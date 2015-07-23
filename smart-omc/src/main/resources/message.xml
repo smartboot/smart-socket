@@ -1,0 +1,10 @@
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+	<entry key="com.zjw.platform.quickly.protocol.p2p.HeartMessageReq">com.zjw.platform.module.omc.server.processor.HeartMessageProcessor</entry>
+
+	<entry key="com.zjw.platform.quickly.protocol.p2p.InvalidMessageReq">com.zjw.platform.module.omc.server.processor.InvalidMessageProcessor</entry>
+
+	<entry key="com.zjw.platform.quickly.protocol.p2p.DetectMessageReq">com.zjw.platform.module.omc.server.processor.DetectMessageProcessor</entry>
+
+	<entry key="com.zjw.platform.quickly.protocol.p2p.ClusterMessageReq">com.zjw.platform.module.omc.server.processor.ClusterMessageProcessor</entry>
+</properties>

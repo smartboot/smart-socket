@@ -1,0 +1,1 @@
+xjc -verbose web-app_2_5.xsd -d D:\zjw\xml

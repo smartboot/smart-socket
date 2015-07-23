@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<document>
+
+	<properties>
+		<title>Smart Socket概述</title>
+		<author email="zhengjunweimail@163.com">Seer</author>
+	</properties>
+
+	<body>
+
+		<section name="Java NIO">
+
+			<p>
+				NIO(New IO)为J2SE 1.4引进的Java IO新特性，实现JSR 51，是Java原IO系统的增强和补充。
+			</p>
+
+			<p>
+				我们知道，系统运行的性能瓶颈通常在I/O读写，包括对端口和文件的操作上，过去，在打开一个I/O通道后，read()将一直等待在端口一边读取字节内容，如果没有内容进来，read()也是傻傻的等，这会影响我们程序继续做其他事情，那么改进做法就是开设线程，让线程去等待，但是这样做也是相当耗费资源的。
+			</p>
+			<p>
+				Java
+				NIO非堵塞技术实际是采取Reactor模式，或者说是Observer模式为我们监察I/O端口，如果有内容进来，会自动通知我们，这样，我们就不必开启多个线程死等，从外界看，实现了流畅的I/O读写，不堵塞了。
+			</p>
+			<p>
+				Java
+				NIO出现不只是一个技术性能的提高，你会发现网络上到处在介绍它，因为它具有里程碑意义，从JDK1.4开始，Java开始提高性能相关的功能，从而使得Java在底层或者并行分布式计算等操作上已经可以和C或Perl等语言并驾齐驱。
+			</p>
+		</section>
+
+		<section name="常见NIO框架">
+			<p>相对于传统Socket,通过NIO实现Socket通信还是存在一些难度与学习成本的，所幸庞大的Java开源社区已流行了以下几款NIO框架。
+			</p>
+
+			<h5>Mina</h5>
+			<p>
+				Mina(Multipurpose Infrastructure for Network Applications) 是
+				Apache组织一个较新的项目，它为开发高性能和高可用性的网络应用程序提供了非常便利的框架。当前发行的 Mina 版本2.04支持基于
+				JavaNIO 技术的 TCP/UDP 应用程序开发、串口通讯程序，Mina
+				所支持的功能也在进一步的扩展中。目前，正在使用Mina的应用包括：Apache Directory
+				Project、AsyncWeb、AMQP（Advanced MessageQueuing Protocol）、RED5
+				Server（Macromedia? FlashMedia RTMP）、ObjectRADIUS、 Openfire等等。
+			</p>
+
+			<h5>Netty</h5>
+			<p>
+				Netty是一款异步的事件驱动的网络应用框架和工具，用于快速开发可维护的高性能、高扩展性协议服务器和客户端。也就是说，Netty是一个NIO客户端/服务器框架，支持快速、简单地开发网络应用，如协议服务器和客户端。它极大简化了网络编程，如TCP和UDP套接字服务器。
+			</p>
+
+			<h5>Grizzly</h5>
+			<p>
+				Grizzly是一种应用程序框架，专门解决编写成千上万用户访问服务器时候产生的各种问题。使用JAVANIO作为基础，并隐藏其编程的复杂性。容易使用的高性能的API。带来非阻塞socketd到协议处理层。利用高性能的缓冲和缓冲管理使用高性能的线程池。
+			</p>
+
+			<h5>结论</h5>
+			<p>上述几个框架我都没接触过， 所以介绍也是抄的!</p>
+		</section>
+
+		<section name="Smart Socket">
+			<p>Smart Socket其实是作者在学习NIO期间逐渐搭建起来的通信框架，经过无数次的优化，一直在追求上手更快、性能更高、稳定性更强!</p>
+		</section>
+	</body>
+
+</document>
