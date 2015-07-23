@@ -1,0 +1,25 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<name>smart-protocol-p2p</name>
+	<description>基于smart-quickly传输层实现的P2P协议</description>
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>net.vinote.smart</groupId>
+		<artifactId>smart-socket</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+	<artifactId>smart-protocol-p2p</artifactId>
+	<dependencies>
+		<dependency>
+			<groupId>net.vinote.smart</groupId>
+			<artifactId>smart-quickly</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.lmax</groupId>
+			<artifactId>disruptor</artifactId>
+			<version>3.3.0</version>
+		</dependency>
+	</dependencies>
+</project>
