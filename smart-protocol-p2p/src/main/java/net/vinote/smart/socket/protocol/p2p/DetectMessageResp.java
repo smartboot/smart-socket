@@ -1,6 +1,5 @@
 package net.vinote.smart.socket.protocol.p2p;
 
-
 /**
  * 探测消息响应
  * 
@@ -8,6 +7,17 @@ package net.vinote.smart.socket.protocol.p2p;
  *
  */
 public class DetectMessageResp extends BaseMessage {
+
+	public DetectMessageResp() {
+		super();
+		// TODO Auto-generated constructor stub
+	}
+
+	public DetectMessageResp(HeadMessage head) {
+		super(head);
+		// TODO Auto-generated constructor stub
+	}
+
 	private String detectMessage;
 
 	protected void encodeBody() {

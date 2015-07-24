@@ -8,7 +8,7 @@ import net.vinote.smart.socket.transport.nio.NioQuickServer;
 public class HttpServerBootstrap {
 	public static void start(AbstractServletContext app) {
 
-		QuicklyConfig config = new QuicklyConfig();
+		QuicklyConfig config = new QuicklyConfig(true);
 		config.setPort(8081);
 		config.setProcessor(new HttpProtocolMessageProcessor(app));
 		config.setProtocolFactory(new HttpProtocolFactory());

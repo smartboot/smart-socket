@@ -10,7 +10,7 @@ import net.vinote.smart.socket.transport.nio.NioQuickServer;
 
 public class OMCServerBootstrap {
 	public static void main(String[] args) {
-		QuicklyConfig config = new QuicklyConfig();
+		QuicklyConfig config = new QuicklyConfig(true);
 		P2PProtocolFactory factory = new P2PProtocolFactory();
 		config.setProtocolFactory(factory);
 		ProtocolDataProcessor processor = new P2PServerMessageProcessor();

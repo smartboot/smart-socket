@@ -19,12 +19,10 @@ import net.vinote.smart.socket.service.session.Session;
 public class DetectMessageProcessor extends AbstractServiceMessageProcessor {
 	private static final RunLogger logger = RunLogger.getLogger();
 
-	
 	public void processor(Session session, DataEntry message) {
 		DetectMessageReq msg = (DetectMessageReq) message;
 		// RunLogger.getLogger().log(Level.FINE, message);
-		DetectMessageResp rspMsg = new DetectMessageResp();
-		rspMsg.setHead(msg.getHead());
+		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
 		rspMsg.setDetectMessage("探测响应消息" + msg.getHead().getSequenceID());
 		try {
 			session.sendWithoutResponse(rspMsg);
@@ -36,11 +34,9 @@ public class DetectMessageProcessor extends AbstractServiceMessageProcessor {
 		}
 	}
 
-	
 	public DataEntry processCluster(Session session, DataEntry message) {
 		DetectMessageReq msg = (DetectMessageReq) message;
-		DetectMessageResp rspMsg = new DetectMessageResp();
-		rspMsg.setHead(msg.getHead());
+		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
 		rspMsg.setDetectMessage("集群探测响应消息" + msg.getHead().getSequenceID());
 		return rspMsg;
 	}
