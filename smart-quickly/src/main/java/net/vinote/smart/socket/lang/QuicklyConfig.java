@@ -186,7 +186,8 @@ public class QuicklyConfig {
 		this.cacheSize = cacheSize;
 	}
 
-	public final void setClusterTriggerStrategy(ClusterTriggerStrategy clusterTriggerStrategy) {
+	public final void setClusterTriggerStrategy(
+			ClusterTriggerStrategy clusterTriggerStrategy) {
 		this.clusterTriggerStrategy = clusterTriggerStrategy;
 	}
 

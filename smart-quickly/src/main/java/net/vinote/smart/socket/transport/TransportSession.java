@@ -11,6 +11,7 @@ import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
+import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 
 /**
  * 传输层会话<br/>
@@ -35,7 +36,7 @@ public abstract class TransportSession {
 	private ByteBuffer readBuffer;
 
 	/** 会话状态 */
-	private volatile SessionStatus status = SessionStatus.ENABLED;
+	private volatile SessionStatusEnum status = SessionStatusEnum.ENABLED;
 
 	protected SmartFilterChain chain;
 
@@ -59,10 +60,10 @@ public abstract class TransportSession {
 		if (immediate) {
 			synchronized (TransportSession.this) {
 				close0();
-				status = SessionStatus.Closed;
+				status = SessionStatusEnum.Closed;
 			}
 		} else {
-			status = SessionStatus.Closing;
+			status = SessionStatusEnum.Closing;
 		}
 	}
 
@@ -135,7 +136,7 @@ public abstract class TransportSession {
 		return sessionId;
 	}
 
-	public SessionStatus getStatus() {
+	public SessionStatusEnum getStatus() {
 		return status;
 	}
 

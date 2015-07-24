@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.service.filter;
+package net.vinote.smart.socket.service.filter.impl;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -6,6 +6,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.vinote.smart.socket.protocol.DataEntry;
+import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 

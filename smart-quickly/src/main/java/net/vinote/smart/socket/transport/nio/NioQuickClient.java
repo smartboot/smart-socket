@@ -14,9 +14,9 @@ import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.service.process.ClientProcessor;
 import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
-import net.vinote.smart.socket.transport.ChannelServiceStatus;
 import net.vinote.smart.socket.transport.ClientChannelService;
 import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
 
 /**
  * @author Seer
@@ -90,7 +90,7 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 	@Override
 	void exceptionInSelector(final Exception e) {
 		RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
-		if (ChannelServiceStatus.RUNING == status && config.isAutoRecover()) {
+		if (ChannelServiceStatusEnum.RUNING == status && config.isAutoRecover()) {
 			restart();
 		} else {
 			shutdown();
@@ -156,7 +156,7 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 	 * @see net.vinote.smart.socket.transport.ChannelService#shutdown()
 	 */
 	public final void shutdown() {
-		updateServiceStatus(ChannelServiceStatus.STOPPING);
+		updateServiceStatus(ChannelServiceStatusEnum.STOPPING);
 		config.getProcessor().shutdown();
 		try {
 			selector.close();
@@ -178,7 +178,7 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 	 */
 	public final void start() {
 		try {
-			updateServiceStatus(ChannelServiceStatus.STARTING);
+			updateServiceStatus(ChannelServiceStatusEnum.STARTING);
 			selector = Selector.open();
 			socketChannel = SocketChannel.open();
 			socketChannel.configureBlocking(false);
