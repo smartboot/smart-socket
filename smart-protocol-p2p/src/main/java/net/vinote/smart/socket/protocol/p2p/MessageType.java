@@ -41,4 +41,16 @@ public interface MessageType {
 
 	/** 集群业务响应消息 */
 	int CLUSTER_MESSAGE_RSP = RESPONSE_MESSAGE | 0x06;
+
+	/** 字节流请求消息 */
+	int BYTE_ARRAY_MESSAGE_REQ = REQUEST_MESSAGE | 0x07;
+
+	/** 字节流响应消息 */
+	int BYTE_ARRAY_MESSAGE_RSP = RESPONSE_MESSAGE | 0x07;
+
+	/** 远程接口请求消息 */
+	int REMOTE_INTERFACE_MESSAGE_REQ = REQUEST_MESSAGE | 0x08;
+
+	/** 远程接口响应消息 */
+	int REMOTE_INTERFACE_MESSAGE_RSP = RESPONSE_MESSAGE | 0x08;
 }

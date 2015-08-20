@@ -9,6 +9,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 
+import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.extension.cluster.Client2ClusterMessageProcessor;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
@@ -119,6 +120,7 @@ public final class NioQuickServer extends AbstractChannelService {
 
 	public void start() throws IOException {
 		try {
+			checkStart();
 			assertAbnormalStatus();
 			updateServiceStatus(ChannelServiceStatusEnum.STARTING);
 			server = ServerSocketChannel.open();
@@ -187,6 +189,14 @@ public final class NioQuickServer extends AbstractChannelService {
 
 		default:
 			break;
+		}
+	}
+
+	@Override
+	void checkStart() {
+		super.checkStart();
+		if (!config.isServer()) {
+			throw new StatusException("invalid quciklyConfig");
 		}
 	}
 

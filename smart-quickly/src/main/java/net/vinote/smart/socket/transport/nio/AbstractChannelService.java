@@ -161,6 +161,25 @@ abstract class AbstractChannelService implements ChannelService {
 		notifyWhenUpdateStatus(status);
 	}
 
+	/**
+	 * 服务启动检测, 校验服务器的基本配置是否正常
+	 */
+	void checkStart() {
+		if (config == null) {
+			throw new NullPointerException(getClass().getSimpleName()
+					+ "'s config is null");
+		}
+		if (config.getProtocolFactory() == null) {
+			throw new NullPointerException(QuicklyConfig.class.getSimpleName()
+					+ "'s protocolFactory is null");
+		}
+
+		if (config.getProcessor() == null) {
+			throw new NullPointerException(QuicklyConfig.class.getSimpleName()
+					+ "'s processor is null");
+		}
+	}
+
 	protected void notifyWhenUpdateStatus(final ChannelServiceStatusEnum status) {
 
 	}
