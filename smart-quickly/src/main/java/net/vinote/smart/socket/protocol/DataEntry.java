@@ -1,7 +1,15 @@
 package net.vinote.smart.socket.protocol;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ProtocolException;
 import java.util.Arrays;
+
+import net.vinote.smart.socket.exception.DecodeException;
+import net.vinote.smart.socket.exception.EncodeException;
 
 public abstract class DataEntry {
 
@@ -59,6 +67,34 @@ public abstract class DataEntry {
 	}
 
 	/**
+	 * 从数据块中反序列化对象 <b>请慎用该方法,性能有待测试</>
+	 * 
+	 * @return
+	 */
+	public final Object readObject() {
+		byte[] bytes = readBytes();
+		if (bytes == null)
+			return null;
+		ByteArrayInputStream bais = null;
+		ObjectInputStream ois = null;
+		try {
+			bais = new ByteArrayInputStream(bytes);
+			ois = new ObjectInputStream(bais);
+			return ois.readObject();
+		} catch (Exception e) {
+			throw new DecodeException(e);
+		} finally {
+			if (ois != null) {
+				try {
+					ois.close();// 该方法会同时关闭ByteArrayOutputStream
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	/**
 	 * 从数据块中当前位置开始读取一个int长度的整形值
 	 * 
 	 * @return
@@ -66,8 +102,8 @@ public abstract class DataEntry {
 	public final int readInt() {
 		assertMode(MODE.READ);
 		assertLimit(index + 3);
-		return ((data[index++] & 0xff) << 24) + ((data[index++] & 0xff) << 16) + ((data[index++] & 0xff) << 8)
-			+ (data[index++] & 0xff);
+		return ((data[index++] & 0xff) << 24) + ((data[index++] & 0xff) << 16)
+				+ ((data[index++] & 0xff) << 8) + (data[index++] & 0xff);
 	}
 
 	/**
@@ -99,6 +135,36 @@ public abstract class DataEntry {
 		ensureCapacity(1);
 		assertLimit(index);
 		tempData[index++] = i;
+	}
+
+	/**
+	 * 将对象进行序列化输出 <b>请慎用该方法,性能有待测试</b>
+	 * 
+	 * @param object
+	 */
+	public final void writeObject(Object object) {
+		if (object == null) {
+			writeBytes(null);
+			return;
+		}
+		ByteArrayOutputStream byteOs = null;
+		ObjectOutputStream oos = null;
+		try {
+			byteOs = new ByteArrayOutputStream();
+			oos = new ObjectOutputStream(byteOs);
+			oos.writeObject(object);
+			writeBytes(byteOs.toByteArray());
+		} catch (IOException e) {
+			throw new EncodeException(e);
+		} finally {
+			if (oos != null) {
+				try {
+					oos.close();// 该方法会同时关闭ByteArrayOutputStream
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	/**
@@ -229,7 +295,8 @@ public abstract class DataEntry {
 	 */
 	private final void assertMode(MODE mode) {
 		if (mode != this.mode) {
-			throw new RuntimeException("current mode is " + this.mode + ", can not " + mode);
+			throw new RuntimeException("current mode is " + this.mode
+					+ ", can not " + mode);
 		}
 	}
 
@@ -286,7 +353,7 @@ public abstract class DataEntry {
 
 	public abstract byte[] encode() throws ProtocolException;
 
-	public abstract void decode();
+	public abstract void decode() throws DecodeException;
 
 	public enum MODE {
 		READ, WRITE;

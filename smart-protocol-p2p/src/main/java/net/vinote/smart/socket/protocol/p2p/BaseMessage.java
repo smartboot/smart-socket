@@ -47,7 +47,7 @@ public abstract class BaseMessage extends DataEntry {
 
 		// 若是请求消息,将自动为其生成唯一标识 sequenceID;重复encode不产生新的序列号
 		if (head.getSequenceID() == 0
-			&& (MessageType.RESPONSE_MESSAGE & getMessageType()) == MessageType.REQUEST_MESSAGE) {
+				&& (MessageType.RESPONSE_MESSAGE & getMessageType()) == MessageType.REQUEST_MESSAGE) {
 			head.setSequenceID(sequence.incrementAndGet());// 由于初始值为0,所以必须先累加一次,否则获取到的是无效序列号
 		}
 
@@ -61,6 +61,8 @@ public abstract class BaseMessage extends DataEntry {
 
 	/**
 	 * 消息解码
+	 * 
+	 * @throws ProtocolException
 	 */
 	public final void decode() {
 		reset(MODE.READ);
@@ -80,8 +82,10 @@ public abstract class BaseMessage extends DataEntry {
 
 	/**
 	 * 各消息类型各自实现消息体解码工作
+	 * 
+	 * @throws ProtocolException
 	 */
-	protected abstract void decodeBody();
+	protected abstract void decodeBody() throws DecodeException;
 
 	public abstract int getMessageType();
 
@@ -102,7 +106,8 @@ public abstract class BaseMessage extends DataEntry {
 		// 读取幻数
 		int magicNum = readInt();
 		if (magicNum != HeadMessage.MAGIC_NUMBER) {
-			throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum));
+			throw new DecodeException("Invalid Magic Number: 0x"
+					+ Integer.toHexString(magicNum));
 		}
 		// 读取消息长度
 		int length = readInt();

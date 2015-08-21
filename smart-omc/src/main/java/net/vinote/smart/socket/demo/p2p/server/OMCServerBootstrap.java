@@ -8,6 +8,8 @@ import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.BaseMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.DetectMessageReq;
+import net.vinote.smart.socket.protocol.p2p.RemoteInterfaceMessageReq;
+import net.vinote.smart.socket.protocol.p2p.processor.RemoteServiceMessageProcessor;
 import net.vinote.smart.socket.protocol.p2p.server.P2PServerMessageProcessor;
 import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
 import net.vinote.smart.socket.transport.nio.NioQuickServer;
@@ -23,6 +25,8 @@ public class OMCServerBootstrap {
 		Properties msgProcessorPro = new Properties();
 		msgProcessorPro.put(DetectMessageReq.class.getName(),
 				DetectMessageProcessor.class.getName());
+		msgProcessorPro.put(RemoteInterfaceMessageReq.class.getName(),
+				RemoteServiceMessageProcessor.class.getName());
 		BaseMessageFactory.getInstance().loadFromProperties(msgProcessorPro);
 		try {
 			server.start();

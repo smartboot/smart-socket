@@ -1,23 +1,23 @@
 package net.vinote.smart.socket.exception;
 
 /**
- * 消息解码异常
+ * 消息编码码异常
  * 
  * @author Seer
  * 
  */
-public class DecodeException extends RuntimeException {
+public class EncodeException extends RuntimeException {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public DecodeException(String string) {
+	public EncodeException(String string) {
 		super(string);
 	}
 
-	public DecodeException(Throwable cause) {
+	public EncodeException(Throwable cause) {
 		super(cause);
 	}
 
