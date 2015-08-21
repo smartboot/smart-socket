@@ -6,8 +6,10 @@ import java.util.logging.Level;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.logger.RunLogger;
+import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.BaseMessageFactory;
+import net.vinote.smart.socket.protocol.p2p.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.DetectMessageResp;
 import net.vinote.smart.socket.protocol.p2p.RemoteInterfaceMessageReq;
 import net.vinote.smart.socket.protocol.p2p.RemoteInterfaceMessageResp;
@@ -31,29 +33,33 @@ public class OMCAgent {
 		msgProcessorPro.put(RemoteInterfaceMessageResp.class.getName(), "");
 		BaseMessageFactory.getInstance().loadFromProperties(msgProcessorPro);
 		client.start();
-		/*
-		 * int i = Integer.MAX_VALUE; while (i-- > 0) { DetectMessageReq req =
-		 * new DetectMessageReq(); DataEntry data =
-		 * processor.getSession().sendWithResponse(req);
-		 * RunLogger.getLogger().log(Level.SEVERE,
-		 * StringUtils.toHexString(data.getData())); }
-		 */
+
+		// 发送探测消息检测链路是否正常
+		int i = 1;
+		while (i-- > 0) {
+			DetectMessageReq req = new DetectMessageReq();
+			DataEntry data = processor.getSession().sendWithResponse(req);
+			RunLogger.getLogger().log(Level.SEVERE,
+					StringUtils.toHexString(data.getData()));
+		}
+
+		// 模拟SOFA的TR服务
 		RemoteInterfaceMessageReq req = new RemoteInterfaceMessageReq();
-		req.setInterfaceClass(RemoteInterface.class.getName());
-		req.setMethod("say11");
-		req.setParamClassList(RemoteModel.class.getName());
+		req.setInterfaceClass(RemoteInterface.class.getName());// 远程接口名称
+		req.setMethod("say1");// 调用接口方法
+		req.setParamClassList(RemoteModel.class.getName());// 接口方法参数类型
 		RemoteModel model = new RemoteModel();
 		model.setName("zjw1");
-		req.setParams(model);
+		req.setParams(model);// 参数对象
 		RemoteInterfaceMessageResp data = (RemoteInterfaceMessageResp) processor
 				.getSession().sendWithResponse(req);
-		RunLogger.getLogger().log(Level.SEVERE,
-				StringUtils.toHexString(data.getData()));
 		if (StringUtils.isNotBlank(data.getException())) {
 			System.out.println(data.getException());
 		} else {
 			System.out.println(data.getReturnObject());
 		}
+		RunLogger.getLogger().log(Level.SEVERE,
+				StringUtils.toHexString(data.getData()));
 		client.shutdown();
 	}
 }
