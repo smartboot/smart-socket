@@ -6,7 +6,12 @@ import java.util.Properties;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.BaseMessageFactory;
+import net.vinote.smart.socket.protocol.p2p.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.HeartMessageReq;
+import net.vinote.smart.socket.protocol.p2p.RemoteInterfaceMessageReq;
+import net.vinote.smart.socket.protocol.p2p.processor.DetectMessageProcessor;
+import net.vinote.smart.socket.protocol.p2p.processor.HeartMessageProcessor;
+import net.vinote.smart.socket.protocol.p2p.processor.RemoteServiceMessageProcessor;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.impl.FlowControlFilter;
 import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
@@ -16,7 +21,10 @@ public class P2PServer {
 	public static void main(String[] args) throws ClassNotFoundException {
 		Properties properties = new Properties();
 		properties.put(HeartMessageReq.class.getName(), HeartMessageProcessor.class.getName());
+		properties.put(DetectMessageReq.class.getName(), DetectMessageProcessor.class.getName());
+		properties.put(RemoteInterfaceMessageReq.class.getName(), RemoteServiceMessageProcessor.class.getName());
 		BaseMessageFactory.getInstance().loadFromProperties(properties);
+
 		QuicklyConfig config = new QuicklyConfig(true);
 		P2PProtocolFactory factory = new P2PProtocolFactory();
 		config.setProtocolFactory(factory);

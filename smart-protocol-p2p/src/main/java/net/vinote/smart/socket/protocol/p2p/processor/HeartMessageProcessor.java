@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.protocol.p2p.server;
+package net.vinote.smart.socket.protocol.p2p.processor;
 
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.p2p.HeartMessageReq;
