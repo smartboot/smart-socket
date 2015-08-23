@@ -34,9 +34,9 @@ public class P2PSession implements Session {
 	private Map<String, Object> attributeMap = new ConcurrentHashMap<String, Object>();
 
 	public P2PSession(TransportSession session) {
-		this.sessionId = session.getSessionID();
-		this.remoteIp = session.getRemoteAddr();
-		this.localAddress = session.getLocalAddress();
+		sessionId = session.getSessionID();
+		remoteIp = session.getRemoteAddr();
+		localAddress = session.getLocalAddress();
 		this.session = session;
 		maxInactiveInterval = session.getQuickConfig().getTimeout();
 		synchRespMap = new ConcurrentHashMap<String, BaseMessage>();
@@ -98,9 +98,10 @@ public class P2PSession implements Session {
 
 	public void setMaxInactiveInterval(int interval) {
 		refreshAccessedTime();
-		this.maxInactiveInterval = interval;
+		maxInactiveInterval = interval;
 	}
 
+	@Override
 	public String toString() {
 		return "OMCSession [remoteIp=" + remoteIp + ", session=" + session + ", creatTime=" + creatTime
 			+ ", lastAccessTime=" + lastAccessTime + ", maxInactiveInterval=" + maxInactiveInterval + ", sessionId="
@@ -127,7 +128,7 @@ public class P2PSession implements Session {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * com.zjw.platform.quickly.service.session.Session#notifySyncMessage(com
 	 * .zjw.platform.quickly.protocol.DataEntry)
@@ -155,7 +156,7 @@ public class P2PSession implements Session {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * com.zjw.platform.quickly.service.session.Session#sendWithoutResponse(
 	 * com.zjw.platform.quickly.protocol.DataEntry)
@@ -169,15 +170,8 @@ public class P2PSession implements Session {
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.zjw.platform.quickly.service.session.Session#sendWithResponse(com
-	 * .zjw.platform.quickly.protocol.DataEntry)
-	 */
-
-	public DataEntry sendWithResponse(DataEntry requestMsg) throws Exception {
+	@Override
+	public DataEntry sendWithResponse(DataEntry requestMsg, long timeout) throws Exception {
 		BaseMessage reqMsg = (BaseMessage) requestMsg;
 		assertTransactionSession();
 		refreshAccessedTime();
@@ -194,7 +188,7 @@ public class P2PSession implements Session {
 			synchronized (reqMsg) {
 				if (synchRespMap.containsKey(sequenceId) && synchRespMap.get(sequenceId) == reqMsg) {
 					try {
-						reqMsg.wait(session.getTimeout());
+						reqMsg.wait(timeout);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
@@ -212,9 +206,20 @@ public class P2PSession implements Session {
 
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * net.vinote.smart.socket.service.session.Session#sendWithResponse(net.
+	 * vinote.smart.socket.protocol.DataEntry)
+	 */
+	public DataEntry sendWithResponse(DataEntry requestMsg) throws Exception {
+		return sendWithResponse(requestMsg, session.getTimeout());
+	}
+
 	/**
 	 * 是否为请求消息类型
-	 * 
+	 *
 	 * @param msgType
 	 * @return
 	 */
@@ -226,4 +231,5 @@ public class P2PSession implements Session {
 	public TransportSession getTransportSession() {
 		return session;
 	}
+
 }

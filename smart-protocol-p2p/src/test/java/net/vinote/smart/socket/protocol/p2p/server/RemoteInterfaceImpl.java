@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.protocol.p2p.processor;
+package net.vinote.smart.socket.protocol.p2p.server;
 
 import java.util.List;
 

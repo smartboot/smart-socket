@@ -8,6 +8,8 @@ import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.p2p.RemoteInterfaceMessageReq;
 import net.vinote.smart.socket.protocol.p2p.RemoteInterfaceMessageResp;
+import net.vinote.smart.socket.protocol.p2p.server.RemoteInterface;
+import net.vinote.smart.socket.protocol.p2p.server.RemoteInterfaceImpl;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
 

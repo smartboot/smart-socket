@@ -24,23 +24,7 @@ public class RemoteInterfaceMessageReq extends BaseMessage {
 		writeString(uniqueId);
 		writeString(interfaceClass);
 		writeString(method);
-		// if (CollectionUtils.isEmpty(paramClassList)) {
-		// writeByte((byte) 0);
-		// } else {
-		// writeByte((byte) paramClassList.size());
-		// for (String s : paramClassList) {
-		// writeString(s);
-		// }
-		// }
 		writeObject(paramClassList);
-		// if (CollectionUtils.isEmpty(params)) {
-		// writeByte((byte) 0);
-		// } else {
-		// writeByte((byte) params.size());
-		// for (byte[] s : params) {
-		// writeBytes(s);
-		// }
-		// }
 		writeObject(params);
 	}
 
@@ -51,20 +35,6 @@ public class RemoteInterfaceMessageReq extends BaseMessage {
 		method = readString();
 		paramClassList = (String[]) readObject();
 		params = (Object[]) readObject();
-		// byte num = readByte();
-		// if (num > 0) {
-		// paramClassList = new ArrayList<String>(num);
-		// while (num-- > 0) {
-		// paramClassList.add(readString());
-		// }
-		// }
-		// num = readByte();
-		// if (num > 0) {
-		// params = new ArrayList<byte[]>(num);
-		// while (num-- > 0) {
-		// params.add(readBytes());
-		// }
-		// }
 	}
 
 	public String getUniqueId() {
