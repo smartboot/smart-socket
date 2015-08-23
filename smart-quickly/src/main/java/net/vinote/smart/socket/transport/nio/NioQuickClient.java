@@ -24,8 +24,7 @@ import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
  * @author Seer
  * @version NioQuickClient.java, v 0.1 2015年3月20日 下午2:55:08 Seer Exp.
  */
-public class NioQuickClient extends AbstractChannelService implements
-		ClientChannelService {
+public class NioQuickClient extends AbstractChannelService implements ClientChannelService {
 	/**
 	 * Socket连接锁,用于监听连接超时
 	 */
@@ -56,27 +55,21 @@ public class NioQuickClient extends AbstractChannelService implements
 	void acceptConnect(SelectionKey key, Selector selector) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		socketChannel.finishConnect();
-		key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT
-				| SelectionKey.OP_READ);
+		key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
 		// 自动修复链路
 		if (session != null && config.isAutoRecover()) {
 			session.initBaseChannelInfo(key);
-			RunLogger.getLogger().log(Level.SEVERE,
-					"Socket link has been recovered!");
+			RunLogger.getLogger().log(Level.SEVERE, "Socket link has been recovered!");
 		} else {
 			session = new NioSession(key, config);
-			RunLogger.getLogger().log(
-					Level.SEVERE,
-					"success connect to "
-							+ socketChannel.socket().getRemoteSocketAddress()
-									.toString());
+			RunLogger.getLogger().log(Level.SEVERE,
+				"success connect to " + socketChannel.socket().getRemoteSocketAddress().toString());
 			ProtocolDataProcessor processor = config.getProcessor();
 			if (processor instanceof ClientProcessor) {
 				((ClientProcessor) processor).createSession(session);
 			} else {
-				throw new InvalidClassException(
-						"Client Processor must implement interface "
-								+ ClientProcessor.class.getName());
+				throw new InvalidClassException("Client Processor must implement interface "
+					+ ClientProcessor.class.getName());
 			}
 			synchronized (conenctLock) {
 				conenctLock.notifyAll();
@@ -92,8 +85,7 @@ public class NioQuickClient extends AbstractChannelService implements
 	 * java.lang.Exception)
 	 */
 	@Override
-	void exceptionInSelectionKey(final SelectionKey key, final Exception e)
-			throws Exception {
+	void exceptionInSelectionKey(final SelectionKey key, final Exception e) throws Exception {
 		throw e;
 	}
 
@@ -125,15 +117,12 @@ public class NioQuickClient extends AbstractChannelService implements
 			int loopTimes = READ_LOOP_TIMES;
 			do {
 				session.flushReadBuffer();
-			} while ((key.interestOps() & SelectionKey.OP_READ) > 0
-					&& (readSize = socketChannel.read(buffer)) > 0
-					&& --loopTimes > 0);// 读取管道中的数据块
+			} while ((key.interestOps() & SelectionKey.OP_READ) > 0 && (readSize = socketChannel.read(buffer)) > 0
+				&& --loopTimes > 0);// 读取管道中的数据块
 			// 达到流末尾则注销读关注
 			if (readSize == -1) {
-				RunLogger.getLogger().log(
-						Level.FINEST,
-						"the read channel[" + socketChannel
-								+ "] has reached end-of-stream");
+				RunLogger.getLogger().log(Level.FINEST,
+					"the read channel[" + socketChannel + "] has reached end-of-stream");
 				key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
 			}
 		}
@@ -153,13 +142,11 @@ public class NioQuickClient extends AbstractChannelService implements
 			socketChannel = SocketChannel.open();
 			socketChannel.configureBlocking(false);
 			socketChannel.register(selector, SelectionKey.OP_CONNECT);
-			socketChannel.connect(new InetSocketAddress(config.getHost(),
-					config.getPort()));
+			socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort()));
 			RunLogger.getLogger().log(
-					Level.SEVERE,
-					"Client " + config.getLocalIp() + " will reconnect to [IP:"
-							+ config.getHost() + " ,Port:" + config.getPort()
-							+ "]");
+				Level.SEVERE,
+				"Client " + config.getLocalIp() + " will reconnect to [IP:" + config.getHost() + " ,Port:"
+					+ config.getPort() + "]");
 		} catch (final IOException e) {
 			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 		}
@@ -199,8 +186,7 @@ public class NioQuickClient extends AbstractChannelService implements
 			socketChannel = SocketChannel.open();
 			socketChannel.configureBlocking(false);
 			socketChannel.register(selector, SelectionKey.OP_CONNECT);
-			socketChannel.connect(new InetSocketAddress(config.getHost(),
-					config.getPort()));
+			socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort()));
 			serverThread = new Thread(this, "QuickClient-" + hashCode());
 			serverThread.start();
 			socketChannel.socket().setSoTimeout(config.getTimeout());
@@ -211,14 +197,14 @@ public class NioQuickClient extends AbstractChannelService implements
 						try {
 							conenctLock.wait(config.getTimeout());
 						} catch (final InterruptedException e) {
-							e.printStackTrace();
+							RunLogger.getLogger().log(e);
 						}
 					}
 				}
 			}
 
 		} catch (final IOException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 	}
 
@@ -234,8 +220,7 @@ public class NioQuickClient extends AbstractChannelService implements
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		ByteBuffer buffer;
 		int loopTimes = WRITE_LOOP_TIMES;
-		while ((buffer = session.getWriteBuffer()) != null
-				&& socketChannel.write(buffer) > 0 && --loopTimes > 0) {
+		while ((buffer = session.getWriteBuffer()) != null && socketChannel.write(buffer) > 0 && --loopTimes > 0) {
 			;
 		}
 	}

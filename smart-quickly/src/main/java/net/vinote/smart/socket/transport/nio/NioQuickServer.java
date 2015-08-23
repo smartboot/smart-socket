@@ -38,20 +38,16 @@ public final class NioQuickServer extends AbstractChannelService {
 	 * @throws IOException
 	 */
 	@Override
-	protected void acceptConnect(final SelectionKey key, final Selector selector)
-			throws IOException {
+	protected void acceptConnect(final SelectionKey key, final Selector selector) throws IOException {
 
 		ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel();
 		SocketChannel socketChannel = serverChannel.accept();
 		socketChannel.configureBlocking(false);
-		SelectionKey socketKey = socketChannel.register(selector,
-				SelectionKey.OP_READ);
+		SelectionKey socketKey = socketChannel.register(selector, SelectionKey.OP_READ);
 		NioSession session = null;
 		// 判断当前链路的消息是否交由集群服务器处理
-		if (config.getClusterTriggerStrategy() != null
-				&& config.getClusterTriggerStrategy().cluster()) {
-			session = new NioSession(socketKey, config,
-					Client2ClusterMessageProcessor.getInstance());
+		if (config.getClusterTriggerStrategy() != null && config.getClusterTriggerStrategy().cluster()) {
+			session = new NioSession(socketKey, config, Client2ClusterMessageProcessor.getInstance());
 		} else {
 			session = new NioSession(socketKey, config);
 		}
@@ -60,17 +56,14 @@ public final class NioQuickServer extends AbstractChannelService {
 	}
 
 	@Override
-	protected void exceptionInSelectionKey(SelectionKey key, final Exception e)
-			throws Exception {
-		RunLogger.getLogger().log(Level.WARNING,
-				"Close Channel because of Exception", e);
+	protected void exceptionInSelectionKey(SelectionKey key, final Exception e) throws Exception {
+		RunLogger.getLogger().log(Level.WARNING, "Close Channel because of Exception", e);
 		final Object att = key.attach(null);
 		if (att instanceof NioSession) {
 			((NioSession) att).close();
 		}
 		key.channel().close();
-		RunLogger.getLogger().log(Level.SEVERE,
-				"close connection " + key.channel());
+		RunLogger.getLogger().log(Level.SEVERE, "close connection " + key.channel());
 		key.cancel();
 	}
 
@@ -88,13 +81,11 @@ public final class NioQuickServer extends AbstractChannelService {
 		int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
 		do {
 			session.flushReadBuffer();
-		} while ((key.interestOps() & SelectionKey.OP_READ) > 0
-				&& --loopTimes > 0
-				&& (readSize = socketChannel.read(buffer)) > 0);// 读取管道中的数据块
+		} while ((key.interestOps() & SelectionKey.OP_READ) > 0 && --loopTimes > 0
+			&& (readSize = socketChannel.read(buffer)) > 0);// 读取管道中的数据块
 		// 达到流末尾则注销读关注
 		if (readSize == -1 || session.getStatus() == SessionStatusEnum.Closing) {
-			RunLogger.getLogger().log(Level.SEVERE,
-					"注销客户端[" + socketChannel + "]读关注");
+			RunLogger.getLogger().log(Level.SEVERE, "注销客户端[" + socketChannel + "]读关注");
 			key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
 		}
 	}
@@ -108,12 +99,12 @@ public final class NioQuickServer extends AbstractChannelService {
 				selector.wakeup();
 			}
 		} catch (final IOException e1) {
-			e1.printStackTrace();
+			RunLogger.getLogger().log(e1);
 		}
 		try {
 			server.close();
 		} catch (final IOException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 		Client2ClusterMessageProcessor.getInstance().shutdown();
 	}
@@ -129,8 +120,7 @@ public final class NioQuickServer extends AbstractChannelService {
 			if (StringUtils.isBlank(config.getLocalIp())) {
 				address = new InetSocketAddress(config.getPort());
 			} else {
-				address = new InetSocketAddress(config.getLocalIp(),
-						config.getPort());
+				address = new InetSocketAddress(config.getLocalIp(), config.getPort());
 			}
 			server.socket().bind(address);
 			selector = Selector.open();
@@ -144,8 +134,7 @@ public final class NioQuickServer extends AbstractChannelService {
 				// public void run() {
 				try {
 					Client2ClusterMessageProcessor.getInstance().init(config);
-					RunLogger.getLogger().log(Level.SEVERE,
-							"Start Cluster Service...");
+					RunLogger.getLogger().log(Level.SEVERE, "Start Cluster Service...");
 				} catch (final Exception e) {
 					RunLogger.getLogger().log(Level.WARNING, "", e);
 				}
@@ -168,23 +157,22 @@ public final class NioQuickServer extends AbstractChannelService {
 		int loopTimes = WRITE_LOOP_TIMES;// 轮训次数,一遍及时让出资源
 		// buffer = session.getByteBuffer()若读取不到数据,则内部会移除写关注
 		// socketChannel.write(buffer) == 0则表示当前以不可写
-		while ((buffer = session.getWriteBuffer()) != null
-				&& socketChannel.write(buffer) > 0 && --loopTimes > 0)
+		while ((buffer = session.getWriteBuffer()) != null && socketChannel.write(buffer) > 0 && --loopTimes > 0) {
 			;
-		if (session.getStatus() == SessionStatusEnum.Closing
-				&& (buffer = session.getWriteBuffer()) == null) {
+		}
+		if (session.getStatus() == SessionStatusEnum.Closing && (buffer = session.getWriteBuffer()) == null) {
 			session.close();
 		}
 	}
 
 	@Override
 	protected void notifyWhenUpdateStatus(ChannelServiceStatusEnum status) {
-		if (status == null)
+		if (status == null) {
 			return;
+		}
 		switch (status) {
 		case RUNING:
-			RunLogger.getLogger().log(Level.SEVERE,
-					"Running with " + config.getPort() + " port");
+			RunLogger.getLogger().log(Level.SEVERE, "Running with " + config.getPort() + " port");
 			break;
 
 		default:
