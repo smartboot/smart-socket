@@ -1,12 +1,11 @@
 package net.vinote.smart.socket.service.process;
 
-
 /**
  * 
  * 协议消息处理线程抽象类
  * 
  * @author Seer
- *
+ * @version ProtocolProcessThread.java, v 0.1 2015年8月24日 下午2:21:57 Seer Exp.
  */
 public abstract class ProtocolProcessThread extends Thread {
 	/** 当前线程服务的处理器 */

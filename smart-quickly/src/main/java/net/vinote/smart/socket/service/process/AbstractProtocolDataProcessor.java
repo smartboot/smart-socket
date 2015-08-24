@@ -11,7 +11,8 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  *
  */
-public abstract class AbstractProtocolDataProcessor implements ProtocolDataProcessor {
+public abstract class AbstractProtocolDataProcessor implements
+		ProtocolDataProcessor {
 	private QuicklyConfig quickConfig;
 
 	public void init(QuicklyConfig config) throws Exception {
