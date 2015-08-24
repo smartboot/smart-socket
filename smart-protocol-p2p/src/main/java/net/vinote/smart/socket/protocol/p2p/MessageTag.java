@@ -1,4 +1,3 @@
-
 package net.vinote.smart.socket.protocol.p2p;
 
 /**
@@ -8,8 +7,7 @@ package net.vinote.smart.socket.protocol.p2p;
  * @author Administrator
  * 
  */
-public interface MessageTag
-{
+public interface MessageTag {
 	/**
 	 * 鉴权用户名
 	 */
@@ -28,6 +26,11 @@ public interface MessageTag
 	/**
 	 * 返回码
 	 */
-	byte RESULT_CODE = (byte) 0xff;
+	byte RETURN_CODE = (byte) 0x04;
+
+	/**
+	 * 描述
+	 */
+	byte DESC_TAG = (byte) 0x05;
 
 }

@@ -11,6 +11,8 @@ import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.BaseMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.HeartMessageReq;
 import net.vinote.smart.socket.protocol.p2p.HeartMessageResp;
+import net.vinote.smart.socket.protocol.p2p.LoginAuthReq;
+import net.vinote.smart.socket.protocol.p2p.LoginAuthResp;
 import net.vinote.smart.socket.protocol.p2p.RemoteInterfaceMessageReq;
 import net.vinote.smart.socket.protocol.p2p.RemoteInterfaceMessageResp;
 import net.vinote.smart.socket.protocol.p2p.server.RemoteInterface;
@@ -24,6 +26,7 @@ public class P2PClient {
 		Properties properties = new Properties();
 		properties.put(HeartMessageResp.class.getName(), "");
 		properties.put(RemoteInterfaceMessageResp.class.getName(), "");
+		properties.put(LoginAuthResp.class.getName(), "");
 		BaseMessageFactory.getInstance().loadFromProperties(properties);
 		QuicklyConfig config = new QuicklyConfig(false);
 		P2PProtocolFactory factory = new P2PProtocolFactory();
@@ -36,7 +39,11 @@ public class P2PClient {
 		NioQuickClient client = new NioQuickClient(config);
 		client.start();
 
-		long num = Integer.MAX_VALUE;
+		// 发送鉴权消息
+		System.out.println(processor.getSession().sendWithResponse(
+				new LoginAuthReq()));
+
+		long num = 1;
 		long start = System.currentTimeMillis();
 		while (num-- > 0) {
 			HeartMessageReq req = new HeartMessageReq();

@@ -2,13 +2,33 @@ package net.vinote.smart.socket.protocol.p2p;
 
 import net.vinote.smart.socket.exception.DecodeException;
 
+/**
+ * 鉴权响应消息
+ * 
+ * @author Seer
+ * @version LoginAuthResp.java, v 0.1 2015年8月24日 下午6:18:34 Seer Exp.
+ */
 public class LoginAuthResp extends BaseMessage {
 
-	private int resultCode;
+	public LoginAuthResp() {
+		super();
+	}
+
+	public LoginAuthResp(HeadMessage head) {
+		super(head);
+	}
+
+	/** 鉴权返回码 */
+	private String returnCode;
+
+	/** 鉴权返回信息 */
+	private String returnDesc;
 
 	protected void encodeBody() {
-		writeByte(MessageTag.RESULT_CODE);
-		writeInt(resultCode);
+		writeByte(MessageTag.RETURN_CODE);
+		writeString(returnCode);
+		writeByte(MessageTag.DESC_TAG);
+		writeString(returnDesc);
 	}
 
 	protected void decodeBody() {
@@ -17,8 +37,11 @@ public class LoginAuthResp extends BaseMessage {
 		while (getPosition() < msgLen) {
 			// 读取tag值
 			switch (tag = readByte()) {
-			case MessageTag.RESULT_CODE:
-				resultCode = readInt();
+			case MessageTag.RETURN_CODE:
+				returnCode = readString();
+				break;
+			case MessageTag.DESC_TAG:
+				returnDesc = readString();
 				break;
 			default:
 				throw new DecodeException("Invalid Tag value:" + tag);
@@ -26,31 +49,24 @@ public class LoginAuthResp extends BaseMessage {
 		}
 	}
 
-	public int getResultCode() {
-		return resultCode;
-	}
-
-	public void setResultCode(int resultCode) {
-		this.resultCode = resultCode;
-	}
-
 	public int getMessageType() {
 		return MessageType.LOGIN_AUTH_RSP;
 	}
 
-	/**
-	 * 登录鉴权响应码
-	 * 
-	 * @author Administrator
-	 */
-	public interface ResultCode {
-		/** 鉴权成功 */
-		int SUCCESS = 1000;
-
-		/** 鉴权失败 */
-		int FAILURE = 3000;
-
-		/** 未鉴权 */
-		int UN_AUTH = 3001;
+	public String getReturnCode() {
+		return returnCode;
 	}
+
+	public void setReturnCode(String returnCode) {
+		this.returnCode = returnCode;
+	}
+
+	public String getReturnDesc() {
+		return returnDesc;
+	}
+
+	public void setReturnDesc(String returnDesc) {
+		this.returnDesc = returnDesc;
+	}
+
 }
