@@ -7,13 +7,15 @@ package net.vinote.smart.socket.protocol.p2p;
  * <p>
  * 注：消息体对象不要重复用于绑定消息实体
  * <p>
+ * MAGIC_NUMBER:幻数(4字节)
+ * <p>
  * Length：消息总长度(4个字节)
  * <p>
  * MessageType：消息类型(4个字节)
  * <p>
  * SequenceID：由发送方填写，请求和响应消息必须保持一致(4个字节)
  * <p>
- * 预留：20字节
+ * 预留：16字节
  * 
  * @author Seer
  * @version HeadMessage.java, v 0.1 2015年8月24日 上午10:40:49 Seer Exp.

@@ -6,6 +6,7 @@ import java.util.logging.Level;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.logger.RunLogger;
+import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.BaseMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.HeartMessageReq;
@@ -39,7 +40,9 @@ public class P2PClient {
 		long start = System.currentTimeMillis();
 		while (num-- > 0) {
 			HeartMessageReq req = new HeartMessageReq();
-			processor.getSession().sendWithResponse(req);
+			DataEntry data = processor.getSession().sendWithResponse(req);
+			RunLogger.getLogger().log(Level.FINE,
+					StringUtils.toHexString(data.getData()));
 		}
 		System.out.println("结束" + (System.currentTimeMillis() - start));
 
