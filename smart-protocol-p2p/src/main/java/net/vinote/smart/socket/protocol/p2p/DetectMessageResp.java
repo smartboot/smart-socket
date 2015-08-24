@@ -10,12 +10,10 @@ public class DetectMessageResp extends BaseMessage {
 
 	public DetectMessageResp() {
 		super();
-		// TODO Auto-generated constructor stub
 	}
 
 	public DetectMessageResp(HeadMessage head) {
 		super(head);
-		// TODO Auto-generated constructor stub
 	}
 
 	private String detectMessage;

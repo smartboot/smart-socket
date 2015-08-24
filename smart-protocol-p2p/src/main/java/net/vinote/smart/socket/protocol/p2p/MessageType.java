@@ -1,5 +1,11 @@
 package net.vinote.smart.socket.protocol.p2p;
 
+/**
+ * 定义消息类型
+ * 
+ * @author Seer
+ * @version MessageType.java, v 0.1 2015年8月24日 上午9:37:04 Seer Exp.
+ */
 public interface MessageType {
 	/** 请求消息类型 */
 	int REQUEST_MESSAGE = 0x10000000;

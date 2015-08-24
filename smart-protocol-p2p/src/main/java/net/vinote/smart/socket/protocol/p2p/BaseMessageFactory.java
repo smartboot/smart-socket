@@ -29,14 +29,28 @@ public class BaseMessageFactory {
 		return factory;
 	}
 
+	/**
+	 * 注册消息
+	 * 
+	 * @param msg
+	 */
 	private void regiestMessage(Class<? extends BaseMessage> msg) {
 		try {
 			Method m = msg.getMethod("getMessageType");
-			msgHaspMap.put((Integer) (m.invoke(msg.newInstance())), msg);
-			logger.log(Level.SEVERE, "load Message Class[" + msg.getName()
-					+ "]");
+			Integer messageType = (Integer) (m.invoke(msg.newInstance()));
+			if (msgHaspMap.containsKey(messageType)) {
+				logger.log(Level.WARNING,
+						"MessageType=" + messageType
+								+ " has already regiested by "
+								+ msgHaspMap.get(messageType).getName()
+								+ ", ingore " + msg.getName());
+			} else {
+				msgHaspMap.put(messageType, msg);
+				logger.log(Level.SEVERE, "load Message Class[" + msg.getName()
+						+ "]");
+			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 	}
 

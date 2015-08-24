@@ -2,6 +2,10 @@ package net.vinote.smart.socket.protocol.p2p;
 
 import java.net.ProtocolException;
 
+/**
+ * @author Seer
+ * @version RemoteInterfaceMessageReq.java, v 0.1 2015年8月24日 上午9:35:07 Seer Exp.
+ */
 public class RemoteInterfaceMessageReq extends BaseMessage {
 
 	/** 接口唯一标识 */
