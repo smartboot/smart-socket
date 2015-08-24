@@ -1,4 +1,0 @@
-<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
-<properties>
-	<entry key="com.zjw.platform.quickly.protocol.p2p.DetectMessageResp">com.zjw.platform.module.omc.client.processor.DetectResponseMessageProcessor</entry>
-</properties>
