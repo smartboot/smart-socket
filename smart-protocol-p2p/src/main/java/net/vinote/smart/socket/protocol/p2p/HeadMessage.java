@@ -13,10 +13,10 @@ package net.vinote.smart.socket.protocol.p2p;
  * <p>
  * SequenceID：由发送方填写，请求和响应消息必须保持一致(4个字节)
  * <p>
- * 预留：16字节
+ * 预留：20字节
  * 
  * @author Seer
- * 
+ * @version HeadMessage.java, v 0.1 2015年8月24日 上午10:40:49 Seer Exp.
  */
 public final class HeadMessage {
 	public static final int HEAD_MESSAGE_LENGTH = 32;

@@ -18,13 +18,14 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  * 维护客户端-》服务端 或 服务端-》客户端 的当前会话
  *
  * @author Seer
- *
+ * @version TransportSession.java, v 0.1 2015年8月24日 上午10:31:38 Seer Exp.
  */
 public abstract class TransportSession {
 	private static final RunLogger logger = RunLogger.getLogger();
 
 	/** 会话ID */
-	private final String sessionId = String.valueOf(System.identityHashCode(this));
+	private final String sessionId = String.valueOf(System
+			.identityHashCode(this));
 	/** 配置信息 */
 	protected QuicklyConfig quickConfig;
 	/** 消息通信协议 */
@@ -172,7 +173,8 @@ public abstract class TransportSession {
 	 * @return 是否输出成功
 	 * @throws Exception
 	 */
-	public abstract void write(byte[] data) throws IOException, CacheFullException;
+	public abstract void write(byte[] data) throws IOException,
+			CacheFullException;
 
 	/**
 	 * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理
@@ -182,6 +184,7 @@ public abstract class TransportSession {
 	 * @return 是否输出成功
 	 * @throws Exception
 	 */
-	public abstract void write(DataEntry data) throws IOException, CacheFullException;
+	public abstract void write(DataEntry data) throws IOException,
+			CacheFullException;
 
 }

@@ -17,7 +17,7 @@ import java.io.IOException;
  * </p>
  *
  * @author Seer
- *
+ * @version ChannelService.java, v 0.1 2015年8月24日 上午10:31:23 Seer Exp.
  */
 public interface ChannelService extends Runnable {
 

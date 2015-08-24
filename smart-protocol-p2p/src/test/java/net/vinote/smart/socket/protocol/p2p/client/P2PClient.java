@@ -35,11 +35,11 @@ public class P2PClient {
 		NioQuickClient client = new NioQuickClient(config);
 		client.start();
 
-		long num = 1;
+		long num = Integer.MAX_VALUE;
 		long start = System.currentTimeMillis();
 		while (num-- > 0) {
 			HeartMessageReq req = new HeartMessageReq();
-			processor.getSession().sendWithoutResponse(req);
+			processor.getSession().sendWithResponse(req);
 		}
 		System.out.println("结束" + (System.currentTimeMillis() - start));
 
@@ -51,13 +51,15 @@ public class P2PClient {
 		RemoteModel model = new RemoteModel();
 		model.setName("zjw1");
 		req.setParams(model);// 参数对象
-		RemoteInterfaceMessageResp data = (RemoteInterfaceMessageResp) processor.getSession().sendWithResponse(req);
+		RemoteInterfaceMessageResp data = (RemoteInterfaceMessageResp) processor
+				.getSession().sendWithResponse(req);
 		if (StringUtils.isNotBlank(data.getException())) {
 			System.out.println(data.getException());
 		} else {
 			System.out.println(data.getReturnObject());
 		}
-		RunLogger.getLogger().log(Level.SEVERE, StringUtils.toHexString(data.getData()));
+		RunLogger.getLogger().log(Level.SEVERE,
+				StringUtils.toHexString(data.getData()));
 		client.shutdown();
 	}
 }

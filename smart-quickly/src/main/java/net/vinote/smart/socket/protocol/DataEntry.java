@@ -132,7 +132,7 @@ public abstract class DataEntry {
 	 * @param i
 	 */
 	public final void writeByte(byte i) {
-		ensureCapacity(1);
+		ensureCapacity(index + 1);
 		assertLimit(index);
 		tempData[index++] = i;
 	}
@@ -176,7 +176,7 @@ public abstract class DataEntry {
 		if (data != null) {
 			assertLimit(index + data.length + 3);
 			writeInt(data.length);
-			ensureCapacity(data.length);
+			ensureCapacity(index + data.length);
 			System.arraycopy(data, 0, tempData, index, data.length);
 			index += data.length;
 		} else {
@@ -192,7 +192,7 @@ public abstract class DataEntry {
 	public final void writeInt(int i) {
 		assertMode(MODE.WRITE);
 		assertLimit(index + 3);
-		ensureCapacity(4);
+		ensureCapacity(index + 4);
 		tempData[index++] = (byte) ((0xff000000 & i) >> 24);
 		tempData[index++] = (byte) ((0xff0000 & i) >> 16);
 		tempData[index++] = (byte) ((0xff00 & i) >> 8);
@@ -207,7 +207,7 @@ public abstract class DataEntry {
 	public final void writeShort(int i) {
 		assertMode(MODE.WRITE);
 		assertLimit(index + 1);
-		ensureCapacity(2);
+		ensureCapacity(index + 2);
 		tempData[index++] = (byte) ((0xff00 & i) >> 8);
 		tempData[index++] = (byte) (0xff & i);
 	}
@@ -261,6 +261,7 @@ public abstract class DataEntry {
 	 * @param n
 	 */
 	public final void position(int n) {
+		ensureCapacity(n + 1);
 		index = n;
 	}
 
