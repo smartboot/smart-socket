@@ -45,7 +45,7 @@ public class P2PClient {
 				processor.getSession().sendWithResponse(new LoginAuthReq())
 						.toString());
 
-		long num = 1;
+		long num = 100;
 		long start = System.currentTimeMillis();
 		while (num-- > 0) {
 			HeartMessageReq req = new HeartMessageReq();

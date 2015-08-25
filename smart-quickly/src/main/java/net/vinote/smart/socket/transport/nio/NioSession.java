@@ -123,25 +123,31 @@ public class NioSession extends TransportSession {
 		return remotePort;
 	}
 
+	/**
+	 * 获取写缓冲
+	 * 
+	 * @return
+	 */
 	public ByteBuffer getWriteBuffer() {
-		if (writeBuffer == null || !writeBuffer.hasRemaining()) {
-			byte[] array = writeCacheList.poll();
+		if (writeBuffer != null && writeBuffer.hasRemaining()) {
+			return writeBuffer;
+		}
 
-			if (array != null) {
-				writeBuffer = ByteBuffer.wrap(array);
-				chain.doWriteFilter(this, writeBuffer);
-			} else {
-				writeBuffer = null;
-				// 不具备写条件,移除该关注
-				if (writeCacheList.isEmpty()) {
-					synchronized (writeLock) {
-						if (writeCacheList.isEmpty()) {
-							channelKey.interestOps(channelKey.interestOps()
-									& ~SelectionKey.OP_WRITE);
-						}
+		byte[] array = writeCacheList.poll();
+		if (array != null) {
+			writeBuffer = ByteBuffer.wrap(array);
+			chain.doWriteFilter(this, writeBuffer);
+		} else {
+			writeBuffer = null;
+			// 不具备写条件,移除该关注
+			if (writeCacheList.isEmpty()) {
+				synchronized (writeLock) {
+					if (writeCacheList.isEmpty()) {
+						channelKey.interestOps(channelKey.interestOps()
+								& ~SelectionKey.OP_WRITE);
 					}
-					resumeReadAttention();
 				}
+				resumeReadAttention();
 			}
 		}
 		return writeBuffer;
@@ -197,15 +203,12 @@ public class NioSession extends TransportSession {
 					.getQueueOverflowStrategy())) {
 			case DISCARD:
 				if (!writeCacheList.offer(writeData)) {
+					RunLogger.getLogger().log(Level.WARNING, "cache is full now");
 					throw new CacheFullException("cache is full now");
 				}
 				break;
 			case WAIT:
-				try {
-					writeCacheList.put(writeData);
-				} catch (InterruptedException e) {
-					RunLogger.getLogger().log(e);
-				}
+				writeCacheList.put(writeData);
 				break;
 			default:
 				throw new QueueOverflowStrategyException(
@@ -213,7 +216,9 @@ public class NioSession extends TransportSession {
 								+ quickConfig.getQueueOverflowStrategy());
 			}
 
-		} catch (Exception e) {
+		} catch (CacheFullException e) {
+			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+		} catch (InterruptedException e) {
 			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 		} finally {
 			if (!channelKey.isValid()) {
