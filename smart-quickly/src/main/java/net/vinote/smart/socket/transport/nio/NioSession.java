@@ -28,7 +28,6 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  *
  */
 public class NioSession extends TransportSession {
-	private static final RunLogger logger = RunLogger.getLogger();
 	private SelectionKey channelKey = null;
 
 	/** 响应消息缓存队列 */
@@ -59,11 +58,13 @@ public class NioSession extends TransportSession {
 		initBaseChannelInfo(channelKey);
 		super.quickConfig = config;
 		super.protocol = config.getProtocolFactory().createProtocol();
-		super.chain = new SmartFilterChainImpl(config.getProcessor(), config.getFilters());
+		super.chain = new SmartFilterChainImpl(config.getProcessor(),
+				config.getFilters());
 		writeCacheList = new ArrayBlockingQueue<byte[]>(config.getCacheSize());
 	}
 
-	public NioSession(SelectionKey channelKey, QuicklyConfig config, ProtocolDataReceiver receiver) {
+	public NioSession(SelectionKey channelKey, QuicklyConfig config,
+			ProtocolDataReceiver receiver) {
 		this(channelKey, config);
 		super.chain = new SmartFilterChainImpl(receiver, config.getFilters());
 	}
@@ -71,7 +72,8 @@ public class NioSession extends TransportSession {
 	@Override
 	protected void cancelReadAttention() {
 		readClosed = true;
-		channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
+		channelKey
+				.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
 	}
 
 	@Override
@@ -81,8 +83,8 @@ public class NioSession extends TransportSession {
 
 	/*
 	 * (non-Javadoc)
-	 *
-	 * @see com.zjw.platform.quickly.TransportSession#close()
+	 * 
+	 * @see net.vinote.smart.socket.transport.TransportSession#close0()
 	 */
 	@Override
 	protected void close0() {
@@ -90,19 +92,15 @@ public class NioSession extends TransportSession {
 			return;
 		}
 		writeCacheList.clear();
-		// protocol = null;
 		try {
 			channelKey.channel().close();
-			logger.log(Level.SEVERE, "close connection " + channelKey.channel());
+			RunLogger.getLogger().log(Level.SEVERE,
+					"close connection " + channelKey.channel());
 		} catch (IOException e) {
-			logger.log(Level.WARNING, e.getMessage(), e);
+			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 		}
 		channelKey.cancel();
 		channelKey.selector().wakeup();// 必须唤醒一次选择器以便移除该Key,否则端口会处于CLOSE_WAIT状态
-		/*
-		 * logger.log(Level.SEVERE, "close dump", new
-		 * Throwable().fillInStackTrace());
-		 */
 	}
 
 	@Override
@@ -125,12 +123,6 @@ public class NioSession extends TransportSession {
 		return remotePort;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see com.zjw.platform.quickly.Session#cancelReadAttention()
-	 */
-
 	public ByteBuffer getWriteBuffer() {
 		if (writeBuffer == null || !writeBuffer.hasRemaining()) {
 			byte[] array = writeCacheList.poll();
@@ -141,10 +133,11 @@ public class NioSession extends TransportSession {
 			} else {
 				writeBuffer = null;
 				// 不具备写条件,移除该关注
-				if (writeCacheList.size() == 0) {
+				if (writeCacheList.isEmpty()) {
 					synchronized (writeLock) {
-						if (writeCacheList.size() == 0) {
-							channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_WRITE);
+						if (writeCacheList.isEmpty()) {
+							channelKey.interestOps(channelKey.interestOps()
+									& ~SelectionKey.OP_WRITE);
 						}
 					}
 					resumeReadAttention();
@@ -156,7 +149,8 @@ public class NioSession extends TransportSession {
 
 	void initBaseChannelInfo(SelectionKey channelKey) {
 		Socket socket = ((SocketChannel) channelKey.channel()).socket();
-		InetSocketAddress remoteAddr = (InetSocketAddress) socket.getRemoteSocketAddress();
+		InetSocketAddress remoteAddr = (InetSocketAddress) socket
+				.getRemoteSocketAddress();
 		remoteIp = remoteAddr.getAddress().getHostAddress();
 		localAddress = socket.getLocalAddress().getHostAddress();
 		remotePort = remoteAddr.getPort();
@@ -172,7 +166,8 @@ public class NioSession extends TransportSession {
 	@Override
 	public void pauseReadAttention() {
 		if ((channelKey.interestOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
-			channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
+			channelKey.interestOps(channelKey.interestOps()
+					& ~SelectionKey.OP_READ);
 		}
 	}
 
@@ -182,23 +177,24 @@ public class NioSession extends TransportSession {
 			return;
 		}
 		if ((channelKey.interestOps() & SelectionKey.OP_READ) != SelectionKey.OP_READ) {
-			channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_READ);
-			// RunLogger.getLogger().log(Level.FINE, "释放读流控" +
-			// writeCacheList.size());
+			channelKey.interestOps(channelKey.interestOps()
+					| SelectionKey.OP_READ);
 		}
 	}
 
 	@Override
 	public String toString() {
-		return "Session [channel=" + channelKey.channel() + ", protocol=" + protocol + ", receiver="
-			+ getQuickConfig().getProcessor() + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
-			+ ", toString()=" + super.toString() + "]";
+		return "Session [channel=" + channelKey.channel() + ", protocol="
+				+ protocol + ", receiver=" + getQuickConfig().getProcessor()
+				+ ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
+				+ ", toString()=" + super.toString() + "]";
 	}
 
 	@Override
-	public void write(byte[] writeData) throws IOException, CacheFullException {
+	public void write(byte[] writeData) throws IOException {
 		try {
-			switch (QueueOverflowStrategy.valueOf(quickConfig.getQueueOverflowStrategy())) {
+			switch (QueueOverflowStrategy.valueOf(quickConfig
+					.getQueueOverflowStrategy())) {
 			case DISCARD:
 				if (!writeCacheList.offer(writeData)) {
 					throw new CacheFullException("cache is full now");
@@ -212,23 +208,26 @@ public class NioSession extends TransportSession {
 				}
 				break;
 			default:
-				throw new QueueOverflowStrategyException("Invalid overflow strategy "
-					+ quickConfig.getQueueOverflowStrategy());
+				throw new QueueOverflowStrategyException(
+						"Invalid overflow strategy "
+								+ quickConfig.getQueueOverflowStrategy());
 			}
 
 		} catch (Exception e) {
-			logger.log(Level.WARNING, e.getMessage(), e);
+			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 		} finally {
 			if (!channelKey.isValid()) {
 				if (getQuickConfig().isAutoRecover()) {
-					throw new NotYetReconnectedException("Network anomaly, will reconnect");
+					throw new NotYetReconnectedException(
+							"Network anomaly, will reconnect");
 				} else {
 					writeCacheList.clear();
 					throw new IOException("Channel is invalid now!");
 				}
 			} else {
 				synchronized (writeLock) {
-					channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_WRITE);
+					channelKey.interestOps(channelKey.interestOps()
+							| SelectionKey.OP_WRITE);
 					channelKey.selector().wakeup();
 				}
 			}
@@ -238,7 +237,7 @@ public class NioSession extends TransportSession {
 
 	/*
 	 * 将数据输出至缓存,若缓存已满则返回false (non-Javadoc)
-	 *
+	 * 
 	 * @see com.zjw.platform.quickly.Session#write(byte[])
 	 */
 	@Override

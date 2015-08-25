@@ -18,7 +18,6 @@ import net.vinote.smart.socket.service.process.ProtocolProcessThread;
  *
  */
 class P2PClientProcessThread extends ProtocolProcessThread {
-	private static final RunLogger logger = RunLogger.getLogger();
 
 	private QueueOverflowStrategy strategy;
 	private ArrayBlockingQueue<BaseMessage> list = new ArrayBlockingQueue<BaseMessage>(
@@ -34,7 +33,7 @@ class P2PClientProcessThread extends ProtocolProcessThread {
 		switch (strategy) {
 		case DISCARD:
 			if (!list.offer((BaseMessage) msg)) {
-				logger.log(Level.FINE, "message queue is full!");
+				RunLogger.getLogger().log(Level.FINE, "message queue is full!");
 			}
 			break;
 		case WAIT:
@@ -58,7 +57,7 @@ class P2PClientProcessThread extends ProtocolProcessThread {
 				processor.process(msg);
 			} catch (Exception e) {
 				if (running) {
-					logger.log(Level.WARNING, e.getMessage(), e);
+					RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 				}
 			}
 		}

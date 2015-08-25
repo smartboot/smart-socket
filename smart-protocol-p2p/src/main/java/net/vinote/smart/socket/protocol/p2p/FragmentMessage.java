@@ -13,7 +13,6 @@ import net.vinote.smart.socket.logger.RunLogger;
  * 
  */
 public class FragmentMessage extends BaseMessage {
-	private static final RunLogger logger = RunLogger.getLogger();
 	private int length;
 
 	protected void encodeBody() {
@@ -87,7 +86,7 @@ public class FragmentMessage extends BaseMessage {
 					RunLogger.getLogger().log(e);
 				}
 			} else {
-				logger.log(
+				RunLogger.getLogger().log(
 						Level.WARNING,
 						"Message[0x"
 								+ Integer.toHexString(head.getMessageType())

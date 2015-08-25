@@ -17,7 +17,6 @@ import net.vinote.smart.socket.service.session.Session;
  *
  */
 public class DetectMessageProcessor extends AbstractServiceMessageProcessor {
-	private static final RunLogger logger = RunLogger.getLogger();
 
 	public void processor(Session session, DataEntry message) {
 		DetectMessageReq msg = (DetectMessageReq) message;
@@ -28,9 +27,9 @@ public class DetectMessageProcessor extends AbstractServiceMessageProcessor {
 			session.sendWithoutResponse(rspMsg);
 		} catch (IOException e) {
 			session.invalidate();
-			logger.log(Level.WARNING, e.getMessage(), e);
+			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 		} catch (Exception e) {
-			logger.log(Level.WARNING, e.getMessage(), e);
+			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 		}
 	}
 

@@ -22,7 +22,8 @@ import com.lmax.disruptor.dsl.Disruptor;
  * @author Seer
  *
  */
-public abstract class AbstractProtocolDisruptorProcessor implements ProtocolDataProcessor {
+public abstract class AbstractProtocolDisruptorProcessor implements
+		ProtocolDataProcessor {
 	protected class ProcessUnit {
 		public String sessionId;
 		public DataEntry msg;
@@ -34,7 +35,8 @@ public abstract class AbstractProtocolDisruptorProcessor implements ProtocolData
 			try {
 				if (handlers != null && handlers.length > 0) {
 					for (SmartFilter h : handlers) {
-						h.processFilter(SessionManager.getInstance().getSession(unit.sessionId), unit.msg);
+						h.processFilter(SessionManager.getInstance()
+								.getSession(unit.sessionId), unit.msg);
 					}
 				}
 				process(unit);
@@ -64,8 +66,8 @@ public abstract class AbstractProtocolDisruptorProcessor implements ProtocolData
 	@SuppressWarnings("unchecked")
 	public void init(QuicklyConfig config) throws Exception {
 		quickConfig = config;
-		disruptor = new Disruptor<ProcessUnit>(new ProcessUnitFactory(), quickConfig.getCacheSize(),
-			Executors.newCachedThreadPool());
+		disruptor = new Disruptor<ProcessUnit>(new ProcessUnitFactory(),
+				quickConfig.getCacheSize(), Executors.newCachedThreadPool());
 		disruptor.handleEventsWith(new ProcessUnitEventHandler());
 		ringBuffer = disruptor.start();
 	}

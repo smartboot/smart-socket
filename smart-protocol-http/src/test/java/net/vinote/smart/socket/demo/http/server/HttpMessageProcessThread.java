@@ -10,7 +10,6 @@ import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
 import net.vinote.smart.socket.service.process.ProtocolProcessThread;
 
 class HttpMessageProcessThread extends ProtocolProcessThread {
-	private static final RunLogger logger = RunLogger.getLogger();
 	private ArrayBlockingQueue<RequestUnit> messageQueue;
 	private Handler handler;
 
@@ -30,7 +29,6 @@ class HttpMessageProcessThread extends ProtocolProcessThread {
 				"OMCServerProcessThread is not support put operation");
 	}
 
-	
 	public void run() {
 		if (handler != null) {
 			handler.handler();
@@ -41,7 +39,7 @@ class HttpMessageProcessThread extends ProtocolProcessThread {
 				processor.process(unit);
 			} catch (Exception e) {
 				if (running) {
-					logger.log(Level.WARNING, e.getMessage(), e);
+					RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 				}
 			}
 		}

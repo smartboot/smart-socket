@@ -38,7 +38,6 @@ public class Client2ClusterMessageProcessor extends
 		return instance;
 	}
 
-	private static final RunLogger logger = RunLogger.getLogger();
 	private static Client2ClusterMessageProcessor instance;
 	private ArrayBlockingQueue<ProcessUnit> msgQueue;
 	private ClusterServiceProcessThread processThread;
@@ -109,8 +108,10 @@ public class Client2ClusterMessageProcessor extends
 
 					NioQuickClient client = new NioQuickClient(config);
 					client.start();
-					logger.log(Level.SEVERE, "Connect to Cluster Server[ip:"
-							+ url.getIp() + " ,port:" + url.getPort() + "]");
+					RunLogger.getLogger().log(
+							Level.SEVERE,
+							"Connect to Cluster Server[ip:" + url.getIp()
+									+ " ,port:" + url.getPort() + "]");
 					getQuicklyConfig().getLoadBalancing().registServer(client);
 				}
 			}
@@ -137,7 +138,7 @@ public class Client2ClusterMessageProcessor extends
 					if (!unit.clientSession.isValid()) {
 						unit.clientSession.close();
 						clientTransSessionMap.remove(key);
-						logger.log(
+						RunLogger.getLogger().log(
 								Level.SEVERE,
 								"remove invalid client[IP:"
 										+ unit.clientSession.getRemoteAddr()
@@ -161,11 +162,11 @@ public class Client2ClusterMessageProcessor extends
 		try {
 			unit.clusterSession.write((DataEntry) unit.msg);
 		} catch (IOException e) {
-			logger.log(Level.WARNING, e.getMessage(), e);
+			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 		} catch (CacheFullException e) {
 			RunLogger.getLogger().log(e);
 		} catch (Exception e) {
-			logger.log(Level.WARNING, e.getMessage(), e);
+			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 		}
 	}
 

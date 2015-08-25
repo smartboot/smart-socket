@@ -16,13 +16,14 @@ import net.vinote.smart.socket.service.session.Session;
  *          Seer Exp.
  */
 public class InvalidMessageResponseProcessor extends
-AbstractServiceMessageProcessor {
-	private static final RunLogger logger = RunLogger.getLogger();
+		AbstractServiceMessageProcessor {
 
 	@Override
 	public void processor(Session session, DataEntry message) {
-		logger.log(Level.SEVERE, "接受到畸形报文响应消息:" + session.getRemoteIp()
-				+ StringUtils.toHexString(message.getData()));
+		RunLogger.getLogger().log(
+				Level.SEVERE,
+				"接受到畸形报文响应消息:" + session.getRemoteIp()
+						+ StringUtils.toHexString(message.getData()));
 	}
 
 }

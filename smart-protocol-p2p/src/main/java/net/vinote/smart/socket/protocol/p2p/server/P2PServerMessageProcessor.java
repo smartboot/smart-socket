@@ -40,7 +40,6 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		}
 	}
 
-	private static final RunLogger logger = RunLogger.getLogger();
 	private ProtocolProcessThread[] processThreads;
 	private ArrayBlockingQueue<ProcessUnit> msgQueue;
 
@@ -92,8 +91,10 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		Session session = SessionManager.getInstance().getSession(
 				unit.sessionId);
 		if (session == null || session.isInvalid()) {
-			logger.log(Level.FINEST, "Session is invalid,lose message"
-					+ StringUtils.toHexString(unit.msg.getData()));
+			RunLogger.getLogger().log(
+					Level.FINEST,
+					"Session is invalid,lose message"
+							+ StringUtils.toHexString(unit.msg.getData()));
 			return;
 		}
 		session.refreshAccessedTime();

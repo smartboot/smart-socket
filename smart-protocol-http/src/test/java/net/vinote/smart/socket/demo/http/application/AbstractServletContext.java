@@ -48,7 +48,6 @@ import net.vinote.smart.socket.protocol.http.SmartHttpRequest;
 import net.vinote.smart.socket.transport.TransportSession;
 
 public abstract class AbstractServletContext implements ServletContext {
-	private static final RunLogger logger = RunLogger.getLogger();
 	/** 应用名称 */
 	private String contextName;
 
@@ -113,20 +112,25 @@ public abstract class AbstractServletContext implements ServletContext {
 		smartRequest.setRemotePort(tranSession.getRemotePort());
 		smartRequest.setRemoteHost(tranSession.getRemoteHost());
 		smartRequest.setRemoteAddr(tranSession.getRemoteAddr());
-		HttpServletRequest request = new SmartHttpServletRequest(smartRequest, this);
+		HttpServletRequest request = new SmartHttpServletRequest(smartRequest,
+				this);
 		smartRequest.setContextPath("/" + contextName);
 		if (!request.getRequestURI().startsWith(request.getContextPath())) {
-			throw new IllegalStateException("contextPath解析异常:uri=" + request.getRequestURI() + " ,contextPaht="
-				+ request.getContextPath());
+			throw new IllegalStateException("contextPath解析异常:uri="
+					+ request.getRequestURI() + " ,contextPaht="
+					+ request.getContextPath());
 		}
 		HttpServletResponse response = new SmartHttpServletResponse(tranSession);
-		service(request, response, request.getRequestURI().substring(request.getContextPath().length()));
+		service(request,
+				response,
+				request.getRequestURI().substring(
+						request.getContextPath().length()));
 
 		// logger.log(Level.SEVERE, unit.request.toString());
 		try {
 			response.getWriter().close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 	}
 
@@ -140,7 +144,8 @@ public abstract class AbstractServletContext implements ServletContext {
 		System.out.println(m.regionEnd());
 	}
 
-	void service(ServletRequest request, ServletResponse response, String uriWithoutContextPaht) {
+	void service(ServletRequest request, ServletResponse response,
+			String uriWithoutContextPaht) {
 		if (!uriWithoutContextPaht.startsWith("/")) {
 			uriWithoutContextPaht = "/" + uriWithoutContextPaht;
 		}
@@ -153,9 +158,11 @@ public abstract class AbstractServletContext implements ServletContext {
 				maxIndex = index;
 				if (request instanceof SmartHttpServletRequest) {
 					SmartHttpServletRequest req = (SmartHttpServletRequest) request;
-					req.setServletPath(uriWithoutContextPaht.substring(0, index));
+					req.setServletPath(uriWithoutContextPaht
+							.substring(0, index));
 					if (index < (uriWithoutContextPaht.length())) {
-						req.setPathInfo(uriWithoutContextPaht.substring(index + 1));
+						req.setPathInfo(uriWithoutContextPaht
+								.substring(index + 1));
 					}
 				}
 				servlet = entry.getServlet();
@@ -165,12 +172,13 @@ public abstract class AbstractServletContext implements ServletContext {
 			servlet = unfindServlet;
 		}
 		try {
-			FilterChain filterChain = getFilterChain(uriWithoutContextPaht, servlet);
+			FilterChain filterChain = getFilterChain(uriWithoutContextPaht,
+					servlet);
 			filterChain.doFilter(request, response);
 		} catch (IOException e1) {
-			e1.printStackTrace();
+			RunLogger.getLogger().log(e1);
 		} catch (ServletException e1) {
-			e1.printStackTrace();
+			RunLogger.getLogger().log(e1);
 		}
 	}
 
@@ -286,7 +294,8 @@ public abstract class AbstractServletContext implements ServletContext {
 		if (!arg0.startsWith("/")) {
 			return null;
 		}
-		URL url = new URL("file:/" + basePath + File.separatorChar + arg0.substring(1));
+		URL url = new URL("file:/" + basePath + File.separatorChar
+				+ arg0.substring(1));
 		return url;
 	}
 
@@ -295,7 +304,7 @@ public abstract class AbstractServletContext implements ServletContext {
 			URL url = getResource(arg0);
 			return url == null ? null : url.openStream();
 		} catch (Exception e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 		return null;
 	}
@@ -342,7 +351,8 @@ public abstract class AbstractServletContext implements ServletContext {
 	}
 
 	public void removeAttribute(String arg0) {
-		ServletContextAttributeEvent event = new ServletContextAttributeEvent(AbstractServletContext.this, arg0, null);
+		ServletContextAttributeEvent event = new ServletContextAttributeEvent(
+				AbstractServletContext.this, arg0, null);
 		for (ServletContextAttributeListener listener : servletContextAttributeListenerList) {
 			listener.attributeRemoved(event);
 		}
@@ -383,14 +393,20 @@ public abstract class AbstractServletContext implements ServletContext {
 	 * Bugzilla 34805, 43079 & 43080
 	 */
 	private void checkUnusualURLPattern(String urlPattern) {
-		if (urlPattern.endsWith("*") && (urlPattern.length() < 2 || urlPattern.charAt(urlPattern.length() - 2) != '/')) {
-			logger.log(Level.FINE, "Suspicious url pattern: \"" + urlPattern + "\"" + " in context [" + contextName
-				+ "] - see" + " section SRV.11.2 of the Servlet specification");
+		if (urlPattern.endsWith("*")
+				&& (urlPattern.length() < 2 || urlPattern.charAt(urlPattern
+						.length() - 2) != '/')) {
+			RunLogger.getLogger().log(
+					Level.FINE,
+					"Suspicious url pattern: \"" + urlPattern + "\""
+							+ " in context [" + contextName + "] - see"
+							+ " section SRV.11.2 of the Servlet specification");
 		}
 	}
 
 	public void setAttribute(String key, Object value) {
-		ServletContextAttributeEvent event = new ServletContextAttributeEvent(AbstractServletContext.this, key, value);
+		ServletContextAttributeEvent event = new ServletContextAttributeEvent(
+				AbstractServletContext.this, key, value);
 		if (attributeMap.containsKey(key)) {
 			for (ServletContextAttributeListener listener : servletContextAttributeListenerList) {
 				listener.attributeReplaced(event);

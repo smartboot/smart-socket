@@ -36,7 +36,6 @@ import com.sun.java.xml.ns.javaee.ServletType;
 import com.sun.java.xml.ns.javaee.UrlPatternType;
 
 public class SmartServerApplication extends AbstractServletContext {
-	private static final RunLogger logger = RunLogger.getLogger();
 
 	public SmartServerApplication() {
 		/*
@@ -51,14 +50,16 @@ public class SmartServerApplication extends AbstractServletContext {
 		// realPath = serverPath;
 		WebXmlConfig webXmlConfig = null;
 		try {
-			webXmlConfig = new WebXmlConfig(serverPath + File.separatorChar + "WEB-INF" + File.separatorChar
-				+ "web.xml");
+			webXmlConfig = new WebXmlConfig(serverPath + File.separatorChar
+					+ "WEB-INF" + File.separatorChar + "web.xml");
 		} catch (JAXBException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
-		logger.log(Level.SEVERE, Thread.currentThread() + " ; " + Thread.currentThread().getContextClassLoader() + " "
-			+ this.getClass().getClassLoader());
+		RunLogger.getLogger().log(
+				Level.SEVERE,
+				Thread.currentThread() + " ; "
+						+ Thread.currentThread().getContextClassLoader() + " "
+						+ this.getClass().getClassLoader());
 
 		renderServetContext(webXmlConfig);
 		renderListener(webXmlConfig);
@@ -74,24 +75,32 @@ public class SmartServerApplication extends AbstractServletContext {
 	private void renderListener(WebXmlConfig webXmlConfig) throws Exception {
 		List<ListenerType> filterList = webXmlConfig.getListenerList();
 		for (ListenerType type : filterList) {
-			Class<?> listenerClass = Class.forName(type.getListenerClass().getValue());
+			Class<?> listenerClass = Class.forName(type.getListenerClass()
+					.getValue());
 			Object listener = listenerClass.newInstance();
 			if (listener instanceof ServletContextListener) {
-				servletContextListenerList.add((ServletContextListener) listener);
+				servletContextListenerList
+						.add((ServletContextListener) listener);
 			} else if (listener instanceof ServletContextAttributeListener) {
-				servletContextAttributeListenerList.add((ServletContextAttributeListener) listener);
+				servletContextAttributeListenerList
+						.add((ServletContextAttributeListener) listener);
 			} else if (listener instanceof HttpSessionListener) {
 				httpSessionListenerList.add((HttpSessionListener) listener);
 			} else if (listener instanceof HttpSessionAttributeListener) {
-				httpSessionAttributeListenerList.add((HttpSessionAttributeListener) listener);
+				httpSessionAttributeListenerList
+						.add((HttpSessionAttributeListener) listener);
 			} else if (listener instanceof HttpSessionActivationListener) {
-				httpSessionActivationListenerList.add((HttpSessionActivationListener) listener);
+				httpSessionActivationListenerList
+						.add((HttpSessionActivationListener) listener);
 			} else if (listener instanceof HttpSessionBindingListener) {
-				httpSessionBindingListenerList.add((HttpSessionBindingListener) listener);
+				httpSessionBindingListenerList
+						.add((HttpSessionBindingListener) listener);
 			} else if (listener instanceof ServletRequestListener) {
-				servletRequestListenerList.add((ServletRequestListener) listener);
+				servletRequestListenerList
+						.add((ServletRequestListener) listener);
 			} else if (listener instanceof ServletRequestAttributeListener) {
-				servletRequestAttributeListenerList.add((ServletRequestAttributeListener) listener);
+				servletRequestAttributeListenerList
+						.add((ServletRequestAttributeListener) listener);
 			} else {
 				throw new RuntimeException();
 			}
@@ -99,12 +108,14 @@ public class SmartServerApplication extends AbstractServletContext {
 	}
 
 	public static void main(String[] args) {
-		System.out.println(ServletContextListener.class.isInstance(ServletContextListener.class));
+		System.out.println(ServletContextListener.class
+				.isInstance(ServletContextListener.class));
 	}
 
 	private void renderServlet(WebXmlConfig webXmlConfig) throws Exception {
 		List<ServletType> servletList = webXmlConfig.getServletList();
-		List<ServletMappingType> servletMappingList = webXmlConfig.getServletMappingList();
+		List<ServletMappingType> servletMappingList = webXmlConfig
+				.getServletMappingList();
 		Collections.sort(servletList, new Comparator<ServletType>() {
 
 			public int compare(ServletType o1, ServletType o2) {
@@ -117,13 +128,15 @@ public class SmartServerApplication extends AbstractServletContext {
 			// 当前filter对应的mapping
 			Map<String, URLPatternType> patterMap = new HashMap<String, URLPatternType>();
 			for (ServletMappingType type : servletMappingList) {
-				if (!type.getServletName().getValue().equals(servletType.getServletName().getValue())) {
+				if (!type.getServletName().getValue()
+						.equals(servletType.getServletName().getValue())) {
 					continue;
 				}
 				for (UrlPatternType urlType : type.getUrlPattern()) {
 					String url = urlType.getValue();
 					if (!validateURLPattern(url)) {
-						throw new IllegalArgumentException("invalid url-mapping:" + url);
+						throw new IllegalArgumentException(
+								"invalid url-mapping:" + url);
 					}
 					// 精确路径匹配
 					if (url.startsWith("/") && (url.indexOf("*") < 0)) {
@@ -131,65 +144,80 @@ public class SmartServerApplication extends AbstractServletContext {
 					}
 					// 目录匹配
 					else if (url.startsWith("/") && (url.indexOf("*") > 0)) {
-						patterMap.put(url.replace("*", ".*"), URLPatternType.CatalogMatcher);
+						patterMap.put(url.replace("*", ".*"),
+								URLPatternType.CatalogMatcher);
 					}
 					// 扩展名匹配
 					else if (url.startsWith("*.")) {
-						patterMap.put(url.replace(".", "(.)").replace("*", ".*"), URLPatternType.ExtensionMatcher);
+						patterMap.put(url.replace(".", "(.)")
+								.replace("*", ".*"),
+								URLPatternType.ExtensionMatcher);
 					} else {
-						throw new IllegalArgumentException("invalid url-mapping:" + url);
+						throw new IllegalArgumentException(
+								"invalid url-mapping:" + url);
 					}
 				}
 			}
 
 			// 解析servlet配置
 			List<ParamValueType> pvList = servletType.getInitParam();
-			Map<String, String> parameterMap = new HashMap<String, String>(pvList.size());
+			Map<String, String> parameterMap = new HashMap<String, String>(
+					pvList.size());
 			for (ParamValueType type : pvList) {
-				parameterMap.put(type.getParamName().getValue(), type.getParamValue().getValue());
+				parameterMap.put(type.getParamName().getValue(), type
+						.getParamValue().getValue());
 			}
-			SmartServletConfig config = new SmartServletConfig(servletType.getServletName().getValue(), this,
-				parameterMap);
+			SmartServletConfig config = new SmartServletConfig(servletType
+					.getServletName().getValue(), this, parameterMap);
 			List<ParamValueType> paramList = servletType.getInitParam();
 			for (ParamValueType type : paramList) {
-				config.setInitParameter(type.getParamName().getValue(), type.getParamValue().getValue());
+				config.setInitParameter(type.getParamName().getValue(), type
+						.getParamValue().getValue());
 			}
 
-			Class<?> servletClass = Class.forName(servletType.getServletClass().getValue());
+			Class<?> servletClass = Class.forName(servletType.getServletClass()
+					.getValue());
 			Servlet servlet = (Servlet) servletClass.newInstance();
 
-			super.servletList
-				.put(config.getServletName(),
-					new SmartServletModel(patterMap, servlet, config,
-						Integer.parseInt(servletType.getLoadOnStartup()) >= 0));
+			super.servletList.put(
+					config.getServletName(),
+					new SmartServletModel(patterMap, servlet, config, Integer
+							.parseInt(servletType.getLoadOnStartup()) >= 0));
 		}
 	}
 
 	private void renderFilter(WebXmlConfig webXmlConfig) throws Exception {
 		List<FilterType> filterList = webXmlConfig.getFilterList();
-		List<FilterMappingType> filterMappingList = webXmlConfig.getFilterMappingList();
+		List<FilterMappingType> filterMappingList = webXmlConfig
+				.getFilterMappingList();
 		for (FilterType type : filterList) {
 			// 过滤器参数
-			SmartFilterConfig config = new SmartFilterConfig(type.getFilterName().getValue(), this);
+			SmartFilterConfig config = new SmartFilterConfig(type
+					.getFilterName().getValue(), this);
 			List<ParamValueType> paramList = type.getInitParam();
 			for (ParamValueType pvType : paramList) {
-				config.setParameter(pvType.getParamName().getValue(), pvType.getParamValue().getValue());
+				config.setParameter(pvType.getParamName().getValue(), pvType
+						.getParamValue().getValue());
 			}
 
-			Class<?> filterClass = Class.forName(type.getFilterClass().getValue());
+			Class<?> filterClass = Class.forName(type.getFilterClass()
+					.getValue());
 			Filter filter = (Filter) filterClass.newInstance();
 			filter.init(config);
 			// 当前filter对应的mapping
 			Map<String, URLPatternType> patterMap = new HashMap<String, URLPatternType>();
 			for (FilterMappingType filterMappingType : filterMappingList) {
-				if (!filterMappingType.getFilterName().getValue().equals(type.getFilterName().getValue())) {
+				if (!filterMappingType.getFilterName().getValue()
+						.equals(type.getFilterName().getValue())) {
 					continue;
 				}
-				for (Object obj : filterMappingType.getUrlPatternOrServletName()) {
+				for (Object obj : filterMappingType
+						.getUrlPatternOrServletName()) {
 					if (obj instanceof ServletNameType) {
 						ServletNameType servletType = (ServletNameType) obj;
 						for (SmartServletModel model : servletList.values()) {
-							if (model.getConfig().getServletName().equals(servletType.getValue())) {
+							if (model.getConfig().getServletName()
+									.equals(servletType.getValue())) {
 								patterMap.putAll(model.getPatterns());
 							}
 						}
@@ -197,7 +225,8 @@ public class SmartServerApplication extends AbstractServletContext {
 						UrlPatternType urlType = (UrlPatternType) obj;
 						String url = urlType.getValue();
 						if (!validateURLPattern(url)) {
-							throw new IllegalArgumentException("invalid url-mapping:" + urlType.getValue());
+							throw new IllegalArgumentException(
+									"invalid url-mapping:" + urlType.getValue());
 						}
 						// 精确路径匹配
 						if (url.startsWith("/") && (url.indexOf("*") < 0)) {
@@ -205,13 +234,17 @@ public class SmartServerApplication extends AbstractServletContext {
 						}
 						// 目录匹配
 						else if (url.startsWith("/") && (url.indexOf("*") > 0)) {
-							patterMap.put(url.replace("*", ".*"), URLPatternType.CatalogMatcher);
+							patterMap.put(url.replace("*", ".*"),
+									URLPatternType.CatalogMatcher);
 						}
 						// 扩展名匹配
 						else if (url.startsWith("*.")) {
-							patterMap.put(url.replace(".", "(.)").replace("*", ".*"), URLPatternType.ExtensionMatcher);
+							patterMap.put(
+									url.replace(".", "(.)").replace("*", ".*"),
+									URLPatternType.ExtensionMatcher);
 						} else {
-							throw new IllegalArgumentException("invalid url-mapping:" + url);
+							throw new IllegalArgumentException(
+									"invalid url-mapping:" + url);
 						}
 					} else {
 						System.out.println(obj);

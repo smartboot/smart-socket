@@ -14,7 +14,6 @@ import net.vinote.smart.socket.logger.RunLogger;
  *
  */
 public final class SessionManager {
-	private static final RunLogger logger = RunLogger.getLogger();
 	private static SessionManager instance = null;
 	private Map<String, Session> sessionMap = new ConcurrentHashMap<String, Session>();
 
@@ -48,7 +47,8 @@ public final class SessionManager {
 							session.invalidate();
 						}
 						Session s = sessionMap.remove(key);
-						logger.log(Level.SEVERE, "Release Overtime Session" + s);
+						RunLogger.getLogger().log(Level.SEVERE,
+								"Release Overtime Session" + s);
 					} else {
 						// 计算下一次执行回收的间隔时间
 						nextCollectTime = nextCollectTime > remainTime ? remainTime
@@ -57,10 +57,11 @@ public final class SessionManager {
 				}
 				synchronized (SessionManager.instance.lock) {
 					try {
-						logger.log(
-								Level.FINEST,
-								nextCollectTime
-										+ "ms later will be collecting session resource!");
+						RunLogger
+								.getLogger()
+								.log(Level.FINEST,
+										nextCollectTime
+												+ "ms later will be collecting session resource!");
 						SessionManager.instance.lock.set(nextCollectTime);
 						SessionManager.instance.lock.wait(nextCollectTime);
 					} catch (InterruptedException e) {

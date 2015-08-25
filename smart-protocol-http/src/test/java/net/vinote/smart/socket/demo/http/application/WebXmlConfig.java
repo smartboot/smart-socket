@@ -20,7 +20,6 @@ import com.sun.java.xml.ns.javaee.ServletType;
 import com.sun.java.xml.ns.javaee.WebAppType;
 
 public class WebXmlConfig {
-	private static final RunLogger logger = RunLogger.getLogger();
 	private List<ServletType> servletList = new ArrayList<ServletType>();
 	private List<ServletMappingType> servletMappingList = new ArrayList<ServletMappingType>();
 	private List<FilterType> filterList = new ArrayList<FilterType>();
@@ -54,7 +53,8 @@ public class WebXmlConfig {
 				ListenerType type = (ListenerType) obj;
 				listenerList.add(type);
 			} else {
-				logger.log(Level.SEVERE, ele.getName().toString());
+				RunLogger.getLogger().log(Level.SEVERE,
+						ele.getName().toString());
 			}
 		}
 	}

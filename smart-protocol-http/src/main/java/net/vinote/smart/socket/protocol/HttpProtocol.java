@@ -20,7 +20,6 @@ import net.vinote.smart.socket.protocol.http.SmartHttpRequest;
 final class HttpProtocol implements Protocol {
 
 	private SmartHttpRequest httpRequest = new SmartHttpRequest();
-	private static final RunLogger logger = RunLogger.getLogger();
 
 	enum ParsePart {
 		/** 请求行 */
@@ -39,7 +38,6 @@ final class HttpProtocol implements Protocol {
 
 	private ParsePart part = ParsePart.RequestLine;
 
-	
 	public List<DataEntry> decode(ByteBuffer buffer) {
 		List<DataEntry> msgList = new ArrayList<DataEntry>();
 		// 未读取到数据则直接返回
@@ -125,7 +123,7 @@ final class HttpProtocol implements Protocol {
 			throw new DecodeException("invalid request line [" + methodLine
 					+ "]");
 		}
-		logger.log(Level.SEVERE, methodLine);
+		RunLogger.getLogger().log(Level.SEVERE, methodLine);
 		httpRequest.setMethod(array[0]);
 		int index = -1;
 		if ((index = array[1].indexOf('?')) > 0) {
@@ -155,7 +153,6 @@ final class HttpProtocol implements Protocol {
 				&& buffer.byteAt(buffer.length() - 1) == '\n';
 	}
 
-	
 	public DataEntry wrapInvalidProtocol() {
 		return new SmartHttpRequest();
 	}

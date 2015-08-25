@@ -13,13 +13,12 @@ import net.vinote.smart.socket.logger.RunLogger;
  *
  */
 public abstract class QuickTimerTask extends TimerTask {
-	private static final RunLogger logger = RunLogger.getLogger();
 	private static Timer timer = new Timer("Quick Timer", true);
 
 	public QuickTimerTask() {
 		timer.schedule(this, getDelay(), getPeriod());
-		logger.log(Level.SEVERE, "Regist QuickTimerTask---- "
-				+ this.getClass().getSimpleName());
+		RunLogger.getLogger().log(Level.SEVERE,
+				"Regist QuickTimerTask---- " + this.getClass().getSimpleName());
 	}
 
 	/**

@@ -17,7 +17,6 @@ import net.vinote.smart.socket.service.session.Session;
  * @version ClusterMessageProcessor.java, v 0.1 2015年3月13日 上午10:34:26 Seer Exp.
  */
 public class ClusterMessageProcessor extends AbstractServiceMessageProcessor {
-	private static final RunLogger logger = RunLogger.getLogger();
 
 	public void processor(Session session, DataEntry message) {
 		ClusterMessageReq msg = (ClusterMessageReq) message;
@@ -32,7 +31,7 @@ public class ClusterMessageProcessor extends AbstractServiceMessageProcessor {
 			rspMsg.setSuccess(true);
 			rspMsg.setServiceData(respMesg);
 		} catch (Exception e) {
-			logger.log(Level.WARNING, e.getMessage(), e);
+			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 			rspMsg.setSuccess(false);
 			rspMsg.setInfo(e.getLocalizedMessage());
 		}
@@ -40,7 +39,7 @@ public class ClusterMessageProcessor extends AbstractServiceMessageProcessor {
 		try {
 			session.sendWithoutResponse(rspMsg);
 		} catch (Exception e) {
-			logger.log(Level.WARNING, e.getMessage(), e);
+			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 		}
 	}
 }

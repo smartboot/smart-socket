@@ -27,7 +27,6 @@ public class CacheFullException extends Exception {
 
 	public CacheFullException(Throwable cause) {
 		super(cause);
-		// TODO Auto-generated constructor stub
 	}
 
 }

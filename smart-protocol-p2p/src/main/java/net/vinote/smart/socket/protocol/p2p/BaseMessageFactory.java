@@ -13,7 +13,6 @@ import net.vinote.smart.socket.service.manager.ServiceProcessorManager;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 
 public class BaseMessageFactory {
-	private static final RunLogger logger = RunLogger.getLogger();
 	private static BaseMessageFactory factory;
 
 	private Map<Integer, Class<?>> msgHaspMap = new HashMap<Integer, Class<?>>();
@@ -39,15 +38,16 @@ public class BaseMessageFactory {
 			Method m = msg.getMethod("getMessageType");
 			Integer messageType = (Integer) (m.invoke(msg.newInstance()));
 			if (msgHaspMap.containsKey(messageType)) {
-				logger.log(Level.WARNING,
+				RunLogger.getLogger().log(
+						Level.WARNING,
 						"MessageType=" + messageType
 								+ " has already regiested by "
 								+ msgHaspMap.get(messageType).getName()
 								+ ", ingore " + msg.getName());
 			} else {
 				msgHaspMap.put(messageType, msg);
-				logger.log(Level.SEVERE, "load Message Class[" + msg.getName()
-						+ "]");
+				RunLogger.getLogger().log(Level.SEVERE,
+						"load Message Class[" + msg.getName() + "]");
 			}
 		} catch (Exception e) {
 			RunLogger.getLogger().log(e);
@@ -65,7 +65,7 @@ public class BaseMessageFactory {
 	public void loadFromProperties(Properties properties)
 			throws ClassNotFoundException {
 		if (properties == null) {
-			logger.log(Level.FINEST, "do you 吃饱了撑着啊,给我null");
+			RunLogger.getLogger().log(Level.FINEST, "do you 吃饱了撑着啊,给我null");
 			return;
 		}
 		Enumeration keys = properties.keys();

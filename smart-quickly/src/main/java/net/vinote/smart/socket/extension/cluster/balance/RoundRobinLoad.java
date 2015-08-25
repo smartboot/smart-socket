@@ -17,17 +17,17 @@ import net.vinote.smart.socket.transport.TransportSession;
  * </p>
  * 
  * @author Seer
- *
+ * @version RoundRobinLoad.java, v 0.1 2015年8月25日 下午3:22:18 Seer Exp.
  */
 public class RoundRobinLoad extends AbstractLoadBalancing {
-	private static final RunLogger logger = RunLogger.getLogger();
 	private AtomicInteger index = new AtomicInteger(0);
 
 	public TransportSession balancing(TransportSession clientSession) {
 		ClientChannelService clusterClient = serverList.get(index
 				.getAndIncrement() % serverList.size());
 		TransportSession session = clusterClient.getSession();
-		logger.log(Level.SEVERE,
+		RunLogger.getLogger().log(
+				Level.SEVERE,
 				"distribute ClusterServer[IP:" + session.getRemoteAddr()
 						+ " ,Port:" + session.getRemotePort()
 						+ "] to Client[IP:" + clientSession.getRemoteAddr()

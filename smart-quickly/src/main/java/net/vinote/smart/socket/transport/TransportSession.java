@@ -21,7 +21,6 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  * @version TransportSession.java, v 0.1 2015年8月24日 上午10:31:38 Seer Exp.
  */
 public abstract class TransportSession {
-	private static final RunLogger logger = RunLogger.getLogger();
 
 	/** 会话ID */
 	private final String sessionId = String.valueOf(System
@@ -87,9 +86,8 @@ public abstract class TransportSession {
 		try {
 			chain.doReadFilter(this, protocol.decode(buffer));
 		} catch (DecodeException e) {
-			logger.log(Level.WARNING, e.getMessage());
+			RunLogger.getLogger().log(Level.WARNING, e.getMessage());
 			cancelReadAttention();
-			// receiver.receive(this, protocol.wrapInvalidProtocol());
 		} finally {
 			buffer.compact();
 		}

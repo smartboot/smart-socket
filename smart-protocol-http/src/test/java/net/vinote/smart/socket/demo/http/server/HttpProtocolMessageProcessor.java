@@ -35,7 +35,6 @@ import net.vinote.smart.socket.transport.TransportSession;
  * 
  */
 public class HttpProtocolMessageProcessor extends AbstractProtocolDataProcessor {
-	private static final RunLogger logger = RunLogger.getLogger();
 
 	// private ProtocolProcessThread[] processThreads;
 	private static final String NO_CONTEXT_SERVLET = "NO_CONTEXT_SERVLET";
@@ -71,8 +70,7 @@ public class HttpProtocolMessageProcessor extends AbstractProtocolDataProcessor 
 		try {
 			invalidApp.registerServlets(invalidServletMap);
 		} catch (ServletException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 	}
 
@@ -87,7 +85,7 @@ public class HttpProtocolMessageProcessor extends AbstractProtocolDataProcessor 
 	 * com.zjw.platform.quickly.process.MessageProcessor#process(com.zjw.platform
 	 * .quickly.Session, com.zjw.platform.quickly.message.DataEntry)
 	 */
-	
+
 	public boolean receive(TransportSession tsession, DataEntry msg) {
 		RequestUnit unit = new RequestUnit((SmartHttpRequest) msg, tsession);
 		ArrayBlockingQueue<RequestUnit> queue = msgMap.get(unit.getRequest()
@@ -99,7 +97,6 @@ public class HttpProtocolMessageProcessor extends AbstractProtocolDataProcessor 
 		}
 	}
 
-	
 	public void init(QuicklyConfig config) throws Exception {
 		super.init(config);
 
@@ -111,7 +108,6 @@ public class HttpProtocolMessageProcessor extends AbstractProtocolDataProcessor 
 		}
 		File[] appFiles = appDir.listFiles(new FileFilter() {
 
-			
 			public boolean accept(File pathname) {
 				return pathname.isDirectory();
 			}
@@ -149,7 +145,6 @@ public class HttpProtocolMessageProcessor extends AbstractProtocolDataProcessor 
 				if (!init) {
 					Handler handler = new Handler() {
 
-						
 						public void handler() {
 							try {
 								initializer.getMethod("init", String.class)
@@ -157,7 +152,7 @@ public class HttpProtocolMessageProcessor extends AbstractProtocolDataProcessor 
 								initializer.getMethod("setServerName",
 										String.class).invoke(obj, f.getName());
 							} catch (Exception e) {
-								logger.log(Level.SEVERE, "", e);
+								RunLogger.getLogger().log(Level.SEVERE, "", e);
 							}
 						}
 					};
@@ -173,7 +168,6 @@ public class HttpProtocolMessageProcessor extends AbstractProtocolDataProcessor 
 
 	}
 
-	
 	public void shutdown() {
 		/*
 		 * for (ProtocolProcessThread thread : processThreads) {
@@ -182,12 +176,10 @@ public class HttpProtocolMessageProcessor extends AbstractProtocolDataProcessor 
 		ServiceProcessorManager.getInstance().destory();
 	}
 
-	
 	public <T> void notifyProcess(T session) {
 		throw new UnsupportedOperationException();
 	}
 
-	
 	public <T> void process(T msg) throws Exception {
 		try {
 			RequestUnit unit = (RequestUnit) msg;
@@ -200,19 +192,18 @@ public class HttpProtocolMessageProcessor extends AbstractProtocolDataProcessor 
 				invalidApp.servie(unit);
 			}
 		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		} catch (SecurityException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		} catch (IllegalAccessException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		} catch (InvocationTargetException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 	}
 
-	
 	public ClusterMessageEntry generateClusterMessage(DataEntry data) {
 		return null;
 	}

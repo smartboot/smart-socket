@@ -21,7 +21,6 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
  */
 public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
-	private static final RunLogger logger = RunLogger.getLogger();
 	/** 当前周期内消息 流量监控 */
 	private AtomicLong flow = new AtomicLong(0);
 	/** 当前周期内接受消息数 */
@@ -69,7 +68,8 @@ public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
 	public void receiveFailHandler(TransportSession session, DataEntry d) {
 		discardNum.incrementAndGet();
 		messageStorage.decrementAndGet();
-		logger.log(Level.FINEST, "HexData -->" + StringUtils.toHexString(d.getData()));
+		RunLogger.getLogger().log(Level.FINEST,
+				"HexData -->" + StringUtils.toHexString(d.getData()));
 	}
 
 	@Override
@@ -78,11 +78,17 @@ public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
 		int recMsgnum = this.recMsgnum.getAndSet(0);
 		int discardNum = this.discardNum.getAndSet(0);
 		int processMsgNum = this.processMsgNum.getAndSet(0);
-		logger.log(Level.SEVERE, "\r\nFlow of Message:\t" + flow * 1.0 / (1024 * 1024) + "(MB)"
-			+ "\r\nNumber of Message:\t" + recMsgnum + "\r\nAvg Size of Message:\t"
-			+ (recMsgnum > 0 ? flow * 1.0 / recMsgnum : 0) + "\r\nNumber of Discard:\t" + discardNum
-			+ "\r\nNum of Process Msg:\t" + processMsgNum + "\r\nStorage of Message:\t" + messageStorage.get()
-			+ "\r\nTotal Num of Process Msg:\t" + totleProcessMsgNum);
+		RunLogger.getLogger().log(
+				Level.SEVERE,
+				"\r\nFlow of Message:\t" + flow * 1.0 / (1024 * 1024) + "(MB)"
+						+ "\r\nNumber of Message:\t" + recMsgnum
+						+ "\r\nAvg Size of Message:\t"
+						+ (recMsgnum > 0 ? flow * 1.0 / recMsgnum : 0)
+						+ "\r\nNumber of Discard:\t" + discardNum
+						+ "\r\nNum of Process Msg:\t" + processMsgNum
+						+ "\r\nStorage of Message:\t" + messageStorage.get()
+						+ "\r\nTotal Num of Process Msg:\t"
+						+ totleProcessMsgNum);
 	}
 
 	@Override

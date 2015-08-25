@@ -10,17 +10,18 @@ import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
 import net.vinote.smart.socket.service.process.ProtocolProcessThread;
 
 class ClusterServiceProcessThread extends ProtocolProcessThread {
-	private static final RunLogger logger = RunLogger.getLogger();
 	private ArrayBlockingQueue<ProcessUnit> messageQueue;
 
-	public ClusterServiceProcessThread(String name, ProtocolDataProcessor processor,
-		ArrayBlockingQueue<ProcessUnit> queue) {
+	public ClusterServiceProcessThread(String name,
+			ProtocolDataProcessor processor,
+			ArrayBlockingQueue<ProcessUnit> queue) {
 		super(name, processor);
 		messageQueue = queue;
 	}
 
 	public void put(String sessionId, DataEntry msg) {
-		throw new UnsupportedOperationException("OMCServerProcessThread is not support put operation");
+		throw new UnsupportedOperationException(
+				"OMCServerProcessThread is not support put operation");
 	}
 
 	@Override
@@ -38,7 +39,7 @@ class ClusterServiceProcessThread extends ProtocolProcessThread {
 				processor.process(unit);
 			} catch (Exception e) {
 				if (running) {
-					logger.log(Level.WARNING, e.getMessage(), e);
+					RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 				}
 			}
 		}

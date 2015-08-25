@@ -49,7 +49,9 @@ public final class ServiceProcessorManager {
 					Level.SEVERE,
 					"load Service Processor Class[" + process.getName()
 							+ "] for " + clazz.getName());
-		} catch (Exception e) {
+		} catch (InstantiationException e) {
+			RunLogger.getLogger().log(e);
+		} catch (IllegalAccessException e) {
 			RunLogger.getLogger().log(e);
 		}
 	}

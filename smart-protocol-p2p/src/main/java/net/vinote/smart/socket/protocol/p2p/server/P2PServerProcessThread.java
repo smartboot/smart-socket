@@ -12,16 +12,17 @@ import net.vinote.smart.socket.service.process.ProtocolProcessThread;
 import net.vinote.smart.socket.service.session.SessionManager;
 
 class P2PServerProcessThread extends ProtocolProcessThread {
-	private static final RunLogger logger = RunLogger.getLogger();
 	private ArrayBlockingQueue<ProcessUnit> messageQueue;
 
-	public P2PServerProcessThread(String name, ProtocolDataProcessor processor, ArrayBlockingQueue<ProcessUnit> queue) {
+	public P2PServerProcessThread(String name, ProtocolDataProcessor processor,
+			ArrayBlockingQueue<ProcessUnit> queue) {
 		super(name, processor);
 		messageQueue = queue;
 	}
 
 	public void put(String sessionId, BaseMessage msg) {
-		throw new UnsupportedOperationException("OMCServerProcessThread is not support put operation");
+		throw new UnsupportedOperationException(
+				"OMCServerProcessThread is not support put operation");
 	}
 
 	@Override
@@ -33,13 +34,14 @@ class P2PServerProcessThread extends ProtocolProcessThread {
 				ProcessUnit unit = messageQueue.take();
 				if (handlers != null && handlers.length > 0) {
 					for (SmartFilter h : handlers) {
-						h.processFilter(SessionManager.getInstance().getSession(unit.sessionId), unit.msg);
+						h.processFilter(SessionManager.getInstance()
+								.getSession(unit.sessionId), unit.msg);
 					}
 				}
 				processor.process(unit);
 			} catch (Exception e) {
 				if (running) {
-					logger.log(Level.WARNING, e.getMessage(), e);
+					RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 				}
 			}
 		}
