@@ -11,12 +11,10 @@ public class SmartEnumeration<K> implements Enumeration<K> {
 		this.iteraotr = iterator;
 	}
 
-	
 	public boolean hasMoreElements() {
 		return iteraotr.hasNext();
 	}
 
-	
 	public K nextElement() {
 		return iteraotr.next();
 	}

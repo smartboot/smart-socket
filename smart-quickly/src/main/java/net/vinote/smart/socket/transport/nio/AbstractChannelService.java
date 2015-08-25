@@ -74,14 +74,14 @@ abstract class AbstractChannelService implements ChannelService {
 							// 读取客户端数据
 							if (key.isReadable()) {
 								readFromChannel(key);
-							} // 输出数据至客户端
-							else if (key.isWritable()) {
+							} else if (key.isWritable()) {// 输出数据至客户端
 								writeToChannel(key);
-							} // 建立新连接,Client触发Connect,Server触发Accept
-							else if (key.isAcceptable() || key.isConnectable()) {
+							} else if (key.isAcceptable()
+									|| key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
 								acceptConnect(key, selector);
 							} else {
-								System.out.println("奇怪了...");
+								RunLogger.getLogger().log(Level.WARNING,
+										"奇怪了...");
 							}
 						} catch (Exception e) {
 							exceptionInSelectionKey(key, e);

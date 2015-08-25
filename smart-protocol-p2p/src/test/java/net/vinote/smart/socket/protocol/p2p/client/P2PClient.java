@@ -40,8 +40,10 @@ public class P2PClient {
 		client.start();
 
 		// 发送鉴权消息
-		System.out.println(processor.getSession().sendWithResponse(
-				new LoginAuthReq()));
+		RunLogger.getLogger().log(
+				Level.FINE,
+				processor.getSession().sendWithResponse(new LoginAuthReq())
+						.toString());
 
 		long num = 1;
 		long start = System.currentTimeMillis();
@@ -51,7 +53,8 @@ public class P2PClient {
 			RunLogger.getLogger().log(Level.FINE,
 					StringUtils.toHexString(data.getData()));
 		}
-		System.out.println("结束" + (System.currentTimeMillis() - start));
+		RunLogger.getLogger().log(Level.FINE,
+				"结束" + (System.currentTimeMillis() - start));
 
 		// 模拟SOFA的TR服务
 		RemoteInterfaceMessageReq req = new RemoteInterfaceMessageReq();
@@ -64,9 +67,10 @@ public class P2PClient {
 		RemoteInterfaceMessageResp data = (RemoteInterfaceMessageResp) processor
 				.getSession().sendWithResponse(req);
 		if (StringUtils.isNotBlank(data.getException())) {
-			System.out.println(data.getException());
+			RunLogger.getLogger().log(Level.FINE, data.getException());
 		} else {
-			System.out.println(data.getReturnObject());
+			RunLogger.getLogger().log(Level.FINE,
+					data.getReturnObject().toString());
 		}
 		RunLogger.getLogger().log(Level.SEVERE,
 				StringUtils.toHexString(data.getData()));

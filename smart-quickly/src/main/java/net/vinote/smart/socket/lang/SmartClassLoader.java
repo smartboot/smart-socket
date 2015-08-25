@@ -12,6 +12,7 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.jar.JarFile;
+import java.util.logging.Level;
 
 import net.vinote.smart.socket.logger.RunLogger;
 
@@ -44,7 +45,6 @@ public class SmartClassLoader extends ClassLoader {
 					+ ".class";
 			URL url = findResource(classFileName);
 			if (url != null) {
-				// Debug.println("load class", url.toString());
 				in = url.openStream();
 				ByteArrayOutputStream out = new ByteArrayOutputStream(
 						in.available());
@@ -82,21 +82,16 @@ public class SmartClassLoader extends ClassLoader {
 			return super.findResources(name);
 		}
 		list.add(url);
-		// if ("file".equals(url.getProtocol()))
-		// {
-		// File f = new File(url.getPath());
-		// if (f.isDirectory())
-		// {
-		// for (File file : f.listFiles())
-		// {
-		// list.add(new URL("file:/" + file.getCanonicalPath()));
-		// }
-		// }
-		// else
-		// {
-		// list.add(url);
-		// }
-		// }
+		if ("file".equals(url.getProtocol())) {
+			File f = new File(url.getPath());
+			if (f.isDirectory()) {
+				for (File file : f.listFiles()) {
+					list.add(new URL("file:/" + file.getCanonicalPath()));
+				}
+			} else {
+				list.add(url);
+			}
+		}
 		return list.size() > 0 ? new SmartEnumeration<URL>(list.iterator())
 				: super.findResources(name);
 	}
@@ -198,7 +193,7 @@ public class SmartClassLoader extends ClassLoader {
 	public static void main(String[] args) throws Exception {
 		String path = System.getProperty("extPath");
 		if (!new File(path).isDirectory()) {
-			System.out.println("目录 " + path + " 不存在");
+			RunLogger.getLogger().log(Level.WARNING, "目录 " + path + " 不存在");
 			return;
 		}
 		String clazz = System.getProperty("class");

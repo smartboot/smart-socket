@@ -39,10 +39,6 @@ public class FragmentMessage extends BaseMessage {
 		return getData() == null ? 0 : getData().length;
 	}
 
-	/*
-	 * public void append(byte[] data) { append(data, 0, data.length); }
-	 */
-
 	public void append(ByteBuffer buf, int size) {
 		append(buf.array(), buf.position(), size);
 		buf.position(buf.position() + size);
@@ -92,12 +88,6 @@ public class FragmentMessage extends BaseMessage {
 								+ Integer.toHexString(head.getMessageType())
 								+ "] Could not find class");
 			}
-			/*
-			 * if (baseMsg == null) { switch (head.getMessageType()) { case
-			 * MessageType.HEART_MESSAGE_REQ: baseMsg = new HeartMessageReq();
-			 * break; case MessageType.HEART_MESSAGE_RSP: baseMsg = new
-			 * HeartMessageResp(); break; default: break; } }
-			 */
 		}
 		if (baseMsg != null) {
 			baseMsg.setData(getData());

@@ -124,32 +124,51 @@ public class Client2ClusterMessageProcessor extends
 		processThread.start();
 
 		// 定时扫描客户端链路有效性
-		sessionMonitorTask = new QuickTimerTask() {
+		sessionMonitorTask = new SessionMonitorTask();
+	}
 
-			@Override
-			protected long getPeriod() {
-				return TimeUnit.SECONDS.toMillis(30);
-			}
+	/**
+	 * 定时扫描客户端链路有效性
+	 * 
+	 * @author Seer
+	 * @version Client2ClusterMessageProcessor.java, v 0.1 2015年8月25日 下午4:12:31
+	 *          Seer Exp.
+	 */
+	private class SessionMonitorTask extends QuickTimerTask {
 
-			@Override
-			public void run() {
-				for (String key : clientTransSessionMap.keySet()) {
-					ProcessUnit unit = clientTransSessionMap.get(key);
-					if (!unit.clientSession.isValid()) {
-						unit.clientSession.close();
-						clientTransSessionMap.remove(key);
-						RunLogger.getLogger().log(
-								Level.SEVERE,
-								"remove invalid client[IP:"
-										+ unit.clientSession.getRemoteAddr()
-										+ " ,Port:"
-										+ unit.clientSession.getRemotePort()
-										+ "]");
-					}
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * net.vinote.smart.socket.extension.timer.QuickTimerTask#getPeriod()
+		 */
+		@Override
+		protected long getPeriod() {
+			return TimeUnit.SECONDS.toMillis(30);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.util.TimerTask#run()
+		 */
+		@Override
+		public void run() {
+			for (String key : clientTransSessionMap.keySet()) {
+				ProcessUnit unit = clientTransSessionMap.get(key);
+				if (!unit.clientSession.isValid()) {
+					unit.clientSession.close();
+					clientTransSessionMap.remove(key);
+					RunLogger.getLogger().log(
+							Level.SEVERE,
+							"remove invalid client[IP:"
+									+ unit.clientSession.getRemoteAddr()
+									+ " ,Port:"
+									+ unit.clientSession.getRemotePort() + "]");
 				}
 			}
+		}
 
-		};
 	}
 
 	/**

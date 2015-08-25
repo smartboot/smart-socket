@@ -20,7 +20,6 @@ public class DetectMessageProcessor extends AbstractServiceMessageProcessor {
 
 	public void processor(Session session, DataEntry message) {
 		DetectMessageReq msg = (DetectMessageReq) message;
-		// RunLogger.getLogger().log(Level.FINE, message);
 		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
 		rspMsg.setDetectMessage("探测响应消息" + msg.getHead().getSequenceID());
 		try {

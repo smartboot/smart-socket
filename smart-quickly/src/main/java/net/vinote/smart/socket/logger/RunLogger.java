@@ -1,6 +1,7 @@
 package net.vinote.smart.socket.logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -74,7 +75,9 @@ public class RunLogger {
 				logger.addHandler(config.getOutFileHandler());
 			}
 
-		} catch (Exception e) {
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		this.config = config;

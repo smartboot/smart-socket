@@ -29,8 +29,6 @@ public abstract class TransportSession {
 	protected QuicklyConfig quickConfig;
 	/** 消息通信协议 */
 	protected Protocol protocol;
-	// /** 消息接受器 */
-	// protected ProtocolDataReceiver receiver;
 
 	/** 缓存传输层读取到的数据流 */
 	private ByteBuffer readBuffer;

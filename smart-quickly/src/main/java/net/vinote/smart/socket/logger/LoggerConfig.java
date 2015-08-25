@@ -1,8 +1,10 @@
 package net.vinote.smart.socket.logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -134,17 +136,12 @@ public class LoggerConfig {
 		this.log2console = log2console;
 	}
 
-	Handler getLogFileHandler() {
+	Handler getLogFileHandler() throws SecurityException, IOException {
 		Handler fh = null;
-		try {
-			LogFormatter sf = new LogFormatter();
-			fh = new FileHandler(getLogDir() + getLogName(), getLimit(), 100,
-					true);
-			fh.setFormatter(sf);
-			fh.setEncoding(getEncoding());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		LogFormatter sf = new LogFormatter();
+		fh = new FileHandler(getLogDir() + getLogName(), getLimit(), 100, true);
+		fh.setFormatter(sf);
+		fh.setEncoding(getEncoding());
 		return fh;
 	}
 
@@ -152,25 +149,23 @@ public class LoggerConfig {
 	 * 获取运行时异常的Handler;文件输出流设置为System.err,用于捕获异常、错误信息
 	 * 
 	 * @return
+	 * @throws IOException
+	 * @throws SecurityException
 	 */
-	Handler getErrorFileHandler() {
+	Handler getErrorFileHandler() throws SecurityException, IOException {
 		Handler errFh = null;
-		try {
-			LogFormatter sf = new LogFormatter();
-			// 设置运行时异常的Handler
-			errFh = new FileHandler(getLogDir() + "error.log", getLimit(), 100,
-					true) {
-				
-				protected synchronized void setOutputStream(OutputStream out)
-						throws SecurityException {
-					System.setErr(new PrintStream(out, true));
-				}
-			};
-			errFh.setFormatter(sf);
-			errFh.setEncoding(getEncoding());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		LogFormatter sf = new LogFormatter();
+		// 设置运行时异常的Handler
+		errFh = new FileHandler(getLogDir() + "error.log", getLimit(), 100,
+				true) {
+
+			protected synchronized void setOutputStream(OutputStream out)
+					throws SecurityException {
+				System.setErr(new PrintStream(out, true));
+			}
+		};
+		errFh.setFormatter(sf);
+		errFh.setEncoding(getEncoding());
 		return errFh;
 	}
 
@@ -178,38 +173,31 @@ public class LoggerConfig {
 	 * 文件输出流设置为System.out,并将该输出流设置为FileHandler
 	 * 
 	 * @return
+	 * @throws IOException
+	 * @throws SecurityException
 	 */
-	Handler getOutFileHandler() {
+	Handler getOutFileHandler() throws SecurityException, IOException {
 		Handler outFh = null;
-		try {
-			LogFormatter sf = new LogFormatter();
-			// 设置运行时异常的Handler
-			outFh = new FileHandler(getLogDir() + "out.log", getLimit(), 100,
-					true) {
-				
-				protected synchronized void setOutputStream(OutputStream out)
-						throws SecurityException {
-					System.setOut(new PrintStream(out, true));
-				}
-			};
-			outFh.setFormatter(sf);
-			outFh.setEncoding(getEncoding());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		LogFormatter sf = new LogFormatter();
+		// 设置运行时异常的Handler
+		outFh = new FileHandler(getLogDir() + "out.log", getLimit(), 100, true) {
+
+			protected synchronized void setOutputStream(OutputStream out)
+					throws SecurityException {
+				System.setOut(new PrintStream(out, true));
+			}
+		};
+		outFh.setFormatter(sf);
+		outFh.setEncoding(getEncoding());
 		return outFh;
 	}
 
-	Handler getConsoleHandler() {
+	Handler getConsoleHandler() throws SecurityException,
+			UnsupportedEncodingException {
 		ConsoleHandler ch = new ConsoleHandler();
 		ch.setFormatter(new LogFormatter());
 		ch.setLevel(Level.ALL);
-		try {
-			ch.setEncoding(getEncoding());
-			// ch.setEncoding("utf8");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		ch.setEncoding(getEncoding());
 		return ch;
 	}
 }

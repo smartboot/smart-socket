@@ -27,7 +27,6 @@ public class FlowControlFilter implements SmartFilter {
 				int count = counter.addAndGet(d.size());
 				if (count * 1.0 / session.getQuickConfig().getCacheSize() > 0.618) {
 					session.pauseReadAttention();
-					// RunLogger.getLogger().log(Level.ALL, "执行读流控");
 				}
 			}
 		}
@@ -42,35 +41,16 @@ public class FlowControlFilter implements SmartFilter {
 		return counter;
 	}
 
-	long startTime;
-	long num;
-	long size;
-
 	@Override
 	public void processFilter(Session session, DataEntry d) {
-		if (num == 1000000) {
-			System.out.println(num * 1000.0 / (System.currentTimeMillis() - startTime) + " " + size * 1000.0 / 1024
-				/ (System.currentTimeMillis() - startTime));
-			size = 0;
-			num = 0;
-		}
-		if (num == 0) {
-			startTime = System.currentTimeMillis();
-		}
-		size += d.getData().length;
-		num++;
 	}
 
 	@Override
 	public void readFilter(TransportSession session, DataEntry d) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void receiveFailHandler(TransportSession session, DataEntry d) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -81,9 +61,6 @@ public class FlowControlFilter implements SmartFilter {
 			if (num * 1.0 / session.getQuickConfig().getCacheSize() < 0.382) {
 				session.resumeReadAttention();
 			}
-		} /*
-		 * else { int num = counter.incrementAndGet(); if (num > 100) {
-		 * session.pauseWriteAttention(); } }
-		 */
+		}
 	}
 }

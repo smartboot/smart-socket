@@ -23,7 +23,6 @@ public class HeartMessageProcessor extends AbstractServiceMessageProcessor {
 		} catch (Exception e) {
 			RunLogger.getLogger().log(e);
 		}
-		// logger.log(Level.SEVERE, StringUtils.toHexString(message.getData()));
 	}
 
 }

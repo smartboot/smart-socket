@@ -35,7 +35,7 @@ public class HelloWorldClient {
 			req.setMale(num % 2 == 0);
 			HelloWorldResp data = (HelloWorldResp) processor.getSession()
 					.sendWithResponse(req);
-			System.out.println(data.getSay());
+			RunLogger.getLogger().log(Level.FINE, data.getSay());
 			RunLogger.getLogger().log(Level.FINE,
 					StringUtils.toHexString(data.getData()));
 		}
