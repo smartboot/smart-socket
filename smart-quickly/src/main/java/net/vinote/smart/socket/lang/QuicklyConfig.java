@@ -13,94 +13,58 @@ import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
  * 
  */
 public class QuicklyConfig {
-	/**
-	 * 自动修复链接
-	 */
 
+	/** 自动修复链接 */
 	private boolean autoRecover = false;
 
-	/**
-	 * 消息队列缓存大小
-	 */
+	/** 消息队列缓存大小 */
 	private int cacheSize = 256;
 
 	/** 消息体缓存大小,字节 */
 	private int dataBufferSize = 1024;
-	/**
-	 * 集群触发策略
-	 */
+
+	/** 集群触发策略 */
 	private ClusterTriggerStrategy clusterTriggerStrategy;
 
-	/**
-	 * 集群环境
-	 */
-
+	/** 集群环境 */
 	private String[] clusterUrl;
 
-	/**
-	 * 远程服务器IP
-	 */
-
+	/** 远程服务器IP */
 	private String host;
 
 	private LoadBalancing loadBalancing;
 
-	/**
-	 * 本地IP
-	 */
+	/** 本地IP */
 	private String localIp;
 
-	/**
-	 * 服务器消息拦截器
-	 */
-
+	/** 服务器消息拦截器 */
 	private SmartFilter[] filters;
 
-	/**
-	 * 服务器端口号
-	 */
+	/** 服务器端口号 */
 	private int port = 8888;
 
-	/**
-	 * 消息处理器
-	 */
-
+	/** 消息处理器 */
 	private ProtocolDataProcessor processor;
 
-	/**
-	 * 协议工厂
-	 */
-
+	/** 协议工厂 */
 	private ProtocolFactory protocolFactory;
 
-	/**
-	 * 队列溢出策略[WAIT,DISCARD]
-	 */
+	/** 队列溢出策略[WAIT,DISCARD] */
 	private String queueOverflowStrategy = QueueOverflowStrategy.WAIT.name();
 
-	/**
-	 * 读管道单论循环操作次数
-	 */
+	/** 读管道单论循环操作次数 */
 	private int readLoopTimes = 5;
 
-	/**
-	 * 服务器关闭监听端口
-	 */
+	/** 服务器关闭监听端口 */
 	private int shutdownPort = 8005;
 
-	/**
-	 * 服务器处理线程数
-	 */
+	/** 服务器处理线程数 */
 	private int threadNum = Runtime.getRuntime().availableProcessors();
 
-	/**
-	 * 超时时间
-	 */
+	/** 超时时间 */
 	private int timeout = Integer.MAX_VALUE;
 
-	/**
-	 * 写管道单论循环操作次数
-	 */
+	/** 写管道单论循环操作次数 */
 	private int writeLoopTimes = 10;
 
 	/** true:服务器,false:客户端 */

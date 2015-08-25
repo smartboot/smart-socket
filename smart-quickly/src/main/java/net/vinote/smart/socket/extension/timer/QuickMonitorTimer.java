@@ -39,8 +39,6 @@ public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
 
 	@Override
 	public void filterDataEntrys(TransportSession session, List<DataEntry> d) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -74,18 +72,18 @@ public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
 
 	@Override
 	public void run() {
-		long flow = this.flow.getAndSet(0);
-		int recMsgnum = this.recMsgnum.getAndSet(0);
-		int discardNum = this.discardNum.getAndSet(0);
-		int processMsgNum = this.processMsgNum.getAndSet(0);
+		long curFlow = this.flow.getAndSet(0);
+		int curRecMsgnum = this.recMsgnum.getAndSet(0);
+		int curDiscardNum = this.discardNum.getAndSet(0);
+		int curProcessMsgNum = this.processMsgNum.getAndSet(0);
 		RunLogger.getLogger().log(
 				Level.SEVERE,
-				"\r\nFlow of Message:\t" + flow * 1.0 / (1024 * 1024) + "(MB)"
-						+ "\r\nNumber of Message:\t" + recMsgnum
+				"\r\nFlow of Message:\t" + curFlow * 1.0 / (1024 * 1024)
+						+ "(MB)" + "\r\nNumber of Message:\t" + curRecMsgnum
 						+ "\r\nAvg Size of Message:\t"
-						+ (recMsgnum > 0 ? flow * 1.0 / recMsgnum : 0)
-						+ "\r\nNumber of Discard:\t" + discardNum
-						+ "\r\nNum of Process Msg:\t" + processMsgNum
+						+ (curRecMsgnum > 0 ? curFlow * 1.0 / curRecMsgnum : 0)
+						+ "\r\nNumber of Discard:\t" + curDiscardNum
+						+ "\r\nNum of Process Msg:\t" + curProcessMsgNum
 						+ "\r\nStorage of Message:\t" + messageStorage.get()
 						+ "\r\nTotal Num of Process Msg:\t"
 						+ totleProcessMsgNum);
@@ -93,8 +91,6 @@ public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
 
 	@Override
 	public void writeFilter(TransportSession session, ByteBuffer d) {
-		// TODO Auto-generated method stub
-
 	}
 
 }

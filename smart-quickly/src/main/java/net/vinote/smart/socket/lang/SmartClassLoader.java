@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -92,8 +93,8 @@ public class SmartClassLoader extends ClassLoader {
 				list.add(url);
 			}
 		}
-		return list.size() > 0 ? new SmartEnumeration<URL>(list.iterator())
-				: super.findResources(name);
+		return list.isEmpty() ? super.findResources(name)
+				: new SmartEnumeration<URL>(list.iterator());
 	}
 
 	/*
@@ -190,7 +191,9 @@ public class SmartClassLoader extends ClassLoader {
 		return null;
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws ClassNotFoundException,
+			SecurityException, NoSuchMethodException, IllegalArgumentException,
+			IllegalAccessException, InvocationTargetException {
 		String path = System.getProperty("extPath");
 		if (!new File(path).isDirectory()) {
 			RunLogger.getLogger().log(Level.WARNING, "目录 " + path + " 不存在");
