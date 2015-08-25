@@ -280,6 +280,6 @@ P2P协议采用TCP协议承载，二进制编码格式，其消息结构分为P2
 ##关于作者
 Edit By [Seer](http://zhengjunweimail.blog.163.com/)  
 E-mail:zhengjunweimail@163.com  
-QQ:499188184
+QQ:504166636
 
 Update Date: 2015-08-24
