@@ -41,7 +41,7 @@ class P2PClientProcessThread extends ProtocolProcessThread {
 			try {
 				list.put((BaseMessage) msg);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				RunLogger.getLogger().log(e);
 			}
 			break;
 		default:
@@ -50,7 +50,6 @@ class P2PClientProcessThread extends ProtocolProcessThread {
 		}
 	}
 
-	
 	public void run() {
 
 		while (running) {

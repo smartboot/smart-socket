@@ -26,7 +26,8 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  *
  */
-public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProcessor {
+public class P2PServerDisruptorProcessor extends
+		AbstractProtocolDisruptorProcessor {
 
 	public ClusterMessageEntry generateClusterMessage(DataEntry data) {
 		ClusterMessageReq entry = new ClusterMessageReq();
@@ -38,25 +39,29 @@ public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProces
 		super.init(config);
 		// 启动线程池处理消息
 		Properties properties = new Properties();
-		properties.put(InvalidMessageReq.class.getName(), InvalidMessageProcessor.class.getName());
+		properties.put(InvalidMessageReq.class.getName(),
+				InvalidMessageProcessor.class.getName());
 		BaseMessageFactory.getInstance().loadFromProperties(properties);
 	}
 
 	public <T> void process(T t) {
 		ProcessUnit unit = (ProcessUnit) t;
-		Session session = SessionManager.getInstance().getSession(unit.sessionId);
+		Session session = SessionManager.getInstance().getSession(
+				unit.sessionId);
 		try {
 			if (session == null || session.isInvalid()) {
-				RunLogger.getLogger().log(Level.FINEST,
-					"Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData()));
+				RunLogger.getLogger().log(
+						Level.FINEST,
+						"Session is invalid,lose message"
+								+ StringUtils.toHexString(unit.msg.getData()));
 				return;
 			}
 			session.refreshAccessedTime();
-			AbstractServiceMessageProcessor processor = ServiceProcessorManager.getInstance().getProcessor(
-				unit.msg.getClass());
+			AbstractServiceMessageProcessor processor = ServiceProcessorManager
+					.getInstance().getProcessor(unit.msg.getClass());
 			processor.processor(session, unit.msg);
 		} catch (Exception e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 
 	}
@@ -75,7 +80,8 @@ public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProces
 	 */
 	@Override
 	public Session getSession(TransportSession tsession) {
-		Session session = SessionManager.getInstance().getSession(tsession.getSessionID());
+		Session session = SessionManager.getInstance().getSession(
+				tsession.getSessionID());
 		if (session == null) {
 			session = new P2PSession(tsession);
 			SessionManager.getInstance().registSession(session);

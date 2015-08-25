@@ -5,6 +5,7 @@ import java.util.Properties;
 
 import net.vinote.smart.socket.extension.timer.QuickMonitorTimer;
 import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.filter.SecureFilter;
 import net.vinote.smart.socket.protocol.p2p.BaseMessageFactory;
@@ -47,7 +48,7 @@ public class P2PServer {
 		try {
 			server.start();
 		} catch (IOException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 	}
 }

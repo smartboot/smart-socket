@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.vinote.smart.socket.exception.DecodeException;
+import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.p2p.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.FragmentMessage;
 import net.vinote.smart.socket.protocol.p2p.HeadMessage;
@@ -38,11 +39,13 @@ final class P2PProtocol implements Protocol {
 		while (buffer.hasRemaining()) {
 			int min;
 			if (tempMsg.getReadSize() < MESSAGE_SIGN_LENGTH) {
-				min = Math.min(buffer.remaining(), MESSAGE_SIGN_LENGTH - tempMsg.getReadSize());
+				min = Math.min(buffer.remaining(), MESSAGE_SIGN_LENGTH
+						- tempMsg.getReadSize());
 				tempMsg.append(buffer, min);
 			}
 			// 先解析消息体大小
-			if (tempMsg.getLength() == 0 && tempMsg.getReadSize() >= MESSAGE_SIGN_LENGTH) {
+			if (tempMsg.getLength() == 0
+					&& tempMsg.getReadSize() >= MESSAGE_SIGN_LENGTH) {
 				byte[] intBytes = new byte[4];
 				// 解析幻数
 				for (int i = 0; i < intBytes.length; i++) {
@@ -50,7 +53,8 @@ final class P2PProtocol implements Protocol {
 				}
 				int magicNum = getInt(intBytes);
 				if (magicNum != HeadMessage.MAGIC_NUMBER) {
-					throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum));
+					throw new DecodeException("Invalid Magic Number: 0x"
+							+ Integer.toHexString(magicNum));
 				}
 
 				// 解析消息体大小,第四位开始
@@ -59,12 +63,14 @@ final class P2PProtocol implements Protocol {
 				}
 				int msgLength = getInt(intBytes);
 				if (msgLength <= 0) {
-					throw new DecodeException("Invalid Message Length " + msgLength);
+					throw new DecodeException("Invalid Message Length "
+							+ msgLength);
 				}
 				tempMsg.setLength(msgLength);
 			}
 
-			min = Math.min(tempMsg.getLength() - tempMsg.getReadSize(), buffer.remaining());
+			min = Math.min(tempMsg.getLength() - tempMsg.getReadSize(),
+					buffer.remaining());
 			if (min > 0) {
 				tempMsg.append(buffer, min);
 				if (tempMsg.getLength() == tempMsg.getReadSize()) {
@@ -89,8 +95,8 @@ final class P2PProtocol implements Protocol {
 			throw new RuntimeException("data length is must 4!");
 		}
 		int index = 0;
-		return ((data[index++] & 0xff) << 24) + ((data[index++] & 0xff) << 16) + ((data[index++] & 0xff) << 8)
-			+ (data[index++] & 0xff);
+		return ((data[index++] & 0xff) << 24) + ((data[index++] & 0xff) << 16)
+				+ ((data[index++] & 0xff) << 8) + (data[index++] & 0xff);
 	}
 
 	public DataEntry wrapInvalidProtocol() {
@@ -100,7 +106,7 @@ final class P2PProtocol implements Protocol {
 		try {
 			msg.encode();
 		} catch (ProtocolException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 		return msg;
 	}

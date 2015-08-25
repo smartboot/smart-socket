@@ -1,5 +1,6 @@
 package net.vinote.smart.socket.protocol.p2p.processor;
 
+import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.p2p.HeartMessageReq;
 import net.vinote.smart.socket.protocol.p2p.HeartMessageResp;
@@ -20,7 +21,7 @@ public class HeartMessageProcessor extends AbstractServiceMessageProcessor {
 		try {
 			session.sendWithoutResponse(rspMsg);
 		} catch (Exception e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 		// logger.log(Level.SEVERE, StringUtils.toHexString(message.getData()));
 	}

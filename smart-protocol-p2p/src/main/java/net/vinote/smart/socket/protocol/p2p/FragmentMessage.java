@@ -16,17 +16,14 @@ public class FragmentMessage extends BaseMessage {
 	private static final RunLogger logger = RunLogger.getLogger();
 	private int length;
 
-	
 	protected void encodeBody() {
 		throw new RuntimeException("unsupport method");
 	}
 
-	
 	protected void decodeBody() {
 		throw new RuntimeException("unsupport method");
 	}
 
-	
 	public int getMessageType() {
 		return 0;
 	}
@@ -87,7 +84,7 @@ public class FragmentMessage extends BaseMessage {
 				try {
 					baseMsg = (BaseMessage) c.newInstance();
 				} catch (Exception e) {
-					e.printStackTrace();
+					RunLogger.getLogger().log(e);
 				}
 			} else {
 				logger.log(

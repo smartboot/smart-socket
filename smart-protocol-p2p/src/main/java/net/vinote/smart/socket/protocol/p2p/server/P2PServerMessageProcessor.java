@@ -46,7 +46,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * com.zjw.platform.quickly.process.MessageProcessor#process(com.zjw.platform
 	 * .quickly.Session, com.zjw.platform.quickly.message.DataEntry)
@@ -62,7 +62,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 
 	/*
 	 * 处理消息 (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * com.zjw.platform.quickly.process.MessageProcessor#process(java.lang.Object
 	 * )
@@ -76,42 +76,47 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		// 启动线程池处理消息
 		processThreads = new P2PServerProcessThread[config.getThreadNum()];
 		for (int i = 0; i < processThreads.length; i++) {
-			processThreads[i] = new P2PServerProcessThread("OMC-Server-Process-Thread-" + i, this, msgQueue);
+			processThreads[i] = new P2PServerProcessThread(
+					"OMC-Server-Process-Thread-" + i, this, msgQueue);
 			processThreads[i].setPriority(Thread.MAX_PRIORITY);
 			processThreads[i].start();
 		}
 		Properties properties = new Properties();
-		properties.put(InvalidMessageReq.class.getName(), InvalidMessageProcessor.class.getName());
+		properties.put(InvalidMessageReq.class.getName(),
+				InvalidMessageProcessor.class.getName());
 		BaseMessageFactory.getInstance().loadFromProperties(properties);
 	}
 
 	public <T> void process(T t) {
 		ProcessUnit unit = (ProcessUnit) t;
-		Session session = SessionManager.getInstance().getSession(unit.sessionId);
+		Session session = SessionManager.getInstance().getSession(
+				unit.sessionId);
 		if (session == null || session.isInvalid()) {
-			logger.log(Level.FINEST, "Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData()));
+			logger.log(Level.FINEST, "Session is invalid,lose message"
+					+ StringUtils.toHexString(unit.msg.getData()));
 			return;
 		}
 		session.refreshAccessedTime();
-		AbstractServiceMessageProcessor processor = ServiceProcessorManager.getInstance().getProcessor(
-			unit.msg.getClass());
+		AbstractServiceMessageProcessor processor = ServiceProcessorManager
+				.getInstance().getProcessor(unit.msg.getClass());
 		try {
 			processor.processor(session, unit.msg);
 		} catch (Exception e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 	}
 
 	public boolean receive(TransportSession tsession, DataEntry msg) {
 		// 会话封装并分配处理线程
-		Session session = SessionManager.getInstance().getSession(tsession.getSessionID());
+		Session session = SessionManager.getInstance().getSession(
+				tsession.getSessionID());
 		if (session == null) {
 			session = new P2PSession(tsession);
 			SessionManager.getInstance().registSession(session);
 		}
 		session.refreshAccessedTime();
-		return session.notifySyncMessage(msg) ? true : msgQueue.offer(new ProcessUnit(session.getId(),
-			(BaseMessage) msg));
+		return session.notifySyncMessage(msg) ? true : msgQueue
+				.offer(new ProcessUnit(session.getId(), (BaseMessage) msg));
 	}
 
 	public void shutdown() {

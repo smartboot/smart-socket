@@ -25,7 +25,8 @@ import net.vinote.smart.socket.transport.nio.NioQuickClient;
  * @author Seer
  *
  */
-public class Client2ClusterMessageProcessor extends AbstractProtocolDataProcessor {
+public class Client2ClusterMessageProcessor extends
+		AbstractProtocolDataProcessor {
 	public static Client2ClusterMessageProcessor getInstance() {
 		if (instance == null) {
 			synchronized (Client2ClusterMessageProcessor.class) {
@@ -58,7 +59,8 @@ public class Client2ClusterMessageProcessor extends AbstractProtocolDataProcesso
 	 * @param url
 	 * @return
 	 */
-	private QuicklyConfig createClusterQuickConfig(final QuicklyConfig baseConfig, final QuickURL url) {
+	private QuicklyConfig createClusterQuickConfig(
+			final QuicklyConfig baseConfig, final QuickURL url) {
 		QuicklyConfig config = new QuicklyConfig(baseConfig.isServer());
 		config.setCacheSize(baseConfig.getCacheSize());
 		config.setProtocolFactory(baseConfig.getProtocolFactory());
@@ -73,7 +75,8 @@ public class Client2ClusterMessageProcessor extends AbstractProtocolDataProcesso
 	}
 
 	public ClusterMessageEntry generateClusterMessage(DataEntry data) {
-		throw new UnsupportedOperationException(this.getClass().getSimpleName() + " is unsupport current operation!");
+		throw new UnsupportedOperationException(this.getClass().getSimpleName()
+				+ " is unsupport current operation!");
 	}
 
 	/**
@@ -94,25 +97,29 @@ public class Client2ClusterMessageProcessor extends AbstractProtocolDataProcesso
 		if (clusterUrls != null && clusterUrls.length > 0) {
 			List<QuickURL> urlList = new ArrayList<QuickURL>(clusterUrls.length);
 			for (String url : baseConfig.getClusterUrl()) {
-				urlList.add(new QuickURL(url.split(":")[0], Integer.valueOf(url.split(":")[1])));
+				urlList.add(new QuickURL(url.split(":")[0], Integer.valueOf(url
+						.split(":")[1])));
 			}
 
 			if (urlList.size() > 0) {
 				for (final QuickURL url : urlList) {
 					// 构造集群配置
-					QuicklyConfig config = createClusterQuickConfig(baseConfig, url);
+					QuicklyConfig config = createClusterQuickConfig(baseConfig,
+							url);
 
 					NioQuickClient client = new NioQuickClient(config);
 					client.start();
-					logger.log(Level.SEVERE, "Connect to Cluster Server[ip:" + url.getIp() + " ,port:" + url.getPort()
-						+ "]");
+					logger.log(Level.SEVERE, "Connect to Cluster Server[ip:"
+							+ url.getIp() + " ,port:" + url.getPort() + "]");
 					getQuicklyConfig().getLoadBalancing().registServer(client);
 				}
 			}
 		}
 		clientTransSessionMap = new ConcurrentHashMap<String, ProcessUnit>();
-		msgQueue = new ArrayBlockingQueue<ProcessUnit>(baseConfig.getCacheSize());
-		processThread = new ClusterServiceProcessThread("Quickly-Cluster-Process-Thread", this, msgQueue);
+		msgQueue = new ArrayBlockingQueue<ProcessUnit>(
+				baseConfig.getCacheSize());
+		processThread = new ClusterServiceProcessThread(
+				"Quickly-Cluster-Process-Thread", this, msgQueue);
 		processThread.start();
 
 		// 定时扫描客户端链路有效性
@@ -130,8 +137,13 @@ public class Client2ClusterMessageProcessor extends AbstractProtocolDataProcesso
 					if (!unit.clientSession.isValid()) {
 						unit.clientSession.close();
 						clientTransSessionMap.remove(key);
-						logger.log(Level.SEVERE, "remove invalid client[IP:" + unit.clientSession.getRemoteAddr()
-							+ " ,Port:" + unit.clientSession.getRemotePort() + "]");
+						logger.log(
+								Level.SEVERE,
+								"remove invalid client[IP:"
+										+ unit.clientSession.getRemoteAddr()
+										+ " ,Port:"
+										+ unit.clientSession.getRemotePort()
+										+ "]");
 					}
 				}
 			}
@@ -151,7 +163,7 @@ public class Client2ClusterMessageProcessor extends AbstractProtocolDataProcesso
 		} catch (IOException e) {
 			logger.log(Level.WARNING, e.getMessage(), e);
 		} catch (CacheFullException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		} catch (Exception e) {
 			logger.log(Level.WARNING, e.getMessage(), e);
 		}
@@ -163,17 +175,22 @@ public class Client2ClusterMessageProcessor extends AbstractProtocolDataProcesso
 	 **/
 	public boolean receive(TransportSession session, DataEntry msg) {
 		if (!clientTransSessionMap.containsKey(session.getSessionID())) {
-			clientTransSessionMap.put(session.getSessionID(), new ProcessUnit(session, null, null));
+			clientTransSessionMap.put(session.getSessionID(), new ProcessUnit(
+					session, null, null));
 		}
-		TransportSession clusterSession = clientTransSessionMap.get(session.getSessionID()).clusterSession;
+		TransportSession clusterSession = clientTransSessionMap.get(session
+				.getSessionID()).clusterSession;
 		// 分配集群服务器
 		if (clusterSession == null) {
-			clusterSession = getQuicklyConfig().getLoadBalancing().balancing(session);
+			clusterSession = getQuicklyConfig().getLoadBalancing().balancing(
+					session);
 			clientTransSessionMap.get(session.getSessionID()).clusterSession = clusterSession;
 		}
-		ClusterMessageEntry clusterReq = getQuicklyConfig().getProcessor().generateClusterMessage(msg);// 封装集群消息
+		ClusterMessageEntry clusterReq = getQuicklyConfig().getProcessor()
+				.generateClusterMessage(msg);// 封装集群消息
 		clusterReq.setUniqueNo(session.getSessionID());
-		return msgQueue.offer(new ProcessUnit(session, clusterSession, clusterReq));
+		return msgQueue.offer(new ProcessUnit(session, clusterSession,
+				clusterReq));
 	}
 
 	public void shutdown() {

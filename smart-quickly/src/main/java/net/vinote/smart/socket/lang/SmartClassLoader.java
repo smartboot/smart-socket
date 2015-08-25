@@ -13,6 +13,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.jar.JarFile;
 
+import net.vinote.smart.socket.logger.RunLogger;
+
 public class SmartClassLoader extends ClassLoader {
 	/**
 	 * 配置classPath
@@ -34,7 +36,6 @@ public class SmartClassLoader extends ClassLoader {
 		this.classPath = classPath.split(File.pathSeparator);
 	}
 
-	
 	protected final Class<?> findClass(String name)
 			throws ClassNotFoundException {
 		InputStream in = null;
@@ -56,13 +57,13 @@ public class SmartClassLoader extends ClassLoader {
 				return defineClass(name, out.toByteArray(), 0, out.size());
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		} finally {
 			if (in != null) {
 				try {
 					in.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					RunLogger.getLogger().log(e);
 				}
 			}
 		}
@@ -105,7 +106,7 @@ public class SmartClassLoader extends ClassLoader {
 	 * 
 	 * @see java.lang.ClassLoader#findResource(java.lang.String)
 	 */
-	
+
 	protected final URL findResource(String name) {
 		String classJarUrl = name.replace(File.separatorChar, '/');
 		for (String path : classPath) {
@@ -121,7 +122,7 @@ public class SmartClassLoader extends ClassLoader {
 				try {
 					return new URL("file:" + classFile.getAbsolutePath());
 				} catch (MalformedURLException e) {
-					e.printStackTrace();
+					RunLogger.getLogger().log(e);
 				}
 			}
 
@@ -169,13 +170,13 @@ public class SmartClassLoader extends ClassLoader {
 							+ classJarUrl);
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				RunLogger.getLogger().log(e);
 			} finally {
 				if (jarFile != null) {
 					try {
 						jarFile.close();
 					} catch (IOException e) {
-						e.printStackTrace();
+						RunLogger.getLogger().log(e);
 					}
 				}
 			}

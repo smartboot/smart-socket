@@ -10,6 +10,7 @@ import java.util.Arrays;
 
 import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.exception.EncodeException;
+import net.vinote.smart.socket.logger.RunLogger;
 
 public abstract class DataEntry {
 
@@ -88,7 +89,7 @@ public abstract class DataEntry {
 				try {
 					ois.close();// 该方法会同时关闭ByteArrayOutputStream
 				} catch (IOException e) {
-					e.printStackTrace();
+					RunLogger.getLogger().log(e);
 				}
 			}
 		}
@@ -161,7 +162,7 @@ public abstract class DataEntry {
 				try {
 					oos.close();// 该方法会同时关闭ByteArrayOutputStream
 				} catch (IOException e) {
-					e.printStackTrace();
+					RunLogger.getLogger().log(e);
 				}
 			}
 		}

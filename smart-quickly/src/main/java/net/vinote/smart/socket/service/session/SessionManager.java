@@ -64,7 +64,7 @@ public final class SessionManager {
 						SessionManager.instance.lock.set(nextCollectTime);
 						SessionManager.instance.lock.wait(nextCollectTime);
 					} catch (InterruptedException e) {
-						e.printStackTrace();
+						RunLogger.getLogger().log(e);
 					}
 				}
 			}

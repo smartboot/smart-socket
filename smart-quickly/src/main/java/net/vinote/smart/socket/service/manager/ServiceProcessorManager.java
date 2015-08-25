@@ -50,7 +50,7 @@ public final class ServiceProcessorManager {
 					"load Service Processor Class[" + process.getName()
 							+ "] for " + clazz.getName());
 		} catch (Exception e) {
-			e.printStackTrace();
+			RunLogger.getLogger().log(e);
 		}
 	}
 
