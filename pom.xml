@@ -134,7 +134,6 @@
 	<modules>
 		<module>smart-quickly</module>
 		<module>smart-protocol-p2p</module>
-		<module>smart-protocol-http</module>
 	</modules>
 	<distributionManagement>
 		<site>

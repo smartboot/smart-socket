@@ -4,8 +4,7 @@
 - 传输层  
 	smart-quickly:NIO的具体实现，并提供协议解析接口
 - 协议层  
-	1. smart-protocol-http:暂时未完善Http解析,可忽略  
-	2. smart-protocol-p2p:以二进制流进行点对点通信的协议，
+	smart-protocol-p2p:以二进制流进行点对点通信的协议，
 
 
 ##快速启动
@@ -282,4 +281,4 @@ Edit By [Seer](http://zhengjunweimail.blog.163.com/)
 E-mail:zhengjunweimail@163.com  
 QQ:504166636
 
-Update Date: 2015-08-24
+Update Date: 2015-08-25
