@@ -92,7 +92,7 @@ public final class NioQuickServer extends AbstractChannelService {
 				&& --loopTimes > 0
 				&& (readSize = socketChannel.read(buffer)) > 0);// 读取管道中的数据块
 		// 达到流末尾则注销读关注
-		if (readSize == -1 || session.getStatus() == SessionStatusEnum.Closing) {
+		if (readSize == -1 || session.getStatus() == SessionStatusEnum.CLOSING) {
 			RunLogger.getLogger().log(Level.SEVERE,
 					"注销客户端[" + socketChannel + "]读关注");
 			key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
@@ -165,7 +165,7 @@ public final class NioQuickServer extends AbstractChannelService {
 				&& socketChannel.write(buffer) > 0 && --loopTimes > 0) {
 			;
 		}
-		if (session.getStatus() == SessionStatusEnum.Closing
+		if (session.getStatus() == SessionStatusEnum.CLOSING
 				&& (buffer = session.getWriteBuffer()) == null) {
 			session.close();
 		}

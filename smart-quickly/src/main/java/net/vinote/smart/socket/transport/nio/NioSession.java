@@ -88,7 +88,7 @@ public class NioSession extends TransportSession {
 	 */
 	@Override
 	protected void close0() {
-		if (getStatus() == SessionStatusEnum.Closed) {
+		if (getStatus() == SessionStatusEnum.CLOSED) {
 			return;
 		}
 		writeCacheList.clear();
@@ -203,7 +203,8 @@ public class NioSession extends TransportSession {
 					.getQueueOverflowStrategy())) {
 			case DISCARD:
 				if (!writeCacheList.offer(writeData)) {
-					RunLogger.getLogger().log(Level.WARNING, "cache is full now");
+					RunLogger.getLogger().log(Level.WARNING,
+							"cache is full now");
 					throw new CacheFullException("cache is full now");
 				}
 				break;

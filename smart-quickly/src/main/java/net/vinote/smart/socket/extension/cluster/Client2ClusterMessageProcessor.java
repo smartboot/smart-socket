@@ -100,7 +100,7 @@ public class Client2ClusterMessageProcessor extends
 						.split(":")[1])));
 			}
 
-			if (urlList.size() > 0) {
+			if (!urlList.isEmpty()) {
 				for (final QuickURL url : urlList) {
 					// 构造集群配置
 					QuicklyConfig config = createClusterQuickConfig(baseConfig,

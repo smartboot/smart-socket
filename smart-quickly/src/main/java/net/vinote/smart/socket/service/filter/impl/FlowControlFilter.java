@@ -10,6 +10,8 @@ import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 /**
  * 流量控制过滤器
  *
@@ -21,7 +23,7 @@ public class FlowControlFilter implements SmartFilter {
 
 	@Override
 	public void filterDataEntrys(TransportSession session, List<DataEntry> d) {
-		if (d != null && d.size() > 0) {
+		if (CollectionUtils.isNotEmpty(d)) {
 			AtomicInteger counter = getCounter(session);
 			if (session.getQuickConfig().isServer()) {
 				int count = counter.addAndGet(d.size());

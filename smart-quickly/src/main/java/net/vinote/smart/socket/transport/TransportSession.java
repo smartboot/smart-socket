@@ -58,10 +58,10 @@ public abstract class TransportSession {
 		if (immediate) {
 			synchronized (TransportSession.this) {
 				close0();
-				status = SessionStatusEnum.Closed;
+				status = SessionStatusEnum.CLOSED;
 			}
 		} else {
-			status = SessionStatusEnum.Closing;
+			status = SessionStatusEnum.CLOSING;
 		}
 	}
 

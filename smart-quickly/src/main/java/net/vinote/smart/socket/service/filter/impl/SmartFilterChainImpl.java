@@ -9,11 +9,13 @@ import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.service.process.ProtocolDataReceiver;
 import net.vinote.smart.socket.transport.TransportSession;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 /**
  * 业务层消息预处理器
  *
  * @author Seer
- *
+ * @version SmartFilterChainImpl.java, v 0.1 2015年8月26日 下午5:08:31 Seer Exp.
  */
 public class SmartFilterChainImpl implements SmartFilterChain {
 	private ProtocolDataReceiver receiver;
@@ -26,7 +28,7 @@ public class SmartFilterChainImpl implements SmartFilterChain {
 	}
 
 	public void doReadFilter(TransportSession session, List<DataEntry> dataList) {
-		if (dataList == null || dataList.size() == 0) {
+		if (CollectionUtils.isEmpty(dataList)) {
 			return;
 		}
 		if (handlers != null && handlers.length > 0) {

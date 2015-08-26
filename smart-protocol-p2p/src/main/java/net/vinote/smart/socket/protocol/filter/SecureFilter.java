@@ -16,15 +16,15 @@ import net.vinote.smart.socket.transport.TransportSession;
 
 /**
  * 鉴权过滤器
+ * 
  * @author Seer
- * @version SecureFilter.java, v 0.1 2015年8月24日 下午6:43:50 Seer Exp. 
+ * @version SecureFilter.java, v 0.1 2015年8月24日 下午6:43:50 Seer Exp.
  */
 public class SecureFilter implements SmartFilter {
 	private static final String SECURE_TOKEN = "SECURE_TOKEN";
 
 	@Override
 	public void filterDataEntrys(TransportSession session, List<DataEntry> d) {
-
 	}
 
 	@Override
@@ -49,17 +49,14 @@ public class SecureFilter implements SmartFilter {
 
 	@Override
 	public void readFilter(TransportSession session, DataEntry d) {
-
 	}
 
 	@Override
 	public void receiveFailHandler(TransportSession session, DataEntry d) {
-
 	}
 
 	@Override
 	public void writeFilter(TransportSession session, ByteBuffer d) {
-
 	}
 
 }
