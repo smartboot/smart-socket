@@ -60,6 +60,14 @@ public interface Session {
 	public Object getAttribute(String name);
 
 	/**
+	 * 获取会话属性
+	 *
+	 * @param name
+	 * @return
+	 */
+	public <T> T getAttribute(String name, Class<T> clazz);
+
+	/**
 	 * 设置会话属性
 	 *
 	 * @param name
@@ -123,7 +131,8 @@ public interface Session {
 	 * @return
 	 * @throws Exception
 	 */
-	public DataEntry sendWithResponse(DataEntry requestMsg, long timeout) throws Exception;
+	public DataEntry sendWithResponse(DataEntry requestMsg, long timeout)
+			throws Exception;
 
 	/**
 	 * 获取远程主机IP

@@ -50,6 +50,12 @@ public class P2PSession implements Session {
 		return attributeMap.get(name);
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T getAttribute(String name, Class<T> clazz) {
+		return (T) getAttribute(name);
+	}
+
 	public long getCreationTime() {
 		return creatTime;
 	}
