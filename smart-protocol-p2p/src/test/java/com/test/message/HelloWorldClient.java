@@ -7,8 +7,8 @@ import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
-import net.vinote.smart.socket.protocol.p2p.BaseMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.client.P2PClientMessageProcessor;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessageFactory;
 import net.vinote.smart.socket.transport.nio.NioQuickClient;
 
 public class HelloWorldClient {

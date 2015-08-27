@@ -6,7 +6,7 @@ import java.util.logging.Level;
 import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
 import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.logger.RunLogger;
-import net.vinote.smart.socket.protocol.p2p.BaseMessage;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
 import net.vinote.smart.socket.service.process.ProtocolProcessThread;
 

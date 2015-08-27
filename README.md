@@ -4,7 +4,9 @@
 	smart-quickly:NIO的具体实现，并提供协议解析接口
 - 协议层  
 	smart-protocol-p2p:以二进制流进行点对点通信的协议，
-
+- 应用层
+	smart-p2p-server:基于smart-protocol-p2p开发的服务端应用
+	smart-p2p-client:基于smart-protocol-p2p开发的客户端应用
 
 ##快速启动
 服务端: P2PServer.java

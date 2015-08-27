@@ -2,8 +2,8 @@ package net.vinote.smart.socket.protocol.p2p.processor;
 
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.enums.ReturnCodeEnum;
-import net.vinote.smart.socket.protocol.p2p.LoginAuthReq;
-import net.vinote.smart.socket.protocol.p2p.LoginAuthResp;
+import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
+import net.vinote.smart.socket.protocol.p2p.message.LoginAuthResp;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
 

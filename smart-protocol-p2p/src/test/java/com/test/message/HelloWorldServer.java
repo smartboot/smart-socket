@@ -6,7 +6,7 @@ import java.util.Properties;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
-import net.vinote.smart.socket.protocol.p2p.BaseMessageFactory;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.server.P2PServerMessageProcessor;
 import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
 import net.vinote.smart.socket.transport.nio.NioQuickServer;

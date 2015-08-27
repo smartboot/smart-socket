@@ -5,8 +5,8 @@ import java.util.logging.Level;
 
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
-import net.vinote.smart.socket.protocol.p2p.DetectMessageReq;
-import net.vinote.smart.socket.protocol.p2p.DetectMessageResp;
+import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
+import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
 

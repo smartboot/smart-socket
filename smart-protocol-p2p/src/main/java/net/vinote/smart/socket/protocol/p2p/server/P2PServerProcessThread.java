@@ -4,7 +4,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Level;
 
 import net.vinote.smart.socket.logger.RunLogger;
-import net.vinote.smart.socket.protocol.p2p.BaseMessage;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.server.P2PServerMessageProcessor.ProcessUnit;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.process.ProtocolDataProcessor;

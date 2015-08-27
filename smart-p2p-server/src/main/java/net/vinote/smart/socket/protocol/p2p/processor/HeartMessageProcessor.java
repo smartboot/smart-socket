@@ -2,8 +2,8 @@ package net.vinote.smart.socket.protocol.p2p.processor;
 
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
-import net.vinote.smart.socket.protocol.p2p.HeartMessageReq;
-import net.vinote.smart.socket.protocol.p2p.HeartMessageResp;
+import net.vinote.smart.socket.protocol.p2p.message.HeartMessageReq;
+import net.vinote.smart.socket.protocol.p2p.message.HeartMessageResp;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
 

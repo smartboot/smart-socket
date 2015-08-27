@@ -135,6 +135,7 @@
 		<module>smart-quickly</module>
 		<module>smart-protocol-p2p</module>
 		<module>smart-p2p-server</module>
+		<module>smart-p2p-client</module>
 	</modules>
 	<distributionManagement>
 		<site>

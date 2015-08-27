@@ -3,9 +3,9 @@ package com.test.message;
 import java.net.ProtocolException;
 
 import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.protocol.p2p.BaseMessage;
-import net.vinote.smart.socket.protocol.p2p.HeadMessage;
-import net.vinote.smart.socket.protocol.p2p.MessageType;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
+import net.vinote.smart.socket.protocol.p2p.message.HeadMessage;
+import net.vinote.smart.socket.protocol.p2p.message.MessageType;
 
 public class HelloWorldResp extends BaseMessage {
 

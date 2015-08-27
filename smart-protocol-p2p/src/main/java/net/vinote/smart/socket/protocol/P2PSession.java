@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.vinote.smart.socket.logger.RunLogger;
-import net.vinote.smart.socket.protocol.p2p.BaseMessage;
-import net.vinote.smart.socket.protocol.p2p.MessageType;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
+import net.vinote.smart.socket.protocol.p2p.message.MessageType;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 

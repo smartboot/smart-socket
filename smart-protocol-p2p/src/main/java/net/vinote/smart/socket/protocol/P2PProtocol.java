@@ -7,10 +7,10 @@ import java.util.List;
 
 import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.logger.RunLogger;
-import net.vinote.smart.socket.protocol.p2p.BaseMessage;
-import net.vinote.smart.socket.protocol.p2p.FragmentMessage;
-import net.vinote.smart.socket.protocol.p2p.HeadMessage;
-import net.vinote.smart.socket.protocol.p2p.InvalidMessageReq;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
+import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
+import net.vinote.smart.socket.protocol.p2p.message.HeadMessage;
+import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageReq;
 
 /**
  * 

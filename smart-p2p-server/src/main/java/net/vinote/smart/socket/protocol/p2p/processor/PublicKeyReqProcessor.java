@@ -4,8 +4,8 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 
 import net.vinote.smart.socket.protocol.DataEntry;
-import net.vinote.smart.socket.protocol.p2p.PublicKeyReq;
-import net.vinote.smart.socket.protocol.p2p.PublicKeyResp;
+import net.vinote.smart.socket.protocol.p2p.message.PublicKeyReq;
+import net.vinote.smart.socket.protocol.p2p.message.PublicKeyResp;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
 
