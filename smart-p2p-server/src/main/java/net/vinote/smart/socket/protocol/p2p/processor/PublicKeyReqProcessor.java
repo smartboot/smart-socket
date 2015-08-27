@@ -18,7 +18,6 @@ public class PublicKeyReqProcessor extends AbstractServiceMessageProcessor {
 				.getAlgorithm());
 		KeyPair keyPair = generator.generateKeyPair();
 		session.setAttribute("PrivateKey", keyPair.getPrivate());
-
 		PublicKeyResp resp = new PublicKeyResp(req.getHead());
 		resp.setPublicKey(keyPair.getPublic().getEncoded());
 		session.sendWithoutResponse(resp);

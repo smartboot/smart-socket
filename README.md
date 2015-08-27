@@ -8,6 +8,10 @@
 	smart-p2p-server:基于smart-protocol-p2p开发的服务端应用  
 	smart-p2p-client:基于smart-protocol-p2p开发的客户端应用  
 
+##未来规划
+- 消息体支持加密通信
+- 待补充...
+
 ##快速启动
 服务端: P2PServer.java
 客户端: P2PClient.java
@@ -285,4 +289,4 @@ Edit By [Seer](http://zhengjunweimail.blog.163.com/)
 E-mail:zhengjunweimail@163.com  
 QQ:504166636
 
-Update Date: 2015-08-25
+Update Date: 2015-08-27

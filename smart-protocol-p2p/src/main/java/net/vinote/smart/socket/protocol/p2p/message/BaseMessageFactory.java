@@ -15,7 +15,7 @@ import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 public class BaseMessageFactory {
 	private static BaseMessageFactory factory;
 
-	private Map<Integer, Class<?>> msgHaspMap = new HashMap<Integer, Class<?>>();
+	private Map<Integer, Class<? extends BaseMessage>> msgHaspMap = new HashMap<Integer, Class<? extends BaseMessage>>();
 
 	public static BaseMessageFactory getInstance() {
 		if (factory == null) {
