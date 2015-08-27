@@ -10,6 +10,7 @@ import net.vinote.smart.socket.protocol.enums.ReturnCodeEnum;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthResp;
+import net.vinote.smart.socket.protocol.p2p.message.SecureSocketReq;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
@@ -31,7 +32,8 @@ public class SecureFilter implements SmartFilter {
 	public void processFilter(Session session, DataEntry d) {
 		Object token = session.getAttribute(SECURE_TOKEN);
 		BaseMessage msg = (BaseMessage) d;
-		if (token == null && !(d instanceof LoginAuthReq)) {
+		if (token == null
+				&& !(d instanceof LoginAuthReq || d instanceof SecureSocketReq)) {
 			LoginAuthResp resp = new LoginAuthResp(msg.getHead());
 			resp.setReturnCode(ReturnCodeEnum.NEED_AUTH.getCode());
 			resp.setReturnDesc(ReturnCodeEnum.NEED_AUTH.getDesc());

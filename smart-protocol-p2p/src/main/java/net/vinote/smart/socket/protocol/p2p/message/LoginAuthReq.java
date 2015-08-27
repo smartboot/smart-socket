@@ -10,6 +10,14 @@ public class LoginAuthReq extends BaseMessage {
 
 	private String password;
 
+	public LoginAuthReq() {
+		super();
+	}
+
+	public LoginAuthReq(byte[] secureKey) {
+		super(secureKey);
+	}
+
 	protected void encodeBody() {
 		writeByte(MessageTag.ENCRYPT);
 		writeByte(encrypt);

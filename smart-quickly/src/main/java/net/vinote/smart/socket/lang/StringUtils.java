@@ -2,6 +2,7 @@ package net.vinote.smart.socket.lang;
 
 /**
  * 扩展StringUtils方法
+ * 
  * @author Seer
  * @version StringUtils.java, v 0.1 2015年8月25日 下午2:48:21 Seer Exp.
  */
@@ -11,6 +12,9 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 			'7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 			'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
 			'x', 'y', 'z' };
+
+	/** 秘钥Key */
+	public static final String SECRET_KEY = "_SecretKey_";
 
 	/**
 	 * 将字节转换成16进制显示

@@ -115,9 +115,19 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 			session = new P2PSession(tsession);
 			SessionManager.getInstance().registSession(session);
 		}
+
+		BaseMessage baseMsg = (BaseMessage) msg;
+		// 解密消息
+		if (baseMsg.getHead().isSecure()) {
+			baseMsg.getHead().setSecretKey(
+					session.getAttribute(StringUtils.SECRET_KEY, byte[].class));
+			baseMsg.decode();
+			RunLogger.getLogger().log(Level.FINEST, "dencrypted message!");
+		}
+
 		session.refreshAccessedTime();
 		return session.notifySyncMessage(msg) ? true : msgQueue
-				.offer(new ProcessUnit(session.getId(), (BaseMessage) msg));
+				.offer(new ProcessUnit(session.getId(), baseMsg));
 	}
 
 	public void shutdown() {

@@ -5,37 +5,35 @@ import java.net.ProtocolException;
 import net.vinote.smart.socket.exception.DecodeException;
 
 /**
- * 请求公钥
+ * 安全通信请求消息,封装了非对称加密算法RSA的公钥
  * 
  * @author Seer
  * @version PublicKeyReq.java, v 0.1 2015年8月26日 下午5:59:24 Seer Exp.
  */
-public class PublicKeyReq extends BaseMessage {
-	private String algorithm;
+public class SecureSocketReq extends BaseMessage {
+	/** RSA公钥 */
+	private byte[] rsaPublicKey;
 
 	@Override
 	protected void encodeBody() throws ProtocolException {
-		// TODO Auto-generated method stub
-
+		writeBytes(rsaPublicKey);
 	}
 
 	@Override
 	protected void decodeBody() throws DecodeException {
-		// TODO Auto-generated method stub
-
+		rsaPublicKey = readBytes();
 	}
 
-	public String getAlgorithm() {
-		return algorithm;
+	public byte[] getRsaPublicKey() {
+		return rsaPublicKey;
 	}
 
-	public void setAlgorithm(String algorithm) {
-		this.algorithm = algorithm;
+	public void setRsaPublicKey(byte[] rsaPublicKey) {
+		this.rsaPublicKey = rsaPublicKey;
 	}
 
 	@Override
 	public int getMessageType() {
-		// TODO Auto-generated method stub
-		return 0;
+		return MessageType.REQUEST_MESSAGE | 0x99;
 	}
 }

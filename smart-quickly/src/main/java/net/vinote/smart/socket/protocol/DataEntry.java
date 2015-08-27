@@ -16,6 +16,9 @@ public abstract class DataEntry {
 
 	private byte[] data;
 
+	/** 是否发生修改 */
+	private boolean modified = false;
+
 	private MODE mode;
 
 	/** 当前索引 */
@@ -133,6 +136,7 @@ public abstract class DataEntry {
 	 * @param i
 	 */
 	public final void writeByte(byte i) {
+		modified = true;
 		ensureCapacity(index + 1);
 		assertLimit(index);
 		tempData[index++] = i;
@@ -191,6 +195,7 @@ public abstract class DataEntry {
 	 * @param i
 	 */
 	public final void writeInt(int i) {
+		modified = true;
 		assertMode(MODE.WRITE);
 		assertLimit(index + 3);
 		ensureCapacity(index + 4);
@@ -206,6 +211,7 @@ public abstract class DataEntry {
 	 * @param i
 	 */
 	public final void writeShort(int i) {
+		modified = true;
 		assertMode(MODE.WRITE);
 		assertLimit(index + 1);
 		ensureCapacity(index + 2);
@@ -228,6 +234,7 @@ public abstract class DataEntry {
 		if (str == null) {
 			str = "";
 		}
+		modified = true;
 		byte[] bytes = str.getBytes();
 		assertLimit(index + bytes.length);
 		ensureCapacity(index + 1 + bytes.length);
@@ -279,9 +286,15 @@ public abstract class DataEntry {
 	 * @return
 	 */
 	public final byte[] getData() {
-		if (mode == MODE.WRITE) {
+		if (mode == MODE.WRITE && modified) {
 			data = new byte[index];
 			System.arraycopy(tempData, 0, data, 0, index);
+			modified = false;// 避免每次调用getData都进行数组拷贝
+		} else if (mode == MODE.READ && modified) {
+			byte[] d = new byte[index];
+			System.arraycopy(data, 0, d, 0, index);
+			data = d;
+			modified = false;// 避免每次调用getData都进行数组拷贝
 		}
 		return data;
 	}
@@ -360,4 +373,9 @@ public abstract class DataEntry {
 	public enum MODE {
 		READ, WRITE;
 	}
+
+	public void setModified(boolean modified) {
+		this.modified = modified;
+	}
+
 }

@@ -9,6 +9,7 @@ import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PSession;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageReq;
@@ -55,6 +56,14 @@ public class P2PServerDisruptorProcessor extends
 						"Session is invalid,lose message"
 								+ StringUtils.toHexString(unit.msg.getData()));
 				return;
+			}
+			BaseMessage baseMsg = (BaseMessage) unit.msg;
+			// 解密消息
+			if (baseMsg.getHead().isSecure()) {
+				baseMsg.getHead().setSecretKey(
+						session.getAttribute(StringUtils.SECRET_KEY,
+								byte[].class));
+				baseMsg.decode();
 			}
 			session.refreshAccessedTime();
 			AbstractServiceMessageProcessor processor = ServiceProcessorManager

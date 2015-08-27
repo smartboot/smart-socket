@@ -91,7 +91,14 @@ public class FragmentMessage extends BaseMessage {
 		}
 		if (baseMsg != null) {
 			baseMsg.setData(getData());
-			baseMsg.decode();
+			// 加密的消息体暂不解码
+			if (head.isSecure()) {
+				baseMsg.decodeHead();
+				RunLogger.getLogger().log(Level.FINE,
+						"encrypted message,wait for dencrypt!", getData());
+			} else {
+				baseMsg.decode();
+			}
 		}
 		return baseMsg;
 	}

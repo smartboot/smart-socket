@@ -1,5 +1,8 @@
 package net.vinote.smart.socket.protocol.p2p.processor;
 
+import java.util.logging.Level;
+
+import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.enums.ReturnCodeEnum;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
@@ -9,8 +12,9 @@ import net.vinote.smart.socket.service.session.Session;
 
 /**
  * 登录鉴权处理器
+ * 
  * @author Seer
- * @version LoginAuthProcessor.java, v 0.1 2015年8月24日 下午6:44:16 Seer Exp. 
+ * @version LoginAuthProcessor.java, v 0.1 2015年8月24日 下午6:44:16 Seer Exp.
  */
 public class LoginAuthProcessor extends AbstractServiceMessageProcessor {
 	private static final String SECURE_TOKEN = "SECURE_TOKEN";
@@ -18,6 +22,7 @@ public class LoginAuthProcessor extends AbstractServiceMessageProcessor {
 	@Override
 	public void processor(Session session, DataEntry message) throws Exception {
 		LoginAuthReq req = (LoginAuthReq) message;
+		RunLogger.getLogger().log(Level.FINE, "", message.getData());
 		session.setAttribute(SECURE_TOKEN, "true");
 		LoginAuthResp resp = new LoginAuthResp(req.getHead());
 		resp.setReturnCode(ReturnCodeEnum.SUCCESS.getCode());

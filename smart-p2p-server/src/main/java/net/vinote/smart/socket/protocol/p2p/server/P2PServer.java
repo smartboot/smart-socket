@@ -3,7 +3,6 @@ package net.vinote.smart.socket.protocol.p2p.server;
 import java.io.IOException;
 import java.util.Properties;
 
-import net.vinote.smart.socket.extension.timer.QuickMonitorTimer;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
@@ -13,10 +12,12 @@ import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.HeartMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
 import net.vinote.smart.socket.protocol.p2p.message.RemoteInterfaceMessageReq;
+import net.vinote.smart.socket.protocol.p2p.message.SecureSocketReq;
 import net.vinote.smart.socket.protocol.p2p.processor.DetectMessageProcessor;
 import net.vinote.smart.socket.protocol.p2p.processor.HeartMessageProcessor;
 import net.vinote.smart.socket.protocol.p2p.processor.LoginAuthProcessor;
 import net.vinote.smart.socket.protocol.p2p.processor.RemoteServiceMessageProcessor;
+import net.vinote.smart.socket.protocol.p2p.processor.SecureSocketProcessor;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.impl.FlowControlFilter;
 import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
@@ -34,13 +35,15 @@ public class P2PServer {
 				RemoteServiceMessageProcessor.class.getName());
 		properties.put(LoginAuthReq.class.getName(),
 				LoginAuthProcessor.class.getName());
+		properties.put(SecureSocketReq.class.getName(),
+				SecureSocketProcessor.class.getName());
 		BaseMessageFactory.getInstance().loadFromProperties(properties);
 
 		QuicklyConfig config = new QuicklyConfig(true);
 		P2PProtocolFactory factory = new P2PProtocolFactory();
 		config.setProtocolFactory(factory);
 		config.setFilters(new SmartFilter[] { new FlowControlFilter(),
-				new QuickMonitorTimer(), new SecureFilter() });
+				new SecureFilter() });
 		ProtocolDataProcessor processor = new P2PServerDisruptorProcessor();
 		// ProtocolDataProcessor processor = new P2PServerMessageProcessor();
 		config.setProcessor(processor);// 定义P2P协议的处理器,可以自定义
