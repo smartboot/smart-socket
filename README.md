@@ -10,6 +10,7 @@
 
 ##未来规划
 - 消息体支持加密通信
+- 提升传输层的安全级别，支持防御类似DDOS之类的网络攻击
 - 待补充...
 
 ##快速启动
@@ -289,4 +290,4 @@ Edit By [Seer](http://zhengjunweimail.blog.163.com/)
 E-mail:zhengjunweimail@163.com  
 QQ:504166636
 
-Update Date: 2015-08-27
+Update Date: 2015-08-28
