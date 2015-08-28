@@ -16,6 +16,10 @@ import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+import net.vinote.smart.socket.transport.filter.TransportFilter;
+import net.vinote.smart.socket.transport.filter.TransportFilterChain;
+import net.vinote.smart.socket.transport.filter.impl.TansportFilterChainImpl;
+import net.vinote.smart.socket.transport.filter.impl.TransportAliveFilter;
 
 /**
  * NIO服务器
@@ -25,6 +29,9 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  */
 public final class NioQuickServer extends AbstractChannelService {
 	private ServerSocketChannel server;
+
+	/** 传输层过滤器 */
+	private TransportFilterChain filterChain = null;
 
 	public NioQuickServer(final QuicklyConfig config) {
 		super(config);
@@ -57,6 +64,7 @@ public final class NioQuickServer extends AbstractChannelService {
 		}
 		socketKey.attach(session);
 		socketChannel.finishConnect();
+		filterChain.doAcceptFilter(session);// 执行过滤器
 	}
 
 	@Override
@@ -180,6 +188,9 @@ public final class NioQuickServer extends AbstractChannelService {
 		case RUNING:
 			RunLogger.getLogger().log(Level.SEVERE,
 					"Running with " + config.getPort() + " port");
+			// 启动过滤器
+			filterChain = new TansportFilterChainImpl(
+					new TransportFilter[] { new TransportAliveFilter() });
 			break;
 
 		default:
