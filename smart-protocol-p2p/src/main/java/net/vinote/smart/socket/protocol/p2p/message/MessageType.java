@@ -59,4 +59,10 @@ public interface MessageType {
 
 	/** 远程接口响应消息 */
 	int REMOTE_INTERFACE_MESSAGE_RSP = RESPONSE_MESSAGE | 0x08;
+
+	/** 安全通信请求消息 */
+	int SECURE_SOCKET_MESSAGE_REQ = MessageType.REQUEST_MESSAGE | 0x09;
+
+	/** 安全通信响应消息 */
+	int SECURE_SOCKET_MESSAGE_RSP = MessageType.RESPONSE_MESSAGE | 0x09;
 }

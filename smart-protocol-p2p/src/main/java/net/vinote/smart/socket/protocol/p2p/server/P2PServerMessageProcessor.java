@@ -122,7 +122,6 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 			baseMsg.getHead().setSecretKey(
 					session.getAttribute(StringUtils.SECRET_KEY, byte[].class));
 			baseMsg.decode();
-			RunLogger.getLogger().log(Level.FINEST, "dencrypted message!");
 		}
 
 		session.refreshAccessedTime();

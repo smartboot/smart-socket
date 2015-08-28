@@ -12,13 +12,21 @@ import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.exception.EncodeException;
 import net.vinote.smart.socket.logger.RunLogger;
 
+/**
+ * 数据报文的存储实体
+ * 
+ * @author Seer
+ * @version DataEntry.java, v 0.1 2015年8月28日 下午4:33:59 Seer Exp.
+ */
 public abstract class DataEntry {
 
+	/** 完整的数据流 */
 	private byte[] data;
 
 	/** 是否发生修改 */
 	private boolean modified = false;
 
+	/** 当前数据存储区处于的操作模式 */
 	private MODE mode;
 
 	/** 当前索引 */
@@ -29,6 +37,7 @@ public abstract class DataEntry {
 
 	public static final int DEFAULT_DATA_LENGTH = 1024;
 
+	/** 数据流临时缓存区 */
 	private byte[] tempData = new byte[DEFAULT_DATA_LENGTH];
 
 	/**

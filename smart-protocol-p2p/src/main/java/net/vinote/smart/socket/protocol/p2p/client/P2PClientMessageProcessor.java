@@ -92,7 +92,6 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor
 			baseMsg.getHead().setSecretKey(
 					session.getAttribute(StringUtils.SECRET_KEY, byte[].class));
 			baseMsg.decode();
-			RunLogger.getLogger().log(Level.FINEST, "dencrypted message!");
 		}
 
 		// 服务器返回的非响应消息交由专门的处理器处理

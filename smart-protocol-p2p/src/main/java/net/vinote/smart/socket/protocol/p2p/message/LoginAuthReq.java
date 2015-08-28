@@ -75,7 +75,6 @@ public class LoginAuthReq extends BaseMessage {
 	}
 
 	public int getMessageType() {
-		// TODO Auto-generated method stub
 		return MessageType.LOGIN_AUTH_REQ;
 	}
 

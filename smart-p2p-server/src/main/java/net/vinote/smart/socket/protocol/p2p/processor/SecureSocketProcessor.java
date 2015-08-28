@@ -7,8 +7,8 @@ import javax.crypto.KeyGenerator;
 
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.protocol.DataEntry;
-import net.vinote.smart.socket.protocol.p2p.message.SecureSocketReq;
-import net.vinote.smart.socket.protocol.p2p.message.SecureSocketResp;
+import net.vinote.smart.socket.protocol.p2p.message.SecureSocketMessageReq;
+import net.vinote.smart.socket.protocol.p2p.message.SecureSocketMessageResp;
 import net.vinote.smart.socket.security.RSA;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
@@ -24,7 +24,7 @@ public class SecureSocketProcessor extends AbstractServiceMessageProcessor {
 
 	@Override
 	public void processor(Session session, DataEntry message) throws Exception {
-		SecureSocketReq req = (SecureSocketReq) message;
+		SecureSocketMessageReq req = (SecureSocketMessageReq) message;
 		// 获取客户端的公钥
 		PublicKey pubKey = RSA.generatePublicKey(req.getRsaPublicKey());
 
@@ -32,7 +32,7 @@ public class SecureSocketProcessor extends AbstractServiceMessageProcessor {
 		KeyPair keyPair = RSA.generateKeyPair();
 		byte[] encodeServerPubKey = RSA.encode(pubKey, keyPair.getPublic()
 				.getEncoded());// 使用客户端的公钥加密服务端的公钥
-		SecureSocketResp resp = new SecureSocketResp(req.getHead());
+		SecureSocketMessageResp resp = new SecureSocketMessageResp(req.getHead());
 		resp.setRsaPublicKey(encodeServerPubKey);
 
 		// 用服务端私钥加密对称加密秘钥

@@ -1,8 +1,5 @@
 package net.vinote.smart.socket.protocol.p2p.processor;
 
-import java.util.logging.Level;
-
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.enums.ReturnCodeEnum;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
@@ -22,7 +19,6 @@ public class LoginAuthProcessor extends AbstractServiceMessageProcessor {
 	@Override
 	public void processor(Session session, DataEntry message) throws Exception {
 		LoginAuthReq req = (LoginAuthReq) message;
-		RunLogger.getLogger().log(Level.FINE, "", message.getData());
 		session.setAttribute(SECURE_TOKEN, "true");
 		LoginAuthResp resp = new LoginAuthResp(req.getHead());
 		resp.setReturnCode(ReturnCodeEnum.SUCCESS.getCode());

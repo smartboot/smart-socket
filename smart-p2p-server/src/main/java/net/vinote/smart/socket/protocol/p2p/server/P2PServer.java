@@ -12,7 +12,7 @@ import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.HeartMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
 import net.vinote.smart.socket.protocol.p2p.message.RemoteInterfaceMessageReq;
-import net.vinote.smart.socket.protocol.p2p.message.SecureSocketReq;
+import net.vinote.smart.socket.protocol.p2p.message.SecureSocketMessageReq;
 import net.vinote.smart.socket.protocol.p2p.processor.DetectMessageProcessor;
 import net.vinote.smart.socket.protocol.p2p.processor.HeartMessageProcessor;
 import net.vinote.smart.socket.protocol.p2p.processor.LoginAuthProcessor;
@@ -35,7 +35,7 @@ public class P2PServer {
 				RemoteServiceMessageProcessor.class.getName());
 		properties.put(LoginAuthReq.class.getName(),
 				LoginAuthProcessor.class.getName());
-		properties.put(SecureSocketReq.class.getName(),
+		properties.put(SecureSocketMessageReq.class.getName(),
 				SecureSocketProcessor.class.getName());
 		BaseMessageFactory.getInstance().loadFromProperties(properties);
 

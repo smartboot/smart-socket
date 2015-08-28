@@ -112,8 +112,6 @@ public class FragmentMessage extends BaseMessage {
 			if (!hasHead) {
 				baseMsg.decodeHead();// 解码消息头以便后续解密处理
 			}
-			RunLogger.getLogger().log(Level.FINE,
-					"secure message,wait for decrypt!", getData());
 		} else {
 			baseMsg.decode();
 		}

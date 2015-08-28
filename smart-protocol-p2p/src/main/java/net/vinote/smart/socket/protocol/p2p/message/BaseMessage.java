@@ -2,10 +2,8 @@ package net.vinote.smart.socket.protocol.p2p.message;
 
 import java.net.ProtocolException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.security.Aes128;
 
@@ -147,7 +145,6 @@ public abstract class BaseMessage extends DataEntry {
 			getData()[megLenIndex++] = (byte) (0xff & head.getLength());
 
 			position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息体位置
-			RunLogger.getLogger().log(Level.FINEST, "decrypt message!");
 		} catch (Exception e) {
 			throw new DecodeException(e);
 		}
