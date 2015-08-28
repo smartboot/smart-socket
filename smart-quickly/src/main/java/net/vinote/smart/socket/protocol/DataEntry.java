@@ -222,6 +222,9 @@ public abstract class DataEntry {
 	protected final void reset(MODE mode) {
 		index = 0;
 		this.mode = mode;
+		if (mode == MODE.WRITE) {
+			modified = true;
+		}
 	}
 
 	/**
@@ -282,6 +285,8 @@ public abstract class DataEntry {
 
 	/**
 	 * 若当前数据体处于read模式,则直接获取data,否则从临时数据区writeData拷贝至data中再返回
+	 * <p>
+	 * 在read模式下请确保已经完成了解密才可调用getData方法，否则会造成未完成解码的数据丢失
 	 * 
 	 * @return
 	 */
@@ -374,7 +379,7 @@ public abstract class DataEntry {
 		READ, WRITE;
 	}
 
-	public void setModified(boolean modified) {
+	protected void setModified(boolean modified) {
 		this.modified = modified;
 	}
 

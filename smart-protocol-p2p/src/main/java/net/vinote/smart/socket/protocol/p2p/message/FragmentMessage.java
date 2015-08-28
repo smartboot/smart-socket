@@ -70,35 +70,52 @@ public class FragmentMessage extends BaseMessage {
 	public BaseMessage decodeMessage() {
 		decodeHead();
 		HeadMessage head = getHead();
-		BaseMessage baseMsg = null;
+
 		// 至少需要确保读取到的数据字节数与解析消息头获得的消息体大小一致
-		if (head.getLength() == getData().length) {
-			Class<?> c = BaseMessageFactory.getInstance().getBaseMessage(
-					head.getMessageType());
-			if (c != null) {
-				try {
-					baseMsg = (BaseMessage) c.newInstance();
-				} catch (Exception e) {
-					RunLogger.getLogger().log(e);
-				}
-			} else {
-				RunLogger.getLogger().log(
-						Level.WARNING,
-						"Message[0x"
-								+ Integer.toHexString(head.getMessageType())
-								+ "] Could not find class");
-			}
+		if (head.getLength() != getData().length) {
+			return null;
 		}
-		if (baseMsg != null) {
-			baseMsg.setData(getData());
-			// 加密的消息体暂不解码
-			if (head.isSecure()) {
-				baseMsg.decodeHead();
-				RunLogger.getLogger().log(Level.FINE,
-						"encrypted message,wait for dencrypt!", getData());
-			} else {
-				baseMsg.decode();
+
+		Class<?> c = BaseMessageFactory.getInstance().getBaseMessage(
+				head.getMessageType());
+		if (c == null) {
+			RunLogger.getLogger().log(
+					Level.WARNING,
+					"Message[0x" + Integer.toHexString(head.getMessageType())
+							+ "] Could not find class");
+			return null;
+		}
+
+		BaseMessage baseMsg = null;
+		boolean hasHead = false;
+		try {
+			// 优先调用带HeadMessage参数的构造方法,减少BaseMessage中构造HeadMessage对象的次数
+			baseMsg = (BaseMessage) c.getConstructor(HeadMessage.class)
+					.newInstance(head);
+			hasHead = true;
+		} catch (NoSuchMethodException e) {
+			try {
+				baseMsg = (BaseMessage) c.newInstance();
+			} catch (Exception e1) {
+				RunLogger.getLogger().log(e1);
 			}
+		} catch (Exception e) {
+			RunLogger.getLogger().log(e);
+		}
+		if (baseMsg == null) {
+			return null;
+		}
+
+		baseMsg.setData(getData());
+		// 加密的消息体暂不解码
+		if (head.isSecure()) {
+			if (!hasHead) {
+				baseMsg.decodeHead();// 解码消息头以便后续解密处理
+			}
+			RunLogger.getLogger().log(Level.FINE,
+					"secure message,wait for decrypt!", getData());
+		} else {
+			baseMsg.decode();
 		}
 		return baseMsg;
 	}

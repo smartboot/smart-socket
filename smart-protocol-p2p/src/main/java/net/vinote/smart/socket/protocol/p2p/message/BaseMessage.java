@@ -27,6 +27,11 @@ public abstract class BaseMessage extends DataEntry {
 		this.head = head;
 	}
 
+	/**
+	 * 构造需要进行加密处理的消息体对象,secureKey将作为消息加密的秘钥
+	 * 
+	 * @param secureKey
+	 */
 	public BaseMessage(byte[] secureKey) {
 		this();
 		if (ArrayUtils.isNotEmpty(secureKey)) {
@@ -66,18 +71,7 @@ public abstract class BaseMessage extends DataEntry {
 
 		// 加密消息体
 		if (head.isSecure()) {
-			try {
-				byte[] tempData = new byte[getData().length
-						- HeadMessage.HEAD_MESSAGE_LENGTH];
-				System.arraycopy(getData(), HeadMessage.HEAD_MESSAGE_LENGTH,
-						tempData, 0, tempData.length);
-				byte[] bodyData = Aes128.encrypt(tempData, head.getSecretKey());
-				position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息头末尾
-				writeBytes(bodyData);// 重新编码消息体
-			} catch (Exception e) {
-				throw new ProtocolException("encrypt data exception! "
-						+ e.getLocalizedMessage());
-			}
+			encryptSecureData();
 		}
 
 		head.setLength(getData().length);// 设置消息体长度
@@ -97,6 +91,24 @@ public abstract class BaseMessage extends DataEntry {
 	}
 
 	/**
+	 * @throws ProtocolException
+	 */
+	private void encryptSecureData() throws ProtocolException {
+		try {
+			byte[] tempData = new byte[getData().length
+					- HeadMessage.HEAD_MESSAGE_LENGTH];
+			System.arraycopy(getData(), HeadMessage.HEAD_MESSAGE_LENGTH,
+					tempData, 0, tempData.length);
+			byte[] bodyData = Aes128.encrypt(tempData, head.getSecretKey());
+			position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息头末尾
+			writeBytes(bodyData);// 重新编码消息体
+		} catch (Exception e) {
+			throw new ProtocolException("encrypt data exception! "
+					+ e.getLocalizedMessage());
+		}
+	}
+
+	/**
 	 * 消息解码
 	 *
 	 * @throws ProtocolException
@@ -109,33 +121,36 @@ public abstract class BaseMessage extends DataEntry {
 		clearLimit();
 		position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息体位置
 
-		// 解码消息体
+		// 解密消息体
 		if (head.isSecure()) {
-			try {
-				byte[] bodyData = Aes128.decrypt(readBytes(),
-						head.getSecretKey());
-				System.arraycopy(bodyData, 0, getData(),
-						HeadMessage.HEAD_MESSAGE_LENGTH, bodyData.length);
-				head.setLength(bodyData.length
-						+ HeadMessage.HEAD_MESSAGE_LENGTH);
-				position(head.getLength());// 游标设置为最后一位
-				setModified(true);// 更新标识以便调用getData()重新读取缓冲区
-
-				int megLenIndex = 4;
-				getData()[megLenIndex++] = (byte) ((0xff000000 & head
-						.getLength()) >> 24);
-				getData()[megLenIndex++] = (byte) ((0xff0000 & head.getLength()) >> 16);
-				getData()[megLenIndex++] = (byte) ((0xff00 & head.getLength()) >> 8);
-				getData()[megLenIndex++] = (byte) (0xff & head.getLength());
-
-				position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息体位置
-				RunLogger.getLogger().log(Level.FINEST, "dencrypted message!");
-			} catch (Exception e) {
-				throw new DecodeException(e);
-			}
-
+			decryptSecureData();
 		}
 		decodeBody();
+	}
+
+	/**
+	 * 解密消息体
+	 */
+	private void decryptSecureData() {
+		try {
+			byte[] bodyData = Aes128.decrypt(readBytes(), head.getSecretKey());
+			System.arraycopy(bodyData, 0, getData(),
+					HeadMessage.HEAD_MESSAGE_LENGTH, bodyData.length);
+			head.setLength(bodyData.length + HeadMessage.HEAD_MESSAGE_LENGTH);
+			position(head.getLength());// 游标设置为最后一位
+			setModified(true);// 更新标识以便调用getData()重新读取缓冲区
+
+			int megLenIndex = 4;
+			getData()[megLenIndex++] = (byte) ((0xff000000 & head.getLength()) >> 24);
+			getData()[megLenIndex++] = (byte) ((0xff0000 & head.getLength()) >> 16);
+			getData()[megLenIndex++] = (byte) ((0xff00 & head.getLength()) >> 8);
+			getData()[megLenIndex++] = (byte) (0xff & head.getLength());
+
+			position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息体位置
+			RunLogger.getLogger().log(Level.FINEST, "decrypt message!");
+		} catch (Exception e) {
+			throw new DecodeException(e);
+		}
 	}
 
 	/**

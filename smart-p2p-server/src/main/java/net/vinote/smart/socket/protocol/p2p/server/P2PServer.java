@@ -44,8 +44,8 @@ public class P2PServer {
 		config.setProtocolFactory(factory);
 		config.setFilters(new SmartFilter[] { new FlowControlFilter(),
 				new SecureFilter() });
-		ProtocolDataProcessor processor = new P2PServerDisruptorProcessor();
-		// ProtocolDataProcessor processor = new P2PServerMessageProcessor();
+		// ProtocolDataProcessor processor = new P2PServerDisruptorProcessor();
+		ProtocolDataProcessor processor = new P2PServerMessageProcessor();
 		config.setProcessor(processor);// 定义P2P协议的处理器,可以自定义
 		NioQuickServer server = new NioQuickServer(config);
 		try {

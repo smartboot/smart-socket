@@ -8,8 +8,11 @@ import java.util.logging.Level;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.logger.RunLogger;
+import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessageFactory;
+import net.vinote.smart.socket.protocol.p2p.message.HeartMessageReq;
+import net.vinote.smart.socket.protocol.p2p.message.HeartMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthResp;
 import net.vinote.smart.socket.protocol.p2p.message.SecureSocketReq;
@@ -24,6 +27,7 @@ public class SecurityP2PClient {
 		Properties properties = new Properties();
 		properties.put(SecureSocketResp.class.getName(), "");
 		properties.put(LoginAuthResp.class.getName(), "");
+		properties.put(HeartMessageResp.class.getName(), "");
 		BaseMessageFactory.getInstance().loadFromProperties(properties);
 		QuicklyConfig config = new QuicklyConfig(false);
 		P2PProtocolFactory factory = new P2PProtocolFactory();
@@ -57,6 +61,25 @@ public class SecurityP2PClient {
 				.sendWithResponse(loginReq);
 		RunLogger.getLogger().log(Level.FINE,
 				StringUtils.toHexString(loginResp.getData()));
+
+		loginReq = new LoginAuthReq();
+		loginReq.setUsername("zjw");
+		loginReq.setPassword("aa");
+		loginResp = (LoginAuthResp) processor.getSession().sendWithResponse(
+				loginReq);
+		RunLogger.getLogger().log(Level.FINE,
+				StringUtils.toHexString(loginResp.getData()));
+
+		long num = Integer.MAX_VALUE;
+		long start = System.currentTimeMillis();
+		while (num-- > 0) {
+			HeartMessageReq req = new HeartMessageReq();
+			DataEntry data = processor.getSession().sendWithResponse(req);
+			RunLogger.getLogger().log(Level.FINE,
+					StringUtils.toHexString(data.getData()));
+		}
+		RunLogger.getLogger().log(Level.FINE,
+				"结束" + (System.currentTimeMillis() - start));
 		client.shutdown();
 	}
 }
