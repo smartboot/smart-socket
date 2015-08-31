@@ -96,7 +96,8 @@ public final class NioQuickServer extends AbstractChannelService {
 		int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
 		do {
 			session.flushReadBuffer();
-		} while ((key.interestOps() & SelectionKey.OP_READ) > 0
+		} while (key.isValid()
+				&& (key.interestOps() & SelectionKey.OP_READ) > 0
 				&& --loopTimes > 0
 				&& (readSize = socketChannel.read(buffer)) > 0);// 读取管道中的数据块
 		// 达到流末尾则注销读关注

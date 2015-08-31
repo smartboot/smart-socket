@@ -12,5 +12,11 @@
   		<artifactId>smart-protocol-p2p</artifactId>
   		<version>1.0.0-SNAPSHOT</version>
   	</dependency>
+
+  	<dependency>
+  		<groupId>net.vinote.smartweb</groupId>
+  		<artifactId>smart-service-facade</artifactId>
+  		<version>0.0.1-SNAPSHOT</version>
+  	</dependency>
   </dependencies>
 </project>
