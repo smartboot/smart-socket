@@ -24,14 +24,14 @@ public class RemoteInterfaceMessageResp extends BaseMessage {
 	@Override
 	protected void encodeBody() throws ProtocolException {
 		writeString(exception);
-		writeObject(returnObject);
+		writeObjectByProtobuf(returnObject);
 		writeString(returnType);
 	}
 
 	@Override
 	protected void decodeBody() {
 		exception = readString();
-		returnObject = readObject();
+		returnObject = readObjectByProtobuf();
 		returnType = readString();
 	}
 

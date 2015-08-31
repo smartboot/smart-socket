@@ -12,6 +12,11 @@ import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.exception.EncodeException;
 import net.vinote.smart.socket.logger.RunLogger;
 
+import com.dyuproject.protostuff.LinkedBuffer;
+import com.dyuproject.protostuff.ProtobufIOUtil;
+import com.dyuproject.protostuff.Schema;
+import com.dyuproject.protostuff.runtime.RuntimeSchema;
+
 /**
  * 数据报文的存储实体
  * 
@@ -82,6 +87,7 @@ public abstract class DataEntry {
 	/**
 	 * 从数据块中反序列化对象 <b>请慎用该方法,性能有待测试</>
 	 * 
+	 * @deprecated
 	 * @return
 	 */
 	public final Object readObject() {
@@ -105,6 +111,23 @@ public abstract class DataEntry {
 				}
 			}
 		}
+	}
+
+	/**
+	 * 从数据块中反序列化对象
+	 * 
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public final <T> T readObjectByProtobuf() {
+		byte[] bytes = readBytes();
+		if (bytes == null)
+			return null;
+		SerializableBean bean = new SerializableBean();
+		Schema<SerializableBean> schema = RuntimeSchema
+				.getSchema(SerializableBean.class);
+		ProtobufIOUtil.mergeFrom(bytes, bean, schema);
+		return (T) bean.getBean();
 	}
 
 	/**
@@ -154,6 +177,7 @@ public abstract class DataEntry {
 	/**
 	 * 将对象进行序列化输出 <b>请慎用该方法,性能有待测试</b>
 	 * 
+	 * @deprecated
 	 * @param object
 	 */
 	public final void writeObject(Object object) {
@@ -179,6 +203,23 @@ public abstract class DataEntry {
 				}
 			}
 		}
+	}
+
+	/**
+	 * 将对象进行序列化输出
+	 * 
+	 * @param object
+	 */
+	public final <T> void writeObjectByProtobuf(T object) {
+		Schema<SerializableBean> schema = RuntimeSchema
+				.getSchema(SerializableBean.class);
+		// 缓存buff
+		LinkedBuffer buffer = LinkedBuffer.allocate(1024);
+		// 序列化成protobuf的二进制数据
+		SerializableBean bean = new SerializableBean();
+		bean.setBean(object);
+		byte[] data = ProtobufIOUtil.toByteArray(bean, schema, buffer);
+		writeBytes(data);
 	}
 
 	/**

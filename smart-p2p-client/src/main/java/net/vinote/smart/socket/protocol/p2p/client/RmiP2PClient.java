@@ -71,7 +71,8 @@ public class RmiP2PClient {
 					.getSession().sendWithResponse(req);
 			SmartResult<UserInfoVO> result = (SmartResult<UserInfoVO>) rmiResp
 					.getReturnObject();
-			System.out.println(result);
+
+			System.out.println(StringUtils.toHexString(rmiResp.getData()));
 		}
 		client.shutdown();
 	}

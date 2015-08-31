@@ -28,8 +28,8 @@ public class RemoteInterfaceMessageReq extends BaseMessage {
 		writeString(uniqueId);
 		writeString(interfaceClass);
 		writeString(method);
-		writeObject(paramClassList);
-		writeObject(params);
+		writeObjectByProtobuf(paramClassList);
+		writeObjectByProtobuf(params);
 	}
 
 	@Override
@@ -37,8 +37,8 @@ public class RemoteInterfaceMessageReq extends BaseMessage {
 		uniqueId = readString();
 		interfaceClass = readString();
 		method = readString();
-		paramClassList = (String[]) readObject();
-		params = (Object[]) readObject();
+		paramClassList = readObjectByProtobuf();
+		params = readObjectByProtobuf();
 	}
 
 	public String getUniqueId() {
