@@ -19,21 +19,18 @@ import net.vinote.smart.socket.service.session.Session;
  * @version RemoteServiceMessageProcessor.java, v 0.1 2015年8月21日 下午5:48:43 Seer
  *          Exp.
  */
-public class RemoteServiceMessageProcessor extends
-		AbstractServiceMessageProcessor {
+public class RemoteServiceMessageProcessor extends AbstractServiceMessageProcessor {
 	private Map<String, Object> impMap = new HashMap<String, Object>();
 
 	public void registService(String key, Object service) {
-		RunLogger.getLogger().log(Level.SEVERE,
-				"注册服务,key:" + key + ",service:" + service.getClass().getName());
+		RunLogger.getLogger().log(Level.SEVERE, "注册服务,key:" + key + ",service:" + service.getClass().getName());
 		impMap.put(key, service);
 	}
 
 	@Override
 	public void processor(Session session, DataEntry message) throws Exception {
 		RemoteInterfaceMessageReq req = (RemoteInterfaceMessageReq) message;
-		RemoteInterfaceMessageResp resp = new RemoteInterfaceMessageResp(
-				req.getHead());
+		RemoteInterfaceMessageResp resp = new RemoteInterfaceMessageResp(req.getHead());
 		try {
 			String[] paramClassList = req.getParamClassList();
 			Object[] paramObjList = req.getParams();
@@ -42,7 +39,7 @@ public class RemoteServiceMessageProcessor extends
 			if (paramClassList != null) {
 				classArray = new Class[paramClassList.length];
 				for (int i = 0; i < classArray.length; i++) {
-					Class clazz = getPrimitiveClass(paramClassList[i]);
+					Class<?> clazz = getPrimitiveClass(paramClassList[i]);
 					if (clazz == null) {
 						classArray[i] = Class.forName(paramClassList[i]);
 					} else {
@@ -52,8 +49,7 @@ public class RemoteServiceMessageProcessor extends
 			}
 			// 调用接口
 			Object impObj = impMap.get(req.getInterfaceClass());
-			Method method = impObj.getClass().getMethod(req.getMethod(),
-					classArray);
+			Method method = impObj.getClass().getMethod(req.getMethod(), classArray);
 			Object obj = method.invoke(impObj, paramObjList);
 			resp.setReturnObject(obj);
 			resp.setReturnType(method.getReturnType().getName());
