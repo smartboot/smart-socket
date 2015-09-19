@@ -1,5 +1,10 @@
 package net.vinote.smart.socket.protocol;
 
+import io.protostuff.LinkedBuffer;
+import io.protostuff.ProtobufIOUtil;
+import io.protostuff.Schema;
+import io.protostuff.runtime.RuntimeSchema;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,14 +17,9 @@ import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.exception.EncodeException;
 import net.vinote.smart.socket.logger.RunLogger;
 
-import com.dyuproject.protostuff.LinkedBuffer;
-import com.dyuproject.protostuff.ProtobufIOUtil;
-import com.dyuproject.protostuff.Schema;
-import com.dyuproject.protostuff.runtime.RuntimeSchema;
-
 /**
  * 数据报文的存储实体
- * 
+ *
  * @author Seer
  * @version DataEntry.java, v 0.1 2015年8月28日 下午4:33:59 Seer Exp.
  */
@@ -47,7 +47,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 读取一个布尔值
-	 * 
+	 *
 	 * @return
 	 */
 	public final boolean readBoolen() {
@@ -58,7 +58,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 从数据块中当前位置开始读取一个byte长度的整形值
-	 * 
+	 *
 	 * @return
 	 */
 	public final byte readByte() {
@@ -69,7 +69,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 从数据块中当前位置开始读取一个byte数值
-	 * 
+	 *
 	 * @return
 	 */
 	public final byte[] readBytes() {
@@ -86,14 +86,16 @@ public abstract class DataEntry {
 
 	/**
 	 * 从数据块中反序列化对象 <b>请慎用该方法,性能有待测试</>
-	 * 
+	 *
 	 * @deprecated
 	 * @return
 	 */
+	@Deprecated
 	public final Object readObject() {
 		byte[] bytes = readBytes();
-		if (bytes == null)
+		if (bytes == null) {
 			return null;
+		}
 		ByteArrayInputStream bais = null;
 		ObjectInputStream ois = null;
 		try {
@@ -115,36 +117,36 @@ public abstract class DataEntry {
 
 	/**
 	 * 从数据块中反序列化对象
-	 * 
+	 *
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
 	public final <T> T readObjectByProtobuf() {
 		byte[] bytes = readBytes();
-		if (bytes == null)
+		if (bytes == null) {
 			return null;
+		}
 		SerializableBean bean = new SerializableBean();
-		Schema<SerializableBean> schema = RuntimeSchema
-				.getSchema(SerializableBean.class);
+		Schema<SerializableBean> schema = RuntimeSchema.getSchema(SerializableBean.class);
 		ProtobufIOUtil.mergeFrom(bytes, bean, schema);
 		return (T) bean.getBean();
 	}
 
 	/**
 	 * 从数据块中当前位置开始读取一个int长度的整形值
-	 * 
+	 *
 	 * @return
 	 */
 	public final int readInt() {
 		assertMode(MODE.READ);
 		assertLimit(index + 3);
-		return ((data[index++] & 0xff) << 24) + ((data[index++] & 0xff) << 16)
-				+ ((data[index++] & 0xff) << 8) + (data[index++] & 0xff);
+		return ((data[index++] & 0xff) << 24) + ((data[index++] & 0xff) << 16) + ((data[index++] & 0xff) << 8)
+			+ (data[index++] & 0xff);
 	}
 
 	/**
 	 * 重数据块中读取一个short长度的整形值
-	 * 
+	 *
 	 * @return
 	 */
 	public final short readShort() {
@@ -155,7 +157,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 输出布尔值
-	 * 
+	 *
 	 * @param flag
 	 */
 	public final void writeBoolean(boolean flag) {
@@ -164,7 +166,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 往数据块中输入byte数值
-	 * 
+	 *
 	 * @param i
 	 */
 	public final void writeByte(byte i) {
@@ -176,10 +178,11 @@ public abstract class DataEntry {
 
 	/**
 	 * 将对象进行序列化输出 <b>请慎用该方法,性能有待测试</b>
-	 * 
+	 *
 	 * @deprecated
 	 * @param object
 	 */
+	@Deprecated
 	public final void writeObject(Object object) {
 		if (object == null) {
 			writeBytes(null);
@@ -207,14 +210,13 @@ public abstract class DataEntry {
 
 	/**
 	 * 将对象进行序列化输出
-	 * 
+	 *
 	 * @param object
 	 */
 	public final <T> void writeObjectByProtobuf(T object) {
-		Schema<SerializableBean> schema = RuntimeSchema
-				.getSchema(SerializableBean.class);
+		Schema<SerializableBean> schema = RuntimeSchema.getSchema(SerializableBean.class);
 		// 缓存buff
-		LinkedBuffer buffer = LinkedBuffer.allocate(1024);
+		LinkedBuffer buffer = LinkedBuffer.allocate(LinkedBuffer.DEFAULT_BUFFER_SIZE);
 		// 序列化成protobuf的二进制数据
 		SerializableBean bean = new SerializableBean();
 		bean.setBean(object);
@@ -224,7 +226,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 往数据块中输出byte数组
-	 * 
+	 *
 	 * @param data
 	 */
 	public final void writeBytes(byte[] data) {
@@ -241,7 +243,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 往数据块中输入int数值
-	 * 
+	 *
 	 * @param i
 	 */
 	public final void writeInt(int i) {
@@ -257,7 +259,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 往数据块中输入short数值
-	 * 
+	 *
 	 * @param i
 	 */
 	public final void writeShort(int i) {
@@ -279,7 +281,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 输出字符串至数据体,以0x00作为结束标识符
-	 * 
+	 *
 	 * @param str
 	 */
 	public final void writeString(String str) {
@@ -299,7 +301,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 从数据块的当前位置开始读取字符串
-	 * 
+	 *
 	 * @return
 	 */
 	public final String readString() {
@@ -310,15 +312,16 @@ public abstract class DataEntry {
 				assertLimit(index);
 			} while (data[index++] != 0x00);
 		} else {
-			while (data[index++] != 0x00)
+			while (data[index++] != 0x00) {
 				;
+			}
 		}
 		return new String(data, curIndex, index - curIndex - 1);
 	}
 
 	/**
 	 * 定位至数据流中的第n+1位
-	 * 
+	 *
 	 * @param n
 	 */
 	public final void position(int n) {
@@ -337,7 +340,7 @@ public abstract class DataEntry {
 	 * 若当前数据体处于read模式,则直接获取data,否则从临时数据区writeData拷贝至data中再返回
 	 * <p>
 	 * 在read模式下请确保已经完成了解密才可调用getData方法，否则会造成未完成解码的数据丢失
-	 * 
+	 *
 	 * @return
 	 */
 	public final byte[] getData() {
@@ -360,19 +363,18 @@ public abstract class DataEntry {
 
 	/**
 	 * 断言当前数据库所处的模式为read or write
-	 * 
+	 *
 	 * @param mode
 	 */
 	private final void assertMode(MODE mode) {
 		if (mode != this.mode) {
-			throw new RuntimeException("current mode is " + this.mode
-					+ ", can not " + mode);
+			throw new RuntimeException("current mode is " + this.mode + ", can not " + mode);
 		}
 	}
 
 	/**
 	 * 预期操作的数据是否超过限制索引
-	 * 
+	 *
 	 * @param lockIndex
 	 */
 	private final void assertLimit(int lockIndex) {
@@ -383,7 +385,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 从当前索引位置开始锁定操作位
-	 * 
+	 *
 	 * @param size
 	 */
 	protected final void limitFromCurrentIndex(int size) {
@@ -392,7 +394,7 @@ public abstract class DataEntry {
 
 	/**
 	 * 限制操作范围
-	 * 
+	 *
 	 * @param size
 	 */
 	protected final void limitIndex(int limit) {
@@ -408,15 +410,16 @@ public abstract class DataEntry {
 
 	/**
 	 * 确保足够的存储容量
-	 * 
+	 *
 	 * @param minCapacity
 	 */
 	private void ensureCapacity(int minCapacity) {
 		int oldCapacity = tempData.length;
 		if (minCapacity > oldCapacity) {
-			int newCapacity = (oldCapacity * 3) / 2 + 1;
-			if (newCapacity < minCapacity)
+			int newCapacity = oldCapacity * 3 / 2 + 1;
+			if (newCapacity < minCapacity) {
 				newCapacity = minCapacity;
+			}
 			tempData = Arrays.copyOf(tempData, newCapacity);
 		}
 	}
