@@ -5,17 +5,10 @@ import io.protostuff.ProtobufIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.ProtocolException;
 import java.util.Arrays;
 
 import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.exception.EncodeException;
-import net.vinote.smart.socket.logger.RunLogger;
 
 /**
  * 数据报文的存储实体
@@ -85,37 +78,6 @@ public abstract class DataEntry {
 	}
 
 	/**
-	 * 从数据块中反序列化对象 <b>请慎用该方法,性能有待测试</>
-	 *
-	 * @deprecated
-	 * @return
-	 */
-	@Deprecated
-	public final Object readObject() {
-		byte[] bytes = readBytes();
-		if (bytes == null) {
-			return null;
-		}
-		ByteArrayInputStream bais = null;
-		ObjectInputStream ois = null;
-		try {
-			bais = new ByteArrayInputStream(bytes);
-			ois = new ObjectInputStream(bais);
-			return ois.readObject();
-		} catch (Exception e) {
-			throw new DecodeException(e);
-		} finally {
-			if (ois != null) {
-				try {
-					ois.close();// 该方法会同时关闭ByteArrayOutputStream
-				} catch (IOException e) {
-					RunLogger.getLogger().log(e);
-				}
-			}
-		}
-	}
-
-	/**
 	 * 从数据块中反序列化对象
 	 *
 	 * @return
@@ -174,38 +136,6 @@ public abstract class DataEntry {
 		ensureCapacity(index + 1);
 		assertLimit(index);
 		tempData[index++] = i;
-	}
-
-	/**
-	 * 将对象进行序列化输出 <b>请慎用该方法,性能有待测试</b>
-	 *
-	 * @deprecated
-	 * @param object
-	 */
-	@Deprecated
-	public final void writeObject(Object object) {
-		if (object == null) {
-			writeBytes(null);
-			return;
-		}
-		ByteArrayOutputStream byteOs = null;
-		ObjectOutputStream oos = null;
-		try {
-			byteOs = new ByteArrayOutputStream();
-			oos = new ObjectOutputStream(byteOs);
-			oos.writeObject(object);
-			writeBytes(byteOs.toByteArray());
-		} catch (IOException e) {
-			throw new EncodeException(e);
-		} finally {
-			if (oos != null) {
-				try {
-					oos.close();// 该方法会同时关闭ByteArrayOutputStream
-				} catch (IOException e) {
-					RunLogger.getLogger().log(e);
-				}
-			}
-		}
 	}
 
 	/**
