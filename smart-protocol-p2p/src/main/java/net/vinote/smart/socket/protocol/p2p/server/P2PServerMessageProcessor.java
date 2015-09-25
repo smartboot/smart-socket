@@ -135,4 +135,16 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		}
 		ServiceProcessorManager.getInstance().destory();
 	}
+
+	@Override
+	public Session getSession(TransportSession tsession) {
+		Session session = SessionManager.getInstance().getSession(
+				tsession.getSessionID());
+		if (session == null) {
+			session = new P2PSession(tsession);
+			SessionManager.getInstance().registSession(session);
+		}
+		session.refreshAccessedTime();
+		return session;
+	}
 }
