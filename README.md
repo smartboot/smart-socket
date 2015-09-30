@@ -290,9 +290,15 @@ P2P协议采用TCP协议承载，二进制编码格式，其消息结构分为P2
 			client.shutdown();
 		}
 	}
+	
+##推荐项目
+- [smart-sosa](https://git.oschina.net/smartdms/smart-sosa)
+- [smart-web](https://git.oschina.net/smartdms/smart-web)
+- [maven-mybatisdalgen-plugin](https://git.oschina.net/smartdms/maven-mybatisdalgen-plugin)
+
 ##关于作者
 Edit By [Seer](http://zhengjunweimail.blog.163.com/)  
 E-mail:zhengjunweimail@163.com  
 QQ:504166636
 
-Update Date: 2015-09-27
+Update Date: 2015-09-30
