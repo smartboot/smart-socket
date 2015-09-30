@@ -15,6 +15,46 @@
 	<description>基于NIO实现的高性能通信框架</description>
 	<packaging>pom</packaging>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>net.vinote.smart</groupId>
+				<artifactId>smart-quickly</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>net.vinote.smart</groupId>
+				<artifactId>smart-protocol-p2p</artifactId>
+				<version>1.0.0-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>com.lmax</groupId>
+				<artifactId>disruptor</artifactId>
+				<version>3.3.0</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-collections4</artifactId>
+				<version>4.0</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>3.4</version>
+			</dependency>
+			<dependency>
+				<groupId>io.protostuff</groupId>
+				<artifactId>protostuff-core</artifactId>
+				<version>1.1.0</version>
+			</dependency>
+			<dependency>
+				<groupId>io.protostuff</groupId>
+				<artifactId>protostuff-runtime</artifactId>
+				<version>1.1.0</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<!-- 项目团队 -->
 	<developers>
 		<developer>
@@ -57,73 +97,24 @@
 					<outputEncoding>UTF8</outputEncoding>
 					<inputEncoding>UTF8</inputEncoding>
 					<reportPlugins>
-						<!-- <plugin>
-							生成javadoc文件
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-javadoc-plugin</artifactId>
-							<version>2.10.1</version>
-							<configuration>
-								<charset>utf8</charset>
-								<encoding>utf8</encoding>
-								<aggregate>true</aggregate>
-							</configuration>
-						</plugin>
-						<plugin>
-							项目信息过滤
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-project-info-reports-plugin</artifactId>
-							<version>2.8</version>
-							<reportSets>
-								<reportSet>
-									<reports>
-										index一定要生成,否则链接问题
-										<report>index</report>
-										 <report>dependencies</report>
-										<report>project-team</report>
-										<report>mailing-list</report>
-										<report>issue-tracking</report>
-										<report>license</report>
-										<report>cim</report>
-										<report>scm</report>
-
-										<report>modules</report>
-										<report>plugins</report>
-										<report>help</report>
-										<report>summary</report>
-									</reports>
-								</reportSet>
-							</reportSets>
-						</plugin>
-						<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-jxr-plugin</artifactId>
-							<version>2.3</version>
-							<configuration>
-								<aggregate>true</aggregate>
-							</configuration>
-						</plugin>
-						<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-checkstyle-plugin</artifactId>
-							<version>2.10</version>
-							<configuration>
-								<encoding>utf8</encoding>
-								<configLocation>config/maven_checks.xml</configLocation>
-							</configuration>
-						</plugin>
-						<plugin>
-							<groupId>org.apache.maven.plugins</groupId>
-							<artifactId>maven-pmd-plugin</artifactId>
-							<version>3.0</version>
-							<configuration>
-								<aggregate>true</aggregate>
-							</configuration>
-						</plugin>
-						<plugin>
-							<groupId>org.codehaus.mojo</groupId>
-							<artifactId>cobertura-maven-plugin</artifactId>
-							<version>2.7</version>
-						</plugin>  -->
+						<!-- <plugin> 生成javadoc文件 <groupId>org.apache.maven.plugins</groupId> 
+							<artifactId>maven-javadoc-plugin</artifactId> <version>2.10.1</version> <configuration> 
+							<charset>utf8</charset> <encoding>utf8</encoding> <aggregate>true</aggregate> 
+							</configuration> </plugin> <plugin> 项目信息过滤 <groupId>org.apache.maven.plugins</groupId> 
+							<artifactId>maven-project-info-reports-plugin</artifactId> <version>2.8</version> 
+							<reportSets> <reportSet> <reports> index一定要生成,否则链接问题 <report>index</report> 
+							<report>dependencies</report> <report>project-team</report> <report>mailing-list</report> 
+							<report>issue-tracking</report> <report>license</report> <report>cim</report> 
+							<report>scm</report> <report>modules</report> <report>plugins</report> <report>help</report> 
+							<report>summary</report> </reports> </reportSet> </reportSets> </plugin> 
+							<plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-jxr-plugin</artifactId> 
+							<version>2.3</version> <configuration> <aggregate>true</aggregate> </configuration> 
+							</plugin> <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-checkstyle-plugin</artifactId> 
+							<version>2.10</version> <configuration> <encoding>utf8</encoding> <configLocation>config/maven_checks.xml</configLocation> 
+							</configuration> </plugin> <plugin> <groupId>org.apache.maven.plugins</groupId> 
+							<artifactId>maven-pmd-plugin</artifactId> <version>3.0</version> <configuration> 
+							<aggregate>true</aggregate> </configuration> </plugin> <plugin> <groupId>org.codehaus.mojo</groupId> 
+							<artifactId>cobertura-maven-plugin</artifactId> <version>2.7</version> </plugin> -->
 						<!-- <plugin> 代码更改日志 <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-changelog-plugin</artifactId> 
 							<version>2.3</version> </plugin> -->
 					</reportPlugins>
