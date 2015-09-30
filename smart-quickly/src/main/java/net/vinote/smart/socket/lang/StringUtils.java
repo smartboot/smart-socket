@@ -6,7 +6,7 @@ package net.vinote.smart.socket.lang;
  * @author Seer
  * @version StringUtils.java, v 0.1 2015年8月25日 下午2:48:21 Seer Exp.
  */
-public class StringUtils extends org.apache.commons.lang3.StringUtils {
+public class StringUtils extends org.apache.commons.lang.StringUtils {
 
 	private final static char[] digits = { '0', '1', '2', '3', '4', '5', '6',
 			'7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',

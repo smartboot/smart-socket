@@ -7,7 +7,7 @@ import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.security.Aes128;
 
-import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang.ArrayUtils;
 
 /**
  * P2P协议基础消息体对象
