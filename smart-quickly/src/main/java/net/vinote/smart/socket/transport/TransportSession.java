@@ -2,6 +2,8 @@ package net.vinote.smart.socket.transport;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 
 import net.vinote.smart.socket.exception.CacheFullException;
@@ -23,8 +25,7 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 public abstract class TransportSession {
 
 	/** 会话ID */
-	private final String sessionId = String.valueOf(System
-			.identityHashCode(this));
+	private final String sessionId = String.valueOf(System.identityHashCode(this));
 	/** 配置信息 */
 	protected QuicklyConfig quickConfig;
 	/** 消息通信协议 */
@@ -33,6 +34,7 @@ public abstract class TransportSession {
 	/** 缓存传输层读取到的数据流 */
 	private ByteBuffer readBuffer;
 
+	private Map<String, Object> attribute = new HashMap<String, Object>();
 	/** 会话状态 */
 	private volatile SessionStatusEnum status = SessionStatusEnum.ENABLED;
 
@@ -82,13 +84,12 @@ public abstract class TransportSession {
 
 		// 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
 		try {
-			chain.doReadFilter(this, protocol.decode(buffer));
+			chain.doReadFilter(this, protocol.decode(buffer, this));
 		} catch (DecodeException e) {
 			RunLogger.getLogger().log(Level.WARNING, e.getMessage());
 			cancelReadAttention();
 			close();// 解码失败断连
-			RunLogger.getLogger().log(Level.WARNING,
-					"close transport because of decode exception");
+			RunLogger.getLogger().log(Level.WARNING, "close transport because of decode exception");
 		} finally {
 			buffer.compact();
 		}
@@ -172,8 +173,7 @@ public abstract class TransportSession {
 	 * @return 是否输出成功
 	 * @throws Exception
 	 */
-	public abstract void write(byte[] data) throws IOException,
-			CacheFullException;
+	public abstract void write(byte[] data) throws IOException, CacheFullException;
 
 	/**
 	 * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理
@@ -183,7 +183,25 @@ public abstract class TransportSession {
 	 * @return 是否输出成功
 	 * @throws Exception
 	 */
-	public abstract void write(DataEntry data) throws IOException,
-			CacheFullException;
+	public abstract void write(DataEntry data) throws IOException, CacheFullException;
+
+	/**
+	 * Getter method for property <tt>attribute</tt>.
+	 *
+	 * @return property value of attribute
+	 */
+	public final Object getAttribute(String key) {
+		return attribute.get(key);
+	}
+
+	/**
+	 * Setter method for property <tt>attribute</tt>.
+	 *
+	 * @param attribute
+	 *            value to be assigned to property attribute
+	 */
+	public final void setAttribute(String key, Object value) {
+		attribute.put(key, value);
+	}
 
 }

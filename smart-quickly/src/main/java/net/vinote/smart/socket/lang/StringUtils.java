@@ -2,16 +2,14 @@ package net.vinote.smart.socket.lang;
 
 /**
  * 扩展StringUtils方法
- * 
+ *
  * @author Seer
  * @version StringUtils.java, v 0.1 2015年8月25日 下午2:48:21 Seer Exp.
  */
 public class StringUtils extends org.apache.commons.lang.StringUtils {
 
-	private final static char[] digits = { '0', '1', '2', '3', '4', '5', '6',
-			'7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-			'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
-			'x', 'y', 'z' };
+	private final static char[] digits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e',
+			'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
 
 	/** 秘钥Key */
 	public static final String SECRET_KEY = "_SecretKey_";
@@ -48,8 +46,7 @@ public class StringUtils extends org.apache.commons.lang.StringUtils {
 			switch (column) {
 			case 0:
 				startIndex = i;
-				buffer.append(fixHexString(Integer.toHexString(i), 8)).append(
-						": ");
+				buffer.append(fixHexString(Integer.toHexString(i), 8)).append(": ");
 				buffer.append(toHex(bytes[i]));
 				buffer.append(" ");
 				break;
@@ -65,11 +62,10 @@ public class StringUtils extends org.apache.commons.lang.StringUtils {
 			}
 		}
 		if (column != 15) {
-			for (int i = 0; i < (15 - column); i++) {
+			for (int i = 0; i < 15 - column; i++) {
 				buffer.append("   ");
 			}
-			buffer.append("; ").append(
-					filterString(bytes, startIndex, column + 1));
+			buffer.append("; ").append(filterString(bytes, startIndex, column + 1));
 			buffer.append("\r\n");
 		}
 
@@ -87,8 +83,7 @@ public class StringUtils extends org.apache.commons.lang.StringUtils {
 	 *            int
 	 * @return String
 	 */
-	private static String filterString(final byte[] bytes, final int offset,
-			final int count) {
+	private static String filterString(final byte[] bytes, final int offset, final int count) {
 		final byte[] buffer = new byte[count];
 		System.arraycopy(bytes, offset, buffer, 0, count);
 		for (int i = 0; i < count; i++) {

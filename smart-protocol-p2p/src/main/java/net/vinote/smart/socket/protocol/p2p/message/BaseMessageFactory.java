@@ -30,24 +30,21 @@ public class BaseMessageFactory {
 
 	/**
 	 * 注册消息
-	 * 
+	 *
 	 * @param msg
 	 */
 	private void regiestMessage(Class<? extends BaseMessage> msg) {
 		try {
 			Method m = msg.getMethod("getMessageType");
-			Integer messageType = (Integer) (m.invoke(msg.newInstance()));
+			Integer messageType = (Integer) m.invoke(msg.newInstance());
 			if (msgHaspMap.containsKey(messageType)) {
 				RunLogger.getLogger().log(
-						Level.WARNING,
-						"MessageType=" + messageType
-								+ " has already regiested by "
-								+ msgHaspMap.get(messageType).getName()
-								+ ", ingore " + msg.getName());
+					Level.WARNING,
+					"MessageType=" + messageType + " has already regiested by " + msgHaspMap.get(messageType).getName()
+					+ ", ingore " + msg.getName());
 			} else {
 				msgHaspMap.put(messageType, msg);
-				RunLogger.getLogger().log(Level.SEVERE,
-						"load Message Class[" + msg.getName() + "]");
+				RunLogger.getLogger().log(Level.SEVERE, "load Message Class[" + msg.getName() + "]");
 			}
 		} catch (Exception e) {
 			RunLogger.getLogger().log(e);
@@ -57,13 +54,12 @@ public class BaseMessageFactory {
 	/**
 	 * 加载属性文件所配置的消息以及处理器<br/>
 	 * key:消息类型 value：消息处理器(可以为空)
-	 * 
+	 *
 	 * @param properties
 	 * @throws ClassNotFoundException
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void loadFromProperties(Properties properties)
-			throws ClassNotFoundException {
+	public void loadFromProperties(Properties properties) throws ClassNotFoundException {
 		if (properties == null) {
 			RunLogger.getLogger().log(Level.FINEST, "do you 吃饱了撑着啊,给我null");
 			return;
@@ -77,9 +73,8 @@ public class BaseMessageFactory {
 			String processClazz = properties.getProperty(key);
 			if (!StringUtils.isBlank(processClazz)) {
 				Class<? extends AbstractServiceMessageProcessor> processClass = (Class<? extends AbstractServiceMessageProcessor>) Class
-						.forName(processClazz);
-				ServiceProcessorManager.getInstance().regist(p2pClass,
-						processClass);
+					.forName(processClazz);
+				ServiceProcessorManager.getInstance().regist(p2pClass, processClass);
 			}
 			regiestMessage(p2pClass);
 		}
