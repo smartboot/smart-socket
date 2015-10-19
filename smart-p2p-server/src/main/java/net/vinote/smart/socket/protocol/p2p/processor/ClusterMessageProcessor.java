@@ -20,14 +20,13 @@ public class ClusterMessageProcessor extends AbstractServiceMessageProcessor {
 
 	public void processor(Session session, DataEntry message) {
 		ClusterMessageReq msg = (ClusterMessageReq) message;
-		AbstractServiceMessageProcessor processor = ServiceProcessorManager
-				.getInstance().getProcessor(msg.getServiceData().getClass());
+		AbstractServiceMessageProcessor processor = session.getTransportSession().getQuickConfig()
+				.getServiceProcessorFactory().getProcessor(msg.getServiceData().getClass());
 
 		ClusterMessageResp rspMsg = new ClusterMessageResp();
 		rspMsg.setUniqueNo(msg.getUniqueNo());
 		try {
-			DataEntry respMesg = processor.processCluster(session,
-					msg.getServiceData());// 由指定消息类型的处理器来处理集群消息
+			DataEntry respMesg = processor.processCluster(session, msg.getServiceData());// 由指定消息类型的处理器来处理集群消息
 			rspMsg.setSuccess(true);
 			rspMsg.setServiceData(respMesg);
 		} catch (Exception e) {

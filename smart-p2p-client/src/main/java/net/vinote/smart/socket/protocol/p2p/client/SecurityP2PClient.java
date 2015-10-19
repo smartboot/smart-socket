@@ -13,20 +13,19 @@ import net.vinote.smart.socket.protocol.p2p.message.BaseMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.message.HeartMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthResp;
+import net.vinote.smart.socket.protocol.p2p.message.RemoteInterfaceMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.SecureSocketMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.SecureSocketMessageResp;
 import net.vinote.smart.socket.security.RSA;
+import net.vinote.smart.socket.service.factory.ServiceMessageFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.impl.FlowControlFilter;
+import net.vinote.smart.socket.service.manager.ServiceProcessorManager;
 import net.vinote.smart.socket.transport.nio.NioQuickClient;
 
 public class SecurityP2PClient {
 	public static void main(String[] args) throws Exception {
-		Properties properties = new Properties();
-		properties.put(SecureSocketMessageResp.class.getName(), "");
-		properties.put(LoginAuthResp.class.getName(), "");
-		properties.put(HeartMessageResp.class.getName(), "");
-		BaseMessageFactory.getInstance().loadFromProperties(properties);
+
 		QuicklyConfig config = new QuicklyConfig(false);
 		P2PProtocolFactory factory = new P2PProtocolFactory();
 		config.setProtocolFactory(factory);
@@ -35,6 +34,15 @@ public class SecurityP2PClient {
 		config.setFilters(new SmartFilter[] { new FlowControlFilter() });
 		config.setHost("127.0.0.1");
 		config.setTimeout(1000);
+
+		config.setServiceProcessorFactory(new ServiceProcessorManager());
+		
+		Properties properties = new Properties();
+		properties.put(HeartMessageResp.class.getName(), "");
+		properties.put(RemoteInterfaceMessageResp.class.getName(), "");
+		properties.put(LoginAuthResp.class.getName(), "");
+		ServiceMessageFactory messageFactory = new BaseMessageFactory(config);
+		messageFactory.loadFromProperties(properties);
 		NioQuickClient client = new NioQuickClient(config);
 		client.start();
 

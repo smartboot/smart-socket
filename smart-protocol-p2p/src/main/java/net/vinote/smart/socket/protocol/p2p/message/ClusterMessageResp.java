@@ -3,6 +3,7 @@ package net.vinote.smart.socket.protocol.p2p.message;
 import java.net.ProtocolException;
 
 import net.vinote.smart.socket.extension.cluster.ClusterMessageResponseEntry;
+import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.DataEntry;
 
 /**
@@ -24,6 +25,8 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 	private String info;
 	/** 客户端唯一标识 */
 	private String clientUniqueNo;
+	
+	private QuicklyConfig quicklyConfig;
 	/**
 	 * 业务响应消息
 	 */
@@ -47,7 +50,7 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 		clientUniqueNo = readString();
 		byte[] data = readBytes();
 		if (data != null) {
-			FragmentMessage tempMsg = new FragmentMessage();
+			FragmentMessage tempMsg = new FragmentMessage(quicklyConfig);
 			tempMsg.append(data, 0, data.length);
 			serviceRespMsg = tempMsg.decodeMessage();
 		}
@@ -88,5 +91,10 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 
 	public void setUniqueNo(String no) {
 		this.clientUniqueNo = no;
+	}
+
+	@Override
+	public void setQuicklyConfig(QuicklyConfig quicklyConfig) {
+		this.quicklyConfig=quicklyConfig;
 	}
 }

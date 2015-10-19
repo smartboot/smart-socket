@@ -3,7 +3,9 @@ package net.vinote.smart.socket.protocol.p2p.message;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 
+import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.logger.RunLogger;
+import net.vinote.smart.socket.service.factory.ServiceMessageFactory;
 
 /**
  * 
@@ -14,6 +16,11 @@ import net.vinote.smart.socket.logger.RunLogger;
  */
 public class FragmentMessage extends BaseMessage {
 	private int length;
+	private QuicklyConfig quicklyConfig;
+
+	public FragmentMessage(QuicklyConfig quicklyConfig) {
+		this.quicklyConfig = quicklyConfig;
+	}
 
 	protected void encodeBody() {
 		throw new RuntimeException("unsupport method");
@@ -75,14 +82,16 @@ public class FragmentMessage extends BaseMessage {
 		if (head.getLength() != getData().length) {
 			return null;
 		}
-
-		Class<?> c = BaseMessageFactory.getInstance().getBaseMessage(
-				head.getMessageType());
+		ServiceMessageFactory messageFactory = quicklyConfig.getServiceMessageFactory();
+		Class<?> c = null;
+		if (messageFactory instanceof BaseMessageFactory) {
+			c = ((BaseMessageFactory) messageFactory).getBaseMessage(head.getMessageType());
+		} else {
+			throw new IllegalArgumentException("invalid ServiceMessageFactory " + messageFactory);
+		}
 		if (c == null) {
-			RunLogger.getLogger().log(
-					Level.WARNING,
-					"Message[0x" + Integer.toHexString(head.getMessageType())
-							+ "] Could not find class");
+			RunLogger.getLogger().log(Level.WARNING,
+					"Message[0x" + Integer.toHexString(head.getMessageType()) + "] Could not find class");
 			return null;
 		}
 
@@ -90,8 +99,7 @@ public class FragmentMessage extends BaseMessage {
 		boolean hasHead = false;
 		try {
 			// 优先调用带HeadMessage参数的构造方法,减少BaseMessage中构造HeadMessage对象的次数
-			baseMsg = (BaseMessage) c.getConstructor(HeadMessage.class)
-					.newInstance(head);
+			baseMsg = (BaseMessage) c.getConstructor(HeadMessage.class).newInstance(head);
 			hasHead = true;
 		} catch (NoSuchMethodException e) {
 			try {

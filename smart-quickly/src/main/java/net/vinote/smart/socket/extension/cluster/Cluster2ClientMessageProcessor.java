@@ -48,8 +48,7 @@ public class Cluster2ClientMessageProcessor extends
 				RunLogger.getLogger().log(e);
 			}
 		} else {
-			AbstractServiceMessageProcessor processor = ServiceProcessorManager
-					.getInstance().getProcessor(
+			AbstractServiceMessageProcessor processor =getQuicklyConfig().getServiceProcessorFactory().getProcessor(
 							unit.msg.getServiceData().getClass());
 			try {
 				processor.processor(null, unit.msg.getServiceData());
@@ -70,6 +69,7 @@ public class Cluster2ClientMessageProcessor extends
 			ClusterMessageResponseEntry resp = (ClusterMessageResponseEntry) msg;
 			clientSession = Client2ClusterMessageProcessor.getInstance()
 					.getClientTransportSession(resp.getUniqueNo());
+			resp.setQuicklyConfig(clientSession.getQuickConfig());
 			return msgQueue.offer(new ProcessUnit(clientSession,
 					clusterSession, resp));
 		}

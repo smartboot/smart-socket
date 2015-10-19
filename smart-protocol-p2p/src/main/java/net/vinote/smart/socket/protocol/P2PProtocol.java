@@ -36,7 +36,7 @@ final class P2PProtocol implements Protocol {
 		// 获取消息片段对象
 		FragmentMessage tempMsg = (FragmentMessage) session.getAttribute(FRAGMENT_MESSAGE_KEY);
 		if (tempMsg == null) {
-			tempMsg = new FragmentMessage();
+			tempMsg = new FragmentMessage(session.getQuickConfig());
 			session.setAttribute(FRAGMENT_MESSAGE_KEY, tempMsg);
 		}
 		@SuppressWarnings("unchecked")

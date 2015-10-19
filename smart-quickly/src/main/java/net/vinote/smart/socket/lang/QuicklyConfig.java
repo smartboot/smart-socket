@@ -3,6 +3,8 @@ package net.vinote.smart.socket.lang;
 import net.vinote.smart.socket.extension.cluster.balance.LoadBalancing;
 import net.vinote.smart.socket.extension.cluster.trigger.ClusterTriggerStrategy;
 import net.vinote.smart.socket.protocol.ProtocolFactory;
+import net.vinote.smart.socket.service.factory.ServiceMessageFactory;
+import net.vinote.smart.socket.service.factory.ServiceProcessorFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
 
@@ -49,6 +51,12 @@ public class QuicklyConfig {
 	/** 协议工厂 */
 	private ProtocolFactory protocolFactory;
 
+	/**业务消息处理器工厂	 */
+	private ServiceProcessorFactory serviceProcessorFactory;
+	
+	/**业务消息存储工厂	 */
+	private ServiceMessageFactory serviceMessageFactory;
+	
 	/** 队列溢出策略[WAIT,DISCARD] */
 	private String queueOverflowStrategy = QueueOverflowStrategy.WAIT.name();
 
@@ -230,4 +238,21 @@ public class QuicklyConfig {
 	public final void setDataBufferSize(int dataBufferSize) {
 		this.dataBufferSize = dataBufferSize;
 	}
+
+	public ServiceProcessorFactory getServiceProcessorFactory() {
+		return serviceProcessorFactory;
+	}
+
+	public void setServiceProcessorFactory(ServiceProcessorFactory serviceProcessorFactory) {
+		this.serviceProcessorFactory = serviceProcessorFactory;
+	}
+
+	public ServiceMessageFactory getServiceMessageFactory() {
+		return serviceMessageFactory;
+	}
+
+	public void setServiceMessageFactory(ServiceMessageFactory serviceMessageFactory) {
+		this.serviceMessageFactory = serviceMessageFactory;
+	}
+	
 }

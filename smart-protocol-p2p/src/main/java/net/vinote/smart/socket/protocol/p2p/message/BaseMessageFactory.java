@@ -7,25 +7,21 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.logger.RunLogger;
-import net.vinote.smart.socket.service.manager.ServiceProcessorManager;
+import net.vinote.smart.socket.service.factory.ServiceMessageFactory;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 
-public class BaseMessageFactory {
-	private static BaseMessageFactory factory;
+public class BaseMessageFactory implements ServiceMessageFactory{
 
 	private Map<Integer, Class<? extends BaseMessage>> msgHaspMap = new HashMap<Integer, Class<? extends BaseMessage>>();
 
-	public static BaseMessageFactory getInstance() {
-		if (factory == null) {
-			synchronized (BaseMessageFactory.class) {
-				if (factory == null) {
-					factory = new BaseMessageFactory();
-				}
-			}
-		}
-		return factory;
+	private QuicklyConfig quicklyConfig; 
+
+	public BaseMessageFactory(QuicklyConfig quicklyConfig) {
+		this.quicklyConfig=quicklyConfig;
+		quicklyConfig.setServiceMessageFactory(this);
 	}
 
 	/**
@@ -74,7 +70,7 @@ public class BaseMessageFactory {
 			if (!StringUtils.isBlank(processClazz)) {
 				Class<? extends AbstractServiceMessageProcessor> processClass = (Class<? extends AbstractServiceMessageProcessor>) Class
 					.forName(processClazz);
-				ServiceProcessorManager.getInstance().regist(p2pClass, processClass);
+				quicklyConfig.getServiceProcessorFactory().regist(p2pClass, processClass);
 			}
 			regiestMessage(p2pClass);
 		}

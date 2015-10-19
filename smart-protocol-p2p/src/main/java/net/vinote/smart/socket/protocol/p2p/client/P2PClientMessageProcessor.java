@@ -61,14 +61,13 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor
 		Properties properties = new Properties();
 		properties.put(InvalidMessageResp.class.getName(),
 				InvalidMessageResponseProcessor.class.getName());
-		BaseMessageFactory.getInstance().loadFromProperties(properties);
+		config.getServiceMessageFactory().loadFromProperties(properties);
 	}
 
 	public <T> void process(T msg) {
 		// 获取处理器
 		BaseMessage message = (BaseMessage) msg;
-		AbstractServiceMessageProcessor processor = ServiceProcessorManager
-				.getInstance().getProcessor(message.getClass());
+		AbstractServiceMessageProcessor processor =getQuicklyConfig().getServiceProcessorFactory().getProcessor(message.getClass());
 		if (processor != null) {
 			try {
 				processor.processor(session, message);
@@ -107,6 +106,6 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor
 			session.invalidate();
 			processThread.shutdown();
 		}
-		ServiceProcessorManager.getInstance().destory();
+		getQuicklyConfig().getServiceProcessorFactory().destory();
 	}
 }

@@ -4,6 +4,7 @@ import java.net.ProtocolException;
 import java.security.InvalidParameterException;
 
 import net.vinote.smart.socket.extension.cluster.ClusterMessageEntry;
+import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.DataEntry;
 
 /**
@@ -21,6 +22,8 @@ public class ClusterMessageReq extends BaseMessage implements ClusterMessageEntr
 	 */
 	private DataEntry serviceMessage;
 
+	private QuicklyConfig quicklyConfig;
+	
 	protected void encodeBody() throws ProtocolException {
 		writeString(clientUniqueNo);
 		serviceMessage.encode();
@@ -30,7 +33,7 @@ public class ClusterMessageReq extends BaseMessage implements ClusterMessageEntr
 	protected void decodeBody() {
 		clientUniqueNo = readString();
 		byte[] data = readBytes();
-		FragmentMessage tempMsg = new FragmentMessage();
+		FragmentMessage tempMsg = new FragmentMessage(quicklyConfig);
 		tempMsg.append(data, 0, data.length);
 		serviceMessage = tempMsg.decodeMessage();
 	}
@@ -56,5 +59,10 @@ public class ClusterMessageReq extends BaseMessage implements ClusterMessageEntr
 
 	public String getUniqueNo() {
 		return clientUniqueNo;
+	}
+
+	@Override
+	public void setQuicklyConfig(QuicklyConfig quicklyConfig) {
+		this.quicklyConfig=quicklyConfig;
 	}
 }

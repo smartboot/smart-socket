@@ -6,6 +6,7 @@ import java.util.logging.Level;
 
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
+import net.vinote.smart.socket.service.factory.ServiceProcessorFactory;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 
 /**
@@ -15,23 +16,8 @@ import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
  * @author Seer
  * @version ServiceProcessorManager.java, v 0.1 2015年3月13日 下午3:28:25 Seer Exp.
  */
-public final class ServiceProcessorManager {
-	private static ServiceProcessorManager instance = null;
+public final class ServiceProcessorManager implements ServiceProcessorFactory{
 	private Map<Class<? extends DataEntry>, AbstractServiceMessageProcessor> processorMap = new HashMap<Class<? extends DataEntry>, AbstractServiceMessageProcessor>();
-
-	private ServiceProcessorManager() {
-	}
-
-	public static ServiceProcessorManager getInstance() {
-		if (instance == null) {
-			synchronized (ServiceProcessorManager.class) {
-				if (instance == null) {
-					instance = new ServiceProcessorManager();
-				}
-			}
-		}
-		return instance;
-	}
 
 	/**
 	 * 注册消息处理器

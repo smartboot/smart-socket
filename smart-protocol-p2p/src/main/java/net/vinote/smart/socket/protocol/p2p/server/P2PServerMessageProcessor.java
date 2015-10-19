@@ -11,11 +11,9 @@ import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PSession;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
-import net.vinote.smart.socket.protocol.p2p.message.BaseMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageReq;
 import net.vinote.smart.socket.protocol.p2p.processor.InvalidMessageProcessor;
-import net.vinote.smart.socket.service.manager.ServiceProcessorManager;
 import net.vinote.smart.socket.service.process.AbstractProtocolDataProcessor;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.process.ProtocolProcessThread;
@@ -46,9 +44,8 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.zjw.platform.quickly.process.MessageProcessor#process(com.zjw.platform
-	 * .quickly.Session, com.zjw.platform.quickly.message.DataEntry)
+	 * @see com.zjw.platform.quickly.process.MessageProcessor#process(com.zjw.
+	 * platform .quickly.Session, com.zjw.platform.quickly.message.DataEntry)
 	 */
 
 	private int msgQueueMaxSize;
@@ -62,9 +59,8 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 	/*
 	 * 处理消息 (non-Javadoc)
 	 * 
-	 * @see
-	 * com.zjw.platform.quickly.process.MessageProcessor#process(java.lang.Object
-	 * )
+	 * @see com.zjw.platform.quickly.process.MessageProcessor#process(java.lang.
+	 * Object )
 	 */
 
 	@Override
@@ -75,31 +71,26 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		// 启动线程池处理消息
 		processThreads = new P2PServerProcessThread[config.getThreadNum()];
 		for (int i = 0; i < processThreads.length; i++) {
-			processThreads[i] = new P2PServerProcessThread(
-					"OMC-Server-Process-Thread-" + i, this, msgQueue);
+			processThreads[i] = new P2PServerProcessThread("OMC-Server-Process-Thread-" + i, this, msgQueue);
 			processThreads[i].setPriority(Thread.MAX_PRIORITY);
 			processThreads[i].start();
 		}
 		Properties properties = new Properties();
-		properties.put(InvalidMessageReq.class.getName(),
-				InvalidMessageProcessor.class.getName());
-		BaseMessageFactory.getInstance().loadFromProperties(properties);
+		properties.put(InvalidMessageReq.class.getName(), InvalidMessageProcessor.class.getName());
+		config.getServiceMessageFactory().loadFromProperties(properties);
 	}
 
 	public <T> void process(T t) {
 		ProcessUnit unit = (ProcessUnit) t;
-		Session session = SessionManager.getInstance().getSession(
-				unit.sessionId);
+		Session session = SessionManager.getInstance().getSession(unit.sessionId);
 		if (session == null || session.isInvalid()) {
-			RunLogger.getLogger().log(
-					Level.FINEST,
-					"Session is invalid,lose message"
-							+ StringUtils.toHexString(unit.msg.getData()));
+			RunLogger.getLogger().log(Level.FINEST,
+					"Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData()));
 			return;
 		}
 		session.refreshAccessedTime();
-		AbstractServiceMessageProcessor processor = ServiceProcessorManager
-				.getInstance().getProcessor(unit.msg.getClass());
+		AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceProcessorFactory()
+				.getProcessor(unit.msg.getClass());
 		try {
 			processor.processor(session, unit.msg);
 		} catch (Exception e) {
@@ -109,8 +100,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 
 	public boolean receive(TransportSession tsession, DataEntry msg) {
 		// 会话封装并分配处理线程
-		Session session = SessionManager.getInstance().getSession(
-				tsession.getSessionID());
+		Session session = SessionManager.getInstance().getSession(tsession.getSessionID());
 		if (session == null) {
 			session = new P2PSession(tsession);
 			SessionManager.getInstance().registSession(session);
@@ -119,27 +109,24 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		BaseMessage baseMsg = (BaseMessage) msg;
 		// 解密消息
 		if (baseMsg.getHead().isSecure()) {
-			baseMsg.getHead().setSecretKey(
-					session.getAttribute(StringUtils.SECRET_KEY, byte[].class));
+			baseMsg.getHead().setSecretKey(session.getAttribute(StringUtils.SECRET_KEY, byte[].class));
 			baseMsg.decode();
 		}
 
 		session.refreshAccessedTime();
-		return session.notifySyncMessage(msg) ? true : msgQueue
-				.offer(new ProcessUnit(session.getId(), baseMsg));
+		return session.notifySyncMessage(msg) ? true : msgQueue.offer(new ProcessUnit(session.getId(), baseMsg));
 	}
 
 	public void shutdown() {
 		for (ProtocolProcessThread thread : processThreads) {
 			thread.shutdown();
 		}
-		ServiceProcessorManager.getInstance().destory();
+		getQuicklyConfig().getServiceProcessorFactory().destory();
 	}
 
 	@Override
 	public Session getSession(TransportSession tsession) {
-		Session session = SessionManager.getInstance().getSession(
-				tsession.getSessionID());
+		Session session = SessionManager.getInstance().getSession(tsession.getSessionID());
 		if (session == null) {
 			session = new P2PSession(tsession);
 			SessionManager.getInstance().registSession(session);

@@ -1,5 +1,6 @@
 package net.vinote.smart.socket.extension.cluster;
 
+import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.DataEntry;
 
 /**
@@ -32,4 +33,6 @@ public interface ClusterMessageEntry {
 	public void setUniqueNo(String no);
 
 	public String getUniqueNo();
+	
+	public void setQuicklyConfig(QuicklyConfig quicklyConfig);
 }
