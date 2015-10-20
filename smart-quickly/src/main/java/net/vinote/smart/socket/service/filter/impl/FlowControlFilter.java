@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.collections.CollectionUtils;
+
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
-
-import org.apache.commons.collections.CollectionUtils;
 
 /**
  * 流量控制过滤器

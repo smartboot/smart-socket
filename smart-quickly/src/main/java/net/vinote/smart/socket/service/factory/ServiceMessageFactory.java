@@ -2,6 +2,9 @@ package net.vinote.smart.socket.service.factory;
 
 import java.util.Properties;
 
+import net.vinote.smart.socket.protocol.DataEntry;
+import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
+
 public interface ServiceMessageFactory {
 
 
@@ -15,4 +18,13 @@ public interface ServiceMessageFactory {
 	public void loadFromProperties(Properties properties) throws ClassNotFoundException ;
 
 
+	/**
+	 * 获取处理器
+	 * 
+	 * @param clazz
+	 * @return
+	 */
+	public AbstractServiceMessageProcessor getProcessor(Class<? extends DataEntry> clazz);
+	
+	public void destory();
 }

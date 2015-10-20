@@ -6,7 +6,6 @@ import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageResp;
-import net.vinote.smart.socket.service.manager.ServiceProcessorManager;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
 
@@ -21,7 +20,7 @@ public class ClusterMessageProcessor extends AbstractServiceMessageProcessor {
 	public void processor(Session session, DataEntry message) {
 		ClusterMessageReq msg = (ClusterMessageReq) message;
 		AbstractServiceMessageProcessor processor = session.getTransportSession().getQuickConfig()
-				.getServiceProcessorFactory().getProcessor(msg.getServiceData().getClass());
+				.getServiceMessageFactory().getProcessor(msg.getServiceData().getClass());
 
 		ClusterMessageResp rspMsg = new ClusterMessageResp();
 		rspMsg.setUniqueNo(msg.getUniqueNo());

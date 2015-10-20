@@ -8,9 +8,8 @@ import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.client.P2PClientMessageProcessor;
-import net.vinote.smart.socket.protocol.p2p.message.BaseMessageFactory;
+import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.service.factory.ServiceMessageFactory;
-import net.vinote.smart.socket.service.manager.ServiceProcessorManager;
 import net.vinote.smart.socket.transport.nio.NioQuickClient;
 
 public class HelloWorldClient {
@@ -25,12 +24,12 @@ public class HelloWorldClient {
 		config.setHost("127.0.0.1");
 		config.setTimeout(1000);
 		
-		config.setServiceProcessorFactory(new ServiceProcessorManager());
 		
 		Properties properties = new Properties();
 		properties.put(HelloWorldResp.class.getName(), "");
-		ServiceMessageFactory messageFactory = new BaseMessageFactory(config);
+		ServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
 		messageFactory.loadFromProperties(properties);
+		config.setServiceMessageFactory(messageFactory);
 		
 		NioQuickClient client = new NioQuickClient(config);
 		client.start();

@@ -1,13 +1,12 @@
 package net.vinote.smart.socket.protocol;
 
+import java.net.ProtocolException;
+import java.util.Arrays;
+
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
-
-import java.net.ProtocolException;
-import java.util.Arrays;
-
 import net.vinote.smart.socket.exception.DecodeException;
 
 /**

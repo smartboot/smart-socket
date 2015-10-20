@@ -57,7 +57,7 @@ public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProces
 				baseMsg.decode();
 			}
 			session.refreshAccessedTime();
-			AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceProcessorFactory()
+			AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory()
 					.getProcessor(unit.msg.getClass());
 			processor.processor(session, unit.msg);
 		} catch (Exception e) {
@@ -68,7 +68,7 @@ public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProces
 
 	public void shutdown() {
 		super.shutdown();
-		getQuicklyConfig().getServiceProcessorFactory().destory();
+		getQuicklyConfig().getServiceMessageFactory().destory();
 	}
 
 	/*

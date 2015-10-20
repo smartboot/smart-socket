@@ -84,8 +84,8 @@ public class FragmentMessage extends BaseMessage {
 		}
 		ServiceMessageFactory messageFactory = quicklyConfig.getServiceMessageFactory();
 		Class<?> c = null;
-		if (messageFactory instanceof BaseMessageFactory) {
-			c = ((BaseMessageFactory) messageFactory).getBaseMessage(head.getMessageType());
+		if (messageFactory instanceof P2pServiceMessageFactory) {
+			c = ((P2pServiceMessageFactory) messageFactory).getBaseMessage(head.getMessageType());
 		} else {
 			throw new IllegalArgumentException("invalid ServiceMessageFactory " + messageFactory);
 		}

@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.protocol;
+/*package net.vinote.smart.socket.protocol;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -21,37 +21,37 @@ import org.apache.mina.http.api.HttpVersion;
 public class HttpServerProtocol implements Protocol {
 	private static final int BUFFER_SIZE = 64;
 	private List<DataEntry> msgList = new ArrayList<DataEntry>(BUFFER_SIZE);
-	/** Key for decoder current state */
+	*//** Key for decoder current state *//*
 	private static final String DECODER_STATE_ATT = "http.ds";
 
-	/** Key for the partial HTTP requests head */
+	*//** Key for the partial HTTP requests head *//*
 	private static final String PARTIAL_HEAD_ATT = "http.ph";
 
-	/** Key for the number of bytes remaining to read for completing the body */
+	*//** Key for the number of bytes remaining to read for completing the body *//*
 	private static final String BODY_REMAINING_BYTES = "http.brb";
 
-	/** Regex to parse HttpRequest Request Line */
+	*//** Regex to parse HttpRequest Request Line *//*
 	public static final Pattern REQUEST_LINE_PATTERN = Pattern.compile(" ");
 
-	/** Regex to parse out QueryString from HttpRequest */
+	*//** Regex to parse out QueryString from HttpRequest *//*
 	public static final Pattern QUERY_STRING_PATTERN = Pattern.compile("\\?");
 
-	/** Regex to parse out parameters from query string */
+	*//** Regex to parse out parameters from query string *//*
 	public static final Pattern PARAM_STRING_PATTERN = Pattern.compile("\\&|;");
 
-	/** Regex to parse out key/value pairs */
+	*//** Regex to parse out key/value pairs *//*
 	public static final Pattern KEY_VALUE_PATTERN = Pattern.compile("=");
 
-	/** Regex to parse raw headers and body */
+	*//** Regex to parse raw headers and body *//*
 	public static final Pattern RAW_VALUE_PATTERN = Pattern.compile("\\r\\n\\r\\n");
 
-	/** Regex to parse raw headers from body */
+	*//** Regex to parse raw headers from body *//*
 	public static final Pattern HEADERS_BODY_PATTERN = Pattern.compile("\\r\\n");
 
-	/** Regex to parse header name and value */
+	*//** Regex to parse header name and value *//*
 	public static final Pattern HEADER_VALUE_PATTERN = Pattern.compile(":");
 
-	/** Regex to split cookie header following RFC6265 Section 5.4 */
+	*//** Regex to split cookie header following RFC6265 Section 5.4 *//*
 	public static final Pattern COOKIE_SEPARATOR_PATTERN = Pattern.compile(";");
 	ByteBuffer partial;
 
@@ -177,3 +177,4 @@ public class HttpServerProtocol implements Protocol {
 		return new HttpRequestImpl(version, method, requestedPath, queryString, generalHeaders);
 	}
 }
+*/

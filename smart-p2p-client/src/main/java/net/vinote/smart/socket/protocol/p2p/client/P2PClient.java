@@ -7,7 +7,7 @@ import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
-import net.vinote.smart.socket.protocol.p2p.message.BaseMessageFactory;
+import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.message.HeartMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthResp;
@@ -15,7 +15,6 @@ import net.vinote.smart.socket.protocol.p2p.message.RemoteInterfaceMessageResp;
 import net.vinote.smart.socket.service.factory.ServiceMessageFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.impl.FlowControlFilter;
-import net.vinote.smart.socket.service.manager.ServiceProcessorManager;
 import net.vinote.smart.socket.transport.nio.NioQuickClient;
 
 public class P2PClient {
@@ -30,15 +29,13 @@ public class P2PClient {
 		config.setHost("127.0.0.1");
 		config.setTimeout(1000);
 
-		config.setServiceProcessorFactory(new ServiceProcessorManager());
-		
 		Properties properties = new Properties();
 		properties.put(HeartMessageResp.class.getName(), "");
 		properties.put(RemoteInterfaceMessageResp.class.getName(), "");
 		properties.put(LoginAuthResp.class.getName(), "");
-		ServiceMessageFactory messageFactory = new BaseMessageFactory(config);
+		ServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
 		messageFactory.loadFromProperties(properties);
-		
+		config.setServiceMessageFactory(messageFactory);
 		
 		NioQuickClient client = new NioQuickClient(config);
 		client.start();

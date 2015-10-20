@@ -89,7 +89,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 			return;
 		}
 		session.refreshAccessedTime();
-		AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceProcessorFactory()
+		AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory()
 				.getProcessor(unit.msg.getClass());
 		try {
 			processor.processor(session, unit.msg);
@@ -121,7 +121,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		for (ProtocolProcessThread thread : processThreads) {
 			thread.shutdown();
 		}
-		getQuicklyConfig().getServiceProcessorFactory().destory();
+		getQuicklyConfig().getServiceMessageFactory().destory();
 	}
 
 	@Override

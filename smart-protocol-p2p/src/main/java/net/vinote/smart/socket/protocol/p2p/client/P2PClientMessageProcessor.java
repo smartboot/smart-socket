@@ -10,18 +10,15 @@ import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PSession;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
-import net.vinote.smart.socket.protocol.p2p.message.BaseMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageResp;
 import net.vinote.smart.socket.protocol.p2p.processor.InvalidMessageResponseProcessor;
-import net.vinote.smart.socket.service.manager.ServiceProcessorManager;
 import net.vinote.smart.socket.service.process.AbstractProtocolDataProcessor;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.process.ClientProcessor;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
-public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor
-		implements ClientProcessor {
+public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor implements ClientProcessor {
 	private Session session;
 	private P2PClientProcessThread processThread;
 
@@ -38,8 +35,7 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor
 		if (session == null) {
 			synchronized (this) {
 				if (session == null) {
-					processThread = new P2PClientProcessThread(
-							"P2PClient-Thread", this);
+					processThread = new P2PClientProcessThread("P2PClient-Thread", this);
 					processThread.start();
 					session = new P2PSession(tsession);
 				}
@@ -59,15 +55,15 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor
 	public void init(QuicklyConfig config) throws Exception {
 		super.init(config);
 		Properties properties = new Properties();
-		properties.put(InvalidMessageResp.class.getName(),
-				InvalidMessageResponseProcessor.class.getName());
+		properties.put(InvalidMessageResp.class.getName(), InvalidMessageResponseProcessor.class.getName());
 		config.getServiceMessageFactory().loadFromProperties(properties);
 	}
 
 	public <T> void process(T msg) {
 		// 获取处理器
 		BaseMessage message = (BaseMessage) msg;
-		AbstractServiceMessageProcessor processor =getQuicklyConfig().getServiceProcessorFactory().getProcessor(message.getClass());
+		AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory()
+				.getProcessor(message.getClass());
 		if (processor != null) {
 			try {
 				processor.processor(session, message);
@@ -75,10 +71,7 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor
 				RunLogger.getLogger().log(e);
 			}
 		} else {
-			RunLogger.getLogger().log(
-					Level.SEVERE,
-					"unsupport message"
-							+ StringUtils.toHexString(message.getData()));
+			RunLogger.getLogger().log(Level.SEVERE, "unsupport message" + StringUtils.toHexString(message.getData()));
 		}
 	}
 
@@ -88,8 +81,7 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor
 
 		// 解密消息
 		if (baseMsg.getHead().isSecure()) {
-			baseMsg.getHead().setSecretKey(
-					session.getAttribute(StringUtils.SECRET_KEY, byte[].class));
+			baseMsg.getHead().setSecretKey(session.getAttribute(StringUtils.SECRET_KEY, byte[].class));
 			baseMsg.decode();
 		}
 
@@ -106,6 +98,6 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor
 			session.invalidate();
 			processThread.shutdown();
 		}
-		getQuicklyConfig().getServiceProcessorFactory().destory();
+		getQuicklyConfig().getServiceMessageFactory().destory();
 	}
 }

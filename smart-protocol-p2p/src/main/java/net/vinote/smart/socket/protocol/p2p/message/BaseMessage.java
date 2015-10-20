@@ -3,11 +3,11 @@ package net.vinote.smart.socket.protocol.p2p.message;
 import java.net.ProtocolException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.lang.ArrayUtils;
+
 import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.security.Aes128;
-
-import org.apache.commons.lang.ArrayUtils;
 
 /**
  * P2P协议基础消息体对象
