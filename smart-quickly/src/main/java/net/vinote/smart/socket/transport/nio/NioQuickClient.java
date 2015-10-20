@@ -194,6 +194,7 @@ public class NioQuickClient extends AbstractChannelService implements
 	public final void start() {
 		try {
 			checkStart();
+			assertAbnormalStatus();
 			updateServiceStatus(ChannelServiceStatusEnum.STARTING);
 			selector = Selector.open();
 			socketChannel = SocketChannel.open();

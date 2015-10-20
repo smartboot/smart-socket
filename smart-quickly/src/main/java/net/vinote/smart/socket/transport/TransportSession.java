@@ -86,7 +86,7 @@ public abstract class TransportSession {
 		try {
 			chain.doReadFilter(this, protocol.decode(buffer, this));
 		} catch (DecodeException e) {
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage());
+			RunLogger.getLogger().log(Level.WARNING,"",e);
 			cancelReadAttention();
 			close();// 解码失败断连
 			RunLogger.getLogger().log(Level.WARNING, "close transport because of decode exception");

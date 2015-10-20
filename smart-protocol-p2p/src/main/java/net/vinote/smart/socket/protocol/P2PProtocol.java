@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.vinote.smart.socket.exception.DecodeException;
+import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
@@ -86,7 +87,7 @@ final class P2PProtocol implements Protocol {
 					// 消息读取完毕进行解码
 					BaseMessage msg = tempMsg.decodeMessage();
 					if (msg == null) {
-						throw new DecodeException("Decode Message Error!");
+						throw new DecodeException("Decode Message Error!"+StringUtils.toHexString(tempMsg.getData()));
 					}
 					msgList.add(msg);
 					tempMsg.reset();

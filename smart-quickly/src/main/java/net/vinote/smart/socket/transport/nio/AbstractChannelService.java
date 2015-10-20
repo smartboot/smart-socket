@@ -42,15 +42,12 @@ abstract class AbstractChannelService implements ChannelService {
 		WRITE_LOOP_TIMES = config.getWriteLoopTimes();
 		try {
 			config.getProcessor().init(config);
+			RunLogger.getLogger().log(Level.SEVERE,
+					"Registe MessageServer Processor[" + config.getProcessor().getClass().getName() + "] success");
 		} catch (final Exception e) {
 			updateServiceStatus(ChannelServiceStatusEnum.Abnormal);
 			RunLogger.getLogger().log(Level.SEVERE, "", e);
 		}
-		RunLogger.getLogger().log(
-				Level.SEVERE,
-				"Registe MessageServer Processor["
-						+ config.getProcessor().getClass().getName()
-						+ "] success");
 	}
 
 	/*
@@ -65,8 +62,7 @@ abstract class AbstractChannelService implements ChannelService {
 			try {
 				// 此处会阻塞在selector.select()直至某个关注的事件将其唤醒
 				while (selector.isOpen() && selector.select() > -1) {
-					Iterator<SelectionKey> keyIterator = selector
-							.selectedKeys().iterator();
+					Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
 					// 执行本次已触发待处理的事件
 					while (keyIterator.hasNext()) {
 						SelectionKey key = keyIterator.next();
@@ -76,12 +72,10 @@ abstract class AbstractChannelService implements ChannelService {
 								readFromChannel(key);
 							} else if (key.isWritable()) {// 输出数据至客户端
 								writeToChannel(key);
-							} else if (key.isAcceptable()
-									|| key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
+							} else if (key.isAcceptable() || key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
 								acceptConnect(key, selector);
 							} else {
-								RunLogger.getLogger().log(Level.WARNING,
-										"奇怪了...");
+								RunLogger.getLogger().log(Level.WARNING, "奇怪了...");
 							}
 						} catch (Exception e) {
 							exceptionInSelectionKey(key, e);
@@ -93,8 +87,7 @@ abstract class AbstractChannelService implements ChannelService {
 				}
 
 				if (!selector.isOpen()) {
-					RunLogger.getLogger().log(Level.SEVERE,
-							"Selector is already closed!");
+					RunLogger.getLogger().log(Level.SEVERE, "Selector is already closed!");
 					break;
 				}
 
@@ -113,8 +106,7 @@ abstract class AbstractChannelService implements ChannelService {
 	 * @param selector
 	 * @throws IOException
 	 */
-	abstract void acceptConnect(SelectionKey key, Selector selector)
-			throws IOException;
+	abstract void acceptConnect(SelectionKey key, Selector selector) throws IOException;
 
 	/**
 	 * 判断状态是否有异常
@@ -132,8 +124,7 @@ abstract class AbstractChannelService implements ChannelService {
 	 * @param e
 	 * @throws Exception
 	 */
-	abstract void exceptionInSelectionKey(SelectionKey key, Exception e)
-			throws Exception;
+	abstract void exceptionInSelectionKey(SelectionKey key, Exception e) throws Exception;
 
 	/**
 	 * 处理选择器层面的异常,此时基本上会导致当前的链路不再可用
@@ -166,17 +157,18 @@ abstract class AbstractChannelService implements ChannelService {
 	 */
 	void checkStart() {
 		if (config == null) {
-			throw new NullPointerException(getClass().getSimpleName()
-					+ "'s config is null");
+			throw new NullPointerException(getClass().getSimpleName() + "'s config is null");
 		}
 		if (config.getProtocolFactory() == null) {
-			throw new NullPointerException(QuicklyConfig.class.getSimpleName()
-					+ "'s protocolFactory is null");
+			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s protocolFactory is null");
 		}
 
 		if (config.getProcessor() == null) {
-			throw new NullPointerException(QuicklyConfig.class.getSimpleName()
-					+ "'s processor is null");
+			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s processor is null");
+		}
+		
+		if(config.getServiceMessageFactory()==null){
+			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s serviceMessageFactory is null");
 		}
 	}
 

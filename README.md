@@ -229,23 +229,24 @@ P2P协议采用TCP协议承载，二进制编码格式，其消息结构分为P2
 
 	public class HelloWorldServer {
 		public static void main(String[] args) throws ClassNotFoundException {
-			// 注册消息以及对应的处理器
-			Properties properties = new Properties();
-			properties.put(HelloWorldReq.class.getName(),
-					HelloWorldProcessor.class.getName());
-			BaseMessageFactory.getInstance().loadFromProperties(properties);
 	
 			// 启动服务
 			QuicklyConfig config = new QuicklyConfig(true);
-			P2PProtocolFactory factory = new P2PProtocolFactory();
-			config.setProtocolFactory(factory);
-			ProtocolDataProcessor processor = new P2PServerMessageProcessor();
-			config.setProcessor(processor);
+			config.setProtocolFactory(new P2PProtocolFactory());//设置协议对象工厂
+			config.setProcessor(new P2PServerMessageProcessor());//设置协议消息处理器
+	
+			// 注册消息以及对应的处理器
+			Properties properties = new Properties();
+			properties.put(HelloWorldReq.class.getName(), HelloWorldProcessor.class.getName());
+			ServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
+			messageFactory.loadFromProperties(properties);
+			config.setServiceMessageFactory(messageFactory);//设置业务消息处理工厂
+	
 			NioQuickServer server = new NioQuickServer(config);
 			try {
 				server.start();
 			} catch (IOException e) {
-				e.printStackTrace();
+				RunLogger.getLogger().log(e);
 			}
 		}
 	}
@@ -263,17 +264,23 @@ P2P协议采用TCP协议承载，二进制编码格式，其消息结构分为P2
 	
 	public class HelloWorldClient {
 		public static void main(String[] args) throws Exception {
-			Properties properties = new Properties();
-			properties.put(HelloWorldResp.class.getName(), "");
-			BaseMessageFactory.getInstance().loadFromProperties(properties);
 	
 			QuicklyConfig config = new QuicklyConfig(false);
+		
 			P2PProtocolFactory factory = new P2PProtocolFactory();
 			config.setProtocolFactory(factory);
 			P2PClientMessageProcessor processor = new P2PClientMessageProcessor();
 			config.setProcessor(processor);
 			config.setHost("127.0.0.1");
 			config.setTimeout(1000);
+			
+			
+			Properties properties = new Properties();
+			properties.put(HelloWorldResp.class.getName(), "");
+			ServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
+			messageFactory.loadFromProperties(properties);
+			config.setServiceMessageFactory(messageFactory);
+			
 			NioQuickClient client = new NioQuickClient(config);
 			client.start();
 	
@@ -283,9 +290,9 @@ P2P协议采用TCP协议承载，二进制编码格式，其消息结构分为P2
 				req.setName("seer" + num);
 				req.setAge(num);
 				req.setMale(num % 2 == 0);
-				DataEntry data = processor.getSession().sendWithResponse(req);
-				RunLogger.getLogger().log(Level.FINE,
-						StringUtils.toHexString(data.getData()));
+				HelloWorldResp data = (HelloWorldResp) processor.getSession().sendWithResponse(req);
+				RunLogger.getLogger().log(Level.FINE, data.getSay());
+				RunLogger.getLogger().log(Level.FINE, StringUtils.toHexString(data.getData()));
 			}
 			client.shutdown();
 		}
@@ -301,4 +308,4 @@ Edit By [Seer](http://zhengjunweimail.blog.163.com/)
 E-mail:zhengjunweimail@163.com  
 QQ:504166636
 
-Update Date: 2015-09-30
+Update Date: 2015-10-20
