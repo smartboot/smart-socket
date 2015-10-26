@@ -43,7 +43,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.zjw.platform.quickly.process.MessageProcessor#process(com.zjw.
 	 * platform .quickly.Session, com.zjw.platform.quickly.message.DataEntry)
 	 */
@@ -58,7 +58,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 
 	/*
 	 * 处理消息 (non-Javadoc)
-	 * 
+	 *
 	 * @see com.zjw.platform.quickly.process.MessageProcessor#process(java.lang.
 	 * Object )
 	 */
@@ -85,12 +85,12 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		Session session = SessionManager.getInstance().getSession(unit.sessionId);
 		if (session == null || session.isInvalid()) {
 			RunLogger.getLogger().log(Level.FINEST,
-					"Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData()));
+				"Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData()));
 			return;
 		}
 		session.refreshAccessedTime();
-		AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory()
-				.getProcessor(unit.msg.getClass());
+		AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory().getProcessor(
+			unit.msg.getClass());
 		try {
 			processor.processor(session, unit.msg);
 		} catch (Exception e) {

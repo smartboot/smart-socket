@@ -31,7 +31,7 @@ public class NioSession extends TransportSession {
 	private SelectionKey channelKey = null;
 
 	/** 响应消息缓存队列 */
-	private ArrayBlockingQueue<byte[]> writeCacheList;
+	private ArrayBlockingQueue<byte[]> writeCacheQueue;
 
 	private ByteBuffer writeBuffer;
 
@@ -58,13 +58,11 @@ public class NioSession extends TransportSession {
 		initBaseChannelInfo(channelKey);
 		super.quickConfig = config;
 		super.protocol = config.getProtocolFactory().createProtocol();
-		super.chain = new SmartFilterChainImpl(config.getProcessor(),
-				config.getFilters());
-		writeCacheList = new ArrayBlockingQueue<byte[]>(config.getCacheSize());
+		super.chain = new SmartFilterChainImpl(config.getProcessor(), config.getFilters());
+		writeCacheQueue = new ArrayBlockingQueue<byte[]>(config.getCacheSize());
 	}
 
-	public NioSession(SelectionKey channelKey, QuicklyConfig config,
-			ProtocolDataReceiver receiver) {
+	public NioSession(SelectionKey channelKey, QuicklyConfig config, ProtocolDataReceiver receiver) {
 		this(channelKey, config);
 		super.chain = new SmartFilterChainImpl(receiver, config.getFilters());
 	}
@@ -72,13 +70,12 @@ public class NioSession extends TransportSession {
 	@Override
 	protected void cancelReadAttention() {
 		readClosed = true;
-		channelKey
-				.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
+		channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
 	}
 
 	@Override
 	public void close(boolean immediate) {
-		super.close(immediate || writeCacheList.isEmpty());
+		super.close(immediate || writeCacheQueue.isEmpty());
 	}
 
 	/*
@@ -91,11 +88,10 @@ public class NioSession extends TransportSession {
 		if (getStatus() == SessionStatusEnum.CLOSED) {
 			return;
 		}
-		writeCacheList.clear();
+		writeCacheQueue.clear();
 		try {
 			channelKey.channel().close();
-			RunLogger.getLogger().log(Level.SEVERE,
-					"close connection " + channelKey.channel());
+			RunLogger.getLogger().log(Level.SEVERE, "close connection " + channelKey.channel());
 		} catch (IOException e) {
 			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
 		}
@@ -125,7 +121,7 @@ public class NioSession extends TransportSession {
 
 	/**
 	 * 获取写缓冲
-	 * 
+	 *
 	 * @return
 	 */
 	public ByteBuffer getWriteBuffer() {
@@ -133,18 +129,17 @@ public class NioSession extends TransportSession {
 			return writeBuffer;
 		}
 
-		byte[] array = writeCacheList.poll();
+		byte[] array = writeCacheQueue.poll();
 		if (array != null) {
 			writeBuffer = ByteBuffer.wrap(array);
 			chain.doWriteFilter(this, writeBuffer);
 		} else {
 			writeBuffer = null;
 			// 不具备写条件,移除该关注
-			if (writeCacheList.isEmpty()) {
+			if (writeCacheQueue.isEmpty()) {
 				synchronized (writeLock) {
-					if (writeCacheList.isEmpty()) {
-						channelKey.interestOps(channelKey.interestOps()
-								& ~SelectionKey.OP_WRITE);
+					if (writeCacheQueue.isEmpty()) {
+						channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_WRITE);
 					}
 				}
 				resumeReadAttention();
@@ -155,8 +150,7 @@ public class NioSession extends TransportSession {
 
 	void initBaseChannelInfo(SelectionKey channelKey) {
 		Socket socket = ((SocketChannel) channelKey.channel()).socket();
-		InetSocketAddress remoteAddr = (InetSocketAddress) socket
-				.getRemoteSocketAddress();
+		InetSocketAddress remoteAddr = (InetSocketAddress) socket.getRemoteSocketAddress();
 		remoteIp = remoteAddr.getAddress().getHostAddress();
 		localAddress = socket.getLocalAddress().getHostAddress();
 		remotePort = remoteAddr.getPort();
@@ -172,8 +166,7 @@ public class NioSession extends TransportSession {
 	@Override
 	public void pauseReadAttention() {
 		if ((channelKey.interestOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
-			channelKey.interestOps(channelKey.interestOps()
-					& ~SelectionKey.OP_READ);
+			channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
 		}
 	}
 
@@ -183,38 +176,34 @@ public class NioSession extends TransportSession {
 			return;
 		}
 		if ((channelKey.interestOps() & SelectionKey.OP_READ) != SelectionKey.OP_READ) {
-			channelKey.interestOps(channelKey.interestOps()
-					| SelectionKey.OP_READ);
+			channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_READ);
+			RunLogger.getLogger().log(Level.FINER, getRemoteAddr() + ":" + getRemotePort() + "释放流控");
 		}
 	}
 
 	@Override
 	public String toString() {
-		return "Session [channel=" + channelKey.channel() + ", protocol="
-				+ protocol + ", receiver=" + getQuickConfig().getProcessor()
-				+ ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
-				+ ", toString()=" + super.toString() + "]";
+		return "Session [channel=" + channelKey.channel() + ", protocol=" + protocol + ", receiver="
+			+ getQuickConfig().getProcessor() + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
+			+ ", toString()=" + super.toString() + "]";
 	}
 
 	@Override
 	public void write(byte[] writeData) throws IOException {
 		try {
-			switch (QueueOverflowStrategy.valueOf(quickConfig
-					.getQueueOverflowStrategy())) {
+			switch (QueueOverflowStrategy.valueOf(quickConfig.getQueueOverflowStrategy())) {
 			case DISCARD:
-				if (!writeCacheList.offer(writeData)) {
-					RunLogger.getLogger().log(Level.WARNING,
-							"cache is full now");
+				if (!writeCacheQueue.offer(writeData)) {
+					RunLogger.getLogger().log(Level.WARNING, "cache is full now");
 					throw new CacheFullException("cache is full now");
 				}
 				break;
 			case WAIT:
-				writeCacheList.put(writeData);
+				writeCacheQueue.put(writeData);
 				break;
 			default:
-				throw new QueueOverflowStrategyException(
-						"Invalid overflow strategy "
-								+ quickConfig.getQueueOverflowStrategy());
+				throw new QueueOverflowStrategyException("Invalid overflow strategy "
+					+ quickConfig.getQueueOverflowStrategy());
 			}
 
 		} catch (CacheFullException e) {
@@ -224,16 +213,14 @@ public class NioSession extends TransportSession {
 		} finally {
 			if (!channelKey.isValid()) {
 				if (getQuickConfig().isAutoRecover()) {
-					throw new NotYetReconnectedException(
-							"Network anomaly, will reconnect");
+					throw new NotYetReconnectedException("Network anomaly, will reconnect");
 				} else {
-					writeCacheList.clear();
+					writeCacheQueue.clear();
 					throw new IOException("Channel is invalid now!");
 				}
 			} else {
 				synchronized (writeLock) {
-					channelKey.interestOps(channelKey.interestOps()
-							| SelectionKey.OP_WRITE);
+					channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_WRITE);
 					channelKey.selector().wakeup();
 				}
 			}

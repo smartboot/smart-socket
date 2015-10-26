@@ -86,7 +86,7 @@ public abstract class TransportSession {
 		try {
 			chain.doReadFilter(this, protocol.decode(buffer, this));
 		} catch (DecodeException e) {
-			RunLogger.getLogger().log(Level.WARNING,"",e);
+			RunLogger.getLogger().log(Level.WARNING, "", e);
 			cancelReadAttention();
 			close();// 解码失败断连
 			RunLogger.getLogger().log(Level.WARNING, "close transport because of decode exception");
@@ -190,8 +190,9 @@ public abstract class TransportSession {
 	 *
 	 * @return property value of attribute
 	 */
-	public final Object getAttribute(String key) {
-		return attribute.get(key);
+	@SuppressWarnings("unchecked")
+	public final <T> T getAttribute(String key) {
+		return (T) attribute.get(key);
 	}
 
 	/**
