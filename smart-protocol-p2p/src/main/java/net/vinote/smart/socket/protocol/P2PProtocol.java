@@ -7,12 +7,14 @@ import java.util.List;
 
 import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
 import net.vinote.smart.socket.protocol.p2p.message.HeadMessage;
 import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageReq;
 import net.vinote.smart.socket.transport.TransportSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -22,6 +24,7 @@ import net.vinote.smart.socket.transport.TransportSession;
  *
  */
 final class P2PProtocol implements Protocol {
+	private Logger logger = LoggerFactory.getLogger(P2PProtocol.class);
 	/**
 	 * P2P消息标志性部分长度,消息头部的 幻数+消息大小 ,共8字节
 	 */
@@ -87,7 +90,7 @@ final class P2PProtocol implements Protocol {
 					// 消息读取完毕进行解码
 					BaseMessage msg = tempMsg.decodeMessage();
 					if (msg == null) {
-						throw new DecodeException("Decode Message Error!"+StringUtils.toHexString(tempMsg.getData()));
+						throw new DecodeException("Decode Message Error!" + StringUtils.toHexString(tempMsg.getData()));
 					}
 					msgList.add(msg);
 					tempMsg.reset();
@@ -119,7 +122,7 @@ final class P2PProtocol implements Protocol {
 		try {
 			msg.encode();
 		} catch (ProtocolException e) {
-			RunLogger.getLogger().log(e);
+			logger.warn("", e);
 		}
 		return msg;
 	}

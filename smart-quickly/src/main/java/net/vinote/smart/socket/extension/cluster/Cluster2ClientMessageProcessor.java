@@ -5,11 +5,13 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import net.vinote.smart.socket.exception.CacheFullException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.process.AbstractProtocolDataProcessor;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.transport.TransportSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 集群服务器响应消息处理器,将集群服务的消息响应值客户端
@@ -18,6 +20,7 @@ import net.vinote.smart.socket.transport.TransportSession;
  *
  */
 public class Cluster2ClientMessageProcessor extends AbstractProtocolDataProcessor {
+	private Logger logger = LoggerFactory.getLogger(Cluster2ClientMessageProcessor.class);
 	private ArrayBlockingQueue<ProcessUnit> msgQueue;
 	private ClusterServiceProcessThread processThread;
 
@@ -39,17 +42,17 @@ public class Cluster2ClientMessageProcessor extends AbstractProtocolDataProcesso
 			try {
 				unit.clientSession.write(unit.msg.getServiceData());
 			} catch (IOException e) {
-				RunLogger.getLogger().log(e);
+				logger.warn("", e);
 			} catch (CacheFullException e) {
-				RunLogger.getLogger().log(e);
+				logger.warn("", e);
 			}
 		} else {
-			AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory()
-					.getProcessor(unit.msg.getServiceData().getClass());
+			AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory().getProcessor(
+				unit.msg.getServiceData().getClass());
 			try {
 				processor.processor(null, unit.msg.getServiceData());
 			} catch (Exception e) {
-				RunLogger.getLogger().log(e);
+				logger.warn("", e);
 			}
 		}
 	}

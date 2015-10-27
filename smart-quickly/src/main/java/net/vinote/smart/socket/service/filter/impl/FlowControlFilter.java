@@ -3,15 +3,15 @@ package net.vinote.smart.socket.service.filter.impl;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 流量控制过滤器
@@ -20,6 +20,7 @@ import org.apache.commons.collections.CollectionUtils;
  * @version FlowControlFilter.java, v 0.1 2015年4月11日 下午4:29:24 Seer Exp.
  */
 public class FlowControlFilter implements SmartFilter {
+	private Logger logger = LoggerFactory.getLogger(FlowControlFilter.class);
 	/** 流控计数器标识 */
 	private static final String FLOW_CONTROL_FLAG = "_FLOW_CONTROL_FLAG_";
 
@@ -31,8 +32,7 @@ public class FlowControlFilter implements SmartFilter {
 				int count = counter.addAndGet(d.size());
 				if (count * 1.0 / session.getQuickConfig().getCacheSize() > 0.618) {
 					session.pauseReadAttention();
-					RunLogger.getLogger().log(Level.FINER,
-						session.getRemoteAddr() + ":" + session.getRemotePort() + "流控");
+					logger.info(session.getRemoteAddr() + ":" + session.getRemotePort() + "流控");
 				}
 			}
 		}

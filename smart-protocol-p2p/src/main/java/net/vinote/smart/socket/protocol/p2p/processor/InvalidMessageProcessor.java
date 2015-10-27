@@ -1,15 +1,16 @@
 package net.vinote.smart.socket.protocol.p2p.processor;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageResp;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 畸形消息处理器
@@ -18,13 +19,11 @@ import net.vinote.smart.socket.service.session.Session;
  * @version InvalidMessageProcessor.java, v 0.1 2015年3月16日 下午4:10:46 Seer Exp.
  */
 public class InvalidMessageProcessor extends AbstractServiceMessageProcessor {
+	private Logger logger = LoggerFactory.getLogger(InvalidMessageProcessor.class);
 
 	@Override
 	public void processor(Session session, DataEntry message) {
-		RunLogger.getLogger().log(
-				Level.SEVERE,
-				"接受到畸形报文:" + session.getRemoteIp()
-						+ StringUtils.toHexString(message.getData()));
+		logger.info("接受到畸形报文:" + session.getRemoteIp() + StringUtils.toHexString(message.getData()));
 		InvalidMessageReq msg = (InvalidMessageReq) message;
 		InvalidMessageResp rspMsg = new InvalidMessageResp(msg.getHead());
 		rspMsg.setMsg("畸形报文");
@@ -33,9 +32,9 @@ public class InvalidMessageProcessor extends AbstractServiceMessageProcessor {
 			session.sendWithoutResponse(rspMsg);
 		} catch (IOException e) {
 			session.invalidate();
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+			logger.warn(e.getMessage(), e);
 		} catch (Exception e) {
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+			logger.warn(e.getMessage(), e);
 		}
 		session.invalidate(false);
 	}

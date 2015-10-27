@@ -5,13 +5,12 @@ import java.util.Properties;
 
 import net.vinote.smart.socket.extension.timer.QuickMonitorTimer;
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.filter.SecureFilter;
-import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.HeartMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
+import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.message.RemoteInterfaceMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.SecureSocketMessageReq;
 import net.vinote.smart.socket.protocol.p2p.processor.DetectMessageProcessor;
@@ -28,7 +27,7 @@ import net.vinote.smart.socket.transport.nio.NioQuickServer;
 public class P2PServer {
 	public static void main(String[] args) throws ClassNotFoundException {
 		QuicklyConfig config = new QuicklyConfig(true);
-		
+
 		// 定义服务器接受的消息类型以及各类消息对应的处理器
 		Properties properties = new Properties();
 		properties.put(HeartMessageReq.class.getName(), HeartMessageProcessor.class.getName());
@@ -39,7 +38,7 @@ public class P2PServer {
 		ServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
 		messageFactory.loadFromProperties(properties);
 		config.setServiceMessageFactory(messageFactory);
-		
+
 		config.setProtocolFactory(new P2PProtocolFactory());
 		config.setFilters(new SmartFilter[] { new FlowControlFilter(), new QuickMonitorTimer(), new SecureFilter() });
 		// ProtocolDataProcessor processor = new P2PServerDisruptorProcessor();
@@ -49,7 +48,7 @@ public class P2PServer {
 		try {
 			server.start();
 		} catch (IOException e) {
-			RunLogger.getLogger().log(e);
+			e.printStackTrace();
 		}
 	}
 }

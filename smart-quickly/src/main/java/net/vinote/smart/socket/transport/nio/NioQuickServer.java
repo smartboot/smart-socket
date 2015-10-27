@@ -7,15 +7,16 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.extension.cluster.Client2ClusterMessageProcessor;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * NIO服务器
@@ -24,6 +25,7 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  *
  */
 public final class NioQuickServer extends AbstractChannelService {
+	private Logger logger = LoggerFactory.getLogger(NioQuickServer.class);
 	private ServerSocketChannel server;
 
 	public NioQuickServer(final QuicklyConfig config) {
@@ -58,19 +60,19 @@ public final class NioQuickServer extends AbstractChannelService {
 
 	@Override
 	protected void exceptionInSelectionKey(SelectionKey key, final Exception e) throws Exception {
-		RunLogger.getLogger().log(Level.WARNING, "Close Channel because of Exception", e);
+		logger.warn("Close Channel because of Exception", e);
 		final Object att = key.attach(null);
 		if (att instanceof NioSession) {
 			((NioSession) att).close();
 		}
 		key.channel().close();
-		RunLogger.getLogger().log(Level.SEVERE, "close connection " + key.channel());
+		logger.info("close connection " + key.channel());
 		key.cancel();
 	}
 
 	@Override
 	protected void exceptionInSelector(Exception e) {
-		RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+		logger.warn(e.getMessage(), e);
 	}
 
 	@Override
@@ -86,7 +88,7 @@ public final class NioQuickServer extends AbstractChannelService {
 			&& (readSize = socketChannel.read(buffer)) > 0);// 读取管道中的数据块
 		// 达到流末尾则注销读关注
 		if (readSize == -1 || session.getStatus() == SessionStatusEnum.CLOSING) {
-			RunLogger.getLogger().log(Level.SEVERE, "注销客户端[" + socketChannel + "]读关注");
+			logger.info("注销客户端[" + socketChannel + "]读关注");
 			key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
 		}
 	}
@@ -100,12 +102,12 @@ public final class NioQuickServer extends AbstractChannelService {
 				selector.wakeup();
 			}
 		} catch (final IOException e1) {
-			RunLogger.getLogger().log(e1);
+			logger.warn("", e1);
 		}
 		try {
 			server.close();
 		} catch (final IOException e) {
-			RunLogger.getLogger().log(e);
+			logger.warn("", e);
 		}
 		Client2ClusterMessageProcessor.getInstance().shutdown();
 	}
@@ -132,9 +134,9 @@ public final class NioQuickServer extends AbstractChannelService {
 				// 启动集群服务
 				try {
 					Client2ClusterMessageProcessor.getInstance().init(config);
-					RunLogger.getLogger().log(Level.SEVERE, "Start Cluster Service...");
+					logger.info("Start Cluster Service...");
 				} catch (final Exception e) {
-					RunLogger.getLogger().log(Level.WARNING, "", e);
+					logger.warn("", e);
 				}
 			}
 		} catch (final IOException e) {
@@ -166,7 +168,7 @@ public final class NioQuickServer extends AbstractChannelService {
 		}
 		switch (status) {
 		case RUNING:
-			RunLogger.getLogger().log(Level.SEVERE, "Running with " + config.getPort() + " port");
+			logger.info("Running with " + config.getPort() + " port");
 			break;
 
 		default:

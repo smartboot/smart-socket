@@ -7,19 +7,20 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.exception.CacheFullException;
 import net.vinote.smart.socket.exception.NotYetReconnectedException;
 import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
 import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
 import net.vinote.smart.socket.service.process.ProtocolDataReceiver;
 import net.vinote.smart.socket.transport.TransportSession;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 维护客户端-》服务端 或 服务端-》客户端 的当前会话
@@ -28,6 +29,7 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  *
  */
 public class NioSession extends TransportSession {
+	private Logger logger = LoggerFactory.getLogger(NioSession.class);
 	private SelectionKey channelKey = null;
 
 	/** 响应消息缓存队列 */
@@ -80,7 +82,7 @@ public class NioSession extends TransportSession {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see net.vinote.smart.socket.transport.TransportSession#close0()
 	 */
 	@Override
@@ -91,9 +93,11 @@ public class NioSession extends TransportSession {
 		writeCacheQueue.clear();
 		try {
 			channelKey.channel().close();
-			RunLogger.getLogger().log(Level.SEVERE, "close connection " + channelKey.channel());
+			if (logger.isTraceEnabled()) {
+				logger.trace("close connection " + channelKey.channel());
+			}
 		} catch (IOException e) {
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+			logger.warn(e.getMessage(), e);
 		}
 		channelKey.cancel();
 		channelKey.selector().wakeup();// 必须唤醒一次选择器以便移除该Key,否则端口会处于CLOSE_WAIT状态
@@ -177,7 +181,7 @@ public class NioSession extends TransportSession {
 		}
 		if ((channelKey.interestOps() & SelectionKey.OP_READ) != SelectionKey.OP_READ) {
 			channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_READ);
-			RunLogger.getLogger().log(Level.FINER, getRemoteAddr() + ":" + getRemotePort() + "释放流控");
+			logger.debug(getRemoteAddr() + ":" + getRemotePort() + "释放流控");
 		}
 	}
 
@@ -194,7 +198,7 @@ public class NioSession extends TransportSession {
 			switch (QueueOverflowStrategy.valueOf(quickConfig.getQueueOverflowStrategy())) {
 			case DISCARD:
 				if (!writeCacheQueue.offer(writeData)) {
-					RunLogger.getLogger().log(Level.WARNING, "cache is full now");
+					logger.warn("cache is full now");
 					throw new CacheFullException("cache is full now");
 				}
 				break;
@@ -207,9 +211,9 @@ public class NioSession extends TransportSession {
 			}
 
 		} catch (CacheFullException e) {
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+			logger.warn(e.getMessage(), e);
 		} catch (InterruptedException e) {
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+			logger.warn(e.getMessage(), e);
 		} finally {
 			if (!channelKey.isValid()) {
 				if (getQuickConfig().isAutoRecover()) {
@@ -230,7 +234,7 @@ public class NioSession extends TransportSession {
 
 	/*
 	 * 将数据输出至缓存,若缓存已满则返回false (non-Javadoc)
-	 * 
+	 *
 	 * @see com.zjw.platform.quickly.Session#write(byte[])
 	 */
 	@Override

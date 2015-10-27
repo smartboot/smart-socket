@@ -4,16 +4,17 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.exception.CacheFullException;
 import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 传输层会话<br/>
@@ -24,6 +25,7 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  */
 public abstract class TransportSession {
 
+	private Logger logger = LoggerFactory.getLogger(TransportSession.class);
 	/** 会话ID */
 	private final String sessionId = String.valueOf(System.identityHashCode(this));
 	/** 配置信息 */
@@ -86,10 +88,10 @@ public abstract class TransportSession {
 		try {
 			chain.doReadFilter(this, protocol.decode(buffer, this));
 		} catch (DecodeException e) {
-			RunLogger.getLogger().log(Level.WARNING, "", e);
+			logger.warn("", e);
 			cancelReadAttention();
 			close();// 解码失败断连
-			RunLogger.getLogger().log(Level.WARNING, "close transport because of decode exception");
+			logger.warn("close transport because of decode exception");
 		} finally {
 			buffer.compact();
 		}

@@ -6,17 +6,20 @@ import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.MessageType;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Seer
  *
  */
 public class P2PSession implements Session {
+	private Logger logger = LoggerFactory.getLogger(P2PSession.class);
 	private String remoteIp;
 	private String localAddress;
 	private TransportSession session;
@@ -110,11 +113,9 @@ public class P2PSession implements Session {
 
 	@Override
 	public String toString() {
-		return "OMCSession [remoteIp=" + remoteIp + ", session=" + session
-				+ ", creatTime=" + creatTime + ", lastAccessTime="
-				+ lastAccessTime + ", maxInactiveInterval="
-				+ maxInactiveInterval + ", sessionId=" + sessionId
-				+ ", invalidated=" + invalidated + "]";
+		return "OMCSession [remoteIp=" + remoteIp + ", session=" + session + ", creatTime=" + creatTime
+			+ ", lastAccessTime=" + lastAccessTime + ", maxInactiveInterval=" + maxInactiveInterval + ", sessionId="
+			+ sessionId + ", invalidated=" + invalidated + "]";
 	}
 
 	public boolean isInvalid() {
@@ -180,30 +181,26 @@ public class P2PSession implements Session {
 	}
 
 	@Override
-	public DataEntry sendWithResponse(DataEntry requestMsg, long timeout)
-			throws Exception {
+	public DataEntry sendWithResponse(DataEntry requestMsg, long timeout) throws Exception {
 		BaseMessage reqMsg = (BaseMessage) requestMsg;
 		assertTransactionSession();
 		refreshAccessedTime();
 
 		if (!isRequestMessage(reqMsg.getMessageType())) {
-			throw new InvalidParameterException(
-					"current message is not a requestMessage, messageType is 0x"
-							+ Integer.toHexString(reqMsg.getMessageType()));
+			throw new InvalidParameterException("current message is not a requestMessage, messageType is 0x"
+				+ Integer.toHexString(reqMsg.getMessageType()));
 		}
 		reqMsg.encode();// 必须执行encode才可产生sequenceId
 		String sequenceId = String.valueOf(reqMsg.getHead().getSequenceID());
 		synchRespMap.put(sequenceId, reqMsg);
 		session.write(reqMsg);
-		if (synchRespMap.containsKey(sequenceId)
-				&& synchRespMap.get(sequenceId) == reqMsg) {
+		if (synchRespMap.containsKey(sequenceId) && synchRespMap.get(sequenceId) == reqMsg) {
 			synchronized (reqMsg) {
-				if (synchRespMap.containsKey(sequenceId)
-						&& synchRespMap.get(sequenceId) == reqMsg) {
+				if (synchRespMap.containsKey(sequenceId) && synchRespMap.get(sequenceId) == reqMsg) {
 					try {
 						reqMsg.wait(timeout);
 					} catch (InterruptedException e) {
-						RunLogger.getLogger().log(e);
+						logger.warn("", e);
 					}
 				}
 			}
@@ -213,8 +210,7 @@ public class P2PSession implements Session {
 			resp = synchRespMap.remove(sequenceId);
 		}
 		if (resp == null || resp == reqMsg) {
-			throw new SocketTimeoutException("Message " + sequenceId
-					+ " is timeout!");
+			throw new SocketTimeoutException("Message " + sequenceId + " is timeout!");
 		}
 		return resp;
 

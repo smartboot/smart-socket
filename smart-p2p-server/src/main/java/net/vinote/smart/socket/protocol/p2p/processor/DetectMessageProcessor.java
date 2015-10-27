@@ -1,23 +1,26 @@
 package net.vinote.smart.socket.protocol.p2p.processor;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 探测消息处理器
- * 
+ *
  * @author Seer
  *
  */
 public class DetectMessageProcessor extends AbstractServiceMessageProcessor {
+	private Logger logger = LoggerFactory.getLogger(DetectMessageProcessor.class);
 
+	@Override
 	public void processor(Session session, DataEntry message) {
 		DetectMessageReq msg = (DetectMessageReq) message;
 		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
@@ -26,12 +29,13 @@ public class DetectMessageProcessor extends AbstractServiceMessageProcessor {
 			session.sendWithoutResponse(rspMsg);
 		} catch (IOException e) {
 			session.invalidate();
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+			logger.warn(e.getMessage(), e);
 		} catch (Exception e) {
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+			logger.warn(e.getMessage(), e);
 		}
 	}
 
+	@Override
 	public DataEntry processCluster(Session session, DataEntry message) {
 		DetectMessageReq msg = (DetectMessageReq) message;
 		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());

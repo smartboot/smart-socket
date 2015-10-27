@@ -1,26 +1,28 @@
 package net.vinote.smart.socket.protocol.p2p.processor;
 
-import java.util.logging.Level;
-
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageResp;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 集群消息处理器
- * 
+ *
  * @author Seer
  * @version ClusterMessageProcessor.java, v 0.1 2015年3月13日 上午10:34:26 Seer Exp.
  */
 public class ClusterMessageProcessor extends AbstractServiceMessageProcessor {
+	private Logger logger = LoggerFactory.getLogger(ClusterMessageProcessor.class);
 
+	@Override
 	public void processor(Session session, DataEntry message) {
 		ClusterMessageReq msg = (ClusterMessageReq) message;
 		AbstractServiceMessageProcessor processor = session.getTransportSession().getQuickConfig()
-				.getServiceMessageFactory().getProcessor(msg.getServiceData().getClass());
+			.getServiceMessageFactory().getProcessor(msg.getServiceData().getClass());
 
 		ClusterMessageResp rspMsg = new ClusterMessageResp();
 		rspMsg.setUniqueNo(msg.getUniqueNo());
@@ -29,7 +31,7 @@ public class ClusterMessageProcessor extends AbstractServiceMessageProcessor {
 			rspMsg.setSuccess(true);
 			rspMsg.setServiceData(respMesg);
 		} catch (Exception e) {
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+			logger.warn(e.getMessage(), e);
 			rspMsg.setSuccess(false);
 			rspMsg.setInfo(e.getLocalizedMessage());
 		}
@@ -37,7 +39,7 @@ public class ClusterMessageProcessor extends AbstractServiceMessageProcessor {
 		try {
 			session.sendWithoutResponse(rspMsg);
 		} catch (Exception e) {
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+			logger.warn(e.getMessage(), e);
 		}
 	}
 }

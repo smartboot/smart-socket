@@ -3,14 +3,15 @@ package net.vinote.smart.socket.protocol.p2p.processor;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.p2p.message.RemoteInterfaceMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.RemoteInterfaceMessageResp;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 调用远程服务消息处理器
@@ -20,10 +21,11 @@ import net.vinote.smart.socket.service.session.Session;
  *          Exp.
  */
 public class RemoteServiceMessageProcessor extends AbstractServiceMessageProcessor {
+	private Logger logger = LoggerFactory.getLogger(RemoteServiceMessageProcessor.class);
 	private Map<String, Object> impMap = new HashMap<String, Object>();
 
 	public void registService(String key, Object service) {
-		RunLogger.getLogger().log(Level.SEVERE, "注册服务,key:" + key + ",service:" + service.getClass().getName());
+		logger.info("注册服务,key:" + key + ",service:" + service.getClass().getName());
 		impMap.put(key, service);
 	}
 
@@ -54,7 +56,7 @@ public class RemoteServiceMessageProcessor extends AbstractServiceMessageProcess
 			resp.setReturnObject(obj);
 			resp.setReturnType(method.getReturnType().getName());
 		} catch (Exception e) {
-			RunLogger.getLogger().log(e);
+			logger.warn(e.getMessage(), e);
 			resp.setException(e.toString());
 		}
 		session.sendWithoutResponse(resp);

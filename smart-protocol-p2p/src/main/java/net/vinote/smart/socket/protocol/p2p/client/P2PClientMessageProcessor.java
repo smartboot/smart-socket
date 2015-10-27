@@ -1,12 +1,10 @@
 package net.vinote.smart.socket.protocol.p2p.client;
 
 import java.util.Properties;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.extension.cluster.ClusterMessageEntry;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PSession;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
@@ -18,7 +16,11 @@ import net.vinote.smart.socket.service.process.ClientProcessor;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor implements ClientProcessor {
+	private Logger logger = LoggerFactory.getLogger(P2PClientMessageProcessor.class);
 	private Session session;
 	private P2PClientProcessThread processThread;
 
@@ -62,16 +64,16 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor imp
 	public <T> void process(T msg) {
 		// 获取处理器
 		BaseMessage message = (BaseMessage) msg;
-		AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory()
-				.getProcessor(message.getClass());
+		AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory().getProcessor(
+			message.getClass());
 		if (processor != null) {
 			try {
 				processor.processor(session, message);
 			} catch (Exception e) {
-				RunLogger.getLogger().log(e);
+				logger.warn("", e);
 			}
 		} else {
-			RunLogger.getLogger().log(Level.SEVERE, "unsupport message" + StringUtils.toHexString(message.getData()));
+			logger.info("unsupport message" + StringUtils.toHexString(message.getData()));
 		}
 	}
 

@@ -5,16 +5,17 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.factory.ServiceMessageFactory;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 
-public class P2pServiceMessageFactory implements ServiceMessageFactory {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+public class P2pServiceMessageFactory implements ServiceMessageFactory {
+	private Logger logger = LoggerFactory.getLogger(P2pServiceMessageFactory.class);
 	private Map<Integer, Class<? extends BaseMessage>> msgHaspMap = new HashMap<Integer, Class<? extends BaseMessage>>();
 	private Map<Class<? extends DataEntry>, AbstractServiceMessageProcessor> processorMap = new HashMap<Class<? extends DataEntry>, AbstractServiceMessageProcessor>();
 
@@ -28,14 +29,14 @@ public class P2pServiceMessageFactory implements ServiceMessageFactory {
 			Method m = msg.getMethod("getMessageType");
 			Integer messageType = (Integer) m.invoke(msg.newInstance());
 			if (msgHaspMap.containsKey(messageType)) {
-				RunLogger.getLogger().log(Level.WARNING, "MessageType=" + messageType + " has already regiested by "
-						+ msgHaspMap.get(messageType).getName() + ", ingore " + msg.getName());
+				logger.warn("MessageType=" + messageType + " has already regiested by "
+					+ msgHaspMap.get(messageType).getName() + ", ingore " + msg.getName());
 			} else {
 				msgHaspMap.put(messageType, msg);
-				RunLogger.getLogger().log(Level.SEVERE, "load Message Class[" + msg.getName() + "]");
+				logger.info("load Message Class[" + msg.getName() + "]");
 			}
 		} catch (Exception e) {
-			RunLogger.getLogger().log(e);
+			logger.warn("", e);
 		}
 	}
 
@@ -49,7 +50,7 @@ public class P2pServiceMessageFactory implements ServiceMessageFactory {
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void loadFromProperties(Properties properties) throws ClassNotFoundException {
 		if (properties == null) {
-			RunLogger.getLogger().log(Level.FINEST, "do you 吃饱了撑着啊,给我null");
+			logger.debug("do you 吃饱了撑着啊,给我null");
 			return;
 		}
 		Enumeration keys = properties.keys();
@@ -61,7 +62,7 @@ public class P2pServiceMessageFactory implements ServiceMessageFactory {
 			String processClazz = properties.getProperty(key);
 			if (!StringUtils.isBlank(processClazz)) {
 				Class<? extends AbstractServiceMessageProcessor> processClass = (Class<? extends AbstractServiceMessageProcessor>) Class
-						.forName(processClazz);
+					.forName(processClazz);
 				regist(p2pClass, processClass);
 			}
 			regiestMessage(p2pClass);
@@ -70,26 +71,24 @@ public class P2pServiceMessageFactory implements ServiceMessageFactory {
 
 	/**
 	 * 注册消息处理器
-	 * 
+	 *
 	 * @param clazz
 	 * @param process
 	 */
-	private <K extends DataEntry, V extends AbstractServiceMessageProcessor> void regist(
-			Class<K> clazz, final Class<V> process) {
+	private <K extends DataEntry, V extends AbstractServiceMessageProcessor> void regist(Class<K> clazz,
+		final Class<V> process) {
 		try {
 			AbstractServiceMessageProcessor processor = process.newInstance();
 			processor.init();
 			processorMap.put(clazz, processor);
-			RunLogger.getLogger().log(
-					Level.SEVERE,
-					"load Service Processor Class[" + process.getName()
-							+ "] for " + clazz.getName());
+			logger.info("load Service Processor Class[" + process.getName() + "] for " + clazz.getName());
 		} catch (InstantiationException e) {
-			RunLogger.getLogger().log(e);
+			logger.warn("", e);
 		} catch (IllegalAccessException e) {
-			RunLogger.getLogger().log(e);
+			logger.warn("", e);
 		}
 	}
+
 	public Class<?> getBaseMessage(int type) {
 		return msgHaspMap.get(type);
 	}

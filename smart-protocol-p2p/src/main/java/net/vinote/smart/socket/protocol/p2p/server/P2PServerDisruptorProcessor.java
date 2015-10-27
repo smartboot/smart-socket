@@ -1,12 +1,10 @@
 package net.vinote.smart.socket.protocol.p2p.server;
 
 import java.util.Properties;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.extension.cluster.ClusterMessageEntry;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PSession;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
@@ -19,6 +17,9 @@ import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.service.session.SessionManager;
 import net.vinote.smart.socket.transport.TransportSession;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 服务器消息处理器,由服务器启动时构造
  *
@@ -26,6 +27,7 @@ import net.vinote.smart.socket.transport.TransportSession;
  *
  */
 public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProcessor {
+	private Logger logger = LoggerFactory.getLogger(P2PServerDisruptorProcessor.class);
 
 	public ClusterMessageEntry generateClusterMessage(DataEntry data) {
 		ClusterMessageReq entry = new ClusterMessageReq();
@@ -33,6 +35,7 @@ public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProces
 		return entry;
 	}
 
+	@Override
 	public void init(QuicklyConfig config) throws Exception {
 		super.init(config);
 		// 启动线程池处理消息
@@ -46,8 +49,7 @@ public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProces
 		Session session = SessionManager.getInstance().getSession(unit.sessionId);
 		try {
 			if (session == null || session.isInvalid()) {
-				RunLogger.getLogger().log(Level.FINEST,
-						"Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData()));
+				logger.info("Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData()));
 				return;
 			}
 			BaseMessage baseMsg = (BaseMessage) unit.msg;
@@ -57,15 +59,16 @@ public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProces
 				baseMsg.decode();
 			}
 			session.refreshAccessedTime();
-			AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory()
-					.getProcessor(unit.msg.getClass());
+			AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory().getProcessor(
+				unit.msg.getClass());
 			processor.processor(session, unit.msg);
 		} catch (Exception e) {
-			RunLogger.getLogger().log(e);
+			logger.warn("", e);
 		}
 
 	}
 
+	@Override
 	public void shutdown() {
 		super.shutdown();
 		getQuicklyConfig().getServiceMessageFactory().destory();
@@ -73,7 +76,7 @@ public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProces
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * net.vinote.smart.socket.service.process.ProtocolDataProcessor#getSession
 	 * (net.vinote.smart.socket.transport.TransportSession)

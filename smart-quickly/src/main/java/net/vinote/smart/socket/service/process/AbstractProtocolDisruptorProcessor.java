@@ -1,20 +1,21 @@
 package net.vinote.smart.socket.service.process;
 
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-
-import com.lmax.disruptor.EventFactory;
-import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.dsl.Disruptor;
 
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.service.session.SessionManager;
 import net.vinote.smart.socket.transport.TransportSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.lmax.disruptor.EventFactory;
+import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.dsl.Disruptor;
 
 /**
  * 基于Disruptor实现的业务层协议消息处理器抽象类
@@ -22,8 +23,9 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  *
  */
-public abstract class AbstractProtocolDisruptorProcessor implements
-		ProtocolDataProcessor {
+public abstract class AbstractProtocolDisruptorProcessor implements ProtocolDataProcessor {
+	private Logger logger = LoggerFactory.getLogger(AbstractProtocolDisruptorProcessor.class);
+
 	protected class ProcessUnit {
 		public String sessionId;
 		public DataEntry msg;
@@ -35,13 +37,12 @@ public abstract class AbstractProtocolDisruptorProcessor implements
 			try {
 				if (handlers != null && handlers.length > 0) {
 					for (SmartFilter h : handlers) {
-						h.processFilter(SessionManager.getInstance()
-								.getSession(unit.sessionId), unit.msg);
+						h.processFilter(SessionManager.getInstance().getSession(unit.sessionId), unit.msg);
 					}
 				}
 				process(unit);
 			} catch (Exception e) {
-				RunLogger.getLogger().log(Level.WARNING, e.getMessage(), e);
+				logger.warn(e.getMessage(), e);
 			}
 
 		}
@@ -66,8 +67,8 @@ public abstract class AbstractProtocolDisruptorProcessor implements
 	@SuppressWarnings("unchecked")
 	public void init(QuicklyConfig config) throws Exception {
 		quickConfig = config;
-		disruptor = new Disruptor<ProcessUnit>(new ProcessUnitFactory(),
-				quickConfig.getCacheSize(), Executors.newCachedThreadPool());
+		disruptor = new Disruptor<ProcessUnit>(new ProcessUnitFactory(), quickConfig.getCacheSize(),
+			Executors.newCachedThreadPool());
 		disruptor.handleEventsWith(new ProcessUnitEventHandler());
 		ringBuffer = disruptor.start();
 	}

@@ -13,11 +13,12 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.jar.JarFile;
-import java.util.logging.Level;
 
-import net.vinote.smart.socket.logger.RunLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SmartClassLoader extends ClassLoader {
+	private Logger logger = LoggerFactory.getLogger(SmartClassLoader.class);
 	/**
 	 * 配置classPath
 	 */
@@ -38,17 +39,15 @@ public class SmartClassLoader extends ClassLoader {
 		this.classPath = classPath.split(File.pathSeparator);
 	}
 
-	protected final Class<?> findClass(String name)
-			throws ClassNotFoundException {
+	@Override
+	protected final Class<?> findClass(String name) throws ClassNotFoundException {
 		InputStream in = null;
 		try {
-			String classFileName = name.replace('.', File.separatorChar)
-					+ ".class";
+			String classFileName = name.replace('.', File.separatorChar) + ".class";
 			URL url = findResource(classFileName);
 			if (url != null) {
 				in = url.openStream();
-				ByteArrayOutputStream out = new ByteArrayOutputStream(
-						in.available());
+				ByteArrayOutputStream out = new ByteArrayOutputStream(in.available());
 				byte[] b = new byte[1024];
 				int length = -1;
 				// 循环读取,单次读取类大小的数据流可能不完整
@@ -58,13 +57,13 @@ public class SmartClassLoader extends ClassLoader {
 				return defineClass(name, out.toByteArray(), 0, out.size());
 			}
 		} catch (IOException e) {
-			RunLogger.getLogger().log(e);
+			logger.warn("", e);
 		} finally {
 			if (in != null) {
 				try {
 					in.close();
 				} catch (IOException e) {
-					RunLogger.getLogger().log(e);
+					logger.warn("", e);
 				}
 			}
 		}
@@ -73,9 +72,10 @@ public class SmartClassLoader extends ClassLoader {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.ClassLoader#findResources(java.lang.String)
 	 */
+	@Override
 	protected Enumeration<URL> findResources(String name) throws IOException {
 		List<URL> list = new ArrayList<URL>();
 		URL url = findResource(name);
@@ -93,16 +93,16 @@ public class SmartClassLoader extends ClassLoader {
 				list.add(url);
 			}
 		}
-		return list.isEmpty() ? super.findResources(name)
-				: new SmartEnumeration<URL>(list.iterator());
+		return list.isEmpty() ? super.findResources(name) : new SmartEnumeration<URL>(list.iterator());
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.ClassLoader#findResource(java.lang.String)
 	 */
 
+	@Override
 	protected final URL findResource(String name) {
 		String classJarUrl = name.replace(File.separatorChar, '/');
 		for (String path : classPath) {
@@ -118,7 +118,7 @@ public class SmartClassLoader extends ClassLoader {
 				try {
 					return new URL("file:" + classFile.getAbsolutePath());
 				} catch (MalformedURLException e) {
-					RunLogger.getLogger().log(e);
+					logger.warn("", e);
 				}
 			}
 
@@ -133,7 +133,7 @@ public class SmartClassLoader extends ClassLoader {
 
 	/**
 	 * 定位指定目录下的类URL
-	 * 
+	 *
 	 * @param curPathFile
 	 *            当前扫描目录
 	 * @param name
@@ -162,17 +162,16 @@ public class SmartClassLoader extends ClassLoader {
 			try {
 				jarFile = new JarFile(file);
 				if (jarFile.getJarEntry(classJarUrl) != null) {
-					return new URL("jar:file:" + file.getCanonicalPath() + "!/"
-							+ classJarUrl);
+					return new URL("jar:file:" + file.getCanonicalPath() + "!/" + classJarUrl);
 				}
 			} catch (IOException e) {
-				RunLogger.getLogger().log(e);
+				logger.warn("", e);
 			} finally {
 				if (jarFile != null) {
 					try {
 						jarFile.close();
 					} catch (IOException e) {
-						RunLogger.getLogger().log(e);
+						logger.warn("", e);
 					}
 				}
 			}
@@ -191,12 +190,11 @@ public class SmartClassLoader extends ClassLoader {
 		return null;
 	}
 
-	public static void main(String[] args) throws ClassNotFoundException,
-			SecurityException, NoSuchMethodException, IllegalArgumentException,
-			IllegalAccessException, InvocationTargetException {
+	public static void main(String[] args) throws ClassNotFoundException, SecurityException, NoSuchMethodException,
+		IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		String path = System.getProperty("extPath");
 		if (!new File(path).isDirectory()) {
-			RunLogger.getLogger().log(Level.WARNING, "目录 " + path + " 不存在");
+			// RunLogger.getLogger().log(Level.WARNING, "目录 " + path + " 不存在");
 			return;
 		}
 		String clazz = System.getProperty("class");

@@ -1,11 +1,9 @@
 package net.vinote.smart.socket.protocol.p2p.client;
 
 import java.util.Properties;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.message.HeartMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.LoginAuthReq;
@@ -17,10 +15,14 @@ import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.impl.FlowControlFilter;
 import net.vinote.smart.socket.transport.nio.NioQuickClient;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class P2PMultiClient {
 	public static void main(String[] args) throws Exception {
 		for (int i = 0; i < 10; i++) {
 			new Thread() {
+				private Logger logger = LoggerFactory.getLogger(this.getClass());
 
 				@Override
 				public void run() {
@@ -58,14 +60,13 @@ public class P2PMultiClient {
 						LoginAuthResp loginResp;
 						try {
 							loginResp = (LoginAuthResp) processor.getSession().sendWithResponse(loginReq);
-							// RunLogger.getLogger().log(Level.FINE,
-							// StringUtils.toHexString(loginResp.getData()));
+							logger.info(StringUtils.toHexString(loginResp.getData()));
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}
-					RunLogger.getLogger().log(Level.FINE, "安全消息结束" + (System.currentTimeMillis() - start));
+					logger.info("安全消息结束" + (System.currentTimeMillis() - start));
 					client.shutdown();
 				}
 

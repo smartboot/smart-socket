@@ -4,19 +4,21 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.transport.ChannelService;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Seer
  * @version AbstractChannelService.java, v 0.1 2015年3月19日 下午6:57:01 Seer Exp.
  */
 abstract class AbstractChannelService implements ChannelService {
+	private Logger logger = LoggerFactory.getLogger(AbstractChannelService.class);
 	/** 服务状态 */
 	volatile ChannelServiceStatusEnum status = ChannelServiceStatusEnum.Init;
 
@@ -42,11 +44,10 @@ abstract class AbstractChannelService implements ChannelService {
 		WRITE_LOOP_TIMES = config.getWriteLoopTimes();
 		try {
 			config.getProcessor().init(config);
-			RunLogger.getLogger().log(Level.SEVERE,
-					"Registe MessageServer Processor[" + config.getProcessor().getClass().getName() + "] success");
+			logger.info("Registe MessageServer Processor[" + config.getProcessor().getClass().getName() + "] success");
 		} catch (final Exception e) {
 			updateServiceStatus(ChannelServiceStatusEnum.Abnormal);
-			RunLogger.getLogger().log(Level.SEVERE, "", e);
+			logger.warn("", e);
 		}
 	}
 
@@ -75,7 +76,7 @@ abstract class AbstractChannelService implements ChannelService {
 							} else if (key.isAcceptable() || key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
 								acceptConnect(key, selector);
 							} else {
-								RunLogger.getLogger().log(Level.WARNING, "奇怪了...");
+								logger.warn("奇怪了...");
 							}
 						} catch (Exception e) {
 							exceptionInSelectionKey(key, e);
@@ -87,7 +88,7 @@ abstract class AbstractChannelService implements ChannelService {
 				}
 
 				if (!selector.isOpen()) {
-					RunLogger.getLogger().log(Level.SEVERE, "Selector is already closed!");
+					logger.info("Selector is already closed!");
 					break;
 				}
 
@@ -96,7 +97,7 @@ abstract class AbstractChannelService implements ChannelService {
 			}
 		}
 		updateServiceStatus(ChannelServiceStatusEnum.STOPPED);
-		RunLogger.getLogger().log(Level.SEVERE, "Channel is stop!");
+		logger.info("Channel is stop!");
 	}
 
 	/**
@@ -119,7 +120,7 @@ abstract class AbstractChannelService implements ChannelService {
 
 	/**
 	 * 处理某个已触发且发生了异常的SelectionKey
-	 * 
+	 *
 	 * @param key
 	 * @param e
 	 * @throws Exception
@@ -128,14 +129,14 @@ abstract class AbstractChannelService implements ChannelService {
 
 	/**
 	 * 处理选择器层面的异常,此时基本上会导致当前的链路不再可用
-	 * 
+	 *
 	 * @param e
 	 */
 	abstract void exceptionInSelector(Exception e);
 
 	/**
 	 * 从管道流中读取数据
-	 * 
+	 *
 	 * @param key
 	 * @param selector
 	 * @throws IOException
@@ -144,7 +145,7 @@ abstract class AbstractChannelService implements ChannelService {
 
 	/**
 	 * 更新服务状态
-	 * 
+	 *
 	 * @param status
 	 */
 	final void updateServiceStatus(final ChannelServiceStatusEnum status) {
@@ -166,8 +167,8 @@ abstract class AbstractChannelService implements ChannelService {
 		if (config.getProcessor() == null) {
 			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s processor is null");
 		}
-		
-		if(config.getServiceMessageFactory()==null){
+
+		if (config.getServiceMessageFactory() == null) {
 			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s serviceMessageFactory is null");
 		}
 	}
@@ -178,7 +179,7 @@ abstract class AbstractChannelService implements ChannelService {
 
 	/**
 	 * 往管道流中输出数据
-	 * 
+	 *
 	 * @param key
 	 * @param selector
 	 * @throws IOException

@@ -2,12 +2,10 @@ package net.vinote.smart.socket.protocol.p2p.server;
 
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.logging.Level;
 
 import net.vinote.smart.socket.extension.cluster.ClusterMessageEntry;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.logger.RunLogger;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PSession;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
@@ -21,6 +19,9 @@ import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.service.session.SessionManager;
 import net.vinote.smart.socket.transport.TransportSession;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 服务器消息处理器,由服务器启动时构造
  *
@@ -28,6 +29,8 @@ import net.vinote.smart.socket.transport.TransportSession;
  *
  */
 public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
+	private Logger logger = LoggerFactory.getLogger(P2PServerMessageProcessor.class);
+
 	class ProcessUnit {
 		String sessionId;
 		BaseMessage msg;
@@ -43,7 +46,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see com.zjw.platform.quickly.process.MessageProcessor#process(com.zjw.
 	 * platform .quickly.Session, com.zjw.platform.quickly.message.DataEntry)
 	 */
@@ -58,7 +61,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 
 	/*
 	 * 处理消息 (non-Javadoc)
-	 *
+	 * 
 	 * @see com.zjw.platform.quickly.process.MessageProcessor#process(java.lang.
 	 * Object )
 	 */
@@ -84,8 +87,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		ProcessUnit unit = (ProcessUnit) t;
 		Session session = SessionManager.getInstance().getSession(unit.sessionId);
 		if (session == null || session.isInvalid()) {
-			RunLogger.getLogger().log(Level.FINEST,
-				"Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData()));
+			logger.info("Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData()));
 			return;
 		}
 		session.refreshAccessedTime();
@@ -94,7 +96,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		try {
 			processor.processor(session, unit.msg);
 		} catch (Exception e) {
-			RunLogger.getLogger().log(e);
+			logger.warn("", e);
 		}
 	}
 
