@@ -50,20 +50,20 @@ public class P2PMultiClient {
 					NioQuickClient client = new NioQuickClient(config);
 					client.start();
 
-					long num = Long.MAX_VALUE;
+					long num = 0;
 					long start = System.currentTimeMillis();
-					while (num-- > 0) {
-						LoginAuthReq loginReq = new LoginAuthReq(processor.getSession().getAttribute(
-							StringUtils.SECRET_KEY, byte[].class));
+					while (num++ < Long.MAX_VALUE) {
+						byte[] secretKey = processor.getSession().getAttribute(StringUtils.SECRET_KEY);
+						LoginAuthReq loginReq = new LoginAuthReq(secretKey);
 						loginReq.setUsername("zjw");
 						loginReq.setPassword("aa");
 						LoginAuthResp loginResp;
 						try {
-							// loginResp = (LoginAuthResp)
-							// processor.getSession().sendWithResponse(loginReq);
-							processor.getSession().sendWithoutResponse(loginReq);
+							loginResp = (LoginAuthResp) processor.getSession().sendWithResponse(loginReq);
+							// processor.getSession().sendWithoutResponse(loginReq);
 							// logger.info(StringUtils.toHexString(loginResp.getData()));
 						} catch (Exception e) {
+							System.out.println(num);
 							e.printStackTrace();
 							System.exit(0);
 						}

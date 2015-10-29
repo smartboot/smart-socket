@@ -48,15 +48,10 @@ public class P2PSession implements Session {
 		refreshAccessedTime();
 	}
 
-	public Object getAttribute(String name) {
-		refreshAccessedTime();
-		return attributeMap.get(name);
-	}
-
 	@SuppressWarnings("unchecked")
-	@Override
-	public <T> T getAttribute(String name, Class<T> clazz) {
-		return (T) getAttribute(name);
+	public <T> T getAttribute(String name) {
+		refreshAccessedTime();
+		return (T) attributeMap.get(name);
 	}
 
 	public long getCreationTime() {

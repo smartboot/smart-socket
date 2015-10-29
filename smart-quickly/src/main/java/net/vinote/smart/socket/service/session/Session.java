@@ -57,15 +57,7 @@ public interface Session {
 	 * @param name
 	 * @return
 	 */
-	public Object getAttribute(String name);
-
-	/**
-	 * 获取会话属性
-	 *
-	 * @param name
-	 * @return
-	 */
-	public <T> T getAttribute(String name, Class<T> clazz);
+	public <T> T getAttribute(String name);
 
 	/**
 	 * 设置会话属性
@@ -124,15 +116,14 @@ public interface Session {
 
 	/**
 	 * 发送消息并同步等待响应 /**
-	 * 
+	 *
 	 * @param requestMsg
 	 * @param timeout
 	 *            超时时间
 	 * @return
 	 * @throws Exception
 	 */
-	public DataEntry sendWithResponse(DataEntry requestMsg, long timeout)
-			throws Exception;
+	public DataEntry sendWithResponse(DataEntry requestMsg, long timeout) throws Exception;
 
 	/**
 	 * 获取远程主机IP

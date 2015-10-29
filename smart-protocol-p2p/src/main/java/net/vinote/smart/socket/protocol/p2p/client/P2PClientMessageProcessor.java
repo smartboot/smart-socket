@@ -89,7 +89,8 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor imp
 
 		// 解密消息
 		if (baseMsg.getHead().isSecure()) {
-			baseMsg.getHead().setSecretKey(session.getAttribute(StringUtils.SECRET_KEY, byte[].class));
+			byte[] secretKey = session.getAttribute(StringUtils.SECRET_KEY);
+			baseMsg.getHead().setSecretKey(secretKey);
 			baseMsg.decode();
 		}
 

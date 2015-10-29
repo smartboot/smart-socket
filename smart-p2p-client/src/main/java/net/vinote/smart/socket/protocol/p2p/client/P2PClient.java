@@ -46,8 +46,8 @@ public class P2PClient {
 		long num = Long.MAX_VALUE;
 		long start = System.currentTimeMillis();
 		while (num-- > 0) {
-			LoginAuthReq loginReq = new LoginAuthReq(processor.getSession().getAttribute(StringUtils.SECRET_KEY,
-				byte[].class));
+			byte[] secretKey = processor.getSession().getAttribute(StringUtils.SECRET_KEY);
+			LoginAuthReq loginReq = new LoginAuthReq(secretKey);
 			loginReq.setUsername("zjw");
 			loginReq.setPassword("aa");
 			LoginAuthResp loginResp = (LoginAuthResp) processor.getSession().sendWithResponse(loginReq);

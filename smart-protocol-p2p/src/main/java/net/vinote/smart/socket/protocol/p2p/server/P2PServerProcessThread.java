@@ -43,9 +43,9 @@ class P2PServerProcessThread extends ProtocolProcessThread {
 				}
 				// 解密消息
 				if (baseMsg.getHead().isSecure()) {
-					baseMsg.getHead().setSecretKey(
-						SessionManager.getInstance().getSession(unit.sessionId)
-						.getAttribute(StringUtils.SECRET_KEY, byte[].class));
+					byte[] secretKey = SessionManager.getInstance().getSession(unit.sessionId)
+						.getAttribute(StringUtils.SECRET_KEY);
+					baseMsg.getHead().setSecretKey(secretKey);
 					baseMsg.decode();
 				}
 				unit.msg = baseMsg;
