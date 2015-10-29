@@ -8,7 +8,7 @@ import net.vinote.smart.socket.protocol.DataEntry;
 
 /**
  * 集群业务响应消息
- * 
+ *
  * @author Seer
  *
  */
@@ -25,13 +25,14 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 	private String info;
 	/** 客户端唯一标识 */
 	private String clientUniqueNo;
-	
+
 	private QuicklyConfig quicklyConfig;
 	/**
 	 * 业务响应消息
 	 */
 	private DataEntry serviceRespMsg;
 
+	@Override
 	protected void encodeBody() throws ProtocolException {
 		writeBoolean(success);
 		writeString(info);
@@ -44,15 +45,16 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 		}
 	}
 
+	@Override
 	protected void decodeBody() {
 		success = readBoolen();
 		info = readString();
 		clientUniqueNo = readString();
 		byte[] data = readBytes();
 		if (data != null) {
-			FragmentMessage tempMsg = new FragmentMessage(quicklyConfig);
+			FragmentMessage tempMsg = new FragmentMessage();
 			tempMsg.append(data, 0, data.length);
-			serviceRespMsg = tempMsg.decodeMessage();
+			serviceRespMsg = tempMsg.decodeMessage(quicklyConfig.getServiceMessageFactory());
 		}
 	}
 
@@ -72,6 +74,7 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 		this.info = info;
 	}
 
+	@Override
 	public int getMessageType() {
 		return MessageType.CLUSTER_MESSAGE_RSP;
 	}
@@ -81,7 +84,7 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 	}
 
 	public void setServiceData(DataEntry data) {
-		this.serviceRespMsg = data;
+		serviceRespMsg = data;
 	}
 
 	public DataEntry getServiceData() {
@@ -90,11 +93,11 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 	}
 
 	public void setUniqueNo(String no) {
-		this.clientUniqueNo = no;
+		clientUniqueNo = no;
 	}
 
 	@Override
 	public void setQuicklyConfig(QuicklyConfig quicklyConfig) {
-		this.quicklyConfig=quicklyConfig;
+		this.quicklyConfig = quicklyConfig;
 	}
 }

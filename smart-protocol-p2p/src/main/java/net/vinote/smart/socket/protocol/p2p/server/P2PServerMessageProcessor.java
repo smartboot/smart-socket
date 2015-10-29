@@ -10,6 +10,7 @@ import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PSession;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageReq;
+import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
 import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageReq;
 import net.vinote.smart.socket.protocol.p2p.processor.InvalidMessageProcessor;
 import net.vinote.smart.socket.service.process.AbstractProtocolDataProcessor;
@@ -34,10 +35,11 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 	class ProcessUnit {
 		String sessionId;
 		BaseMessage msg;
+		FragmentMessage fragmentMessage;
 
-		public ProcessUnit(String sessionId, BaseMessage msg) {
+		public ProcessUnit(String sessionId, FragmentMessage msg) {
 			this.sessionId = sessionId;
-			this.msg = msg;
+			fragmentMessage = msg;
 		}
 	}
 
@@ -108,15 +110,9 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 			SessionManager.getInstance().registSession(session);
 		}
 
-		BaseMessage baseMsg = (BaseMessage) msg;
-		// 解密消息
-		if (baseMsg.getHead().isSecure()) {
-			baseMsg.getHead().setSecretKey(session.getAttribute(StringUtils.SECRET_KEY, byte[].class));
-			baseMsg.decode();
-		}
-
 		session.refreshAccessedTime();
-		return session.notifySyncMessage(msg) ? true : msgQueue.offer(new ProcessUnit(session.getId(), baseMsg));
+		return session.notifySyncMessage(msg) ? true : msgQueue.offer(new ProcessUnit(session.getId(),
+			(FragmentMessage) msg));
 	}
 
 	public void shutdown() {

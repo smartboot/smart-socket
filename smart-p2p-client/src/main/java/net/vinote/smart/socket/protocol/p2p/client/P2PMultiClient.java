@@ -59,11 +59,13 @@ public class P2PMultiClient {
 						loginReq.setPassword("aa");
 						LoginAuthResp loginResp;
 						try {
-							loginResp = (LoginAuthResp) processor.getSession().sendWithResponse(loginReq);
-							logger.info(StringUtils.toHexString(loginResp.getData()));
+							// loginResp = (LoginAuthResp)
+							// processor.getSession().sendWithResponse(loginReq);
+							processor.getSession().sendWithoutResponse(loginReq);
+							// logger.info(StringUtils.toHexString(loginResp.getData()));
 						} catch (Exception e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
+							System.exit(0);
 						}
 					}
 					logger.info("安全消息结束" + (System.currentTimeMillis() - start));
@@ -71,7 +73,7 @@ public class P2PMultiClient {
 				}
 
 			}.start();
-			Thread.sleep(100);
+			Thread.sleep(500);
 		}
 
 	}

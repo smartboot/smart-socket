@@ -2,12 +2,14 @@ package net.vinote.smart.socket.protocol.p2p.client;
 
 import java.util.Properties;
 
+import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.extension.cluster.ClusterMessageEntry;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PSession;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
+import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
 import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageResp;
 import net.vinote.smart.socket.protocol.p2p.processor.InvalidMessageResponseProcessor;
 import net.vinote.smart.socket.service.process.AbstractProtocolDataProcessor;
@@ -73,12 +75,16 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor imp
 				logger.warn("", e);
 			}
 		} else {
-			logger.info("unsupport message" + StringUtils.toHexString(message.getData()));
+			// logger.info("unsupport message" +
+			// StringUtils.toHexString(message.getData()));
 		}
 	}
 
 	public boolean receive(TransportSession tsession, DataEntry msg) {
-		BaseMessage baseMsg = (BaseMessage) msg;
+		BaseMessage baseMsg = ((FragmentMessage) msg).decodeMessage(getQuicklyConfig().getServiceMessageFactory());
+		if (baseMsg == null) {
+			throw new DecodeException("Decode Message Error!" + StringUtils.toHexString(msg.getData()));
+		}
 		ensureSession(tsession);
 
 		// 解密消息

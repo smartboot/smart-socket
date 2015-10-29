@@ -2,6 +2,8 @@ package net.vinote.smart.socket.protocol.p2p.server;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
+import net.vinote.smart.socket.exception.DecodeException;
+import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.server.P2PServerMessageProcessor.ProcessUnit;
 import net.vinote.smart.socket.service.filter.SmartFilter;
@@ -32,6 +34,21 @@ class P2PServerProcessThread extends ProtocolProcessThread {
 			SmartFilter[] handlers = processor.getQuicklyConfig().getFilters();
 			try {
 				ProcessUnit unit = messageQueue.take();
+				// 消息读取完毕进行解码
+				BaseMessage baseMsg = unit.fragmentMessage.decodeMessage(processor.getQuicklyConfig()
+					.getServiceMessageFactory());
+				if (baseMsg == null) {
+					throw new DecodeException("Decode Message Error!"
+						+ StringUtils.toHexString(unit.fragmentMessage.getData()));
+				}
+				// 解密消息
+				if (baseMsg.getHead().isSecure()) {
+					baseMsg.getHead().setSecretKey(
+						SessionManager.getInstance().getSession(unit.sessionId)
+						.getAttribute(StringUtils.SECRET_KEY, byte[].class));
+					baseMsg.decode();
+				}
+				unit.msg = baseMsg;
 				if (handlers != null && handlers.length > 0) {
 					for (SmartFilter h : handlers) {
 						h.processFilter(SessionManager.getInstance().getSession(unit.sessionId), unit.msg);

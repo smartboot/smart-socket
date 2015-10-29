@@ -24,8 +24,9 @@ import org.slf4j.LoggerFactory;
  * 服务器消息处理器,由服务器启动时构造
  *
  * @author Seer
- *
+ * @deprecated
  */
+@Deprecated
 public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProcessor {
 	private Logger logger = LoggerFactory.getLogger(P2PServerDisruptorProcessor.class);
 
@@ -76,7 +77,7 @@ public class P2PServerDisruptorProcessor extends AbstractProtocolDisruptorProces
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * net.vinote.smart.socket.service.process.ProtocolDataProcessor#getSession
 	 * (net.vinote.smart.socket.transport.TransportSession)

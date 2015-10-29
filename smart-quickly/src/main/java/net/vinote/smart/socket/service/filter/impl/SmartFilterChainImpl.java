@@ -3,13 +3,13 @@ package net.vinote.smart.socket.service.filter.impl;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import org.apache.commons.collections.CollectionUtils;
-
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.service.process.ProtocolDataReceiver;
 import net.vinote.smart.socket.transport.TransportSession;
+
+import org.apache.commons.collections.CollectionUtils;
 
 /**
  * 业务层消息预处理器
@@ -21,8 +21,7 @@ public class SmartFilterChainImpl implements SmartFilterChain {
 	private ProtocolDataReceiver receiver;
 	private SmartFilter[] handlers = null;
 
-	public SmartFilterChainImpl(ProtocolDataReceiver receiver,
-			SmartFilter[] handlers) {
+	public SmartFilterChainImpl(ProtocolDataReceiver receiver, SmartFilter[] handlers) {
 		this.receiver = receiver;
 		this.handlers = handlers;
 	}

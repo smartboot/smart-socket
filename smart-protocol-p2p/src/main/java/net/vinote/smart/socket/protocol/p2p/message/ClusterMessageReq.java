@@ -9,7 +9,7 @@ import net.vinote.smart.socket.protocol.DataEntry;
 
 /**
  * 集群业务请求消息
- * 
+ *
  * @author Seer
  * @version ClusterMessageReq.java, v 0.1 2015年3月27日 下午2:23:49 Seer Exp.
  */
@@ -23,21 +23,24 @@ public class ClusterMessageReq extends BaseMessage implements ClusterMessageEntr
 	private DataEntry serviceMessage;
 
 	private QuicklyConfig quicklyConfig;
-	
+
+	@Override
 	protected void encodeBody() throws ProtocolException {
 		writeString(clientUniqueNo);
 		serviceMessage.encode();
 		writeBytes(serviceMessage.getData());
 	}
 
+	@Override
 	protected void decodeBody() {
 		clientUniqueNo = readString();
 		byte[] data = readBytes();
-		FragmentMessage tempMsg = new FragmentMessage(quicklyConfig);
+		FragmentMessage tempMsg = new FragmentMessage();
 		tempMsg.append(data, 0, data.length);
-		serviceMessage = tempMsg.decodeMessage();
+		serviceMessage = tempMsg.decodeMessage(quicklyConfig.getServiceMessageFactory());
 	}
 
+	@Override
 	public int getMessageType() {
 		return MessageType.CLUSTER_MESSAGE_REQ;
 	}
@@ -46,7 +49,7 @@ public class ClusterMessageReq extends BaseMessage implements ClusterMessageEntr
 		if (!(data instanceof BaseMessage)) {
 			throw new InvalidParameterException("param must be instance of BaseMessage");
 		}
-		this.serviceMessage = (BaseMessage) data;
+		serviceMessage = data;
 	}
 
 	public DataEntry getServiceData() {
@@ -54,7 +57,7 @@ public class ClusterMessageReq extends BaseMessage implements ClusterMessageEntr
 	}
 
 	public void setUniqueNo(String no) {
-		this.clientUniqueNo = no;
+		clientUniqueNo = no;
 	}
 
 	public String getUniqueNo() {
@@ -63,6 +66,6 @@ public class ClusterMessageReq extends BaseMessage implements ClusterMessageEntr
 
 	@Override
 	public void setQuicklyConfig(QuicklyConfig quicklyConfig) {
-		this.quicklyConfig=quicklyConfig;
+		this.quicklyConfig = quicklyConfig;
 	}
 }

@@ -32,7 +32,8 @@ public class FlowControlFilter implements SmartFilter {
 				int count = counter.addAndGet(d.size());
 				if (count * 1.0 / session.getQuickConfig().getCacheSize() > 0.618) {
 					session.pauseReadAttention();
-					logger.info(session.getRemoteAddr() + ":" + session.getRemotePort() + "流控");
+					// logger.info(session.getRemoteAddr() + ":" +
+					// session.getRemotePort() + "流控");
 				}
 			}
 		}

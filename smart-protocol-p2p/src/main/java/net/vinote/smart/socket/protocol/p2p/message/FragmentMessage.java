@@ -2,7 +2,6 @@ package net.vinote.smart.socket.protocol.p2p.message;
 
 import java.nio.ByteBuffer;
 
-import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.service.factory.ServiceMessageFactory;
 
 import org.slf4j.Logger;
@@ -18,11 +17,6 @@ import org.slf4j.LoggerFactory;
 public class FragmentMessage extends BaseMessage {
 	private Logger logger = LoggerFactory.getLogger(FragmentMessage.class);
 	private int length;
-	private QuicklyConfig quicklyConfig;
-
-	public FragmentMessage(QuicklyConfig quicklyConfig) {
-		this.quicklyConfig = quicklyConfig;
-	}
 
 	@Override
 	protected void encodeBody() {
@@ -69,17 +63,12 @@ public class FragmentMessage extends BaseMessage {
 		setData(tempData);
 	}
 
-	public void reset() {
-		length = 0;
-		setData(null);
-	}
-
 	/**
 	 * 将当前对象中的数据解析成具体类型的消息体
 	 *
 	 * @return
 	 */
-	public BaseMessage decodeMessage() {
+	public BaseMessage decodeMessage(ServiceMessageFactory messageFactory) {
 		decodeHead();
 		HeadMessage head = getHead();
 
@@ -87,7 +76,6 @@ public class FragmentMessage extends BaseMessage {
 		if (head.getLength() != getData().length) {
 			return null;
 		}
-		ServiceMessageFactory messageFactory = quicklyConfig.getServiceMessageFactory();
 		Class<?> c = null;
 		if (messageFactory instanceof P2pServiceMessageFactory) {
 			c = ((P2pServiceMessageFactory) messageFactory).getBaseMessage(head.getMessageType());

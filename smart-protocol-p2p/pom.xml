@@ -15,9 +15,5 @@
 			<groupId>net.vinote.smart</groupId>
 			<artifactId>smart-quickly</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>com.lmax</groupId>
-			<artifactId>disruptor</artifactId>
-		</dependency>
 	</dependencies>
 </project>

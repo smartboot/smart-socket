@@ -56,7 +56,7 @@ public class NioSession extends TransportSession {
 	 * @param processor
 	 *            当前channel消息的处理器
 	 */
-	public NioSession(SelectionKey channelKey, QuicklyConfig config) {
+	public NioSession(SelectionKey channelKey, final QuicklyConfig config) {
 		initBaseChannelInfo(channelKey);
 		super.quickConfig = config;
 		super.protocol = config.getProtocolFactory().createProtocol();
@@ -181,7 +181,7 @@ public class NioSession extends TransportSession {
 		}
 		if ((channelKey.interestOps() & SelectionKey.OP_READ) != SelectionKey.OP_READ) {
 			channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_READ);
-			logger.debug(getRemoteAddr() + ":" + getRemotePort() + "释放流控");
+			// logger.debug(getRemoteAddr() + ":" + getRemotePort() + "释放流控");
 		}
 	}
 

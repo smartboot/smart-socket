@@ -72,7 +72,7 @@ public class SmartClassLoader extends ClassLoader {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.ClassLoader#findResources(java.lang.String)
 	 */
 	@Override
@@ -98,7 +98,7 @@ public class SmartClassLoader extends ClassLoader {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.ClassLoader#findResource(java.lang.String)
 	 */
 
@@ -191,10 +191,10 @@ public class SmartClassLoader extends ClassLoader {
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, SecurityException, NoSuchMethodException,
-		IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+	IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		String path = System.getProperty("extPath");
 		if (!new File(path).isDirectory()) {
-			// RunLogger.getLogger().log(Level.WARNING, "目录 " + path + " 不存在");
+			System.out.println("目录 " + path + " 不存在");
 			return;
 		}
 		String clazz = System.getProperty("class");

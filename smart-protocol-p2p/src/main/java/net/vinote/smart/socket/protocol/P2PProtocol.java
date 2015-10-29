@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
 import net.vinote.smart.socket.protocol.p2p.message.HeadMessage;
 import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageReq;
@@ -40,7 +38,7 @@ final class P2PProtocol implements Protocol {
 		// 获取消息片段对象
 		FragmentMessage tempMsg = (FragmentMessage) session.getAttribute(FRAGMENT_MESSAGE_KEY);
 		if (tempMsg == null) {
-			tempMsg = new FragmentMessage(session.getQuickConfig());
+			tempMsg = new FragmentMessage();
 			session.setAttribute(FRAGMENT_MESSAGE_KEY, tempMsg);
 		}
 		@SuppressWarnings("unchecked")
@@ -87,13 +85,9 @@ final class P2PProtocol implements Protocol {
 			if (min > 0) {
 				tempMsg.append(buffer, min);
 				if (tempMsg.getLength() == tempMsg.getReadSize()) {
-					// 消息读取完毕进行解码
-					BaseMessage msg = tempMsg.decodeMessage();
-					if (msg == null) {
-						throw new DecodeException("Decode Message Error!" + StringUtils.toHexString(tempMsg.getData()));
-					}
-					msgList.add(msg);
-					tempMsg.reset();
+					msgList.add(tempMsg);
+					tempMsg = new FragmentMessage();
+					session.setAttribute(FRAGMENT_MESSAGE_KEY, tempMsg);
 					if (msgList.size() == BUFFER_SIZE) {
 						return msgList;
 					}
