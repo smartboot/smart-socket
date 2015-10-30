@@ -1,15 +1,12 @@
 package net.vinote.smart.socket.service.filter.impl;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.service.process.ProtocolDataReceiver;
 import net.vinote.smart.socket.transport.TransportSession;
-
-import org.apache.commons.collections.CollectionUtils;
 
 /**
  * 业务层消息预处理器
@@ -26,31 +23,24 @@ public class SmartFilterChainImpl implements SmartFilterChain {
 		this.handlers = handlers;
 	}
 
-	public void doReadFilter(TransportSession session, List<DataEntry> dataList) {
-		if (CollectionUtils.isEmpty(dataList)) {
+	public void doReadFilter(TransportSession session, DataEntry dataEntry) {
+		if (dataEntry == null) {
 			return;
 		}
+		// 接收到的消息进行预处理
 		if (handlers != null && handlers.length > 0) {
 			for (SmartFilter h : handlers) {
-				h.filterDataEntrys(session, dataList);
+				h.readFilter(session, dataEntry);
 			}
 		}
-		for (DataEntry d : dataList) {
-			// 接收到的消息进行预处理
-			if (handlers != null && handlers.length > 0) {
-				for (SmartFilter h : handlers) {
-					h.readFilter(session, d);
-				}
+		boolean succ = receiver.receive(session, dataEntry);
+		// 未能成功接受消息
+		if (!succ && handlers != null && handlers.length > 0) {
+			for (SmartFilter h : handlers) {
+				h.receiveFailHandler(session, dataEntry);
 			}
-			boolean succ = receiver.receive(session, d);
-			// 未能成功接受消息
-			if (!succ && handlers != null && handlers.length > 0) {
-				for (SmartFilter h : handlers) {
-					h.receiveFailHandler(session, d);
-				}
-			}
+		}
 
-		}
 	}
 
 	public void doWriteFilter(TransportSession session, ByteBuffer buffer) {

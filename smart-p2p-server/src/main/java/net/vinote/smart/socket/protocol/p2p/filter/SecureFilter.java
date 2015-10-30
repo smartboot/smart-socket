@@ -1,7 +1,6 @@
 package net.vinote.smart.socket.protocol.p2p.filter;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.enums.ReturnCodeEnum;
@@ -25,10 +24,6 @@ import org.slf4j.LoggerFactory;
 public class SecureFilter implements SmartFilter {
 	private Logger logger = LoggerFactory.getLogger(SecureFilter.class);
 	private static final String SECURE_TOKEN = "SECURE_TOKEN";
-
-	@Override
-	public void filterDataEntrys(TransportSession session, List<DataEntry> d) {
-	}
 
 	@Override
 	public void processFilter(Session session, DataEntry d) {

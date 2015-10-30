@@ -1,7 +1,6 @@
 package net.vinote.smart.socket.extension.timer;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -38,10 +37,6 @@ public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
 	private AtomicInteger messageStorage = new AtomicInteger(0);
 
 	private volatile long totleProcessMsgNum = 0;
-
-	@Override
-	public void filterDataEntrys(TransportSession session, List<DataEntry> d) {
-	}
 
 	@Override
 	protected long getDelay() {

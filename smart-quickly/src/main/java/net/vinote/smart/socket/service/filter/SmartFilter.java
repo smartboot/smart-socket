@@ -1,7 +1,6 @@
 package net.vinote.smart.socket.service.filter;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.session.Session;
@@ -14,8 +13,6 @@ import net.vinote.smart.socket.transport.TransportSession;
  *
  */
 public interface SmartFilter {
-
-	public void filterDataEntrys(TransportSession session, List<DataEntry> d);
 
 	/**
 	 * 消息处理前置预处理

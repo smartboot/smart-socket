@@ -86,7 +86,10 @@ public abstract class TransportSession {
 
 		// 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
 		try {
-			chain.doReadFilter(this, protocol.decode(buffer, this));
+			DataEntry dataEntry;
+			while ((dataEntry = protocol.decode(buffer, this)) != null) {
+				chain.doReadFilter(this, dataEntry);
+			}
 		} catch (DecodeException e) {
 			logger.warn("", e);
 			cancelReadAttention();
@@ -207,4 +210,7 @@ public abstract class TransportSession {
 		attribute.put(key, value);
 	}
 
+	public final void removeAttribute(String key) {
+		attribute.remove(key);
+	}
 }

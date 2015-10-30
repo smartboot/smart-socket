@@ -82,7 +82,7 @@ public class NioSession extends TransportSession {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see net.vinote.smart.socket.transport.TransportSession#close0()
 	 */
 	@Override
@@ -171,6 +171,7 @@ public class NioSession extends TransportSession {
 	public void pauseReadAttention() {
 		if ((channelKey.interestOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
 			channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
+			logger.info(getRemoteAddr() + ":" + getRemotePort() + "流控");
 		}
 	}
 
@@ -181,7 +182,7 @@ public class NioSession extends TransportSession {
 		}
 		if ((channelKey.interestOps() & SelectionKey.OP_READ) != SelectionKey.OP_READ) {
 			channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_READ);
-			// logger.debug(getRemoteAddr() + ":" + getRemotePort() + "释放流控");
+			logger.debug(getRemoteAddr() + ":" + getRemotePort() + "释放流控");
 		}
 	}
 
@@ -248,7 +249,7 @@ public class NioSession extends TransportSession {
 
 	/*
 	 * 将数据输出至缓存,若缓存已满则返回false (non-Javadoc)
-	 * 
+	 *
 	 * @see com.zjw.platform.quickly.Session#write(byte[])
 	 */
 	@Override

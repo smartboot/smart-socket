@@ -1,7 +1,6 @@
 package net.vinote.smart.socket.protocol;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 import net.vinote.smart.socket.transport.TransportSession;
 
@@ -19,7 +18,7 @@ public interface Protocol {
 	 * @param data
 	 * @return 本次解码所成功解析的消息实例集合,不允许返回null
 	 */
-	public List<DataEntry> decode(ByteBuffer data, TransportSession session);
+	public DataEntry decode(ByteBuffer data, TransportSession session);
 
 	/**
 	 * 封装畸形报文协议

@@ -97,7 +97,7 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor imp
 		// 服务器返回的非响应消息交由专门的处理器处理
 		if (!session.notifySyncMessage(baseMsg)) {
 			// 同步响应消息若出现超时情况,也会进到if里面
-			processThread.put(session.getId(), (BaseMessage) msg);
+			processThread.put(session.getId(), baseMsg);
 		}
 		return true;
 	}

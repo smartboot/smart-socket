@@ -2,8 +2,6 @@ package net.vinote.smart.socket.protocol;
 
 import java.net.ProtocolException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
@@ -30,27 +28,16 @@ final class P2PProtocol implements Protocol {
 
 	private static final String FRAGMENT_MESSAGE_KEY = "fmk";
 
-	private static final String DECODED_MESSAGE_LIST = "dml";
-
-	private static final int BUFFER_SIZE = 64;
-
-	public List<DataEntry> decode(ByteBuffer buffer, TransportSession session) {
+	public DataEntry decode(ByteBuffer buffer, TransportSession session) {
+		// 未读取到数据则直接返回
+		if (buffer == null) {
+			return null;
+		}
 		// 获取消息片段对象
 		FragmentMessage tempMsg = (FragmentMessage) session.getAttribute(FRAGMENT_MESSAGE_KEY);
 		if (tempMsg == null) {
 			tempMsg = new FragmentMessage();
 			session.setAttribute(FRAGMENT_MESSAGE_KEY, tempMsg);
-		}
-		@SuppressWarnings("unchecked")
-		List<DataEntry> msgList = (List<DataEntry>) session.getAttribute(DECODED_MESSAGE_LIST);
-		if (msgList == null) {
-			msgList = new ArrayList<DataEntry>(BUFFER_SIZE);
-			session.setAttribute(DECODED_MESSAGE_LIST, msgList);
-		}
-		msgList.clear();
-		// 未读取到数据则直接返回
-		if (buffer == null) {
-			return msgList;
 		}
 		while (buffer.hasRemaining()) {
 			int min;
@@ -85,16 +72,12 @@ final class P2PProtocol implements Protocol {
 			if (min > 0) {
 				tempMsg.append(buffer, min);
 				if (tempMsg.getLength() == tempMsg.getReadSize()) {
-					msgList.add(tempMsg);
-					tempMsg = new FragmentMessage();
-					session.setAttribute(FRAGMENT_MESSAGE_KEY, tempMsg);
-					if (msgList.size() == BUFFER_SIZE) {
-						return msgList;
-					}
+					session.removeAttribute(FRAGMENT_MESSAGE_KEY);
+					return tempMsg;
 				}
 			}
 		}
-		return msgList;
+		return null;
 	}
 
 	private int getInt(byte[] data) {

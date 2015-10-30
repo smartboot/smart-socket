@@ -81,7 +81,7 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see net.vinote.smart.socket.transport.AbstractChannelService#
 	 * exceptionInSelectionKey(java.nio.channels.SelectionKey,
 	 * java.lang.Exception)
@@ -103,7 +103,7 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see net.vinote.smart.socket.transport.ClientChannelService#getSession()
 	 */
 	public final TransportSession getSession() {
@@ -153,7 +153,7 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see net.vinote.smart.socket.transport.ChannelService#shutdown()
 	 */
 	public final void shutdown() {
@@ -174,7 +174,7 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see net.vinote.smart.socket.transport.ChannelService#start()
 	 */
 	public final void start() {
@@ -212,7 +212,7 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * net.vinote.smart.socket.transport.AbstractChannelService#writeToChannel
 	 * (java.nio.channels.SelectionKey, java.nio.channels.Selector)
