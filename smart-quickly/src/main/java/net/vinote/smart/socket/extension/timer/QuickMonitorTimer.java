@@ -54,16 +54,16 @@ public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
 		totleProcessMsgNum++;
 	}
 
-	public void readFilter(TransportSession session, DataEntry d) {
-		flow.addAndGet(d.getData().length);
+	public void readFilter(TransportSession session, ByteBuffer d) {
+		flow.addAndGet(d.capacity());
 		recMsgnum.incrementAndGet();
 		messageStorage.incrementAndGet();
 	}
 
-	public void receiveFailHandler(TransportSession session, DataEntry d) {
+	public void receiveFailHandler(TransportSession session, ByteBuffer d) {
 		discardNum.incrementAndGet();
 		messageStorage.decrementAndGet();
-		logger.info("HexData -->" + StringUtils.toHexString(d.getData()));
+		logger.info("HexData -->" + StringUtils.toHexString(d.array()));
 	}
 
 	@Override

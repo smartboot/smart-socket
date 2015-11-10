@@ -28,12 +28,12 @@ public interface SmartFilter {
 	 * @param session
 	 * @param d
 	 */
-	public void readFilter(TransportSession session, DataEntry d);
+	public void readFilter(TransportSession session, ByteBuffer d);
 
 	/**
 	 * 消息接受失败处理
 	 */
-	public void receiveFailHandler(TransportSession session, DataEntry d);
+	public void receiveFailHandler(TransportSession session, ByteBuffer d);
 
 	public void writeFilter(TransportSession session, ByteBuffer d);
 }

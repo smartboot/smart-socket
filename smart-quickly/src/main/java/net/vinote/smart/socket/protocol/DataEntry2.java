@@ -6,7 +6,7 @@ import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 
 import java.net.ProtocolException;
-import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import net.vinote.smart.socket.exception.DecodeException;
 
@@ -16,15 +16,27 @@ import net.vinote.smart.socket.exception.DecodeException;
  * @author Seer
  * @version DataEntry.java, v 0.1 2015年8月28日 下午4:33:59 Seer Exp.
  */
-public abstract class DataEntry implements Cloneable {
+public abstract class DataEntry2 {
 
 	/** 完整的数据流 */
-	private ByteBuffer data;
+	private byte[] data;
+
+	/** 是否发生修改 */
+	private boolean modified = false;
 
 	/** 当前数据存储区处于的操作模式 */
 	private MODE mode;
 
+	/** 当前索引 */
+	private int index;
+
+	/** 限制索引,当limit>0且index>limit,进行读写操作都跑异常 */
+	private int limit = -1;
+
 	public static final int DEFAULT_DATA_LENGTH = 1024;
+
+	/** 数据流临时缓存区 */
+	private byte[] tempData = new byte[DEFAULT_DATA_LENGTH];
 
 	/**
 	 * 读取一个布尔值
@@ -33,7 +45,8 @@ public abstract class DataEntry implements Cloneable {
 	 */
 	public final boolean readBoolen() {
 		assertMode(MODE.READ);
-		return readByte() == 1;
+		assertLimit(index);
+		return data[index++] == 1;
 	}
 
 	/**
@@ -43,7 +56,8 @@ public abstract class DataEntry implements Cloneable {
 	 */
 	public final byte readByte() {
 		assertMode(MODE.READ);
-		return data.get();
+		assertLimit(index);
+		return data[index++];
 	}
 
 	/**
@@ -56,8 +70,10 @@ public abstract class DataEntry implements Cloneable {
 		if (size < 0) {
 			return null;
 		}
+		assertLimit(index + size - 1);
 		byte[] bytes = new byte[size];
-		data.get(bytes);
+		System.arraycopy(data, index, bytes, 0, size);
+		index += size;
 		return bytes;
 	}
 
@@ -85,7 +101,9 @@ public abstract class DataEntry implements Cloneable {
 	 */
 	public final int readInt() {
 		assertMode(MODE.READ);
-		return data.getInt();
+		assertLimit(index + 3);
+		return ((data[index++] & 0xff) << 24) + ((data[index++] & 0xff) << 16) + ((data[index++] & 0xff) << 8)
+			+ (data[index++] & 0xff);
 	}
 
 	/**
@@ -95,7 +113,8 @@ public abstract class DataEntry implements Cloneable {
 	 */
 	public final short readShort() {
 		assertMode(MODE.READ);
-		return data.getShort();
+		assertLimit(index + 1);
+		return (short) (((data[index++] & 0xff) << 8) + (data[index++] & 0xff));
 	}
 
 	/**
@@ -113,8 +132,10 @@ public abstract class DataEntry implements Cloneable {
 	 * @param i
 	 */
 	public final void writeByte(byte i) {
-		ensureCapacity(1);
-		data.put(i);
+		modified = true;
+		ensureCapacity(index + 1);
+		assertLimit(index);
+		tempData[index++] = i;
 	}
 
 	/**
@@ -140,9 +161,11 @@ public abstract class DataEntry implements Cloneable {
 	 */
 	public final void writeBytes(byte[] data) {
 		if (data != null) {
+			assertLimit(index + data.length + 3);
 			writeInt(data.length);
-			ensureCapacity(data.length);
-			this.data.put(data);
+			ensureCapacity(index + data.length);
+			System.arraycopy(data, 0, tempData, index, data.length);
+			index += data.length;
 		} else {
 			writeInt(-1);
 		}
@@ -154,9 +177,14 @@ public abstract class DataEntry implements Cloneable {
 	 * @param i
 	 */
 	public final void writeInt(int i) {
+		modified = true;
 		assertMode(MODE.WRITE);
-		ensureCapacity(4);
-		data.putInt(i);
+		assertLimit(index + 3);
+		ensureCapacity(index + 4);
+		tempData[index++] = (byte) ((0xff000000 & i) >> 24);
+		tempData[index++] = (byte) ((0xff0000 & i) >> 16);
+		tempData[index++] = (byte) ((0xff00 & i) >> 8);
+		tempData[index++] = (byte) (0xff & i);
 	}
 
 	/**
@@ -164,16 +192,21 @@ public abstract class DataEntry implements Cloneable {
 	 *
 	 * @param i
 	 */
-	public final void writeShort(short i) {
+	public final void writeShort(int i) {
+		modified = true;
 		assertMode(MODE.WRITE);
-		ensureCapacity(2);
-		data.putShort(i);
+		assertLimit(index + 1);
+		ensureCapacity(index + 2);
+		tempData[index++] = (byte) ((0xff00 & i) >> 8);
+		tempData[index++] = (byte) (0xff & i);
 	}
 
 	protected final void reset(MODE mode) {
+		index = 0;
 		this.mode = mode;
-		ensureCapacity(0);
-		data.position(0);
+		if (mode == MODE.WRITE) {
+			modified = true;
+		}
 	}
 
 	/**
@@ -186,10 +219,14 @@ public abstract class DataEntry implements Cloneable {
 		if (str == null) {
 			str = "";
 		}
+		modified = true;
 		byte[] bytes = str.getBytes();
-		ensureCapacity(1 + bytes.length);
-		data.put(bytes);
-		data.put((byte) 0x00);
+		assertLimit(index + bytes.length);
+		ensureCapacity(index + 1 + bytes.length);
+		for (byte b : bytes) {
+			tempData[index++] = b;
+		}
+		tempData[index++] = 0x00;
 	}
 
 	/**
@@ -199,14 +236,34 @@ public abstract class DataEntry implements Cloneable {
 	 */
 	public final String readString() {
 		assertMode(MODE.READ);
-		int curIndex = data.position();
-		while (data.get() != 0x00) {
-			;
+		int curIndex = index;
+		if (limit > 0) {// 减少判断次数
+			do {
+				assertLimit(index);
+			} while (data[index++] != 0x00);
+		} else {
+			while (data[index++] != 0x00) {
+				;
+			}
 		}
-		byte[] str = new byte[data.position() - curIndex];
-		data.position(curIndex);
-		data.get(str);
-		return new String(str, 0, str.length - 1);
+		return new String(data, curIndex, index - curIndex - 1);
+	}
+
+	/**
+	 * 定位至数据流中的第n+1位
+	 *
+	 * @param n
+	 */
+	public final void position(int n) {
+		ensureCapacity(n + 1);
+		index = n;
+	}
+
+	/**
+	 * 当前游标位置
+	 */
+	public final int getPosition() {
+		return index;
 	}
 
 	/**
@@ -216,19 +273,21 @@ public abstract class DataEntry implements Cloneable {
 	 *
 	 * @return
 	 */
-	public final ByteBuffer getData(boolean compress) {
-		if (compress && data.limit() < data.capacity()) {
-			data.flip();
-			data = ByteBuffer.allocate(data.limit()).put(data);
+	public final byte[] getData() {
+		if (mode == MODE.WRITE && modified) {
+			data = new byte[index];
+			System.arraycopy(tempData, 0, data, 0, index);
+			modified = false;// 避免每次调用getData都进行数组拷贝
+		} else if (mode == MODE.READ && modified) {
+			byte[] d = new byte[index];
+			System.arraycopy(data, 0, d, 0, index);
+			data = d;
+			modified = false;// 避免每次调用getData都进行数组拷贝
 		}
 		return data;
 	}
 
-	public final ByteBuffer getData() {
-		return getData(true);
-	}
-
-	public final void setData(ByteBuffer data) {
+	public final void setData(byte[] data) {
 		this.data = data;
 	}
 
@@ -244,70 +303,67 @@ public abstract class DataEntry implements Cloneable {
 	}
 
 	/**
-	 * 确保足够的存储容量
+	 * 预期操作的数据是否超过限制索引
 	 *
-	 * @param minCapacity
+	 * @param lockIndex
 	 */
-	private void ensureCapacity(int minCapacity) {
-		if (data == null) {
-			data = ByteBuffer.allocate(Math.max(minCapacity, DEFAULT_DATA_LENGTH));
-			data.limit(minCapacity);
-		}
-		if (data.capacity() - data.position() < minCapacity) {
-			data = ByteBuffer.allocate(data.capacity() * 3 / 2 + 1).put(data);
-		}
-		int limit = data.position() + minCapacity;
-		if (limit > data.limit()) {
-			data.limit(limit);
+	private final void assertLimit(int lockIndex) {
+		if (limit > -1 && lockIndex > limit) {
+			throw new ArrayIndexOutOfBoundsException(limit);
 		}
 	}
 
-	public abstract ByteBuffer encode() throws ProtocolException;
-
-	public abstract void decode() throws DecodeException;
-
 	/**
-	 * 定位至数据流中的第n+1位
+	 * 从当前索引位置开始锁定操作位
 	 *
-	 * @param n
+	 * @param size
 	 */
-	public final void position(int n) {
-		if (data == null || data.capacity() < n) {
-			ensureCapacity(n + 1);
-		}
-		if (data.limit() < n) {
-			data.limit(n);
-		}
-		data.position(n);
+	protected final void limitFromCurrentIndex(int size) {
+		limit = index + size - 1;
 	}
 
 	/**
-	 * 当前游标位置
+	 * 限制操作范围
+	 *
+	 * @param size
 	 */
-	public final int getPosition() {
-		return data.position();
+	protected final void limitIndex(int limit) {
+		this.limit = limit;
 	}
 
 	/**
 	 * 清除限制
 	 */
 	public void clearLimit() {
-		data.limit(data.capacity());
+		limit = -1;
 	}
+
+	/**
+	 * 确保足够的存储容量
+	 *
+	 * @param minCapacity
+	 */
+	private void ensureCapacity(int minCapacity) {
+		int oldCapacity = tempData.length;
+		if (minCapacity > oldCapacity) {
+			int newCapacity = oldCapacity * 3 / 2 + 1;
+			if (newCapacity < minCapacity) {
+				newCapacity = minCapacity;
+			}
+			tempData = Arrays.copyOf(tempData, newCapacity);
+		}
+	}
+
+	public abstract byte[] encode() throws ProtocolException;
+
+	public abstract void decode() throws DecodeException;
 
 	public enum MODE {
 		READ, WRITE;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#clone()
-	 */
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		// TODO Auto-generated method stub
-		return super.clone();
+	protected void setModified(boolean modified) {
+		this.modified = modified;
 	}
 
 }

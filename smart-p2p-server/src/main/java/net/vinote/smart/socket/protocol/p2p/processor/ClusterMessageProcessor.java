@@ -1,8 +1,12 @@
 package net.vinote.smart.socket.protocol.p2p.processor;
 
+import java.nio.ByteBuffer;
+
 import net.vinote.smart.socket.protocol.DataEntry;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageResp;
+import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
 
@@ -21,13 +25,17 @@ public class ClusterMessageProcessor extends AbstractServiceMessageProcessor {
 	@Override
 	public void processor(Session session, DataEntry message) {
 		ClusterMessageReq msg = (ClusterMessageReq) message;
+		FragmentMessage fragMsg = new FragmentMessage();
+		fragMsg.setData(msg.getServiceData());
+		BaseMessage baseMsg = fragMsg.decodeMessage(session.getTransportSession().getQuickConfig()
+			.getServiceMessageFactory());
 		AbstractServiceMessageProcessor processor = session.getTransportSession().getQuickConfig()
-			.getServiceMessageFactory().getProcessor(msg.getServiceData().getClass());
+			.getServiceMessageFactory().getProcessor(baseMsg.getClass());
 
 		ClusterMessageResp rspMsg = new ClusterMessageResp();
 		rspMsg.setUniqueNo(msg.getUniqueNo());
 		try {
-			DataEntry respMesg = processor.processCluster(session, msg.getServiceData());// 由指定消息类型的处理器来处理集群消息
+			ByteBuffer respMesg = processor.processCluster(session, msg.getServiceData());// 由指定消息类型的处理器来处理集群消息
 			rspMsg.setSuccess(true);
 			rspMsg.setServiceData(respMesg);
 		} catch (Exception e) {

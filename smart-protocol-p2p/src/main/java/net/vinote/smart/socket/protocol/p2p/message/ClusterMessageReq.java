@@ -1,11 +1,9 @@
 package net.vinote.smart.socket.protocol.p2p.message;
 
 import java.net.ProtocolException;
-import java.security.InvalidParameterException;
+import java.nio.ByteBuffer;
 
 import net.vinote.smart.socket.extension.cluster.ClusterMessageEntry;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.protocol.DataEntry;
 
 /**
  * 集群业务请求消息
@@ -20,24 +18,18 @@ public class ClusterMessageReq extends BaseMessage implements ClusterMessageEntr
 	/**
 	 * 原始业务消息
 	 */
-	private DataEntry serviceMessage;
-
-	private QuicklyConfig quicklyConfig;
+	private ByteBuffer serviceMessage;
 
 	@Override
 	protected void encodeBody() throws ProtocolException {
 		writeString(clientUniqueNo);
-		serviceMessage.encode();
-		writeBytes(serviceMessage.getData());
+		writeBytes(serviceMessage.array());
 	}
 
 	@Override
 	protected void decodeBody() {
 		clientUniqueNo = readString();
-		byte[] data = readBytes();
-		FragmentMessage tempMsg = new FragmentMessage();
-		tempMsg.append(data, 0, data.length);
-		serviceMessage = tempMsg.decodeMessage(quicklyConfig.getServiceMessageFactory());
+		serviceMessage = ByteBuffer.wrap(readBytes());
 	}
 
 	@Override
@@ -45,14 +37,11 @@ public class ClusterMessageReq extends BaseMessage implements ClusterMessageEntr
 		return MessageType.CLUSTER_MESSAGE_REQ;
 	}
 
-	public void setServiceData(DataEntry data) {
-		if (!(data instanceof BaseMessage)) {
-			throw new InvalidParameterException("param must be instance of BaseMessage");
-		}
+	public void setServiceData(ByteBuffer data) {
 		serviceMessage = data;
 	}
 
-	public DataEntry getServiceData() {
+	public ByteBuffer getServiceData() {
 		return serviceMessage;
 	}
 
@@ -64,8 +53,4 @@ public class ClusterMessageReq extends BaseMessage implements ClusterMessageEntr
 		return clientUniqueNo;
 	}
 
-	@Override
-	public void setQuicklyConfig(QuicklyConfig quicklyConfig) {
-		this.quicklyConfig = quicklyConfig;
-	}
 }

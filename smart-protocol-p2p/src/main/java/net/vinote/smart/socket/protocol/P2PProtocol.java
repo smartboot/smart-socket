@@ -28,65 +28,26 @@ final class P2PProtocol implements Protocol {
 
 	private static final String FRAGMENT_MESSAGE_KEY = "fmk";
 
-	public DataEntry decode(ByteBuffer buffer, TransportSession session) {
+	public ByteBuffer decode(ByteBuffer buffer, TransportSession session) {
 		// 未读取到数据则直接返回
-		if (buffer == null) {
+		if (buffer == null || buffer.remaining() < MESSAGE_SIGN_LENGTH) {
 			return null;
 		}
-		// 获取消息片段对象
-		FragmentMessage tempMsg = (FragmentMessage) session.getAttribute(FRAGMENT_MESSAGE_KEY);
-		if (tempMsg == null) {
-			tempMsg = new FragmentMessage();
-			session.setAttribute(FRAGMENT_MESSAGE_KEY, tempMsg);
+		int magicNum = buffer.getInt(0);
+		if (magicNum != HeadMessage.MAGIC_NUMBER) {
+			throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum));
 		}
-		while (buffer.hasRemaining()) {
-			int min;
-			if (tempMsg.getReadSize() < MESSAGE_SIGN_LENGTH) {
-				min = Math.min(buffer.remaining(), MESSAGE_SIGN_LENGTH - tempMsg.getReadSize());
-				tempMsg.append(buffer, min);
-			}
-			// 先解析消息体大小
-			if (tempMsg.getLength() == 0 && tempMsg.getReadSize() >= MESSAGE_SIGN_LENGTH) {
-				byte[] intBytes = new byte[4];
-				// 解析幻数
-				for (int i = 0; i < intBytes.length; i++) {
-					intBytes[i] = tempMsg.getData()[i];
-				}
-				int magicNum = getInt(intBytes);
-				if (magicNum != HeadMessage.MAGIC_NUMBER) {
-					throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum));
-				}
-
-				// 解析消息体大小,第四位开始
-				for (int i = 0; i < intBytes.length; i++) {
-					intBytes[i] = tempMsg.getData()[i + 4];
-				}
-				int msgLength = getInt(intBytes);
-				if (msgLength <= 0) {
-					throw new DecodeException("Invalid Message Length " + msgLength);
-				}
-				tempMsg.setLength(msgLength);
-			}
-
-			min = Math.min(tempMsg.getLength() - tempMsg.getReadSize(), buffer.remaining());
-			if (min > 0) {
-				tempMsg.append(buffer, min);
-				if (tempMsg.getLength() == tempMsg.getReadSize()) {
-					session.removeAttribute(FRAGMENT_MESSAGE_KEY);
-					return tempMsg;
-				}
-			}
+		int msgLength = buffer.getInt(4);
+		if (msgLength <= 0) {
+			throw new DecodeException("Invalid Message Length " + msgLength);
 		}
-		return null;
-	}
 
-	private int getInt(byte[] data) {
-		if (data == null || data.length != 4) {
-			throw new RuntimeException("data length is must 4!");
+		if (buffer.remaining() < msgLength) {
+			return null;
 		}
-		int index = 0;
-		return ((data[index++] & 0xff) << 24) + ((data[index++] & 0xff) << 16) + ((data[index++] & 0xff) << 8)
-			+ (data[index++] & 0xff);
+		byte[] data = new byte[msgLength];
+		buffer.get(data);
+		return ByteBuffer.wrap(data);
 	}
 
 	public DataEntry wrapInvalidProtocol(TransportSession session) {
@@ -94,7 +55,7 @@ final class P2PProtocol implements Protocol {
 		msg.setMsg("Invalid P2P Message.");
 		FragmentMessage fragMsg = (FragmentMessage) session.getAttribute(FRAGMENT_MESSAGE_KEY);
 		if (fragMsg != null) {
-			msg.setInvalidMsgData(fragMsg.getData());
+			msg.setInvalidMsgData(fragMsg.getData().array());
 		}
 		try {
 			msg.encode();

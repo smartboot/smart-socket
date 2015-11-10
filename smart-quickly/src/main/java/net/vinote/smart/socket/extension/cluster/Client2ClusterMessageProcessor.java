@@ -1,6 +1,7 @@
 package net.vinote.smart.socket.extension.cluster;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -74,7 +75,7 @@ public class Client2ClusterMessageProcessor extends AbstractProtocolDataProcesso
 		return config;
 	}
 
-	public ClusterMessageEntry generateClusterMessage(DataEntry data) {
+	public ClusterMessageEntry generateClusterMessage(ByteBuffer data) {
 		throw new UnsupportedOperationException(this.getClass().getSimpleName() + " is unsupport current operation!");
 	}
 
@@ -182,7 +183,7 @@ public class Client2ClusterMessageProcessor extends AbstractProtocolDataProcesso
 	 *
 	 * 接受客户端消息以便转发至集群服务器
 	 **/
-	public boolean receive(TransportSession session, DataEntry msg) {
+	public boolean receive(TransportSession session, ByteBuffer msg) {
 		if (!clientTransSessionMap.containsKey(session.getSessionID())) {
 			clientTransSessionMap.put(session.getSessionID(), new ProcessUnit(session, null, null));
 		}

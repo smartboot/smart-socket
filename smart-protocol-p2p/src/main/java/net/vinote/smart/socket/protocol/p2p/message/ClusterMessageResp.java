@@ -1,10 +1,9 @@
 package net.vinote.smart.socket.protocol.p2p.message;
 
 import java.net.ProtocolException;
+import java.nio.ByteBuffer;
 
 import net.vinote.smart.socket.extension.cluster.ClusterMessageResponseEntry;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.protocol.DataEntry;
 
 /**
  * 集群业务响应消息
@@ -26,11 +25,10 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 	/** 客户端唯一标识 */
 	private String clientUniqueNo;
 
-	private QuicklyConfig quicklyConfig;
 	/**
 	 * 业务响应消息
 	 */
-	private DataEntry serviceRespMsg;
+	private ByteBuffer serviceRespMsg;
 
 	@Override
 	protected void encodeBody() throws ProtocolException {
@@ -40,8 +38,7 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 		if (serviceRespMsg == null) {
 			writeBytes(null);
 		} else {
-			serviceRespMsg.encode();
-			writeBytes(serviceRespMsg.getData());
+			writeBytes(serviceRespMsg.array());
 		}
 	}
 
@@ -52,9 +49,7 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 		clientUniqueNo = readString();
 		byte[] data = readBytes();
 		if (data != null) {
-			FragmentMessage tempMsg = new FragmentMessage();
-			tempMsg.append(data, 0, data.length);
-			serviceRespMsg = tempMsg.decodeMessage(quicklyConfig.getServiceMessageFactory());
+			serviceRespMsg = ByteBuffer.wrap(data);
 		}
 	}
 
@@ -83,11 +78,11 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 		return clientUniqueNo;
 	}
 
-	public void setServiceData(DataEntry data) {
+	public void setServiceData(ByteBuffer data) {
 		serviceRespMsg = data;
 	}
 
-	public DataEntry getServiceData() {
+	public ByteBuffer getServiceData() {
 		// TODO Auto-generated method stub
 		return serviceRespMsg;
 	}
@@ -96,8 +91,4 @@ public class ClusterMessageResp extends BaseMessage implements ClusterMessageRes
 		clientUniqueNo = no;
 	}
 
-	@Override
-	public void setQuicklyConfig(QuicklyConfig quicklyConfig) {
-		this.quicklyConfig = quicklyConfig;
-	}
 }

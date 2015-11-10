@@ -1,10 +1,13 @@
 package net.vinote.smart.socket.protocol.p2p.processor;
 
 import java.io.IOException;
+import java.net.ProtocolException;
+import java.nio.ByteBuffer;
 
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
+import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.service.session.Session;
 
@@ -36,11 +39,14 @@ public class DetectMessageProcessor extends AbstractServiceMessageProcessor {
 	}
 
 	@Override
-	public DataEntry processCluster(Session session, DataEntry message) {
-		DetectMessageReq msg = (DetectMessageReq) message;
+	public ByteBuffer processCluster(Session session, ByteBuffer message) throws ProtocolException {
+		FragmentMessage fragMsg = new FragmentMessage();
+		fragMsg.setData(message);
+		DetectMessageReq msg = (DetectMessageReq) fragMsg.decodeMessage(session.getTransportSession().getQuickConfig()
+			.getServiceMessageFactory());
 		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
 		rspMsg.setDetectMessage("集群探测响应消息" + msg.getHead().getSequenceID());
-		return rspMsg;
+		return rspMsg.encode();
 	}
 
 }

@@ -67,7 +67,7 @@ public class SecurityP2PClient {
 			loginReq.setUsername("zjw");
 			loginReq.setPassword("aa");
 			LoginAuthResp loginResp = (LoginAuthResp) processor.getSession().sendWithResponse(loginReq);
-			logger.info(StringUtils.toHexString(loginResp.getData()));
+			logger.info(StringUtils.toHexString(loginResp.getData().array()));
 		}
 		logger.info("安全消息结束" + (System.currentTimeMillis() - start));
 
@@ -79,7 +79,7 @@ public class SecurityP2PClient {
 			loginReq.setPassword("aa");
 			LoginAuthResp loginResp = (LoginAuthResp) processor.getSession().sendWithResponse(loginReq);
 
-			logger.info(StringUtils.toHexString(loginResp.getData()));
+			logger.info(StringUtils.toHexString(loginResp.getData().array()));
 
 		}
 		logger.info("结束" + (System.currentTimeMillis() - start));

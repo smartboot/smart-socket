@@ -2,7 +2,6 @@ package net.vinote.smart.socket.service.filter.impl;
 
 import java.nio.ByteBuffer;
 
-import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.service.process.ProtocolDataReceiver;
@@ -23,7 +22,7 @@ public class SmartFilterChainImpl implements SmartFilterChain {
 		this.handlers = handlers;
 	}
 
-	public void doReadFilter(TransportSession session, DataEntry dataEntry) {
+	public void doReadFilter(TransportSession session, ByteBuffer dataEntry) {
 		if (dataEntry == null) {
 			return;
 		}

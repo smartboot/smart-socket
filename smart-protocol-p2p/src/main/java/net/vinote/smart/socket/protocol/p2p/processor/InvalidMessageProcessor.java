@@ -23,7 +23,7 @@ public class InvalidMessageProcessor extends AbstractServiceMessageProcessor {
 
 	@Override
 	public void processor(Session session, DataEntry message) {
-		logger.info("接受到畸形报文:" + session.getRemoteIp() + StringUtils.toHexString(message.getData()));
+		logger.info("接受到畸形报文:" + session.getRemoteIp() + StringUtils.toHexString(message.getData().array()));
 		InvalidMessageReq msg = (InvalidMessageReq) message;
 		InvalidMessageResp rspMsg = new InvalidMessageResp(msg.getHead());
 		rspMsg.setMsg("畸形报文");

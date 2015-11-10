@@ -1,12 +1,12 @@
 package net.vinote.smart.socket.protocol.p2p.server;
 
+import java.nio.ByteBuffer;
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import net.vinote.smart.socket.extension.cluster.ClusterMessageEntry;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.P2PSession;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageReq;
@@ -35,11 +35,10 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 	class ProcessUnit {
 		String sessionId;
 		BaseMessage msg;
-		FragmentMessage fragmentMessage;
 
-		public ProcessUnit(String sessionId, FragmentMessage msg) {
+		public ProcessUnit(String sessionId, BaseMessage msg) {
 			this.sessionId = sessionId;
-			fragmentMessage = msg;
+			this.msg = msg;
 		}
 	}
 
@@ -48,14 +47,14 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.zjw.platform.quickly.process.MessageProcessor#process(com.zjw.
 	 * platform .quickly.Session, com.zjw.platform.quickly.message.DataEntry)
 	 */
 
 	private int msgQueueMaxSize;
 
-	public ClusterMessageEntry generateClusterMessage(DataEntry data) {
+	public ClusterMessageEntry generateClusterMessage(ByteBuffer data) {
 		ClusterMessageReq entry = new ClusterMessageReq();
 		entry.setServiceData(data);
 		return entry;
@@ -63,7 +62,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 
 	/*
 	 * 处理消息 (non-Javadoc)
-	 * 
+	 *
 	 * @see com.zjw.platform.quickly.process.MessageProcessor#process(java.lang.
 	 * Object )
 	 */
@@ -89,7 +88,7 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		ProcessUnit unit = (ProcessUnit) t;
 		Session session = SessionManager.getInstance().getSession(unit.sessionId);
 		if (session == null || session.isInvalid()) {
-			logger.info("Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData()));
+			logger.info("Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData().array()));
 			return;
 		}
 		session.refreshAccessedTime();
@@ -102,17 +101,23 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 		}
 	}
 
-	public boolean receive(TransportSession tsession, DataEntry msg) {
+	public boolean receive(TransportSession tsession, ByteBuffer buffer) {
 		// 会话封装并分配处理线程
 		Session session = SessionManager.getInstance().getSession(tsession.getSessionID());
 		if (session == null) {
 			session = new P2PSession(tsession);
 			SessionManager.getInstance().registSession(session);
-		}
 
+		}
 		session.refreshAccessedTime();
-		return session.notifySyncMessage(msg) ? true : msgQueue.offer(new ProcessUnit(session.getId(),
-			(FragmentMessage) msg));
+		FragmentMessage msg = session.getAttribute("FragmentMessage");
+		if (msg == null) {
+			msg = new FragmentMessage();
+			session.setAttribute("FragmentMessage", msg);
+		}
+		msg.setData(buffer);
+		BaseMessage baseMsg = msg.decodeMessage(getQuicklyConfig().getServiceMessageFactory());
+		return session.notifySyncMessage(msg) ? true : msgQueue.offer(new ProcessUnit(session.getId(), baseMsg));
 	}
 
 	public void shutdown() {

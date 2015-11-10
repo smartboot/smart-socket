@@ -1,11 +1,14 @@
 package net.vinote.smart.socket.service.process;
 
+import java.net.ProtocolException;
+import java.nio.ByteBuffer;
+
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.session.Session;
 
 /**
  * 应用业务层消息处理器
- * 
+ *
  * @author Seer
  *
  */
@@ -16,19 +19,18 @@ public abstract class AbstractServiceMessageProcessor {
 	public void init() {
 	}
 
-	public abstract void processor(Session session, DataEntry message)
-			throws Exception;
+	public abstract void processor(Session session, DataEntry message) throws Exception;
 
 	/**
 	 * 处理集群消息
-	 * 
+	 *
 	 * @param session
 	 * @param message
 	 * @return 响应消息
+	 * @throws ProtocolException
 	 */
-	public DataEntry processCluster(Session session, DataEntry message) {
-		throw new UnsupportedOperationException(this.getClass().getName()
-				+ " unsupport to operate cluster message!");
+	public ByteBuffer processCluster(Session session, ByteBuffer message) throws ProtocolException {
+		throw new UnsupportedOperationException(this.getClass().getName() + " unsupport to operate cluster message!");
 	};
 
 	/**

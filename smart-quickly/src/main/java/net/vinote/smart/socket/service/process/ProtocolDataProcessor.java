@@ -1,8 +1,9 @@
 package net.vinote.smart.socket.service.process;
 
+import java.nio.ByteBuffer;
+
 import net.vinote.smart.socket.extension.cluster.ClusterMessageEntry;
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
@@ -19,7 +20,7 @@ public interface ProtocolDataProcessor extends ProtocolDataReceiver {
 	 * @param data
 	 * @return
 	 */
-	public ClusterMessageEntry generateClusterMessage(DataEntry data);
+	public ClusterMessageEntry generateClusterMessage(ByteBuffer data);
 
 	/**
 	 * 获取服务器/客户端配置
@@ -51,7 +52,7 @@ public interface ProtocolDataProcessor extends ProtocolDataReceiver {
 
 	/**
 	 * 获取业务层会话
-	 * 
+	 *
 	 * @param tsession
 	 * @return
 	 */

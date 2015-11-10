@@ -1,6 +1,7 @@
 package net.vinote.smart.socket.protocol.p2p.message;
 
-import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import net.vinote.smart.socket.service.factory.ServiceMessageFactory;
 
@@ -16,7 +17,7 @@ import org.slf4j.LoggerFactory;
  */
 public class FragmentMessage extends BaseMessage {
 	private Logger logger = LoggerFactory.getLogger(FragmentMessage.class);
-	private int length;
+	private Map<Class<?>, CacheUnit> cacheMap = new WeakHashMap<Class<?>, CacheUnit>();
 
 	@Override
 	protected void encodeBody() {
@@ -33,47 +34,18 @@ public class FragmentMessage extends BaseMessage {
 		return 0;
 	}
 
-	public int getLength() {
-		return length;
-	}
-
-	public void setLength(int length) {
-		this.length = length;
-	}
-
-	public int getReadSize() {
-		return getData() == null ? 0 : getData().length;
-	}
-
-	public void append(ByteBuffer buf, int size) {
-		append(buf.array(), buf.position(), size);
-		buf.position(buf.position() + size);
-	}
-
-	public void append(byte[] data, int index, int length) {
-		byte[] tempData = null;
-		if (getData() == null || getData().length == 0) {
-			tempData = new byte[length];
-			System.arraycopy(data, index, tempData, 0, length);
-		} else {
-			tempData = new byte[getData().length + length];
-			System.arraycopy(getData(), 0, tempData, 0, getData().length);
-			System.arraycopy(data, index, tempData, getData().length, length);
-		}
-		setData(tempData);
-	}
-
 	/**
 	 * 将当前对象中的数据解析成具体类型的消息体
 	 *
 	 * @return
 	 */
 	public BaseMessage decodeMessage(ServiceMessageFactory messageFactory) {
+		position(0);
 		decodeHead();
 		HeadMessage head = getHead();
 
 		// 至少需要确保读取到的数据字节数与解析消息头获得的消息体大小一致
-		if (head.getLength() != getData().length) {
+		if (head.getLength() != getData().limit()) {
 			return null;
 		}
 		Class<?> c = null;
@@ -87,25 +59,37 @@ public class FragmentMessage extends BaseMessage {
 			return null;
 		}
 
+		CacheUnit cache = cacheMap.get(c);
 		BaseMessage baseMsg = null;
 		boolean hasHead = false;
-		try {
-			// 优先调用带HeadMessage参数的构造方法,减少BaseMessage中构造HeadMessage对象的次数
-			baseMsg = (BaseMessage) c.getConstructor(HeadMessage.class).newInstance(head);
-			hasHead = true;
-		} catch (NoSuchMethodException e) {
+		if (cache == null) {
 			try {
-				baseMsg = (BaseMessage) c.newInstance();
-			} catch (Exception e1) {
-				logger.warn("", e1);
+				// 优先调用带HeadMessage参数的构造方法,减少BaseMessage中构造HeadMessage对象的次数
+				baseMsg = (BaseMessage) c.getConstructor(HeadMessage.class).newInstance(head);
+				hasHead = true;
+			} catch (NoSuchMethodException e) {
+				try {
+					baseMsg = (BaseMessage) c.newInstance();
+				} catch (Exception e1) {
+					logger.warn("", e1);
+				}
+			} catch (Exception e) {
+				logger.warn("", e);
 			}
-		} catch (Exception e) {
-			logger.warn("", e);
+			if (baseMsg == null) {
+				return null;
+			}
+			cache = new CacheUnit();
+			cache.hasHead = hasHead;
+			cache.message = baseMsg;
+		} else {
+			try {
+				baseMsg = (BaseMessage) cache.message.clone();
+			} catch (CloneNotSupportedException e) {
+				throw new RuntimeException(e);
+			}
+			hasHead = cache.hasHead;
 		}
-		if (baseMsg == null) {
-			return null;
-		}
-
 		baseMsg.setData(getData());
 		// 加密的消息体暂不解码
 		if (head.isSecure()) {
@@ -116,5 +100,10 @@ public class FragmentMessage extends BaseMessage {
 			baseMsg.decode();
 		}
 		return baseMsg;
+	}
+
+	class CacheUnit {
+		BaseMessage message;
+		boolean hasHead;
 	}
 }

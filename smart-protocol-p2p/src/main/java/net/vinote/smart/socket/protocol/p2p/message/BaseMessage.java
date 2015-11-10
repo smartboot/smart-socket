@@ -1,13 +1,14 @@
 package net.vinote.smart.socket.protocol.p2p.message;
 
 import java.net.ProtocolException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.commons.lang.ArrayUtils;
 
 import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.security.Aes128;
+
+import org.apache.commons.lang.ArrayUtils;
 
 /**
  * P2P协议基础消息体对象
@@ -27,7 +28,7 @@ public abstract class BaseMessage extends DataEntry {
 
 	/**
 	 * 构造需要进行加密处理的消息体对象,secureKey将作为消息加密的秘钥
-	 * 
+	 *
 	 * @param secureKey
 	 */
 	public BaseMessage(byte[] secureKey) {
@@ -58,7 +59,7 @@ public abstract class BaseMessage extends DataEntry {
 	 * @throws ProtocolException
 	 */
 	@Override
-	public final byte[] encode() throws ProtocolException {
+	public final ByteBuffer encode() throws ProtocolException {
 		reset(MODE.WRITE);
 		if (head == null) {
 			throw new ProtocolException("Protocol head is unset!");
@@ -72,18 +73,18 @@ public abstract class BaseMessage extends DataEntry {
 			encryptSecureData();
 		}
 
-		head.setLength(getData().length);// 设置消息体长度
+		head.setLength(getPosition());// 设置消息体长度
 
 		// 若是请求消息,将自动为其生成唯一标识 sequenceID;重复encode不产生新的序列号
 		if (head.getSequenceID() == 0
-				&& (MessageType.RESPONSE_MESSAGE & getMessageType()) == MessageType.REQUEST_MESSAGE) {
+			&& (MessageType.RESPONSE_MESSAGE & getMessageType()) == MessageType.REQUEST_MESSAGE) {
 			head.setSequenceID(sequence.incrementAndGet());// 由于初始值为0,所以必须先累加一次,否则获取到的是无效序列号
 		}
 
 		position(0);// 定位至消息体起始位置
-		limitIndex(HeadMessage.HEAD_MESSAGE_LENGTH);// 操作位锁定,避免自定消息体编码超过消息体大小
+		// limitIndex(HeadMessage.HEAD_MESSAGE_LENGTH);// 操作位锁定,避免自定消息体编码超过消息体大小
 		encodeHead();// 编码消息头
-		clearLimit();
+		// clearLimit();
 		position(head.getLength());// 设置标志位至消息末尾
 		return getData();
 	}
@@ -93,16 +94,15 @@ public abstract class BaseMessage extends DataEntry {
 	 */
 	private void encryptSecureData() throws ProtocolException {
 		try {
-			byte[] tempData = new byte[getData().length
-					- HeadMessage.HEAD_MESSAGE_LENGTH];
-			System.arraycopy(getData(), HeadMessage.HEAD_MESSAGE_LENGTH,
-					tempData, 0, tempData.length);
+			byte[] tempData = new byte[getData().position() - HeadMessage.HEAD_MESSAGE_LENGTH];
+			getData().get(tempData, HeadMessage.HEAD_MESSAGE_LENGTH,
+				getData().limit() - HeadMessage.HEAD_MESSAGE_LENGTH);
+			System.arraycopy(getData(), HeadMessage.HEAD_MESSAGE_LENGTH, tempData, 0, tempData.length);
 			byte[] bodyData = Aes128.encrypt(tempData, head.getSecretKey());
 			position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息头末尾
 			writeBytes(bodyData);// 重新编码消息体
 		} catch (Exception e) {
-			throw new ProtocolException("encrypt data exception! "
-					+ e.getLocalizedMessage());
+			throw new ProtocolException("encrypt data exception! " + e.getLocalizedMessage());
 		}
 	}
 
@@ -114,7 +114,6 @@ public abstract class BaseMessage extends DataEntry {
 	@Override
 	public final void decode() {
 		reset(MODE.READ);
-		limitIndex(HeadMessage.HEAD_MESSAGE_LENGTH);// 操作位锁定,避免自定消息体解码超过消息体大小
 		decodeHead();
 		clearLimit();
 		position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息体位置
@@ -132,17 +131,11 @@ public abstract class BaseMessage extends DataEntry {
 	private void decryptSecureData() {
 		try {
 			byte[] bodyData = Aes128.decrypt(readBytes(), head.getSecretKey());
-			System.arraycopy(bodyData, 0, getData(),
-					HeadMessage.HEAD_MESSAGE_LENGTH, bodyData.length);
+			position(HeadMessage.HEAD_MESSAGE_LENGTH);
+			getData(false).put(bodyData, HeadMessage.HEAD_MESSAGE_LENGTH, bodyData.length);
 			head.setLength(bodyData.length + HeadMessage.HEAD_MESSAGE_LENGTH);
-			position(head.getLength());// 游标设置为最后一位
-			setModified(true);// 更新标识以便调用getData()重新读取缓冲区
 
-			int megLenIndex = 4;
-			getData()[megLenIndex++] = (byte) ((0xff000000 & head.getLength()) >> 24);
-			getData()[megLenIndex++] = (byte) ((0xff0000 & head.getLength()) >> 16);
-			getData()[megLenIndex++] = (byte) ((0xff00 & head.getLength()) >> 8);
-			getData()[megLenIndex++] = (byte) (0xff & head.getLength());
+			getData(false).putInt(4, head.getLength());
 
 			position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息体位置
 		} catch (Exception e) {
@@ -166,7 +159,7 @@ public abstract class BaseMessage extends DataEntry {
 
 	/**
 	 * 获取消息类型
-	 * 
+	 *
 	 * @return
 	 */
 	public abstract int getMessageType();
@@ -196,8 +189,7 @@ public abstract class BaseMessage extends DataEntry {
 		// 读取幻数
 		int magicNum = readInt();
 		if (magicNum != HeadMessage.MAGIC_NUMBER) {
-			throw new DecodeException("Invalid Magic Number: 0x"
-					+ Integer.toHexString(magicNum));
+			throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum));
 		}
 		// 读取消息长度
 		int length = readInt();

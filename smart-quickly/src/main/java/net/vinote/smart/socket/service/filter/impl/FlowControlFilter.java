@@ -43,7 +43,7 @@ public class FlowControlFilter implements SmartFilter {
 	}
 
 	@Override
-	public void readFilter(TransportSession session, DataEntry d) {
+	public void readFilter(TransportSession session, ByteBuffer d) {
 		AtomicInteger counter = getCounter(session);
 		if (session.getQuickConfig().isServer()) {
 			int count = counter.incrementAndGet();
@@ -54,7 +54,7 @@ public class FlowControlFilter implements SmartFilter {
 	}
 
 	@Override
-	public void receiveFailHandler(TransportSession session, DataEntry d) {
+	public void receiveFailHandler(TransportSession session, ByteBuffer d) {
 	}
 
 }

@@ -18,7 +18,7 @@ public interface Protocol {
 	 * @param data
 	 * @return 本次解码所成功解析的消息实例集合,不允许返回null
 	 */
-	public DataEntry decode(ByteBuffer data, TransportSession session);
+	public ByteBuffer decode(ByteBuffer data, TransportSession session);
 
 	/**
 	 * 封装畸形报文协议

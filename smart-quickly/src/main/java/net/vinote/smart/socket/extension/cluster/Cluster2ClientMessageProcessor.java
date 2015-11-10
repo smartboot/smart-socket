@@ -1,11 +1,11 @@
 package net.vinote.smart.socket.extension.cluster;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import net.vinote.smart.socket.exception.CacheFullException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.process.AbstractProtocolDataProcessor;
 import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
 import net.vinote.smart.socket.transport.TransportSession;
@@ -24,7 +24,7 @@ public class Cluster2ClientMessageProcessor extends AbstractProtocolDataProcesso
 	private ArrayBlockingQueue<ProcessUnit> msgQueue;
 	private ClusterServiceProcessThread processThread;
 
-	public ClusterMessageEntry generateClusterMessage(DataEntry data) {
+	public ClusterMessageEntry generateClusterMessage(ByteBuffer data) {
 		throw new UnsupportedOperationException(this.getClass().getSimpleName() + " is unsupport current operation!");
 	}
 
@@ -61,13 +61,12 @@ public class Cluster2ClientMessageProcessor extends AbstractProtocolDataProcesso
 	 * 接受集群服务器的消息
 	 */
 
-	public boolean receive(TransportSession clusterSession, DataEntry msg) {
+	public boolean receive(TransportSession clusterSession, ByteBuffer msg) {
 		TransportSession clientSession = null;
 		// 识别集群业务消息对应的客户端链接
 		if (msg instanceof ClusterMessageResponseEntry) {
 			ClusterMessageResponseEntry resp = (ClusterMessageResponseEntry) msg;
 			clientSession = Client2ClusterMessageProcessor.getInstance().getClientTransportSession(resp.getUniqueNo());
-			resp.setQuicklyConfig(clientSession.getQuickConfig());
 			return msgQueue.offer(new ProcessUnit(clientSession, clusterSession, resp));
 		}
 		return false;

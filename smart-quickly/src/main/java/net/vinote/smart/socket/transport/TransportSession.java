@@ -86,7 +86,7 @@ public abstract class TransportSession {
 
 		// 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
 		try {
-			DataEntry dataEntry;
+			ByteBuffer dataEntry;
 			while ((dataEntry = protocol.decode(buffer, this)) != null) {
 				chain.doReadFilter(this, dataEntry);
 			}
@@ -178,7 +178,7 @@ public abstract class TransportSession {
 	 * @return 是否输出成功
 	 * @throws Exception
 	 */
-	public abstract void write(byte[] data) throws IOException, CacheFullException;
+	public abstract void write(ByteBuffer data) throws IOException, CacheFullException;
 
 	/**
 	 * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理

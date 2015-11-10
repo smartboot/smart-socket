@@ -45,11 +45,11 @@ public class SecureFilter implements SmartFilter {
 	}
 
 	@Override
-	public void readFilter(TransportSession session, DataEntry d) {
+	public void readFilter(TransportSession session, ByteBuffer d) {
 	}
 
 	@Override
-	public void receiveFailHandler(TransportSession session, DataEntry d) {
+	public void receiveFailHandler(TransportSession session, ByteBuffer d) {
 	}
 
 	@Override

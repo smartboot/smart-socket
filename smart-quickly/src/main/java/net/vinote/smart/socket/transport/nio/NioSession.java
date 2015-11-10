@@ -82,7 +82,7 @@ public class NioSession extends TransportSession {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see net.vinote.smart.socket.transport.TransportSession#close0()
 	 */
 	@Override
@@ -194,8 +194,8 @@ public class NioSession extends TransportSession {
 	}
 
 	@Override
-	public void write(byte[] writeData) throws IOException {
-		ByteBuffer buffer = ByteBuffer.wrap(writeData);
+	public void write(ByteBuffer buffer) throws IOException {
+		buffer.flip();
 		if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty()) {
 			synchronized (this) {
 				if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty()) {
@@ -208,7 +208,6 @@ public class NioSession extends TransportSession {
 		if (!buffer.hasRemaining()) {
 			return;
 		}
-		System.out.println("hhhh");
 		try {
 			switch (QueueOverflowStrategy.valueOf(quickConfig.getQueueOverflowStrategy())) {
 			case DISCARD:
@@ -249,7 +248,7 @@ public class NioSession extends TransportSession {
 
 	/*
 	 * 将数据输出至缓存,若缓存已满则返回false (non-Javadoc)
-	 *
+	 * 
 	 * @see com.zjw.platform.quickly.Session#write(byte[])
 	 */
 	@Override
