@@ -5,20 +5,20 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.transport.ChannelService;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Seer
  * @version AbstractChannelService.java, v 0.1 2015年3月19日 下午6:57:01 Seer Exp.
  */
 abstract class AbstractChannelService implements ChannelService {
-	private Logger logger = LoggerFactory.getLogger(AbstractChannelService.class);
+	private Logger logger = LogManager.getLogger(AbstractChannelService.class);
 	/** 服务状态 */
 	volatile ChannelServiceStatusEnum status = ChannelServiceStatusEnum.Init;
 
@@ -43,8 +43,8 @@ abstract class AbstractChannelService implements ChannelService {
 		READ_LOOP_TIMES = config.getReadLoopTimes();
 		WRITE_LOOP_TIMES = config.getWriteLoopTimes();
 		try {
-			config.getProcessor().init(config);
-			logger.info("Registe MessageServer Processor[" + config.getProcessor().getClass().getName() + "] success");
+			//config.getProcessor().init(config);
+		//	logger.info("Registe MessageServer Processor[" + config.getProcessor().getClass().getName() + "] success");
 		} catch (final Exception e) {
 			updateServiceStatus(ChannelServiceStatusEnum.Abnormal);
 			logger.warn("", e);
@@ -164,13 +164,10 @@ abstract class AbstractChannelService implements ChannelService {
 			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s protocolFactory is null");
 		}
 
-		if (config.getProcessor() == null) {
-			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s processor is null");
+		if (config.getReceiver() == null) {
+			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s receiver is null");
 		}
 
-		if (config.getServiceMessageFactory() == null) {
-			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s serviceMessageFactory is null");
-		}
 	}
 
 	protected void notifyWhenUpdateStatus(final ChannelServiceStatusEnum status) {

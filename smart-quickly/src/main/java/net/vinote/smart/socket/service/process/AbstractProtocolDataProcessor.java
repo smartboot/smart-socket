@@ -1,8 +1,6 @@
 package net.vinote.smart.socket.service.process;
 
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.protocol.DataEntry;
-import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
 /**
@@ -11,8 +9,7 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  *
  */
-public abstract class AbstractProtocolDataProcessor implements
-		ProtocolDataProcessor {
+public abstract class AbstractProtocolDataProcessor<T> implements ProtocolDataProcessor<T> {
 	private QuicklyConfig quickConfig;
 
 	public void init(QuicklyConfig config) throws Exception {
@@ -24,13 +21,12 @@ public abstract class AbstractProtocolDataProcessor implements
 	}
 
 	@Override
-	public Session getSession(TransportSession tsession) {
+	public void initSession(TransportSession<T> tsession) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public boolean preReceive(TransportSession session, DataEntry entry) {
-		// TODO Auto-generated method stub
+	public  boolean preReceive(TransportSession<T> session, T entry) {
 		return true;
 	}
 

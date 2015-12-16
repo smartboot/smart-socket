@@ -5,14 +5,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.protocol.DataEntry;
-import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.service.session.Session;
-import net.vinote.smart.socket.transport.TransportSession;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.vinote.smart.socket.lang.StringUtils;
+import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.transport.TransportSession;
 
 /**
  * 服务器监测定时器
@@ -20,8 +18,8 @@ import org.slf4j.LoggerFactory;
  * @author Seer
  * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
  */
-public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
-	private Logger logger = LoggerFactory.getLogger(QuickMonitorTimer.class);
+public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<T> {
+	private Logger logger = LogManager.getLogger(QuickMonitorTimer.class);
 	/** 当前周期内消息 流量监控 */
 	private AtomicLong flow = new AtomicLong(0);
 	/** 当前周期内接受消息数 */
@@ -48,22 +46,22 @@ public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
 		return TimeUnit.MINUTES.toMillis(1);
 	}
 
-	public void processFilter(Session session, DataEntry d) {
+	public void processFilter(TransportSession<T> session, T d) {
 		processMsgNum.incrementAndGet();
 		messageStorage.decrementAndGet();
 		totleProcessMsgNum++;
 	}
 
-	public void readFilter(TransportSession session, ByteBuffer d) {
-		flow.addAndGet(d.capacity());
+	public void readFilter(TransportSession<T> session, T d) {
+		flow.addAndGet(((byte[])d).length);
 		recMsgnum.incrementAndGet();
 		messageStorage.incrementAndGet();
 	}
 
-	public void receiveFailHandler(TransportSession session, ByteBuffer d) {
+	public void receiveFailHandler(TransportSession<T> session, T d) {
 		discardNum.incrementAndGet();
 		messageStorage.decrementAndGet();
-		logger.info("HexData -->" + StringUtils.toHexString(d.array()));
+		logger.info("HexData -->" + StringUtils.toHexString((byte[])d));
 	}
 
 	@Override
@@ -80,7 +78,7 @@ public class QuickMonitorTimer extends QuickTimerTask implements SmartFilter {
 	}
 
 	@Override
-	public void writeFilter(TransportSession session, ByteBuffer d) {
+	public void writeFilter(TransportSession<T> session, ByteBuffer d) {
 	}
 
 }

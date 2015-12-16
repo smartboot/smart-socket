@@ -2,8 +2,6 @@ package net.vinote.smart.socket.service.filter;
 
 import java.nio.ByteBuffer;
 
-import net.vinote.smart.socket.protocol.DataEntry;
-import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
 /**
@@ -12,7 +10,7 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  *
  */
-public interface SmartFilter {
+public interface SmartFilter<T> {
 
 	/**
 	 * 消息处理前置预处理
@@ -20,7 +18,7 @@ public interface SmartFilter {
 	 * @param session
 	 * @param d
 	 */
-	public void processFilter(Session session, DataEntry d);
+	public void processFilter(TransportSession<T> session, T d);
 
 	/**
 	 * 消息接受前置预处理
@@ -28,12 +26,12 @@ public interface SmartFilter {
 	 * @param session
 	 * @param d
 	 */
-	public void readFilter(TransportSession session, ByteBuffer d);
+	public void readFilter(TransportSession<T> session, T d);
 
 	/**
 	 * 消息接受失败处理
 	 */
-	public void receiveFailHandler(TransportSession session, ByteBuffer d);
+	public void receiveFailHandler(TransportSession<T> session, T d);
 
-	public void writeFilter(TransportSession session, ByteBuffer d);
+	public void writeFilter(TransportSession<T> session, ByteBuffer d);
 }

@@ -47,15 +47,16 @@
 				<artifactId>protostuff-runtime</artifactId>
 				<version>1.1.0</version>
 			</dependency>
+			<!-- 日志系统 -->
 			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-api</artifactId>
-				<version>1.7.12</version>
+				<groupId>org.apache.logging.log4j</groupId>
+				<artifactId>log4j-api</artifactId>
+				<version>2.4.1</version>
 			</dependency>
 			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-log4j12</artifactId>
-				<version>1.7.12</version>
+				<groupId>org.apache.logging.log4j</groupId>
+				<artifactId>log4j-core</artifactId>
+				<version>2.4.1</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -136,12 +137,39 @@
 			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+    
+		<profile>
+			<id>dev</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<repositories>
+				<repository>
+					<id>central_oschina</id>
+					<url>http://192.168.46.14:8081/nexus/content/repositories/central_oschina</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+				</repository>
+			</repositories>
+			<pluginRepositories>
+				<pluginRepository>
+					<id>central_oschina</id>
+					<url>http://192.168.46.14:8081/nexus/content/repositories/central_oschina</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</pluginRepository>
+			</pluginRepositories>
+		</profile>
+  </profiles>
 	<modules>
 		<module>smart-quickly</module>
-		<module>smart-protocol-p2p</module>
+	<!-- 	<module>smart-protocol-p2p</module>
 		<module>smart-p2p-server</module>
 		<module>smart-p2p-client</module>
-		<module>smart-protocol-http</module>
+		<module>smart-protocol-http</module> -->
 	</modules>
 	<distributionManagement>
 		<site>

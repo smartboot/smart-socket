@@ -8,15 +8,15 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.extension.cluster.Client2ClusterMessageProcessor;
+import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * NIO服务器
@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public final class NioQuickServer extends AbstractChannelService {
-	private Logger logger = LoggerFactory.getLogger(NioQuickServer.class);
+	private Logger logger = LogManager.getLogger(NioQuickServer.class);
 	private ServerSocketChannel server;
 
 	public NioQuickServer(final QuicklyConfig config) {
@@ -46,16 +46,13 @@ public final class NioQuickServer extends AbstractChannelService {
 		SocketChannel socketChannel = serverChannel.accept();
 		socketChannel.configureBlocking(false);
 		SelectionKey socketKey = socketChannel.register(selector, SelectionKey.OP_READ);
-		NioSession session = null;
-		// 判断当前链路的消息是否交由集群服务器处理
-		if (config.getClusterTriggerStrategy() != null && config.getClusterTriggerStrategy().cluster()) {
-			session = new NioSession(socketKey, config, Client2ClusterMessageProcessor.getInstance());
-		} else {
-			session = new NioSession(socketKey, config);
-		}
+		NioSession session = new NioSession(socketKey, config.getProtocolFactory().createProtocol(),
+			config.getReceiver(), config.getFilters(), config.getCacheSize(),
+			QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy()), config.isAutoRecover(),config.getDataBufferSize());
 		socketKey.attach(session);
 		socketChannel.finishConnect();
-		config.getProcessor().getSession(session);// 创建会话以便进行状态监控
+		config.getReceiver().initChannel(session);
+		// config.getProcessor().initSession(session);// 创建会话以便进行状态监控
 	}
 
 	@Override
@@ -95,7 +92,7 @@ public final class NioQuickServer extends AbstractChannelService {
 
 	public void shutdown() {
 		updateServiceStatus(ChannelServiceStatusEnum.STOPPING);
-		config.getProcessor().shutdown();
+		// config.getProcessor().shutdown();
 		try {
 			if (selector != null) {
 				selector.close();
@@ -109,7 +106,6 @@ public final class NioQuickServer extends AbstractChannelService {
 		} catch (final IOException e) {
 			logger.warn("", e);
 		}
-		Client2ClusterMessageProcessor.getInstance().shutdown();
 	}
 
 	public void start() throws IOException {
@@ -130,15 +126,6 @@ public final class NioQuickServer extends AbstractChannelService {
 			server.register(selector, SelectionKey.OP_ACCEPT, config);
 			serverThread = new Thread(this, "Nio-Server");
 			serverThread.start();
-			if (config.getClusterUrl() != null) {
-				// 启动集群服务
-				try {
-					Client2ClusterMessageProcessor.getInstance().init(config);
-					logger.info("Start Cluster Service...");
-				} catch (final Exception e) {
-					logger.warn("", e);
-				}
-			}
 		} catch (final IOException e) {
 			shutdown();
 			throw e;

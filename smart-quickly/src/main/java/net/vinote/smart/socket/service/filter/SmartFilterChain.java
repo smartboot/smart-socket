@@ -10,9 +10,9 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  *
  */
-public interface SmartFilterChain {
+public interface SmartFilterChain<T> {
 
-	public void doReadFilter(TransportSession session, ByteBuffer buffer);
+	public void doReadFilter(TransportSession<T> session, T buffer);
 
-	public void doWriteFilter(TransportSession session, ByteBuffer buffer);
+	public void doWriteFilter(TransportSession<T> session, ByteBuffer buffer);
 }

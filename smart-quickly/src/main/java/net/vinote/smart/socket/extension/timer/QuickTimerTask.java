@@ -3,8 +3,8 @@ package net.vinote.smart.socket.extension.timer;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * 服务器定时任务
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public abstract class QuickTimerTask extends TimerTask {
-	private Logger logger = LoggerFactory.getLogger(QuickTimerTask.class);
+	private Logger logger = LogManager.getLogger(QuickTimerTask.class);
 	private static Timer timer = new Timer("Quick Timer", true);
 
 	public QuickTimerTask() {

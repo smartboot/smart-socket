@@ -5,16 +5,14 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.vinote.smart.socket.exception.CacheFullException;
 import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 传输层会话<br/>
@@ -23,24 +21,28 @@ import org.slf4j.LoggerFactory;
  * @author Seer
  * @version TransportSession.java, v 0.1 2015年8月24日 上午10:31:38 Seer Exp.
  */
-public abstract class TransportSession {
+public abstract class TransportSession<T> {
 
-	private Logger logger = LoggerFactory.getLogger(TransportSession.class);
+	private Logger logger = LogManager.getLogger(TransportSession.class);
 	/** 会话ID */
 	private final String sessionId = String.valueOf(System.identityHashCode(this));
-	/** 配置信息 */
-	protected QuicklyConfig quickConfig;
-	/** 消息通信协议 */
-	protected Protocol protocol;
 
+	/** 消息通信协议 */
+	protected Protocol<T> protocol;
+	/** 超时时间 */
+	protected int timeout;
+
+	/** 缓存大小 */
+	protected int bufferSize;
 	/** 缓存传输层读取到的数据流 */
 	private ByteBuffer readBuffer;
 
+	protected int cacheSize;
 	private Map<String, Object> attribute = new HashMap<String, Object>();
 	/** 会话状态 */
 	private volatile SessionStatusEnum status = SessionStatusEnum.ENABLED;
 
-	protected SmartFilterChain chain;
+	protected SmartFilterChain<T> chain;
 
 	/**
 	 * 取消读关注<br/>
@@ -86,7 +88,7 @@ public abstract class TransportSession {
 
 		// 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
 		try {
-			ByteBuffer dataEntry;
+			T dataEntry;
 			while ((dataEntry = protocol.decode(buffer, this)) != null) {
 				chain.doReadFilter(this, dataEntry);
 			}
@@ -102,13 +104,9 @@ public abstract class TransportSession {
 
 	public abstract String getLocalAddress();
 
-	public final QuicklyConfig getQuickConfig() {
-		return quickConfig;
-	}
-
 	public ByteBuffer getReadBuffer() {
 		if (readBuffer == null) {
-			readBuffer = ByteBuffer.allocate(quickConfig.getDataBufferSize());
+			readBuffer = ByteBuffer.allocate(bufferSize);
 		}
 		return readBuffer;
 	}
@@ -152,7 +150,7 @@ public abstract class TransportSession {
 	 * @return
 	 */
 	public int getTimeout() {
-		return quickConfig.getTimeout();
+		return timeout;
 	}
 
 	/**
@@ -188,7 +186,7 @@ public abstract class TransportSession {
 	 * @return 是否输出成功
 	 * @throws Exception
 	 */
-	public abstract void write(DataEntry data) throws IOException, CacheFullException;
+	public abstract void write(T data) throws IOException, CacheFullException;
 
 	/**
 	 * Getter method for property <tt>attribute</tt>.
@@ -196,8 +194,8 @@ public abstract class TransportSession {
 	 * @return property value of attribute
 	 */
 	@SuppressWarnings("unchecked")
-	public final <T> T getAttribute(String key) {
-		return (T) attribute.get(key);
+	public final <T1> T1 getAttribute(String key) {
+		return (T1) attribute.get(key);
 	}
 
 	/**
@@ -213,4 +211,14 @@ public abstract class TransportSession {
 	public final void removeAttribute(String key) {
 		attribute.remove(key);
 	}
+
+	/**
+	 * Getter method for property <tt>cacheSize</tt>.
+	 *
+	 * @return property value of cacheSize
+	 */
+	public final int getCacheSize() {
+		return cacheSize;
+	}
+	
 }

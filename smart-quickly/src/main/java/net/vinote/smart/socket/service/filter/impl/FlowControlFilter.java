@@ -3,9 +3,7 @@ package net.vinote.smart.socket.service.filter.impl;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
 /**
@@ -14,22 +12,20 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  * @version FlowControlFilter.java, v 0.1 2015年4月11日 下午4:29:24 Seer Exp.
  */
-public class FlowControlFilter implements SmartFilter {
+public class FlowControlFilter implements SmartFilter<byte[]> {
 	/** 流控计数器标识 */
 	private static final String FLOW_CONTROL_FLAG = "_FLOW_CONTROL_FLAG_";
 
 	@Override
-	public void writeFilter(TransportSession session, ByteBuffer d) {
+	public void writeFilter(TransportSession<byte[]> session, ByteBuffer d) {
 		AtomicInteger counter = getCounter(session);
-		if (session.getQuickConfig().isServer()) {
-			int num = counter.decrementAndGet();
-			if (num * 1.0 / session.getQuickConfig().getCacheSize() < 0.382) {
-				session.resumeReadAttention();
-			}
+		int num = counter.decrementAndGet();
+		if (num * 1.0 / session.getCacheSize() < 0.382) {
+			session.resumeReadAttention();
 		}
 	}
 
-	private AtomicInteger getCounter(TransportSession session) {
+	private AtomicInteger getCounter(TransportSession<byte[]> session) {
 		AtomicInteger counter = session.getAttribute(FLOW_CONTROL_FLAG);
 		if (counter == null) {
 			counter = new AtomicInteger();
@@ -39,22 +35,20 @@ public class FlowControlFilter implements SmartFilter {
 	}
 
 	@Override
-	public void processFilter(Session session, DataEntry d) {
+	public void processFilter(TransportSession<byte[]> session, byte[] d) {
 	}
 
 	@Override
-	public void readFilter(TransportSession session, ByteBuffer d) {
+	public void readFilter(TransportSession<byte[]> session, byte[] d) {
 		AtomicInteger counter = getCounter(session);
-		if (session.getQuickConfig().isServer()) {
-			int count = counter.incrementAndGet();
-			if (count * 1.0 / session.getQuickConfig().getCacheSize() > 0.618) {
-				session.pauseReadAttention();
-			}
+		int count = counter.incrementAndGet();
+		if (count * 1.0 / session.getCacheSize() > 0.618) {
+			session.pauseReadAttention();
 		}
 	}
 
 	@Override
-	public void receiveFailHandler(TransportSession session, ByteBuffer d) {
+	public void receiveFailHandler(TransportSession<byte[]> session, byte[] d) {
 	}
 
 }

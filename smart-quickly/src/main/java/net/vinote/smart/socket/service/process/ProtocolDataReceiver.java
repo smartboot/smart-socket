@@ -1,8 +1,5 @@
 package net.vinote.smart.socket.service.process;
 
-import java.nio.ByteBuffer;
-
-import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.transport.TransportSession;
 
 /**
@@ -15,7 +12,7 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  * @version 1.0
  */
-public interface ProtocolDataReceiver {
+public interface ProtocolDataReceiver<T> {
 
 	/**
 	 * 消息的前置处理器
@@ -26,7 +23,7 @@ public interface ProtocolDataReceiver {
 	 * @param entry
 	 * @return
 	 */
-	public boolean preReceive(TransportSession session, DataEntry entry);
+	public boolean preReceive(TransportSession<T> session, T entry);
 
 	/**
 	 * 接受业务消息
@@ -42,5 +39,7 @@ public interface ProtocolDataReceiver {
 	 *            待接收的消息
 	 * @return
 	 */
-	public boolean receive(TransportSession session, ByteBuffer entry);
+	public boolean receive(TransportSession<T> session, T entry);
+
+	public void initChannel(TransportSession<T> session);
 }

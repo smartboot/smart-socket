@@ -13,8 +13,8 @@ import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.Cipher;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * 封装RSA加解密的常用方法
@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * @version RSA.java, v 0.1 2015年8月27日 下午3:42:34 Seer Exp.
  */
 public class RSA {
-	private static Logger logger = LoggerFactory.getLogger(RSA.class);
+	private static Logger logger = LogManager.getLogger(RSA.class);
 	private static final String ALGORITHM = "RSA";
 	/** */
 	/**

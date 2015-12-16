@@ -8,19 +8,19 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.vinote.smart.socket.exception.CacheFullException;
 import net.vinote.smart.socket.exception.NotYetReconnectedException;
 import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
 import net.vinote.smart.socket.lang.QueueOverflowStrategy;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.protocol.DataEntry;
+import net.vinote.smart.socket.protocol.Protocol;
+import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
 import net.vinote.smart.socket.service.process.ProtocolDataReceiver;
 import net.vinote.smart.socket.transport.TransportSession;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 维护客户端-》服务端 或 服务端-》客户端 的当前会话
@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
  * @author Administrator
  *
  */
-public class NioSession extends TransportSession {
-	private Logger logger = LoggerFactory.getLogger(NioSession.class);
+public class NioSession<T> extends TransportSession<T> {
+	private Logger logger = LogManager.getLogger(NioSession.class);
 	private SelectionKey channelKey = null;
 
 	/** 响应消息缓存队列 */
@@ -48,6 +48,10 @@ public class NioSession extends TransportSession {
 	/** 是否已注销读关注 */
 	private boolean readClosed = false;
 
+	private QueueOverflowStrategy strategy = QueueOverflowStrategy.DISCARD;
+	/** 是否自动修复链路 */
+	private boolean autoRecover;
+
 	/**
 	 * @param channel
 	 *            当前的Socket管道
@@ -56,17 +60,17 @@ public class NioSession extends TransportSession {
 	 * @param processor
 	 *            当前channel消息的处理器
 	 */
-	public NioSession(SelectionKey channelKey, final QuicklyConfig config) {
+	public NioSession(SelectionKey channelKey, final Protocol<T> protocol, final ProtocolDataReceiver<T> receiver,
+		final SmartFilter<T>[] filters, final int cacheSize, QueueOverflowStrategy strategy, final boolean autoRecover,
+		final int bufferSize) {
 		initBaseChannelInfo(channelKey);
-		super.quickConfig = config;
-		super.protocol = config.getProtocolFactory().createProtocol();
-		super.chain = new SmartFilterChainImpl(config.getProcessor(), config.getFilters());
-		writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getCacheSize());
-	}
-
-	public NioSession(SelectionKey channelKey, QuicklyConfig config, ProtocolDataReceiver receiver) {
-		this(channelKey, config);
-		super.chain = new SmartFilterChainImpl(receiver, config.getFilters());
+		super.protocol = protocol;
+		super.chain = new SmartFilterChainImpl<T>(receiver, filters);
+		this.cacheSize = cacheSize;
+		writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(cacheSize);
+		this.strategy = strategy;
+		this.autoRecover = autoRecover;
+		super.bufferSize = bufferSize;
 	}
 
 	@Override
@@ -188,14 +192,13 @@ public class NioSession extends TransportSession {
 
 	@Override
 	public String toString() {
-		return "Session [channel=" + channelKey.channel() + ", protocol=" + protocol + ", receiver="
-			+ getQuickConfig().getProcessor() + ", getClass()=" + getClass() + ", hashCode()=" + hashCode()
-			+ ", toString()=" + super.toString() + "]";
+		return "Session [channel=" + channelKey.channel() + ", protocol=" + protocol + ", receiver=" + ", getClass()="
+			+ getClass() + ", hashCode()=" + hashCode() + ", toString()=" + super.toString() + "]";
 	}
 
 	@Override
 	public void write(ByteBuffer buffer) throws IOException {
-		buffer.flip();
+		// buffer.flip();
 		if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty()) {
 			synchronized (this) {
 				if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty()) {
@@ -209,7 +212,7 @@ public class NioSession extends TransportSession {
 			return;
 		}
 		try {
-			switch (QueueOverflowStrategy.valueOf(quickConfig.getQueueOverflowStrategy())) {
+			switch (strategy) {
 			case DISCARD:
 				if (!writeCacheQueue.offer(buffer)) {
 					logger.warn("cache is full now");
@@ -220,8 +223,7 @@ public class NioSession extends TransportSession {
 				writeCacheQueue.put(buffer);
 				break;
 			default:
-				throw new QueueOverflowStrategyException("Invalid overflow strategy "
-					+ quickConfig.getQueueOverflowStrategy());
+				throw new QueueOverflowStrategyException("Invalid overflow strategy " + strategy);
 			}
 
 		} catch (CacheFullException e) {
@@ -230,7 +232,7 @@ public class NioSession extends TransportSession {
 			logger.warn(e.getMessage(), e);
 		} finally {
 			if (!channelKey.isValid()) {
-				if (getQuickConfig().isAutoRecover()) {
+				if (autoRecover) {
 					throw new NotYetReconnectedException("Network anomaly, will reconnect");
 				} else {
 					writeCacheQueue.clear();
@@ -252,8 +254,8 @@ public class NioSession extends TransportSession {
 	 * @see com.zjw.platform.quickly.Session#write(byte[])
 	 */
 	@Override
-	public void write(DataEntry data) throws IOException, CacheFullException {
-		write(data.encode());
+	public void write(T data) throws IOException, CacheFullException {
+		throw new UnsupportedOperationException();
 	}
 
 }

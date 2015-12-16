@@ -7,11 +7,11 @@ package net.vinote.smart.socket.protocol;
  * @author Administrator
  *
  */
-public interface ProtocolFactory {
+public interface ProtocolFactory<T> {
 	/**
 	 * 创建协议解析器
 	 * 
 	 * @return
 	 */
-	public Protocol createProtocol();
+	public Protocol<T> createProtocol();
 }

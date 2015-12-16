@@ -1,7 +1,6 @@
 package net.vinote.smart.socket.transport.nio;
 
 import java.io.IOException;
-import java.io.InvalidClassException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -10,24 +9,21 @@ import java.nio.channels.SocketChannel;
 import java.security.InvalidParameterException;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.vinote.smart.socket.exception.StatusException;
+import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.service.process.ClientProcessor;
-import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
-import net.vinote.smart.socket.transport.ClientChannelService;
-import net.vinote.smart.socket.transport.TransportSession;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Seer
  * @version NioQuickClient.java, v 0.1 2015年3月20日 下午2:55:08 Seer Exp.
  */
-public class NioQuickClient extends AbstractChannelService implements ClientChannelService {
-	private Logger logger = LoggerFactory.getLogger(NioQuickClient.class);
+public class NioQuickClient extends AbstractChannelService {
+	private Logger logger = LogManager.getLogger(NioQuickClient.class);
 	/**
 	 * Socket连接锁,用于监听连接超时
 	 */
@@ -64,15 +60,20 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 			session.initBaseChannelInfo(key);
 			logger.info("Socket link has been recovered!");
 		} else {
-			session = new NioSession(key, config);
+			session = new NioSession(key, config.getProtocolFactory().createProtocol(), config.getReceiver(),
+				config.getFilters(), config.getCacheSize(),
+				QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy()), config.isAutoRecover(),
+				config.getDataBufferSize());
 			logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
-			ProtocolDataProcessor processor = config.getProcessor();
-			if (processor instanceof ClientProcessor) {
-				((ClientProcessor) processor).createSession(session);
-			} else {
-				throw new InvalidClassException("Client Processor must implement interface "
-					+ ClientProcessor.class.getName());
-			}
+			config.getReceiver().initChannel(session);
+			// ProtocolDataProcessor processor = config.getProcessor();
+			// if (processor instanceof ClientProcessor) {
+			// ((ClientProcessor) processor).createSession(session);
+			// } else {
+			// throw new InvalidClassException(
+			// "Client Processor must implement interface " +
+			// ClientProcessor.class.getName());
+			// }
 			synchronized (conenctLock) {
 				conenctLock.notifyAll();
 			}
@@ -93,21 +94,12 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 
 	@Override
 	void exceptionInSelector(final Exception e) {
-		logger.warn(e.getMessage(), e);
+		logger.catching(e);
 		if (ChannelServiceStatusEnum.RUNING == status && config.isAutoRecover()) {
 			restart();
 		} else {
 			shutdown();
 		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see net.vinote.smart.socket.transport.ClientChannelService#getSession()
-	 */
-	public final TransportSession getSession() {
-		return session;
 	}
 
 	@Override
@@ -158,7 +150,7 @@ public class NioQuickClient extends AbstractChannelService implements ClientChan
 	 */
 	public final void shutdown() {
 		updateServiceStatus(ChannelServiceStatusEnum.STOPPING);
-		config.getProcessor().shutdown();
+		// config.getProcessor().shutdown();
 		try {
 			selector.close();
 			selector.wakeup();
