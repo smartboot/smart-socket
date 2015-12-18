@@ -116,7 +116,15 @@ public class NioQuickClient extends AbstractChannelService {
 			// 达到流末尾则注销读关注
 			if (readSize == -1) {
 				logger.info("the read channel[" + channel + "] has reached end-of-stream");
-				key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+				// key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+				session.cancelReadAttention();
+				// key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+				if (session.getWriteBuffer() == null || key.isValid()) {
+					session.close();
+					logger.info("关闭Socket[" + socketChannel + "]");
+				} else {
+					logger.info("注销Socket[" + socketChannel + "]读关注");
+				}
 			}
 		}
 	}

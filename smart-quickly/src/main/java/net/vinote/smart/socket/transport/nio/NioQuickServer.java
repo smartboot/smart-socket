@@ -48,7 +48,8 @@ public final class NioQuickServer extends AbstractChannelService {
 		SelectionKey socketKey = socketChannel.register(selector, SelectionKey.OP_READ);
 		NioSession session = new NioSession(socketKey, config.getProtocolFactory().createProtocol(),
 			config.getReceiver(), config.getFilters(), config.getCacheSize(),
-			QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy()), config.isAutoRecover(),config.getDataBufferSize());
+			QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy()), config.isAutoRecover(),
+			config.getDataBufferSize());
 		socketKey.attach(session);
 		socketChannel.finishConnect();
 		config.getReceiver().initChannel(session);
@@ -85,8 +86,14 @@ public final class NioQuickServer extends AbstractChannelService {
 			&& (readSize = socketChannel.read(buffer)) > 0);// 读取管道中的数据块
 		// 达到流末尾则注销读关注
 		if (readSize == -1 || session.getStatus() == SessionStatusEnum.CLOSING) {
-			logger.info("注销客户端[" + socketChannel + "]读关注");
-			key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+			session.cancelReadAttention();
+			// key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+			if (session.getWriteBuffer() == null || key.isValid()) {
+				session.close();
+				logger.info("关闭客户端[" + socketChannel + "]");
+			} else {
+				logger.info("注销客户端[" + socketChannel + "]读关注");
+			}
 		}
 	}
 
@@ -144,6 +151,7 @@ public final class NioQuickServer extends AbstractChannelService {
 			;
 		}
 		if (session.getStatus() == SessionStatusEnum.CLOSING && (buffer = session.getWriteBuffer()) == null) {
+			System.out.println("Close");
 			session.close();
 		}
 	}

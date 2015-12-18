@@ -20,6 +20,7 @@ public class FlowControlFilter implements SmartFilter<byte[]> {
 	public void writeFilter(TransportSession<byte[]> session, ByteBuffer d) {
 		AtomicInteger counter = getCounter(session);
 		int num = counter.decrementAndGet();
+		System.out.println("hello world :" + num);
 		if (num * 1.0 / session.getCacheSize() < 0.382) {
 			session.resumeReadAttention();
 		}
@@ -42,6 +43,7 @@ public class FlowControlFilter implements SmartFilter<byte[]> {
 	public void readFilter(TransportSession<byte[]> session, byte[] d) {
 		AtomicInteger counter = getCounter(session);
 		int count = counter.incrementAndGet();
+		System.out.println(count + "  " + session.getCacheSize());
 		if (count * 1.0 / session.getCacheSize() > 0.618) {
 			session.pauseReadAttention();
 		}

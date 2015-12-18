@@ -198,18 +198,24 @@ public class NioSession<T> extends TransportSession<T> {
 
 	@Override
 	public void write(ByteBuffer buffer) throws IOException {
-		// buffer.flip();
+		buffer.flip();
 		if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty()) {
 			synchronized (this) {
 				if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty()) {
 					writeBuffer = buffer;
 					chain.doWriteFilter(this, writeBuffer);
 					((SocketChannel) channelKey.channel()).write(writeBuffer);
+					if (writeBuffer.hasRemaining()) {
+						synchronized (writeLock) {
+							channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_WRITE);
+							channelKey.selector().wakeup();
+						}
+					} else {
+						writeBuffer = null;
+					}
+					return;
 				}
 			}
-		}
-		if (!buffer.hasRemaining()) {
-			return;
 		}
 		try {
 			switch (strategy) {
