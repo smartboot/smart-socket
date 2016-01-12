@@ -1,3 +1,5 @@
+#注意：smart-socker处于重构阶段，master暂时不可用。有兴趣者可先使用feature/with-protocol-http这个分支的老版本
+
 ![输入图片说明](https://static.oschina.net/uploads/img/201508/26160044_Uvf4.png "在这里输入图片标题")
 ##框架结构
 - 传输层  
