@@ -50,9 +50,9 @@ public class P2PMultiClient {
 						DetectMessageReq request = new DetectMessageReq();
 						request.setDetectMessage("Hello");
 						try {
-							//DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
-							//	.sendWithResponse(request);
-							 processor.getSession().sendWithoutResponse(request);
+							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
+								.sendWithResponse(request);
+							// processor.getSession().sendWithoutResponse(request);
 							// logger.info(loginResp);
 						} catch (Exception e) {
 							System.out.println(num);
