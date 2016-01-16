@@ -6,18 +6,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.protocol.DataEntry;
-import net.vinote.smart.socket.service.factory.ServiceMessageFactory;
-import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
+import net.vinote.smart.socket.protocol.p2p.AbstractServiceMessageProcessor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class P2pServiceMessageFactory implements ServiceMessageFactory {
-	private Logger logger = LoggerFactory.getLogger(P2pServiceMessageFactory.class);
+public class P2pServiceMessageFactory {
+	private Logger logger = LogManager.getLogger(P2pServiceMessageFactory.class);
 	private Map<Integer, Class<? extends BaseMessage>> msgHaspMap = new HashMap<Integer, Class<? extends BaseMessage>>();
-	private Map<Class<? extends DataEntry>, AbstractServiceMessageProcessor> processorMap = new HashMap<Class<? extends DataEntry>, AbstractServiceMessageProcessor>();
+	private Map<Class<? extends BaseMessage>, AbstractServiceMessageProcessor> processorMap = new HashMap<Class<? extends BaseMessage>, AbstractServiceMessageProcessor>();
+
 
 	/**
 	 * 注册消息
@@ -75,7 +74,7 @@ public class P2pServiceMessageFactory implements ServiceMessageFactory {
 	 * @param clazz
 	 * @param process
 	 */
-	private <K extends DataEntry, V extends AbstractServiceMessageProcessor> void regist(Class<K> clazz,
+	private <K extends BaseMessage, V extends AbstractServiceMessageProcessor> void regist(Class<K> clazz,
 		final Class<V> process) {
 		try {
 			AbstractServiceMessageProcessor processor = process.newInstance();
@@ -93,7 +92,7 @@ public class P2pServiceMessageFactory implements ServiceMessageFactory {
 		return msgHaspMap.get(type);
 	}
 
-	@Override
+	// @Override
 	public void destory() {
 		for (AbstractServiceMessageProcessor processor : processorMap.values()) {
 			processor.destory();
@@ -102,8 +101,8 @@ public class P2pServiceMessageFactory implements ServiceMessageFactory {
 		msgHaspMap.clear();
 	}
 
-	@Override
-	public AbstractServiceMessageProcessor getProcessor(Class<? extends DataEntry> clazz) {
+	// @Override
+	public AbstractServiceMessageProcessor getProcessor(Class<? extends BaseMessage> clazz) {
 		return processorMap.get(clazz);
 	}
 }

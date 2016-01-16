@@ -2,15 +2,15 @@ package net.vinote.smart.socket.lang;
 
 import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.service.process.ProtocolDataReceiver;
+import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
 
 /**
- * Quickly服务端/客户端配置信息
+ * Quickly服务端/客户端配置信息 T:解码后生成的对象类型，S:
  * 
  * @author Seer
  * 
  */
-public class QuicklyConfig<T, S> {
+public class QuicklyConfig<T> {
 
 	/** 自动修复链接 */
 	private boolean autoRecover = false;
@@ -34,7 +34,7 @@ public class QuicklyConfig<T, S> {
 	private int port = 8888;
 
 	/** 消息处理器 */
-	private ProtocolDataReceiver<S> receiver;
+	private ProtocolDataProcessor<T> processor;
 
 	/** 协议工厂 */
 	private ProtocolFactory<T> protocolFactory;
@@ -177,15 +177,15 @@ public class QuicklyConfig<T, S> {
 	 *
 	 * @return property value of filters
 	 */
-	public final SmartFilter<? extends T>[] getFilters() {
+	public final SmartFilter<T>[] getFilters() {
 		return filters;
 	}
-
 
 	/**
 	 * Setter method for property <tt>filters</tt>.
 	 *
-	 * @param filters value to be assigned to property filters
+	 * @param filters
+	 *            value to be assigned to property filters
 	 */
 	public final void setFilters(SmartFilter<T>[] filters) {
 		this.filters = filters;
@@ -211,22 +211,21 @@ public class QuicklyConfig<T, S> {
 	}
 
 	/**
-	 * Getter method for property <tt>receiver</tt>.
+	 * Getter method for property <tt>processor</tt>.
 	 *
-	 * @return property value of receiver
+	 * @return property value of processor
 	 */
-	public final ProtocolDataReceiver<S> getReceiver() {
-		return receiver;
+	public final ProtocolDataProcessor<T> getProcessor() {
+		return processor;
 	}
 
 	/**
-	 * Setter method for property <tt>receiver</tt>.
+	 * Setter method for property <tt>processor</tt>.
 	 *
-	 * @param receiver
-	 *            value to be assigned to property receiver
+	 * @param processor
+	 *            value to be assigned to property processor
 	 */
-	public final void setReceiver(ProtocolDataReceiver<S> receiver) {
-		this.receiver = receiver;
+	public final void setProcessor(ProtocolDataProcessor<T> processor) {
+		this.processor = processor;
 	}
-
 }

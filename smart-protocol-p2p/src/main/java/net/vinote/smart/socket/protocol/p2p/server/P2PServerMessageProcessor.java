@@ -1,27 +1,19 @@
 package net.vinote.smart.socket.protocol.p2p.server;
 
-import java.nio.ByteBuffer;
-import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import net.vinote.smart.socket.extension.cluster.ClusterMessageEntry;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.protocol.P2PSession;
-import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
-import net.vinote.smart.socket.protocol.p2p.message.ClusterMessageReq;
-import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
-import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageReq;
-import net.vinote.smart.socket.protocol.p2p.processor.InvalidMessageProcessor;
-import net.vinote.smart.socket.service.process.AbstractProtocolDataProcessor;
-import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
-import net.vinote.smart.socket.service.process.ProtocolProcessThread;
-import net.vinote.smart.socket.service.session.Session;
-import net.vinote.smart.socket.service.session.SessionManager;
-import net.vinote.smart.socket.transport.TransportSession;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.protocol.P2PSession;
+import net.vinote.smart.socket.protocol.p2p.AbstractServiceMessageProcessor;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
+import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
+import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.service.process.AbstractProtocolDataProcessor;
+import net.vinote.smart.socket.service.process.ProtocolProcessThread;
+import net.vinote.smart.socket.transport.TransportSession;
 
 /**
  * 服务器消息处理器,由服务器启动时构造
@@ -29,46 +21,32 @@ import org.slf4j.LoggerFactory;
  * @author Seer
  *
  */
-public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
-	private Logger logger = LoggerFactory.getLogger(P2PServerMessageProcessor.class);
+public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor<BaseMessage> {
+	private Logger logger = LogManager.getLogger(P2PServerMessageProcessor.class);
+	private static final String SESSION_KEY = "SESSION";
+	private P2pServiceMessageFactory serviceMessageFactory;
+
+	public P2PServerMessageProcessor(P2pServiceMessageFactory serviceMessageFactory) {
+		this.serviceMessageFactory = serviceMessageFactory;
+	}
 
 	class ProcessUnit {
-		String sessionId;
+		TransportSession<BaseMessage> session;
 		BaseMessage msg;
 
-		public ProcessUnit(String sessionId, BaseMessage msg) {
-			this.sessionId = sessionId;
+		public ProcessUnit(TransportSession<BaseMessage> session, BaseMessage msg) {
+			this.session = session;
 			this.msg = msg;
 		}
 	}
 
-	private ProtocolProcessThread[] processThreads;
+	private ProtocolProcessThread<BaseMessage>[] processThreads;
 	private ArrayBlockingQueue<ProcessUnit> msgQueue;
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see com.zjw.platform.quickly.process.MessageProcessor#process(com.zjw.
-	 * platform .quickly.Session, com.zjw.platform.quickly.message.DataEntry)
-	 */
 
 	private int msgQueueMaxSize;
 
-	public ClusterMessageEntry generateClusterMessage(ByteBuffer data) {
-		ClusterMessageReq entry = new ClusterMessageReq();
-		entry.setServiceData(data);
-		return entry;
-	}
-
-	/*
-	 * 处理消息 (non-Javadoc)
-	 *
-	 * @see com.zjw.platform.quickly.process.MessageProcessor#process(java.lang.
-	 * Object )
-	 */
-
 	@Override
-	public void init(QuicklyConfig config) throws Exception {
+	public void init(QuicklyConfig<BaseMessage> config) {
 		super.init(config);
 		msgQueueMaxSize = config.getThreadNum() * 500;
 		msgQueue = new ArrayBlockingQueue<ProcessUnit>(msgQueueMaxSize);
@@ -79,62 +57,34 @@ public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor {
 			processThreads[i].setPriority(Thread.MAX_PRIORITY);
 			processThreads[i].start();
 		}
-		Properties properties = new Properties();
-		properties.put(InvalidMessageReq.class.getName(), InvalidMessageProcessor.class.getName());
-		config.getServiceMessageFactory().loadFromProperties(properties);
-	}
-
-	public <T> void process(T t) {
-		ProcessUnit unit = (ProcessUnit) t;
-		Session session = SessionManager.getInstance().getSession(unit.sessionId);
-		if (session == null || session.isInvalid()) {
-			logger.info("Session is invalid,lose message" + StringUtils.toHexString(unit.msg.getData().array()));
-			return;
-		}
-		session.refreshAccessedTime();
-		AbstractServiceMessageProcessor processor = getQuicklyConfig().getServiceMessageFactory().getProcessor(
-			unit.msg.getClass());
-		try {
-			processor.processor(session, unit.msg);
-		} catch (Exception e) {
-			logger.warn("", e);
-		}
-	}
-
-	public boolean receive(TransportSession tsession, ByteBuffer buffer) {
-		// 会话封装并分配处理线程
-		Session session = SessionManager.getInstance().getSession(tsession.getSessionID());
-		if (session == null) {
-			session = new P2PSession(tsession);
-			SessionManager.getInstance().registSession(session);
-
-		}
-		session.refreshAccessedTime();
-		FragmentMessage msg = session.getAttribute("FragmentMessage");
-		if (msg == null) {
-			msg = new FragmentMessage();
-			session.setAttribute("FragmentMessage", msg);
-		}
-		msg.setData(buffer);
-		BaseMessage baseMsg = msg.decodeMessage(getQuicklyConfig().getServiceMessageFactory());
-		return session.notifySyncMessage(msg) ? true : msgQueue.offer(new ProcessUnit(session.getId(), baseMsg));
 	}
 
 	public void shutdown() {
-		for (ProtocolProcessThread thread : processThreads) {
+		for (ProtocolProcessThread<BaseMessage> thread : processThreads) {
 			thread.shutdown();
 		}
-		getQuicklyConfig().getServiceMessageFactory().destory();
 	}
 
 	@Override
-	public Session getSession(TransportSession tsession) {
-		Session session = SessionManager.getInstance().getSession(tsession.getSessionID());
-		if (session == null) {
-			session = new P2PSession(tsession);
-			SessionManager.getInstance().registSession(session);
+	public void process(TransportSession<BaseMessage> tsession, BaseMessage entry) throws Exception {
+		P2PSession session = tsession.getAttribute(SESSION_KEY);
+		SmartFilter<BaseMessage>[] handlers = getQuicklyConfig().getFilters();
+		if (handlers != null && handlers.length > 0) {
+			for (SmartFilter<BaseMessage> h : handlers) {
+				h.processFilter(tsession, entry);
+			}
 		}
-		session.refreshAccessedTime();
-		return session;
+		AbstractServiceMessageProcessor processor = serviceMessageFactory.getProcessor(entry.getClass());
+		processor.processor(session, entry);
+	}
+
+	@Override
+	public boolean receive(TransportSession<BaseMessage> session, BaseMessage entry) {
+		return msgQueue.offer(new ProcessUnit(session, entry));
+	}
+
+	@Override
+	public void initChannel(TransportSession<BaseMessage> session) {
+		session.setAttribute(SESSION_KEY, new P2PSession(session));
 	}
 }

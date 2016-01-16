@@ -2,27 +2,28 @@ package net.vinote.smart.socket.protocol;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import net.vinote.smart.socket.protocol.p2p.Session;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.MessageType;
-import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Seer
  *
  */
 public class P2PSession implements Session {
-	private Logger logger = LoggerFactory.getLogger(P2PSession.class);
+	private Logger logger = LogManager.getLogger(P2PSession.class);
 	private String remoteIp;
 	private String localAddress;
-	private TransportSession session;
+	private TransportSession<BaseMessage> session;
 	/** 会话创建时间 */
 	private final long creatTime;
 	/** 上一次访问时间 */
@@ -37,12 +38,12 @@ public class P2PSession implements Session {
 
 	private Map<String, Object> attributeMap = new ConcurrentHashMap<String, Object>();
 
-	public P2PSession(TransportSession session) {
+	public P2PSession(TransportSession<BaseMessage> session) {
 		sessionId = session.getSessionID();
 		remoteIp = session.getRemoteAddr();
 		localAddress = session.getLocalAddress();
 		this.session = session;
-		maxInactiveInterval = session.getQuickConfig().getTimeout();
+		maxInactiveInterval = session.getTimeout();
 		synchRespMap = new ConcurrentHashMap<String, BaseMessage>();
 		creatTime = System.currentTimeMillis();
 		refreshAccessedTime();
@@ -139,7 +140,7 @@ public class P2PSession implements Session {
 	 * .zjw.platform.quickly.protocol.DataEntry)
 	 */
 
-	public boolean notifySyncMessage(DataEntry baseMsg) {
+	public boolean notifySyncMessage(BaseMessage baseMsg) {
 		BaseMessage respMsg = (BaseMessage) baseMsg;
 		if (isRequestMessage(respMsg.getMessageType())) {
 			return false;
@@ -167,16 +168,14 @@ public class P2PSession implements Session {
 	 * com.zjw.platform.quickly.protocol.DataEntry)
 	 */
 
-	public void sendWithoutResponse(DataEntry requestMsg) throws Exception {
-		BaseMessage reqMsg = (BaseMessage) requestMsg;
+	public void sendWithoutResponse(BaseMessage requestMsg) throws Exception {
 		assertTransactionSession();
 		refreshAccessedTime();
-		session.write(reqMsg);
-
+		ByteBuffer buffer = requestMsg.encode();
+		session.write(buffer);
 	}
 
-	@Override
-	public DataEntry sendWithResponse(DataEntry requestMsg, long timeout) throws Exception {
+	public BaseMessage sendWithResponse(BaseMessage requestMsg, long timeout) throws Exception {
 		BaseMessage reqMsg = (BaseMessage) requestMsg;
 		assertTransactionSession();
 		refreshAccessedTime();
@@ -185,10 +184,10 @@ public class P2PSession implements Session {
 			throw new InvalidParameterException("current message is not a requestMessage, messageType is 0x"
 				+ Integer.toHexString(reqMsg.getMessageType()));
 		}
-		reqMsg.encode();// 必须执行encode才可产生sequenceId
+		ByteBuffer buffer = reqMsg.encode();// 必须执行encode才可产生sequenceId
 		String sequenceId = String.valueOf(reqMsg.getHead().getSequenceID());
 		synchRespMap.put(sequenceId, reqMsg);
-		session.write(reqMsg);
+		session.write(buffer);
 		if (synchRespMap.containsKey(sequenceId) && synchRespMap.get(sequenceId) == reqMsg) {
 			synchronized (reqMsg) {
 				if (synchRespMap.containsKey(sequenceId) && synchRespMap.get(sequenceId) == reqMsg) {
@@ -218,7 +217,7 @@ public class P2PSession implements Session {
 	 * net.vinote.smart.socket.service.session.Session#sendWithResponse(net.
 	 * vinote.smart.socket.protocol.DataEntry)
 	 */
-	public DataEntry sendWithResponse(DataEntry requestMsg) throws Exception {
+	public BaseMessage sendWithResponse(BaseMessage requestMsg) throws Exception {
 		return sendWithResponse(requestMsg, session.getTimeout());
 	}
 
@@ -232,8 +231,7 @@ public class P2PSession implements Session {
 		return (MessageType.RESPONSE_MESSAGE & msgType) == MessageType.REQUEST_MESSAGE;
 	}
 
-	@Override
-	public TransportSession getTransportSession() {
+	public TransportSession<BaseMessage> getTransportSession() {
 		return session;
 	}
 

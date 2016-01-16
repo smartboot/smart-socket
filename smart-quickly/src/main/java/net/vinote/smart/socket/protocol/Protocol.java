@@ -20,11 +20,4 @@ public interface Protocol<T> {
 	 */
 	public T decode(ByteBuffer data, TransportSession<T> session);
 
-	/**
-	 * 封装畸形报文协议
-	 *
-	 * @return
-	 */
-	// public DataEntry wrapInvalidProtocol(TransportSession session);
-
 }

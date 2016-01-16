@@ -1,18 +1,15 @@
 package net.vinote.smart.socket.protocol.p2p.processor;
 
 import java.io.IOException;
-import java.net.ProtocolException;
-import java.nio.ByteBuffer;
 
-import net.vinote.smart.socket.protocol.DataEntry;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import net.vinote.smart.socket.protocol.p2p.AbstractServiceMessageProcessor;
+import net.vinote.smart.socket.protocol.p2p.Session;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
-import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
-import net.vinote.smart.socket.service.process.AbstractServiceMessageProcessor;
-import net.vinote.smart.socket.service.session.Session;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 探测消息处理器
@@ -21,32 +18,19 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class DetectMessageProcessor extends AbstractServiceMessageProcessor {
-	private Logger logger = LoggerFactory.getLogger(DetectMessageProcessor.class);
+	private Logger logger = LogManager.getLogger(DetectMessageProcessor.class);
 
 	@Override
-	public void processor(Session session, DataEntry message) {
+	public void processor(Session session, BaseMessage message) {
 		DetectMessageReq msg = (DetectMessageReq) message;
 		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
 		rspMsg.setDetectMessage("探测响应消息" + msg.getHead().getSequenceID());
 		try {
 			session.sendWithoutResponse(rspMsg);
 		} catch (IOException e) {
-			session.invalidate();
 			logger.warn(e.getMessage(), e);
 		} catch (Exception e) {
 			logger.warn(e.getMessage(), e);
 		}
 	}
-
-	@Override
-	public ByteBuffer processCluster(Session session, ByteBuffer message) throws ProtocolException {
-		FragmentMessage fragMsg = new FragmentMessage();
-		fragMsg.setData(message);
-		DetectMessageReq msg = (DetectMessageReq) fragMsg.decodeMessage(session.getTransportSession().getQuickConfig()
-			.getServiceMessageFactory());
-		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
-		rspMsg.setDetectMessage("集群探测响应消息" + msg.getHead().getSequenceID());
-		return rspMsg.encode();
-	}
-
 }

@@ -12,18 +12,11 @@ import net.vinote.smart.socket.transport.TransportSession;
 public interface ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
 
 	/**
-	 * 获取服务器/客户端配置
-	 *
-	 * @return
-	 */
-	public QuicklyConfig<T,?> getQuicklyConfig();
-
-	/**
 	 * 初始化处理器
 	 *
 	 * @throws Exception
 	 */
-	public void init(QuicklyConfig<T,?> config) throws Exception;
+	public void init(QuicklyConfig<T> config);
 
 	/**
 	 * 用于处理指定session内的一个消息实例,若直接在该方法内处理消息,则实现的是同步处理方式.
@@ -32,18 +25,10 @@ public interface ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
 	 * @param session
 	 * @throws Exception
 	 */
-	public  void process(T session) throws Exception;
+	public void process(TransportSession<T> session, T msg) throws Exception;
 
 	/**
 	 * 关闭处理器
 	 */
 	public void shutdown();
-
-	/**
-	 * 获取业务层会话
-	 *
-	 * @param tsession
-	 * @return
-	 */
-	public void initSession(TransportSession<T> tsession);
 }

@@ -17,13 +17,13 @@ import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
  * @author Seer
  * @version AbstractChannelService.java, v 0.1 2015年3月19日 下午6:57:01 Seer Exp.
  */
-abstract class AbstractChannelService implements ChannelService {
+abstract class AbstractChannelService<T> implements ChannelService {
 	private Logger logger = LogManager.getLogger(AbstractChannelService.class);
 	/** 服务状态 */
 	volatile ChannelServiceStatusEnum status = ChannelServiceStatusEnum.Init;
 
 	/** 服务配置 */
-	QuicklyConfig config;
+	QuicklyConfig<T> config;
 
 	Selector selector;
 
@@ -38,13 +38,14 @@ abstract class AbstractChannelService implements ChannelService {
 	/** 写管道单论操作读取次数 */
 	final int WRITE_LOOP_TIMES;
 
-	public AbstractChannelService(final QuicklyConfig config) {
+	public AbstractChannelService(final QuicklyConfig<T> config) {
 		this.config = config;
 		READ_LOOP_TIMES = config.getReadLoopTimes();
 		WRITE_LOOP_TIMES = config.getWriteLoopTimes();
 		try {
-			//config.getProcessor().init(config);
-		//	logger.info("Registe MessageServer Processor[" + config.getProcessor().getClass().getName() + "] success");
+			// config.getProcessor().init(config);
+			// logger.info("Registe MessageServer Processor[" +
+			// config.getProcessor().getClass().getName() + "] success");
 		} catch (final Exception e) {
 			updateServiceStatus(ChannelServiceStatusEnum.Abnormal);
 			logger.warn("", e);
@@ -79,6 +80,7 @@ abstract class AbstractChannelService implements ChannelService {
 								logger.warn("奇怪了...");
 							}
 						} catch (Exception e) {
+							e.printStackTrace();
 							exceptionInSelectionKey(key, e);
 						} finally {
 							// 移除已处理的事件
@@ -164,7 +166,7 @@ abstract class AbstractChannelService implements ChannelService {
 			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s protocolFactory is null");
 		}
 
-		if (config.getReceiver() == null) {
+		if (config.getProcessor() == null) {
 			throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s receiver is null");
 		}
 

@@ -4,19 +4,23 @@ import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.protocol.DataEntry;
-import net.vinote.smart.socket.security.Aes128;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
-import org.apache.commons.lang.ArrayUtils;
+import net.vinote.smart.socket.exception.DecodeException;
 
 /**
+ * 
  * P2P协议基础消息体对象
  *
+ * 
+ * 
  * @author Seer
+ * 
  * @version BaseMessage.java, v 0.1 2015年8月22日 上午11:24:03 Seer Exp.
+ * 
  */
-public abstract class BaseMessage extends DataEntry {
+public abstract class BaseMessage {
 	/** 消息头 */
 	private HeadMessage head;
 
@@ -24,19 +28,6 @@ public abstract class BaseMessage extends DataEntry {
 
 	public BaseMessage(HeadMessage head) {
 		this.head = head;
-	}
-
-	/**
-	 * 构造需要进行加密处理的消息体对象,secureKey将作为消息加密的秘钥
-	 *
-	 * @param secureKey
-	 */
-	public BaseMessage(byte[] secureKey) {
-		this();
-		if (ArrayUtils.isNotEmpty(secureKey)) {
-			head.setSecretKey(secureKey);
-			head.setSecure(true);
-		}
 	}
 
 	public BaseMessage() {
@@ -48,163 +39,237 @@ public abstract class BaseMessage extends DataEntry {
 	}
 
 	/**
+	 * 
 	 * <p>
+	 * 
 	 * 消息编码;
+	 * 
 	 * </p>
+	 * 
 	 * <p>
+	 * 
 	 * 若是请求消息,将自动为其生成唯一标识 sequenceID;<br/>
+	 * 
 	 * 响应消息需要自行从对应的请求消息中获取再设置
+	 * 
 	 * </p>
 	 *
+	 * 
+	 * 
 	 * @throws ProtocolException
+	 * 
 	 */
-	@Override
 	public final ByteBuffer encode() throws ProtocolException {
-		reset(MODE.WRITE);
 		if (head == null) {
 			throw new ProtocolException("Protocol head is unset!");
 		}
 		// 完成消息体编码便可获取实际消息大小
-		position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息头末尾
-		encodeBody();// 编码消息体
 
-		// 加密消息体
-		if (head.isSecure()) {
-			encryptSecureData();
-		}
+		// position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息头末尾
+		ByteBuffer bodyBuffer = ByteBuffer.allocate(1024);
+		bodyBuffer.position(HeadMessage.HEAD_MESSAGE_LENGTH);
+		encodeBody(bodyBuffer);// 编码消息体
+		bodyBuffer.flip();
 
-		head.setLength(getPosition());// 设置消息体长度
-
+		head.setLength(bodyBuffer.limit());// 设置消息体长度
 		// 若是请求消息,将自动为其生成唯一标识 sequenceID;重复encode不产生新的序列号
 		if (head.getSequenceID() == 0
 			&& (MessageType.RESPONSE_MESSAGE & getMessageType()) == MessageType.REQUEST_MESSAGE) {
 			head.setSequenceID(sequence.incrementAndGet());// 由于初始值为0,所以必须先累加一次,否则获取到的是无效序列号
 		}
 
-		position(0);// 定位至消息体起始位置
-		// limitIndex(HeadMessage.HEAD_MESSAGE_LENGTH);// 操作位锁定,避免自定消息体编码超过消息体大小
-		encodeHead();// 编码消息头
+		encodeHead(bodyBuffer);// 编码消息头
+		bodyBuffer.position(bodyBuffer.limit());
+		// int limit=bodyBuffer.limit();
+		// bodyBuffer.flip();
 		// clearLimit();
-		position(head.getLength());// 设置标志位至消息末尾
-		return getData();
+		// position(head.getLength());// 设置标志位至消息末尾
+
+		return bodyBuffer;
 	}
 
 	/**
-	 * @throws ProtocolException
-	 */
-	private void encryptSecureData() throws ProtocolException {
-		try {
-			byte[] tempData = new byte[getData().position() - HeadMessage.HEAD_MESSAGE_LENGTH];
-			getData().get(tempData, HeadMessage.HEAD_MESSAGE_LENGTH,
-				getData().limit() - HeadMessage.HEAD_MESSAGE_LENGTH);
-			System.arraycopy(getData(), HeadMessage.HEAD_MESSAGE_LENGTH, tempData, 0, tempData.length);
-			byte[] bodyData = Aes128.encrypt(tempData, head.getSecretKey());
-			position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息头末尾
-			writeBytes(bodyData);// 重新编码消息体
-		} catch (Exception e) {
-			throw new ProtocolException("encrypt data exception! " + e.getLocalizedMessage());
-		}
-	}
-
-	/**
+	 * 
 	 * 消息解码
 	 *
+	 * 
+	 * 
 	 * @throws ProtocolException
+	 * 
 	 */
-	@Override
-	public final void decode() {
-		reset(MODE.READ);
-		decodeHead();
-		clearLimit();
-		position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息体位置
-
-		// 解密消息体
-		if (head.isSecure()) {
-			decryptSecureData();
-		}
-		decodeBody();
+	public final void decode(ByteBuffer buffer) throws DecodeException {
+		int bodyPosition = buffer.position() + HeadMessage.HEAD_MESSAGE_LENGTH;
+		decodeHead(buffer);
+		buffer.position(bodyPosition);
+		decodeBody(buffer);
 	}
 
 	/**
-	 * 解密消息体
-	 */
-	private void decryptSecureData() {
-		try {
-			byte[] bodyData = Aes128.decrypt(readBytes(), head.getSecretKey());
-			position(HeadMessage.HEAD_MESSAGE_LENGTH);
-			getData(false).put(bodyData, HeadMessage.HEAD_MESSAGE_LENGTH, bodyData.length);
-			head.setLength(bodyData.length + HeadMessage.HEAD_MESSAGE_LENGTH);
-
-			getData(false).putInt(4, head.getLength());
-
-			position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息体位置
-		} catch (Exception e) {
-			throw new DecodeException(e);
-		}
-	}
-
-	/**
+	 * 
 	 * 各消息类型各自实现消息体编码工作
 	 *
+	 * 
+	 * 
 	 * @throws ProtocolException
+	 * 
 	 */
-	protected abstract void encodeBody() throws ProtocolException;
+	protected abstract void encodeBody(ByteBuffer buffer) throws ProtocolException;
 
 	/**
+	 * 
 	 * 各消息类型各自实现消息体解码工作
+	 * 
+	 * @param buffer
 	 *
+	 * 
+	 * 
 	 * @throws ProtocolException
+	 * 
 	 */
-	protected abstract void decodeBody() throws DecodeException;
+	protected abstract void decodeBody(ByteBuffer buffer) throws DecodeException;
 
 	/**
+	 * 
 	 * 获取消息类型
-	 *
+	 * 
+	 * 
+	 * 
 	 * @return
+	 * 
 	 */
 	public abstract int getMessageType();
 
 	/**
+	 * 
 	 * 对消息头进行编码
+	 * 
 	 */
-	protected final void encodeHead() {
+	protected final void encodeHead(ByteBuffer buffer) {
 		// 输出幻数
-		writeInt(HeadMessage.MAGIC_NUMBER);
+		buffer.putInt(HeadMessage.MAGIC_NUMBER);
 		// 输出消息长度
-		writeInt(head.getLength());
+		buffer.putInt(head.getLength());
 		// 消息类型
-		writeInt(getMessageType());
+		buffer.putInt(getMessageType());
 		// 由发送方填写，请求和响应消息必须保持一致(4个字节)
-		writeInt(head.getSequenceID());
-		// 是否加密消息体
-		writeBoolean(head.isSecure());
+		buffer.putInt(head.getSequenceID());
 
 	}
 
 	/**
+	 * 
 	 * 对消息头进行解码
+	 * 
 	 */
-	protected final void decodeHead() {
-		reset(MODE.READ);
+	protected final void decodeHead(ByteBuffer buffer) {
 		// 读取幻数
-		int magicNum = readInt();
+		int magicNum = buffer.getInt();
 		if (magicNum != HeadMessage.MAGIC_NUMBER) {
 			throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum));
 		}
+
 		// 读取消息长度
-		int length = readInt();
+		int length = buffer.getInt();
+
 		// 消息类型
-		int msgType = readInt();
+		int msgType = buffer.getInt();
+
 		// 由发送方填写，请求和响应消息必须保持一致(4个字节)
-		int sequeue = readInt();
-		boolean secure = readBoolen();
+		int sequeue = buffer.getInt();
 		if (head == null) {
 			head = new HeadMessage();
 		}
 		head.setLength(length);
 		head.setMessageType(msgType);
 		head.setSequenceID(sequeue);
-		head.setSecure(secure);
+	}
+
+	/**
+	 * 输出字符串至数据体,以0x00作为结束标识符
+	 *
+	 * @param str
+	 */
+	protected final void writeString(ByteBuffer buffer, String str) {
+		writeBytes(buffer, str == null ? null : str.getBytes());
+	}
+
+	/**
+	 * 往数据块中输出byte数组
+	 *
+	 * @param data
+	 */
+	protected final void writeBytes(ByteBuffer buffer, byte[] data) {
+		if (data != null) {
+			buffer.putInt(data.length);
+			buffer.put(data);
+		} else {
+			buffer.putInt(-1);
+		}
+	}
+
+	/**
+	 * 输出布尔值
+	 *
+	 * @param flag
+	 */
+	protected final void writeBoolean(ByteBuffer buffer, boolean flag) {
+		writeByte(buffer, flag ? (byte) 1 : 0);
+	}
+
+	/**
+	 * 往数据块中输入byte数值
+	 *
+	 * @param i
+	 */
+	protected final void writeByte(ByteBuffer buffer, byte i) {
+		buffer.put(i);
+	}
+
+	/**
+	 * 从数据块的当前位置开始读取字符串
+	 * 
+	 * @param buffer
+	 *
+	 * @return
+	 */
+	protected final String readString(ByteBuffer buffer) {
+		return new String(readBytes(buffer));
+	}
+
+	/**
+	 * 从数据块中当前位置开始读取一个byte数值
+	 *
+	 * @return
+	 */
+	protected final byte[] readBytes(ByteBuffer buffer) {
+		int size = buffer.getInt();
+		if (size < 0) {
+			return null;
+		}
+		byte[] bytes = new byte[size];
+		buffer.get(bytes);
+		return bytes;
+	}
+
+	/**
+	 * 读取一个布尔值
+	 * 
+	 * @param buffer
+	 *
+	 * @return
+	 */
+	protected final boolean readBoolen(ByteBuffer buffer) {
+		return buffer.get() == 1;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this, ToStringStyle.DEFAULT_STYLE);
 	}
 
 }

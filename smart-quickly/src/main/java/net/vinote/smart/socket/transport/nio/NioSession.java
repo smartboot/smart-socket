@@ -132,7 +132,7 @@ public class NioSession<T> extends TransportSession<T> {
 	 *
 	 * @return
 	 */
-	public ByteBuffer getWriteBuffer() {
+	public synchronized ByteBuffer getWriteBuffer() {
 		if (writeBuffer != null && writeBuffer.hasRemaining()) {
 			return writeBuffer;
 		}
@@ -197,7 +197,7 @@ public class NioSession<T> extends TransportSession<T> {
 	}
 
 	@Override
-	public void write(ByteBuffer buffer) throws IOException {
+	public synchronized void write(ByteBuffer buffer) throws IOException {
 		buffer.flip();
 		if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty()) {
 			synchronized (this) {

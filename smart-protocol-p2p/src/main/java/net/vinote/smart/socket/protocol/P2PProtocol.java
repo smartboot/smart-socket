@@ -1,16 +1,15 @@
 package net.vinote.smart.socket.protocol;
 
-import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 
-import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.protocol.p2p.message.FragmentMessage;
-import net.vinote.smart.socket.protocol.p2p.message.HeadMessage;
-import net.vinote.smart.socket.protocol.p2p.message.InvalidMessageReq;
-import net.vinote.smart.socket.transport.TransportSession;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.vinote.smart.socket.exception.DecodeException;
+import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
+import net.vinote.smart.socket.protocol.p2p.message.HeadMessage;
+import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
+import net.vinote.smart.socket.transport.TransportSession;
 
 /**
  *
@@ -19,25 +18,28 @@ import org.slf4j.LoggerFactory;
  * @author Administrator
  *
  */
-final class P2PProtocol implements Protocol {
-	private Logger logger = LoggerFactory.getLogger(P2PProtocol.class);
+final class P2PProtocol implements Protocol<BaseMessage> {
+	private Logger LOGGER = LogManager.getLogger(P2PProtocol.class);
 	/**
 	 * P2P消息标志性部分长度,消息头部的 幻数+消息大小 ,共8字节
 	 */
 	private static final int MESSAGE_SIGN_LENGTH = 8;
+	private P2pServiceMessageFactory serviceMessageFactory;
 
-	private static final String FRAGMENT_MESSAGE_KEY = "fmk";
+	public P2PProtocol(P2pServiceMessageFactory serviceMessageFactory) {
+		this.serviceMessageFactory = serviceMessageFactory;
+	}
 
-	public ByteBuffer decode(ByteBuffer buffer, TransportSession session) {
+	public BaseMessage decode(ByteBuffer buffer, TransportSession<BaseMessage> session) {
 		// 未读取到数据则直接返回
 		if (buffer == null || buffer.remaining() < MESSAGE_SIGN_LENGTH) {
 			return null;
 		}
-		int magicNum = buffer.getInt(0);
+		int magicNum = buffer.getInt(buffer.position());
 		if (magicNum != HeadMessage.MAGIC_NUMBER) {
 			throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum));
 		}
-		int msgLength = buffer.getInt(4);
+		int msgLength = buffer.getInt(buffer.position() + 4);
 		if (msgLength <= 0) {
 			throw new DecodeException("Invalid Message Length " + msgLength);
 		}
@@ -45,23 +47,33 @@ final class P2PProtocol implements Protocol {
 		if (buffer.remaining() < msgLength) {
 			return null;
 		}
-		byte[] data = new byte[msgLength];
-		buffer.get(data);
-		return ByteBuffer.wrap(data);
+		BaseMessage message = decode(buffer);
+		if (message == null) {
+			throw new DecodeException("");
+		}
+		return message;
 	}
 
-	public DataEntry wrapInvalidProtocol(TransportSession session) {
-		InvalidMessageReq msg = new InvalidMessageReq();
-		msg.setMsg("Invalid P2P Message.");
-		FragmentMessage fragMsg = (FragmentMessage) session.getAttribute(FRAGMENT_MESSAGE_KEY);
-		if (fragMsg != null) {
-			msg.setInvalidMsgData(fragMsg.getData().array());
+	private BaseMessage decode(ByteBuffer buffer) {
+		int type = buffer.getInt(buffer.position() + 8);
+
+		BaseMessage baseMsg = null;
+		Class<?> c = serviceMessageFactory.getBaseMessage(type);
+		if (c == null) {
+			LOGGER.warn("Message[0x" + Integer.toHexString(type) + "] Could not find class");
+			return null;
 		}
+
 		try {
-			msg.encode();
-		} catch (ProtocolException e) {
-			logger.warn("", e);
+			// 优先调用带HeadMessage参数的构造方法,减少BaseMessage中构造HeadMessage对象的次数
+			baseMsg = (BaseMessage) c.newInstance();
+		} catch (Exception e) {
+			LOGGER.warn("", e);
 		}
-		return msg;
+		if (baseMsg == null) {
+			return null;
+		}
+		baseMsg.decode(buffer);
+		return baseMsg;
 	}
 }

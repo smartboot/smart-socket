@@ -1,7 +1,6 @@
 package net.vinote.smart.socket.service.process;
 
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.transport.TransportSession;
 
 /**
  * 业务层协议消息处理器抽象类
@@ -10,24 +9,13 @@ import net.vinote.smart.socket.transport.TransportSession;
  *
  */
 public abstract class AbstractProtocolDataProcessor<T> implements ProtocolDataProcessor<T> {
-	private QuicklyConfig quickConfig;
+	private QuicklyConfig<T> quickConfig;
 
-	public void init(QuicklyConfig config) throws Exception {
+	public void init(QuicklyConfig<T> config) {
 		this.quickConfig = config;
 	}
 
-	public final QuicklyConfig getQuicklyConfig() {
+	public final QuicklyConfig<T> getQuicklyConfig() {
 		return quickConfig;
 	}
-
-	@Override
-	public void initSession(TransportSession<T> tsession) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public  boolean preReceive(TransportSession<T> session, T entry) {
-		return true;
-	}
-
 }

@@ -24,11 +24,11 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  * @author Seer
  *
  */
-public final class NioQuickServer extends AbstractChannelService {
+public final class NioQuickServer<T> extends AbstractChannelService<T> {
 	private Logger logger = LogManager.getLogger(NioQuickServer.class);
 	private ServerSocketChannel server;
 
-	public NioQuickServer(final QuicklyConfig config) {
+	public NioQuickServer(final QuicklyConfig<T> config) {
 		super(config);
 	}
 
@@ -46,13 +46,13 @@ public final class NioQuickServer extends AbstractChannelService {
 		SocketChannel socketChannel = serverChannel.accept();
 		socketChannel.configureBlocking(false);
 		SelectionKey socketKey = socketChannel.register(selector, SelectionKey.OP_READ);
-		NioSession session = new NioSession(socketKey, config.getProtocolFactory().createProtocol(),
-			config.getReceiver(), config.getFilters(), config.getCacheSize(),
+		NioSession<T> session = new NioSession<T>(socketKey, config.getProtocolFactory().createProtocol(),
+			config.getProcessor(), config.getFilters(), config.getCacheSize(),
 			QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy()), config.isAutoRecover(),
 			config.getDataBufferSize());
 		socketKey.attach(session);
 		socketChannel.finishConnect();
-		config.getReceiver().initChannel(session);
+		config.getProcessor().initChannel(session);
 		// config.getProcessor().initSession(session);// 创建会话以便进行状态监控
 	}
 
@@ -76,7 +76,7 @@ public final class NioQuickServer extends AbstractChannelService {
 	@Override
 	protected void readFromChannel(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		NioSession session = (NioSession) key.attachment();
+		NioSession<T> session = (NioSession) key.attachment();
 		ByteBuffer buffer = session.getReadBuffer();
 		int readSize = 0;
 		int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
@@ -142,7 +142,7 @@ public final class NioQuickServer extends AbstractChannelService {
 	@Override
 	protected void writeToChannel(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		NioSession session = (NioSession) key.attachment();
+		NioSession<T> session = (NioSession<T>) key.attachment();
 		ByteBuffer buffer;
 		int loopTimes = WRITE_LOOP_TIMES;// 轮训次数,一遍及时让出资源
 		// buffer = session.getByteBuffer()若读取不到数据,则内部会移除写关注
@@ -164,6 +164,7 @@ public final class NioQuickServer extends AbstractChannelService {
 		switch (status) {
 		case RUNING:
 			logger.info("Running with " + config.getPort() + " port");
+			config.getProcessor().init(config);
 			break;
 
 		default:

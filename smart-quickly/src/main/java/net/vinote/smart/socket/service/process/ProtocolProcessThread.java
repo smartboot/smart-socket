@@ -7,12 +7,12 @@ package net.vinote.smart.socket.service.process;
  * @author Seer
  * @version ProtocolProcessThread.java, v 0.1 2015年8月24日 下午2:21:57 Seer Exp.
  */
-public abstract class ProtocolProcessThread extends Thread {
+public abstract class ProtocolProcessThread<T> extends Thread {
 	/** 当前线程服务的处理器 */
-	protected ProtocolDataProcessor processor;
+	protected ProtocolDataProcessor<T> processor;
 	protected volatile boolean running = true;
 
-	public ProtocolProcessThread(String name, ProtocolDataProcessor processor) {
+	public ProtocolProcessThread(String name, ProtocolDataProcessor<T> processor) {
 		super(name);
 		this.processor = processor;
 	}

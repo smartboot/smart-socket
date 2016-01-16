@@ -22,7 +22,7 @@ import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
  * @author Seer
  * @version NioQuickClient.java, v 0.1 2015年3月20日 下午2:55:08 Seer Exp.
  */
-public class NioQuickClient extends AbstractChannelService {
+public class NioQuickClient<T> extends AbstractChannelService<T> {
 	private Logger logger = LogManager.getLogger(NioQuickClient.class);
 	/**
 	 * Socket连接锁,用于监听连接超时
@@ -32,14 +32,14 @@ public class NioQuickClient extends AbstractChannelService {
 	/**
 	 * 客户端会话信息
 	 */
-	private NioSession session;
+	private NioSession<T> session;
 
 	private SocketChannel socketChannel;
 
 	/**
 	 * @param config
 	 */
-	public NioQuickClient(final QuicklyConfig config) {
+	public NioQuickClient(final QuicklyConfig<T> config) {
 		super(config);
 	}
 
@@ -60,12 +60,12 @@ public class NioQuickClient extends AbstractChannelService {
 			session.initBaseChannelInfo(key);
 			logger.info("Socket link has been recovered!");
 		} else {
-			session = new NioSession(key, config.getProtocolFactory().createProtocol(), config.getReceiver(),
+			session = new NioSession<T>(key, config.getProtocolFactory().createProtocol(), config.getProcessor(),
 				config.getFilters(), config.getCacheSize(),
 				QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy()), config.isAutoRecover(),
 				config.getDataBufferSize());
 			logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
-			config.getReceiver().initChannel(session);
+			config.getProcessor().initChannel(session);
 			// ProtocolDataProcessor processor = config.getProcessor();
 			// if (processor instanceof ClientProcessor) {
 			// ((ClientProcessor) processor).createSession(session);
@@ -238,4 +238,23 @@ public class NioQuickClient extends AbstractChannelService {
 		}
 	}
 
+	@Override
+	protected void notifyWhenUpdateStatus(ChannelServiceStatusEnum status) {
+		if (status == null) {
+			return;
+		}
+		switch (status) {
+		case RUNING:
+			try {
+				config.getProcessor().init(config);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
 }

@@ -15,17 +15,6 @@ import net.vinote.smart.socket.transport.TransportSession;
 public interface ProtocolDataReceiver<T> {
 
 	/**
-	 * 消息的前置处理器
-	 * <p>
-	 * 若返回false,则本次消息不再进入receive方法
-	 *
-	 * @param session
-	 * @param entry
-	 * @return
-	 */
-	public boolean preReceive(TransportSession<T> session, T entry);
-
-	/**
 	 * 接受业务消息
 	 * <p>
 	 * 传输层成功进行数据流解码后交由业务层接收该消息实体

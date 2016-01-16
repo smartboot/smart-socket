@@ -53,7 +53,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
 	}
 
 	public void readFilter(TransportSession<T> session, T d) {
-		flow.addAndGet(((byte[])d).length);
+		//flow.addAndGet(((byte[])d).length);
 		recMsgnum.incrementAndGet();
 		messageStorage.incrementAndGet();
 	}
@@ -61,7 +61,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
 	public void receiveFailHandler(TransportSession<T> session, T d) {
 		discardNum.incrementAndGet();
 		messageStorage.decrementAndGet();
-		logger.info("HexData -->" + StringUtils.toHexString((byte[])d));
+		//logger.info("HexData -->" + StringUtils.toHexString((byte[])d));
 	}
 
 	@Override

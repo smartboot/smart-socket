@@ -1,5 +1,6 @@
 package net.vinote.smart.socket.protocol.p2p.message;
 
+import java.nio.ByteBuffer;
 
 /**
  * 探测消息请求
@@ -10,12 +11,12 @@ package net.vinote.smart.socket.protocol.p2p.message;
 public class DetectMessageReq extends BaseMessage {
 	private String detectMessage;
 
-	protected void encodeBody() {
-		writeString(detectMessage);
+	protected void encodeBody(ByteBuffer buffer) {
+		writeString(buffer,detectMessage);
 	}
 
-	protected void decodeBody() {
-		detectMessage = readString();
+	protected void decodeBody(ByteBuffer buffer) {
+		detectMessage = readString(buffer);
 	}
 
 	public int getMessageType() {
