@@ -13,7 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
@@ -60,20 +59,9 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
 			session.initBaseChannelInfo(key);
 			logger.info("Socket link has been recovered!");
 		} else {
-			session = new NioSession<T>(key, config.getProtocolFactory().createProtocol(), config.getProcessor(),
-				config.getFilters(), config.getCacheSize(),
-				QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy()), config.isAutoRecover(),
-				config.getDataBufferSize());
+			session = new NioSession<T>(key, config);
 			logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
 			config.getProcessor().initChannel(session);
-			// ProtocolDataProcessor processor = config.getProcessor();
-			// if (processor instanceof ClientProcessor) {
-			// ((ClientProcessor) processor).createSession(session);
-			// } else {
-			// throw new InvalidClassException(
-			// "Client Processor must implement interface " +
-			// ClientProcessor.class.getName());
-			// }
 			synchronized (conenctLock) {
 				conenctLock.notifyAll();
 			}

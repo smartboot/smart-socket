@@ -12,7 +12,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
@@ -46,14 +45,10 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 		SocketChannel socketChannel = serverChannel.accept();
 		socketChannel.configureBlocking(false);
 		SelectionKey socketKey = socketChannel.register(selector, SelectionKey.OP_READ);
-		NioSession<T> session = new NioSession<T>(socketKey, config.getProtocolFactory().createProtocol(),
-			config.getProcessor(), config.getFilters(), config.getCacheSize(),
-			QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy()), config.isAutoRecover(),
-			config.getDataBufferSize());
+		NioSession<T> session = new NioSession<T>(socketKey, config);
 		socketKey.attach(session);
 		socketChannel.finishConnect();
 		config.getProcessor().initChannel(session);
-		// config.getProcessor().initSession(session);// 创建会话以便进行状态监控
 	}
 
 	@Override
@@ -99,7 +94,7 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 
 	public void shutdown() {
 		updateServiceStatus(ChannelServiceStatusEnum.STOPPING);
-		// config.getProcessor().shutdown();
+		config.getProcessor().shutdown();
 		try {
 			if (selector != null) {
 				selector.close();

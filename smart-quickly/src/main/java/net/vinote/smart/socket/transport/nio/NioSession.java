@@ -15,10 +15,8 @@ import net.vinote.smart.socket.exception.CacheFullException;
 import net.vinote.smart.socket.exception.NotYetReconnectedException;
 import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
 import net.vinote.smart.socket.lang.QueueOverflowStrategy;
-import net.vinote.smart.socket.protocol.Protocol;
-import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
-import net.vinote.smart.socket.service.process.ProtocolDataReceiver;
 import net.vinote.smart.socket.transport.TransportSession;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 
@@ -60,17 +58,15 @@ public class NioSession<T> extends TransportSession<T> {
 	 * @param processor
 	 *            当前channel消息的处理器
 	 */
-	public NioSession(SelectionKey channelKey, final Protocol<T> protocol, final ProtocolDataReceiver<T> receiver,
-		final SmartFilter<T>[] filters, final int cacheSize, QueueOverflowStrategy strategy, final boolean autoRecover,
-		final int bufferSize) {
+	public NioSession(SelectionKey channelKey, final QuicklyConfig<T> config) {
 		initBaseChannelInfo(channelKey);
-		super.protocol = protocol;
-		super.chain = new SmartFilterChainImpl<T>(receiver, filters);
-		this.cacheSize = cacheSize;
+		super.protocol = config.getProtocolFactory().createProtocol();
+		super.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
+		this.cacheSize = config.getCacheSize();
 		writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(cacheSize);
-		this.strategy = strategy;
-		this.autoRecover = autoRecover;
-		super.bufferSize = bufferSize;
+		this.strategy = QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy());
+		this.autoRecover = config.isAutoRecover();
+		super.bufferSize = config.getDataBufferSize();
 	}
 
 	@Override

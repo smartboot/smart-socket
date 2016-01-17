@@ -42,14 +42,6 @@ abstract class AbstractChannelService<T> implements ChannelService {
 		this.config = config;
 		READ_LOOP_TIMES = config.getReadLoopTimes();
 		WRITE_LOOP_TIMES = config.getWriteLoopTimes();
-		try {
-			// config.getProcessor().init(config);
-			// logger.info("Registe MessageServer Processor[" +
-			// config.getProcessor().getClass().getName() + "] success");
-		} catch (final Exception e) {
-			updateServiceStatus(ChannelServiceStatusEnum.Abnormal);
-			logger.warn("", e);
-		}
 	}
 
 	/*
