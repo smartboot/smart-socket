@@ -98,7 +98,10 @@ public abstract class TransportSession<T> {
 			close();// 解码失败断连
 			logger.warn("close transport because of decode exception");
 		} finally {
-			buffer.compact();
+			// 仅当发生数据读取时调用compact,减少内存拷贝
+			if (buffer.position() > 0 || buffer.limit() == 0) {
+				buffer.compact();
+			}
 		}
 	}
 
@@ -220,5 +223,5 @@ public abstract class TransportSession<T> {
 	public final int getCacheSize() {
 		return cacheSize;
 	}
-	
+
 }

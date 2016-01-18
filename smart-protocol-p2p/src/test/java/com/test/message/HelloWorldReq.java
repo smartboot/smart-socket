@@ -40,14 +40,14 @@ public class HelloWorldReq extends BaseMessage {
 	@Override
 	protected void encodeBody(ByteBuffer buffer) throws ProtocolException {
 		writeString(buffer, name);
-		buffer.putInt(age);
+		writeInt(buffer, age);
 		writeBoolean(buffer, male);
 	}
 
 	@Override
 	protected void decodeBody(ByteBuffer buffer) throws DecodeException {
 		name = readString(buffer);
-		age = buffer.getInt();
+		age = readInt(buffer);
 		male = readBoolen(buffer);
 	}
 

@@ -64,8 +64,6 @@ public abstract class BaseMessage {
 			throw new ProtocolException("Protocol head is unset!");
 		}
 		// 完成消息体编码便可获取实际消息大小
-
-		// position(HeadMessage.HEAD_MESSAGE_LENGTH);// 定位至消息头末尾
 		ByteBuffer bodyBuffer = ByteBuffer.allocate(1024);
 		bodyBuffer.position(HeadMessage.HEAD_MESSAGE_LENGTH);
 		encodeBody(bodyBuffer);// 编码消息体
@@ -80,10 +78,6 @@ public abstract class BaseMessage {
 
 		encodeHead(bodyBuffer);// 编码消息头
 		bodyBuffer.position(bodyBuffer.limit());
-		// int limit=bodyBuffer.limit();
-		// bodyBuffer.flip();
-		// clearLimit();
-		// position(head.getLength());// 设置标志位至消息末尾
 
 		return bodyBuffer;
 	}
@@ -105,10 +99,7 @@ public abstract class BaseMessage {
 	}
 
 	/**
-	 * 
 	 * 各消息类型各自实现消息体编码工作
-	 *
-	 * 
 	 * 
 	 * @throws ProtocolException
 	 * 
@@ -163,19 +154,19 @@ public abstract class BaseMessage {
 	 */
 	protected final void decodeHead(ByteBuffer buffer) {
 		// 读取幻数
-		int magicNum = buffer.getInt();
+		int magicNum = readInt(buffer);
 		if (magicNum != HeadMessage.MAGIC_NUMBER) {
 			throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum));
 		}
 
 		// 读取消息长度
-		int length = buffer.getInt();
+		int length = readInt(buffer);
 
 		// 消息类型
-		int msgType = buffer.getInt();
+		int msgType = readInt(buffer);
 
 		// 由发送方填写，请求和响应消息必须保持一致(4个字节)
-		int sequeue = buffer.getInt();
+		int sequeue = readInt(buffer);
 		if (head == null) {
 			head = new HeadMessage();
 		}
@@ -185,7 +176,7 @@ public abstract class BaseMessage {
 	}
 
 	/**
-	 * 输出字符串至数据体,以0x00作为结束标识符
+	 * 输出字符串至数据体
 	 *
 	 * @param str
 	 */
@@ -205,6 +196,10 @@ public abstract class BaseMessage {
 		} else {
 			buffer.putInt(-1);
 		}
+	}
+
+	protected final void writeInt(ByteBuffer buffer, int value) {
+		buffer.putInt(value);
 	}
 
 	/**
@@ -249,6 +244,10 @@ public abstract class BaseMessage {
 		byte[] bytes = new byte[size];
 		buffer.get(bytes);
 		return bytes;
+	}
+
+	protected final int readInt(ByteBuffer buffer) {
+		return buffer.getInt();
 	}
 
 	/**

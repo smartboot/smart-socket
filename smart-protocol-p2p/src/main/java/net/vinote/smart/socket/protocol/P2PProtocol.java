@@ -35,11 +35,11 @@ final class P2PProtocol implements Protocol<BaseMessage> {
 		if (buffer == null || buffer.remaining() < MESSAGE_SIGN_LENGTH) {
 			return null;
 		}
-		int magicNum = buffer.getInt(buffer.position());
+		int magicNum = buffer.getInt(0);
 		if (magicNum != HeadMessage.MAGIC_NUMBER) {
 			throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum));
 		}
-		int msgLength = buffer.getInt(buffer.position() + 4);
+		int msgLength = buffer.getInt(4);
 		if (msgLength <= 0) {
 			throw new DecodeException("Invalid Message Length " + msgLength);
 		}
@@ -55,7 +55,7 @@ final class P2PProtocol implements Protocol<BaseMessage> {
 	}
 
 	private BaseMessage decode(ByteBuffer buffer) {
-		int type = buffer.getInt(buffer.position() + 8);
+		int type = buffer.getInt(8);
 
 		BaseMessage baseMsg = null;
 		Class<?> c = serviceMessageFactory.getBaseMessage(type);
