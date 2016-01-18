@@ -146,7 +146,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
 	 */
 	public final void shutdown() {
 		updateServiceStatus(ChannelServiceStatusEnum.STOPPING);
-		// config.getProcessor().shutdown();
+		config.getProcessor().shutdown();
 		try {
 			selector.close();
 			selector.wakeup();

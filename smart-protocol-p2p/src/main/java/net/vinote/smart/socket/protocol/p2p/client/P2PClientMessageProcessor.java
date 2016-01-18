@@ -21,7 +21,7 @@ public class P2PClientMessageProcessor extends AbstractProtocolDataProcessor<Bas
 	}
 
 	public void shutdown() {
-
+		processThread.shutdown();
 	}
 
 	@Override

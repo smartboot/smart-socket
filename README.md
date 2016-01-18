@@ -91,18 +91,18 @@ P2P协议采用TCP协议承载，二进制编码格式，其消息结构分为P2
 ####encodeBody
 为了能够把本地的数据传递至网络的对端，需要对数据进行编码，转换成P2P协议的消息格式。继承`BaseMessage`之后便可直接使用父类提供的编码方法，根据不同的数据类型选择不同的编码方法。
 
-	protected void encodeBody() throws ProtocolException {
-		writeString(name);
-		writeInt(age);
-		writeBoolean(male);
+	protected void encodeBody(ByteBuffer buffer) throws ProtocolException {
+		writeString(buffer, name);
+		writeInt(buffer, age);
+		writeBoolean(buffer, male);
 	}
 ####decodeBody
 解码是对P2P数据报文的反向解析，还原其业务含义。解码字段的顺序需要与编码保持一致，否则将破坏原真是数据，甚至导致异常的发生。
 
-	protected void decodeBody() throws DecodeException {
-		name = readString();
-		age = readInt();
-		male = readBoolen();
+	protected void decodeBody(ByteBuffer buffer) throws DecodeException {
+		name = readString(buffer);
+		age = readInt(buffer);
+		male = readBoolen(buffer);
 	}
 
 ####getMessageType
@@ -123,63 +123,52 @@ P2P协议采用TCP协议承载，二进制编码格式，其消息结构分为P2
 请求消息:
 
 	public class HelloWorldReq extends BaseMessage {
-	
 		private String name;
 		private int age;
 		private boolean male;
-	
 		public String getName() {
 			return name;
 		}
-	
 		public void setName(String name) {
 			this.name = name;
 		}
-	
 		public int getAge() {
 			return age;
 		}
-	
 		public void setAge(int age) {
 			this.age = age;
 		}
-	
 		public boolean isMale() {
 			return male;
 		}
-	
 		public void setMale(boolean male) {
 			this.male = male;
 		}
-	
 		@Override
-		protected void encodeBody() throws ProtocolException {
-			writeString(name);
-			writeInt(age);
-			writeBoolean(male);
+		protected void encodeBody(ByteBuffer buffer) throws ProtocolException {
+			writeString(buffer, name);
+			writeInt(buffer, age);
+			writeBoolean(buffer, male);
 		}
-	
 		@Override
-		protected void decodeBody() throws DecodeException {
-			name = readString();
-			age = readInt();
-			male = readBoolen();
+		protected void decodeBody(ByteBuffer buffer) throws DecodeException {
+			name = readString(buffer);
+			age = readInt(buffer);
+			male = readBoolen(buffer);
 		}
-	
 		@Override
 		public int getMessageType() {
-			return MessageType.REQUEST_MESSAGE|0x01;
+			return MessageType.REQUEST_MESSAGE | 0x01;
 		}
 	}
 
 响应消息:
 	
 	public class HelloWorldResp extends BaseMessage {
-
 		public HelloWorldResp() {
 			super();
 		}
-
+	
 		public HelloWorldResp(HeadMessage head) {
 			super(head);
 		}
@@ -187,13 +176,21 @@ P2P协议采用TCP协议承载，二进制编码格式，其消息结构分为P2
 		private String say;
 	
 		@Override
-		protected void encodeBody() throws ProtocolException {
-			writeString(say);
+		protected void encodeBody(ByteBuffer buffer) throws ProtocolException {
+			writeString(buffer, say);
 		}
 	
 		@Override
-		protected void decodeBody() throws DecodeException {
-			say = readString();
+		protected void decodeBody(ByteBuffer buffer) throws DecodeException {
+			say = readString(buffer);
+		}
+	
+		public String getSay() {
+			return say;
+		}
+	
+		public void setSay(String say) {
+			this.say = say;
 		}
 	
 		@Override
@@ -229,70 +226,57 @@ P2P协议采用TCP协议承载，二进制编码格式，其消息结构分为P2
 
 	public class HelloWorldServer {
 		public static void main(String[] args) throws ClassNotFoundException {
-	
-			// 启动服务
-			QuicklyConfig config = new QuicklyConfig(true);
-			config.setProtocolFactory(new P2PProtocolFactory());//设置协议对象工厂
-			config.setProcessor(new P2PServerMessageProcessor());//设置协议消息处理器
-	
 			// 注册消息以及对应的处理器
 			Properties properties = new Properties();
 			properties.put(HelloWorldReq.class.getName(), HelloWorldProcessor.class.getName());
-			ServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
+			P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
 			messageFactory.loadFromProperties(properties);
-			config.setServiceMessageFactory(messageFactory);//设置业务消息处理工厂
+			// 启动服务
+			QuicklyConfig<BaseMessage> config = new QuicklyConfig<BaseMessage>(true);
+			config.setProtocolFactory(new P2PProtocolFactory(messageFactory));// 设置协议对象工厂
+			config.setProcessor(new P2PServerMessageProcessor(messageFactory));
 	
-			NioQuickServer server = new NioQuickServer(config);
+			NioQuickServer<BaseMessage> server = new NioQuickServer<BaseMessage>(config);
 			try {
 				server.start();
 			} catch (IOException e) {
-				RunLogger.getLogger().log(e);
+				e.printStackTrace();
 			}
 		}
 	}
 
 运行之后,控制台打印：
 
-	[2015-08-24 15:54:17.754] [SEVERE] [Thread-10] [ServiceProcessorManager(regist:48)]load Service Processor Class[com.test.message.HelloWorldProcessor] for com.test.message.HelloWorldReq
-	[2015-08-24 15:54:17.851] [SEVERE] [Thread-10] [BaseMessageFactory(regiestMessage:49)]load Message Class[com.test.message.HelloWorldReq]
-	[2015-08-24 15:54:17.866] [SEVERE] [Thread-10] [ServiceProcessorManager(regist:48)]load Service Processor Class[net.vinote.smart.socket.protocol.p2p.processor.InvalidMessageProcessor] for net.vinote.smart.socket.protocol.p2p.InvalidMessageReq
-	[2015-08-24 15:54:17.866] [SEVERE] [Thread-10] [BaseMessageFactory(regiestMessage:49)]load Message Class[net.vinote.smart.socket.protocol.p2p.InvalidMessageReq]
-	[2015-08-24 15:54:17.867] [SEVERE] [Thread-10] [AbstractChannelService(<init>:49)]Registe MessageServer Processor[net.vinote.smart.socket.protocol.p2p.server.P2PServerMessageProcessor] success
-	[2015-08-24 15:54:18.09] [SEVERE] [Thread-11] [NioQuickServer(notifyWhenUpdateStatus:175)]Running with 8888 port
+	[2016-01-18 15:25:27.474] [main] INFO  regist(P2pServiceMessageFactory.java:83) - load Service Processor Class[com.test.message.HelloWorldProcessor] for com.test.message.HelloWorldReq
+	[2016-01-18 15:25:27.475] [main] INFO  regiestMessage(P2pServiceMessageFactory.java:35) - load Message Class[com.test.message.HelloWorldReq]
+	[2016-01-18 15:25:27.495] [Nio-Server] INFO  notifyWhenUpdateStatus(NioQuickServer.java:161) - Running with 8888 port
+
 
 ###客户端开发
 	
 	public class HelloWorldClient {
 		public static void main(String[] args) throws Exception {
-	
-			QuicklyConfig config = new QuicklyConfig(false);
-		
-			P2PProtocolFactory factory = new P2PProtocolFactory();
+			Properties properties = new Properties();
+			properties.put(HelloWorldResp.class.getName(), "");
+			P2pServiceMessageFactory messageFactory =new  P2pServiceMessageFactory();
+			messageFactory.loadFromProperties(properties);
+			QuicklyConfig<BaseMessage> config = new QuicklyConfig<BaseMessage>(false);
+			P2PProtocolFactory factory = new P2PProtocolFactory(messageFactory);
 			config.setProtocolFactory(factory);
 			P2PClientMessageProcessor processor = new P2PClientMessageProcessor();
 			config.setProcessor(processor);
 			config.setHost("127.0.0.1");
 			config.setTimeout(1000);
-			
-			
-			Properties properties = new Properties();
-			properties.put(HelloWorldResp.class.getName(), "");
-			ServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
-			messageFactory.loadFromProperties(properties);
-			config.setServiceMessageFactory(messageFactory);
-			
-			NioQuickClient client = new NioQuickClient(config);
+			NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>(config);
 			client.start();
-	
 			int num = 10;
 			while (num-- > 0) {
 				HelloWorldReq req = new HelloWorldReq();
 				req.setName("seer" + num);
 				req.setAge(num);
 				req.setMale(num % 2 == 0);
-				HelloWorldResp data = (HelloWorldResp) processor.getSession().sendWithResponse(req);
-				RunLogger.getLogger().log(Level.FINE, data.getSay());
-				RunLogger.getLogger().log(Level.FINE, StringUtils.toHexString(data.getData()));
+				BaseMessage msg = processor.getSession().sendWithResponse(req);
+				System.out.println(msg);
 			}
 			client.shutdown();
 		}
@@ -300,7 +284,7 @@ P2P协议采用TCP协议承载，二进制编码格式，其消息结构分为P2
 	
 ##推荐项目
 - [smart-sosa](https://git.oschina.net/smartdms/smart-sosa)
-- [smart-web](https://git.oschina.net/smartdms/smart-web)
+- [smart-boot](https://git.oschina.net/smartdms/smart-boot)
 - [maven-mybatisdalgen-plugin](https://git.oschina.net/smartdms/maven-mybatisdalgen-plugin)
 
 ##关于作者
