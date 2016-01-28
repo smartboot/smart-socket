@@ -3,7 +3,7 @@ package net.vinote.smart.socket.protocol;
 /**
  * 序列化对象
  * 
- * @author 三刀
+ * @author Seer
  * @version SerializableBean.java, v 0.1 2015年11月20日 下午4:28:48 Seer Exp. 
  */
 public class SerializableBean {
