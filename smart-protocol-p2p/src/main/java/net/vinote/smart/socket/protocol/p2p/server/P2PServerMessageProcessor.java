@@ -2,9 +2,6 @@ package net.vinote.smart.socket.protocol.p2p.server;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.P2PSession;
 import net.vinote.smart.socket.protocol.p2p.AbstractServiceMessageProcessor;
@@ -22,7 +19,6 @@ import net.vinote.smart.socket.transport.TransportSession;
  *
  */
 public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor<BaseMessage> {
-	private Logger logger = LogManager.getLogger(P2PServerMessageProcessor.class);
 	private static final String SESSION_KEY = "SESSION";
 	private P2pServiceMessageFactory serviceMessageFactory;
 

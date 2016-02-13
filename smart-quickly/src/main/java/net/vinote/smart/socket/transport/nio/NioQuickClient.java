@@ -92,27 +92,25 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
 
 	@Override
 	void readFromChannel(SelectionKey key) throws IOException {
-		if (key.isReadable()) {
-			SocketChannel channel = (SocketChannel) key.channel();
-			ByteBuffer buffer = session.getReadBuffer();
-			int readSize = 0;
-			int loopTimes = READ_LOOP_TIMES;
-			do {
-				session.flushReadBuffer();
-			} while ((key.interestOps() & SelectionKey.OP_READ) > 0 && (readSize = channel.read(buffer)) > 0
-				&& --loopTimes > 0);// 读取管道中的数据块
-			// 达到流末尾则注销读关注
-			if (readSize == -1) {
-				logger.info("the read channel[" + channel + "] has reached end-of-stream");
-				// key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
-				session.cancelReadAttention();
-				// key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
-				if (session.getWriteBuffer() == null || key.isValid()) {
-					session.close();
-					logger.info("关闭Socket[" + socketChannel + "]");
-				} else {
-					logger.info("注销Socket[" + socketChannel + "]读关注");
-				}
+		SocketChannel channel = (SocketChannel) key.channel();
+		ByteBuffer buffer = session.getReadBuffer();
+		int readSize = 0;
+		int loopTimes = READ_LOOP_TIMES;
+		do {
+			session.flushReadBuffer();
+		} while ((key.interestOps() & SelectionKey.OP_READ) > 0 && (readSize = channel.read(buffer)) > 0
+			&& --loopTimes > 0);// 读取管道中的数据块
+		// 达到流末尾则注销读关注
+		if (readSize == -1) {
+			logger.info("the read channel[" + channel + "] has reached end-of-stream");
+			// key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+			session.cancelReadAttention();
+			// key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+			if (session.getWriteBuffer() == null || key.isValid()) {
+				session.close();
+				logger.info("关闭Socket[" + socketChannel + "]");
+			} else {
+				logger.info("注销Socket[" + socketChannel + "]读关注");
 			}
 		}
 	}

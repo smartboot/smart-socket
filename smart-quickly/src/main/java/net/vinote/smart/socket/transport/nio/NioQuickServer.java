@@ -56,7 +56,7 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 		logger.warn("Close Channel because of Exception", e);
 		final Object att = key.attach(null);
 		if (att instanceof NioSession) {
-			((NioSession) att).close();
+			((NioSession<?>) att).close();
 		}
 		key.channel().close();
 		logger.info("close connection " + key.channel());

@@ -128,15 +128,18 @@ public class NioSession<T> extends TransportSession<T> {
 	 *
 	 * @return
 	 */
-	public synchronized ByteBuffer getWriteBuffer() {
+	public ByteBuffer getWriteBuffer() {
 		if (writeBuffer != null && writeBuffer.hasRemaining()) {
 			return writeBuffer;
 		}
 
 		ByteBuffer array = writeCacheQueue.poll();
 		if (array != null) {
+			// writeBuffer==null,说明本次获取的byteBuffer对象已于write方法中执行过了doWriteFilter
+			if (writeBuffer == null || array.position() > 0) {
+				chain.doWriteFilter(this, array);
+			}
 			writeBuffer = array;
-			chain.doWriteFilter(this, writeBuffer);
 		} else {
 			writeBuffer = null;
 			// 不具备写条件,移除该关注
@@ -195,23 +198,14 @@ public class NioSession<T> extends TransportSession<T> {
 	@Override
 	public synchronized void write(ByteBuffer buffer) throws IOException {
 		buffer.flip();
-		if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty()) {
-			synchronized (this) {
-				if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty()) {
-					writeBuffer = buffer;
-					chain.doWriteFilter(this, writeBuffer);
-					((SocketChannel) channelKey.channel()).write(writeBuffer);
-					if (writeBuffer.hasRemaining()) {
-						synchronized (writeLock) {
-							channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_WRITE);
-							channelKey.selector().wakeup();
-						}
-					} else {
-						writeBuffer = null;
-					}
-					return;
-				}
-			}
+		if (writeCacheQueue.isEmpty() && (writeBuffer == null || !writeBuffer.hasRemaining())) {
+			chain.doWriteFilter(this, buffer);
+			int writeTimes = 3;//控制循环次数防止低效输出流占用资源
+			while (((SocketChannel) channelKey.channel()).write(buffer) > 0 && writeTimes-- > 0)
+				;
+		}
+		if (!buffer.hasRemaining()) {
+			return;
 		}
 		try {
 			switch (strategy) {
