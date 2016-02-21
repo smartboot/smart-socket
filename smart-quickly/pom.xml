@@ -9,7 +9,6 @@
 		<groupId>net.vinote.smart</groupId>
 		<artifactId>smart-socket</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>smart-quickly</artifactId>
 	<dependencies>
