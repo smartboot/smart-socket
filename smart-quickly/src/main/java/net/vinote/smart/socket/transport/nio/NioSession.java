@@ -67,6 +67,7 @@ public class NioSession<T> extends TransportSession<T> {
 		this.strategy = QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy());
 		this.autoRecover = config.isAutoRecover();
 		super.bufferSize = config.getDataBufferSize();
+		super.timeout = config.getTimeout();
 	}
 
 	@Override
@@ -200,7 +201,7 @@ public class NioSession<T> extends TransportSession<T> {
 		buffer.flip();
 		if (writeCacheQueue.isEmpty() && (writeBuffer == null || !writeBuffer.hasRemaining())) {
 			chain.doWriteFilter(this, buffer);
-			int writeTimes = 3;//控制循环次数防止低效输出流占用资源
+			int writeTimes = 3;// 控制循环次数防止低效输出流占用资源
 			while (((SocketChannel) channelKey.channel()).write(buffer) > 0 && writeTimes-- > 0)
 				;
 		}

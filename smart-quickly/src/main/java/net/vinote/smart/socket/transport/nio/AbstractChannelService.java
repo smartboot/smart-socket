@@ -1,6 +1,7 @@
 package net.vinote.smart.socket.transport.nio;
 
 import java.io.IOException;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
@@ -54,44 +55,50 @@ abstract class AbstractChannelService<T> implements ChannelService {
 		// 通过检查状态使之一直保持服务状态
 		while (ChannelServiceStatusEnum.RUNING == status) {
 			try {
-				// 此处会阻塞在selector.select()直至某个关注的事件将其唤醒
-				while (selector.isOpen() && selector.select() > -1) {
-					Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
-					// 执行本次已触发待处理的事件
-					while (keyIterator.hasNext()) {
-						SelectionKey key = keyIterator.next();
-						try {
-							// 读取客户端数据
-							if (key.isReadable()) {
-								readFromChannel(key);
-							} else if (key.isWritable()) {// 输出数据至客户端
-								writeToChannel(key);
-							} else if (key.isAcceptable() || key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
-								acceptConnect(key, selector);
-							} else {
-								logger.warn("奇怪了...");
-							}
-						} catch (Exception e) {
-							e.printStackTrace();
-							exceptionInSelectionKey(key, e);
-						} finally {
-							// 移除已处理的事件
-							keyIterator.remove();
-						}
-					}
-				}
-
-				if (!selector.isOpen()) {
-					logger.info("Selector is already closed!");
-					break;
-				}
-
+				running();
+			} catch (ClosedSelectorException e) {
+				updateServiceStatus(ChannelServiceStatusEnum.Abnormal);// Selector关闭触发服务终止
 			} catch (Exception e) {
 				exceptionInSelector(e);
 			}
 		}
 		updateServiceStatus(ChannelServiceStatusEnum.STOPPED);
 		logger.info("Channel is stop!");
+	}
+
+	/**
+	 * 运行channel服务
+	 * 
+	 * @throws IOException
+	 * @throws Exception
+	 */
+	private void running() throws IOException, Exception {
+		// 此处会阻塞在selector.select()直至某个关注的事件将其唤醒
+		if (selector.select() < 0) {
+			return;
+		}
+		Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
+		// 执行本次已触发待处理的事件
+		while (keyIterator.hasNext()) {
+			SelectionKey key = keyIterator.next();
+			try {
+				// 读取客户端数据
+				if (key.isReadable()) {
+					readFromChannel(key);
+				} else if (key.isWritable()) {// 输出数据至客户端
+					writeToChannel(key);
+				} else if (key.isAcceptable() || key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
+					acceptConnect(key, selector);
+				} else {
+					logger.warn("奇怪了...");
+				}
+			} catch (Exception e) {
+				exceptionInSelectionKey(key, e);
+			} finally {
+				// 移除已处理的事件
+				keyIterator.remove();
+			}
+		}
 	}
 
 	/**
