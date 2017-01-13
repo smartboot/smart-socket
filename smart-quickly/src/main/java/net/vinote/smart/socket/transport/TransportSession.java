@@ -8,7 +8,6 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.vinote.smart.socket.exception.CacheFullException;
 import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
@@ -26,6 +25,9 @@ public abstract class TransportSession<T> {
 	private Logger logger = LogManager.getLogger(TransportSession.class);
 	/** 会话ID */
 	private final String sessionId = String.valueOf(System.identityHashCode(this));
+
+	/** 本次读取的消息体大小 */
+	public static final String ATTRIBUTE_KEY_CUR_DATA_LENGTH = "_attr_key_curDataLength_";
 
 	/** 消息通信协议 */
 	protected Protocol<T> protocol;
@@ -99,8 +101,10 @@ public abstract class TransportSession<T> {
 			logger.warn("close transport because of decode exception");
 		} finally {
 			// 仅当发生数据读取时调用compact,减少内存拷贝
-			if (buffer.position() > 0 || buffer.limit() == 0) {
+			if (buffer.position() > 0) {
 				buffer.compact();
+			} else {
+				buffer.limit(buffer.capacity());
 			}
 		}
 	}
@@ -179,7 +183,7 @@ public abstract class TransportSession<T> {
 	 * @return 是否输出成功
 	 * @throws Exception
 	 */
-	public abstract void write(ByteBuffer data) throws IOException, CacheFullException;
+	public abstract void write(ByteBuffer data) throws IOException;
 
 	/**
 	 * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理
@@ -189,7 +193,7 @@ public abstract class TransportSession<T> {
 	 * @return 是否输出成功
 	 * @throws Exception
 	 */
-	public abstract void write(T data) throws IOException, CacheFullException;
+	// public abstract void write(T data) throws IOException;
 
 	/**
 	 * Getter method for property <tt>attribute</tt>.

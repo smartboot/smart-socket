@@ -17,6 +17,9 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 	private ProtocolDataReceiver<T> receiver;
 	private SmartFilter<T>[] handlers = null;
 
+	/** 上一个WriteBuffer的hashCode */
+	private int preWriteBuf;
+
 	public SmartFilterChainImpl(ProtocolDataReceiver<T> receiver, SmartFilter<T>[] handlers) {
 		this.receiver = receiver;
 		this.handlers = handlers;
@@ -27,14 +30,15 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 			return;
 		}
 		// 接收到的消息进行预处理
-		if (handlers != null && handlers.length > 0) {
+		boolean hasHandlers = handlers != null && handlers.length > 0;
+		if (hasHandlers) {
 			for (SmartFilter<T> h : handlers) {
 				h.readFilter(session, dataEntry);
 			}
 		}
 		boolean succ = receiver.receive(session, dataEntry);
 		// 未能成功接受消息
-		if (!succ && handlers != null && handlers.length > 0) {
+		if (!succ && hasHandlers) {
 			for (SmartFilter<T> h : handlers) {
 				h.receiveFailHandler(session, dataEntry);
 			}
@@ -43,6 +47,13 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 	}
 
 	public void doWriteFilter(TransportSession<T> session, ByteBuffer buffer) {
+		// 防止buffer重复进入过滤器
+		int hashCode = System.identityHashCode(buffer);
+		if (hashCode == 0 || hashCode == preWriteBuf) {
+			return;
+		}
+		preWriteBuf = hashCode;
+
 		if (handlers != null && handlers.length > 0) {
 			for (SmartFilter<T> h : handlers) {
 				h.writeFilter(session, buffer);

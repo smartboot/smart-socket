@@ -11,11 +11,11 @@ import java.util.concurrent.ArrayBlockingQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.vinote.smart.socket.exception.CacheFullException;
 import net.vinote.smart.socket.exception.NotYetReconnectedException;
 import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
 import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
 import net.vinote.smart.socket.transport.TransportSession;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
@@ -32,8 +32,6 @@ public class NioSession<T> extends TransportSession<T> {
 
 	/** 响应消息缓存队列 */
 	private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
-
-	private ByteBuffer writeBuffer;
 
 	private Object writeLock = new Object();
 
@@ -129,31 +127,26 @@ public class NioSession<T> extends TransportSession<T> {
 	 *
 	 * @return
 	 */
-	public ByteBuffer getWriteBuffer() {
-		if (writeBuffer != null && writeBuffer.hasRemaining()) {
-			return writeBuffer;
+	public final ByteBuffer getWriteBuffer() {
+		ByteBuffer buffer = null;
+		// 移除已输出的数据流
+		while ((buffer = writeCacheQueue.peek()) != null && buffer.remaining() == 0) {
+			writeCacheQueue.poll();
 		}
 
-		ByteBuffer array = writeCacheQueue.poll();
-		if (array != null) {
-			// writeBuffer==null,说明本次获取的byteBuffer对象已于write方法中执行过了doWriteFilter
-			if (writeBuffer == null || array.position() > 0) {
-				chain.doWriteFilter(this, array);
-			}
-			writeBuffer = array;
-		} else {
-			writeBuffer = null;
-			// 不具备写条件,移除该关注
-			if (writeCacheQueue.isEmpty()) {
-				synchronized (writeLock) {
-					if (writeCacheQueue.isEmpty()) {
-						channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_WRITE);
-					}
+		// 缓存队列已空则注销写关注
+		if (buffer == null) {
+			synchronized (writeLock) {
+				if (writeCacheQueue.isEmpty()) {
+					channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_WRITE);
 				}
-				resumeReadAttention();
 			}
+			resumeReadAttention();
+			return null;
+		} else if (buffer.position() == 0) {// 首次输出执行过滤器
+			chain.doWriteFilter(this, buffer);
 		}
-		return writeBuffer;
+		return buffer;
 	}
 
 	void initBaseChannelInfo(SelectionKey channelKey) {
@@ -172,7 +165,7 @@ public class NioSession<T> extends TransportSession<T> {
 	}
 
 	@Override
-	public void pauseReadAttention() {
+	public final void pauseReadAttention() {
 		if ((channelKey.interestOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
 			channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
 			logger.info(getRemoteAddr() + ":" + getRemotePort() + "流控");
@@ -180,13 +173,15 @@ public class NioSession<T> extends TransportSession<T> {
 	}
 
 	@Override
-	public void resumeReadAttention() {
+	public final void resumeReadAttention() {
 		if (readClosed) {
 			return;
 		}
 		if ((channelKey.interestOps() & SelectionKey.OP_READ) != SelectionKey.OP_READ) {
 			channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_READ);
-			logger.debug(getRemoteAddr() + ":" + getRemotePort() + "释放流控");
+			if (logger.isDebugEnabled()) {
+				logger.debug(getRemoteAddr() + ":" + getRemotePort() + "释放流控");
+			}
 		}
 	}
 
@@ -197,48 +192,66 @@ public class NioSession<T> extends TransportSession<T> {
 	}
 
 	@Override
-	public synchronized void write(ByteBuffer buffer) throws IOException {
+	public final void write(ByteBuffer buffer) throws IOException {
+		boolean isNew = true;
 		buffer.flip();
-		if (writeCacheQueue.isEmpty() && (writeBuffer == null || !writeBuffer.hasRemaining())) {
-			chain.doWriteFilter(this, buffer);
-			int writeTimes = 3;// 控制循环次数防止低效输出流占用资源
-			while (((SocketChannel) channelKey.channel()).write(buffer) > 0 && writeTimes-- > 0)
-				;
-		}
-		if (!buffer.hasRemaining()) {
-			return;
-		}
-		try {
-			switch (strategy) {
-			case DISCARD:
-				if (!writeCacheQueue.offer(buffer)) {
-					logger.warn("cache is full now");
-					throw new CacheFullException("cache is full now");
-				}
-				break;
-			case WAIT:
-				writeCacheQueue.put(buffer);
-				break;
-			default:
-				throw new QueueOverflowStrategyException("Invalid overflow strategy " + strategy);
-			}
+		// 队列为空时直接输出
+		if (writeCacheQueue.isEmpty()) {
+			synchronized (this) {
+				if (writeCacheQueue.isEmpty()) {
+					chain.doWriteFilter(this, buffer);
+					int writeTimes = 8;// 控制循环次数防止低效输出流占用资源
+					while (((SocketChannel) channelKey.channel()).write(buffer) > 0 && writeTimes >> 1 > 0)
+						;
+					// 数据全部输出则return
+					if (buffer.position() >= buffer.limit()) {
+						return;
+					}
 
-		} catch (CacheFullException e) {
-			logger.warn(e.getMessage(), e);
+					boolean cacheFlag = writeCacheQueue.offer(buffer);
+					// 已输出部分数据，但剩余数据缓存失败,则异常处理
+					if (!cacheFlag && buffer.position() > 0) {
+						throw new IOException("cache data fail, channel has become unavailable!");
+					}
+					// 缓存失败并无数据输出,则忽略本次数据包
+					if (!cacheFlag && buffer.position() == 0) {
+						logger.warn("cache data fail, ignore!");
+						return;
+					}
+					isNew = false;
+				}
+			}
+		}
+
+		try {
+			if (isNew) {
+				switch (strategy) {
+				case DISCARD:
+					if (!writeCacheQueue.offer(buffer)) {
+						logger.warn("cache is full now," + StringUtils.toHexString(buffer.array()));
+					}
+					break;
+				case WAIT:
+					writeCacheQueue.put(buffer);
+					break;
+				default:
+					throw new QueueOverflowStrategyException("Invalid overflow strategy " + strategy);
+				}
+			}
 		} catch (InterruptedException e) {
 			logger.warn(e.getMessage(), e);
 		} finally {
-			if (!channelKey.isValid()) {
+			if (channelKey.isValid()) {
+				synchronized (writeLock) {
+					channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_WRITE);
+					channelKey.selector().wakeup();
+				}
+			} else {
 				if (autoRecover) {
 					throw new NotYetReconnectedException("Network anomaly, will reconnect");
 				} else {
 					writeCacheQueue.clear();
 					throw new IOException("Channel is invalid now!");
-				}
-			} else {
-				synchronized (writeLock) {
-					channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_WRITE);
-					channelKey.selector().wakeup();
 				}
 			}
 		}
@@ -250,9 +263,9 @@ public class NioSession<T> extends TransportSession<T> {
 	 * 
 	 * @see com.zjw.platform.quickly.Session#write(byte[])
 	 */
-	@Override
-	public void write(T data) throws IOException, CacheFullException {
-		throw new UnsupportedOperationException();
-	}
+	// @Override
+	// public void write(T data) throws IOException {
+	// throw new UnsupportedOperationException();
+	// }
 
 }

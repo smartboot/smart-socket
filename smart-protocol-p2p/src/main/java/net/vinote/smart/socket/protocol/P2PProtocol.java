@@ -51,6 +51,7 @@ final class P2PProtocol implements Protocol<BaseMessage> {
 		if (message == null) {
 			throw new DecodeException("");
 		}
+		session.setAttribute(TransportSession.ATTRIBUTE_KEY_CUR_DATA_LENGTH, msgLength);// 设置消息体大小
 		return message;
 	}
 

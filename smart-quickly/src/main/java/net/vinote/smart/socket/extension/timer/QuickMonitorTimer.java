@@ -52,7 +52,8 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
 	}
 
 	public void readFilter(TransportSession<T> session, T d) {
-		//flow.addAndGet(((byte[])d).length);
+		int length = session.getAttribute(TransportSession.ATTRIBUTE_KEY_CUR_DATA_LENGTH);
+		flow.addAndGet(length);
 		recMsgnum.incrementAndGet();
 		messageStorage.incrementAndGet();
 	}
@@ -60,7 +61,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
 	public void receiveFailHandler(TransportSession<T> session, T d) {
 		discardNum.incrementAndGet();
 		messageStorage.decrementAndGet();
-		//logger.info("HexData -->" + StringUtils.toHexString((byte[])d));
+		// logger.info("HexData -->" + StringUtils.toHexString((byte[])d));
 	}
 
 	@Override
@@ -69,9 +70,9 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
 		int curRecMsgnum = recMsgnum.getAndSet(0);
 		int curDiscardNum = discardNum.getAndSet(0);
 		int curProcessMsgNum = processMsgNum.getAndSet(0);
-		logger.info("\r\nFlow of Message:\t" + curFlow * 1.0 / (1024 * 1024) + "(MB)" + "\r\nNumber of Message:\t"
+		logger.info("\r\nFlow of Message:\t\t" + curFlow * 1.0 / (1024 * 1024) + "(MB)" + "\r\nNumber of Message:\t"
 			+ curRecMsgnum + "\r\nAvg Size of Message:\t" + (curRecMsgnum > 0 ? curFlow * 1.0 / curRecMsgnum : 0)
-			+ "\r\nNumber of Discard:\t" + curDiscardNum + "\r\nNum of Process Msg:\t" + curProcessMsgNum
+			+ "(B)" + "\r\nNumber of Discard:\t" + curDiscardNum + "\r\nNum of Process Msg:\t" + curProcessMsgNum
 			+ "\r\nStorage of Message:\t" + messageStorage.get() + "\r\nTotal Num of Process Msg:\t"
 			+ totleProcessMsgNum);
 	}
