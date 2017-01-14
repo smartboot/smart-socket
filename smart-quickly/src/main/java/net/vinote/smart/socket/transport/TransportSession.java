@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.DecodeException;
+import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
@@ -98,12 +99,14 @@ public abstract class TransportSession<T> {
 			logger.warn("", e);
 			cancelReadAttention();
 			close();// 解码失败断连
-			logger.warn("close transport because of decode exception");
+			logger.warn("close transport because of decode exception, " + StringUtils.toHexString(buffer.array()));
 		} finally {
 			// 仅当发生数据读取时调用compact,减少内存拷贝
+			// buffer.compact();
 			if (buffer.position() > 0) {
 				buffer.compact();
 			} else {
+				buffer.position(buffer.limit());
 				buffer.limit(buffer.capacity());
 			}
 		}
