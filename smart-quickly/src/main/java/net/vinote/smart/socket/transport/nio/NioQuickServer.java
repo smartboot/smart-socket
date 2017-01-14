@@ -146,7 +146,6 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 			;
 		}
 		if (session.getStatus() == SessionStatusEnum.CLOSING && (buffer = session.getWriteBuffer()) == null) {
-			System.out.println("Close");
 			session.close();
 		}
 	}
