@@ -74,7 +74,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
 	 */
 	private void running() throws IOException, Exception {
 		// 此处会阻塞在selector.select()直至某个关注的事件将其唤醒
-		if (selector.select() < 0) {
+		if (selector.selectNow() == 0 && selector.select() < 0) {
 			return;
 		}
 		Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();

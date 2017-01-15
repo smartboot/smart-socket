@@ -6,11 +6,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
-import net.vinote.smart.socket.protocol.p2p.server.P2PServerMessageProcessor.ProcessUnit;
 import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
 import net.vinote.smart.socket.service.process.ProtocolProcessThread;
 
-class P2PServerProcessThread extends ProtocolProcessThread<BaseMessage> {
+final class P2PServerProcessThread extends ProtocolProcessThread<BaseMessage> {
 	private Logger logger = LogManager.getLogger(P2PServerProcessThread.class);
 	private ArrayBlockingQueue<ProcessUnit> messageQueue;
 

@@ -18,22 +18,12 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  *
  */
-public class P2PServerMessageProcessor extends AbstractProtocolDataProcessor<BaseMessage> {
+public final class P2PServerMessageProcessor extends AbstractProtocolDataProcessor<BaseMessage> {
 	private static final String SESSION_KEY = "SESSION";
 	private P2pServiceMessageFactory serviceMessageFactory;
 
 	public P2PServerMessageProcessor(P2pServiceMessageFactory serviceMessageFactory) {
 		this.serviceMessageFactory = serviceMessageFactory;
-	}
-
-	class ProcessUnit {
-		TransportSession<BaseMessage> session;
-		BaseMessage msg;
-
-		public ProcessUnit(TransportSession<BaseMessage> session, BaseMessage msg) {
-			this.session = session;
-			this.msg = msg;
-		}
 	}
 
 	private ProtocolProcessThread<BaseMessage>[] processThreads;
