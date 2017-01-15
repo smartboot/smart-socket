@@ -228,7 +228,7 @@ public class P2PSession implements Session {
 	 * @return
 	 */
 	private boolean isRequestMessage(int msgType) {
-		return (MessageType.REQUEST_MESSAGE & msgType) == MessageType.REQUEST_MESSAGE;
+		return (MessageType.RESPONSE_MESSAGE & msgType) == MessageType.REQUEST_MESSAGE;
 	}
 
 	public TransportSession<BaseMessage> getTransportSession() {
