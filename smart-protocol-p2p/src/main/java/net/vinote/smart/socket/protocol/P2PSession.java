@@ -34,7 +34,7 @@ public class P2PSession implements Session {
 	private String sessionId = null;
 	/** 失效标识 */
 	private boolean invalidated = false;
-	private Map<String, BaseMessage> synchRespMap;
+	private Map<Integer, BaseMessage> synchRespMap;
 
 	private Map<String, Object> attributeMap = new ConcurrentHashMap<String, Object>();
 
@@ -44,7 +44,7 @@ public class P2PSession implements Session {
 		localAddress = session.getLocalAddress();
 		this.session = session;
 		maxInactiveInterval = session.getTimeout();
-		synchRespMap = new ConcurrentHashMap<String, BaseMessage>();
+		synchRespMap = new ConcurrentHashMap<Integer, BaseMessage>();
 		creatTime = System.currentTimeMillis();
 		refreshAccessedTime();
 	}
@@ -145,7 +145,7 @@ public class P2PSession implements Session {
 		if (isRequestMessage(respMsg.getMessageType())) {
 			return false;
 		}
-		String sequenceId = String.valueOf(respMsg.getHead().getSequenceID());
+		int sequenceId = respMsg.getHead().getSequenceID();
 		BaseMessage reqMsg = synchRespMap.get(sequenceId);
 		if (reqMsg != null) {
 			synchronized (reqMsg) {
@@ -185,12 +185,12 @@ public class P2PSession implements Session {
 				+ Integer.toHexString(reqMsg.getMessageType()));
 		}
 		ByteBuffer buffer = reqMsg.encode();// 必须执行encode才可产生sequenceId
-		String sequenceId = String.valueOf(reqMsg.getHead().getSequenceID());
+		int sequenceId = reqMsg.getHead().getSequenceID();
 		synchRespMap.put(sequenceId, reqMsg);
 		session.write(buffer);
-		if (synchRespMap.containsKey(sequenceId) && synchRespMap.get(sequenceId) == reqMsg) {
+		if (synchRespMap.get(sequenceId) == reqMsg) {
 			synchronized (reqMsg) {
-				if (synchRespMap.containsKey(sequenceId) && synchRespMap.get(sequenceId) == reqMsg) {
+				if (synchRespMap.get(sequenceId) == reqMsg) {
 					try {
 						reqMsg.wait(timeout);
 					} catch (InterruptedException e) {
@@ -228,7 +228,7 @@ public class P2PSession implements Session {
 	 * @return
 	 */
 	private boolean isRequestMessage(int msgType) {
-		return (MessageType.RESPONSE_MESSAGE & msgType) == MessageType.REQUEST_MESSAGE;
+		return (MessageType.REQUEST_MESSAGE & msgType) == MessageType.REQUEST_MESSAGE;
 	}
 
 	public TransportSession<BaseMessage> getTransportSession() {
