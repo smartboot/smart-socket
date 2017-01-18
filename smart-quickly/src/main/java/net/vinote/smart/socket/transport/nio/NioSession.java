@@ -6,13 +6,14 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.NotYetReconnectedException;
 import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
+import net.vinote.smart.socket.lang.ArrayBlockingQueue;
 import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
@@ -31,7 +32,7 @@ public class NioSession<T> extends TransportSession<T> {
 	private SelectionKey channelKey = null;
 
 	/** 响应消息缓存队列 */
-	private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
+	private BlockingQueue<ByteBuffer> writeCacheQueue;
 
 	private Object writeLock = new Object();
 
@@ -61,7 +62,7 @@ public class NioSession<T> extends TransportSession<T> {
 		super.protocol = config.getProtocolFactory().createProtocol();
 		super.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
 		this.cacheSize = config.getCacheSize();
-		writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(cacheSize);
+		writeCacheQueue = new ArrayBlockingQueue(cacheSize);
 		this.strategy = QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy());
 		this.autoRecover = config.isAutoRecover();
 		super.bufferSize = config.getDataBufferSize();
@@ -143,9 +144,9 @@ public class NioSession<T> extends TransportSession<T> {
 			}
 			resumeReadAttention();
 			return null;
-		} else if (buffer.position() == 0) {// 首次输出执行过滤器
+		} /*else if (buffer.position() == 0) {// 首次输出执行过滤器
 			chain.doWriteFilter(this, buffer);
-		}
+		}*/
 		return buffer;
 	}
 
@@ -193,13 +194,15 @@ public class NioSession<T> extends TransportSession<T> {
 
 	@Override
 	public final void write(ByteBuffer buffer) throws IOException {
+		chain.doWriteFilter(this, buffer);
 		boolean isNew = true;
+		
 		buffer.flip();
 		// 队列为空时直接输出
 		if (writeCacheQueue.isEmpty()) {
 			synchronized (this) {
 				if (writeCacheQueue.isEmpty()) {
-					chain.doWriteFilter(this, buffer);
+//					chain.doWriteFilter(this, buffer);
 					int writeTimes = 8;// 控制循环次数防止低效输出流占用资源
 					while (((SocketChannel) channelKey.channel()).write(buffer) > 0 && writeTimes >> 1 > 0)
 						;

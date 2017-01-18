@@ -14,7 +14,7 @@ public class HelloWorldServer {
 	public static void main(String[] args) throws ClassNotFoundException {
 		// 注册消息以及对应的处理器
 		Properties properties = new Properties();
-		properties.put(HelloWorldReq.class.getName(), HelloWorldProcessor.class.getName());
+		properties.put(HelloWorldReq.class.getName(), HelloWorldHandler.class.getName());
 		P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
 		messageFactory.loadFromProperties(properties);
 		// 启动服务

@@ -10,12 +10,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.protocol.p2p.AbstractServiceMessageProcessor;
+import net.vinote.smart.socket.protocol.p2p.MessageHandler;
 
 public class P2pServiceMessageFactory {
 	private Logger logger = LogManager.getLogger(P2pServiceMessageFactory.class);
 	private Map<Integer, Class<? extends BaseMessage>> msgHaspMap = new HashMap<Integer, Class<? extends BaseMessage>>();
-	private Map<Class<? extends BaseMessage>, AbstractServiceMessageProcessor> processorMap = new HashMap<Class<? extends BaseMessage>, AbstractServiceMessageProcessor>();
+	private Map<Class<? extends BaseMessage>, MessageHandler> processorMap = new HashMap<Class<? extends BaseMessage>, MessageHandler>();
 
 
 	/**
@@ -60,7 +60,7 @@ public class P2pServiceMessageFactory {
 
 			String processClazz = properties.getProperty(key);
 			if (!StringUtils.isBlank(processClazz)) {
-				Class<? extends AbstractServiceMessageProcessor> processClass = (Class<? extends AbstractServiceMessageProcessor>) Class
+				Class<? extends MessageHandler> processClass = (Class<? extends MessageHandler>) Class
 					.forName(processClazz);
 				regist(p2pClass, processClass);
 			}
@@ -74,10 +74,10 @@ public class P2pServiceMessageFactory {
 	 * @param clazz
 	 * @param process
 	 */
-	private <K extends BaseMessage, V extends AbstractServiceMessageProcessor> void regist(Class<K> clazz,
+	private <K extends BaseMessage, V extends MessageHandler> void regist(Class<K> clazz,
 		final Class<V> process) {
 		try {
-			AbstractServiceMessageProcessor processor = process.newInstance();
+			MessageHandler processor = process.newInstance();
 			processor.init();
 			processorMap.put(clazz, processor);
 			logger.info("load Service Processor Class[" + process.getName() + "] for " + clazz.getName());
@@ -94,7 +94,7 @@ public class P2pServiceMessageFactory {
 
 	// @Override
 	public void destory() {
-		for (AbstractServiceMessageProcessor processor : processorMap.values()) {
+		for (MessageHandler processor : processorMap.values()) {
 			processor.destory();
 		}
 		processorMap.clear();
@@ -102,7 +102,7 @@ public class P2pServiceMessageFactory {
 	}
 
 	// @Override
-	public AbstractServiceMessageProcessor getProcessor(Class<? extends BaseMessage> clazz) {
+	public MessageHandler getProcessor(Class<? extends BaseMessage> clazz) {
 		return processorMap.get(clazz);
 	}
 }

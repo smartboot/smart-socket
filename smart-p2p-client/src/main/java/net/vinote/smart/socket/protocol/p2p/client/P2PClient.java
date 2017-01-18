@@ -49,16 +49,17 @@ public class P2PClient {
 					long start = System.currentTimeMillis();
 					while (num++ < Long.MAX_VALUE) {
 						DetectMessageReq request = new DetectMessageReq();
-						request.setDetectMessage("Hello");
+						request.setDetectMessage("HelloWorldHelloWorldHelloWorldHelloWorldHelloWorld");
 						try {
-							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
-								.sendWithResponse(request);
-							// processor.getSession().sendWithoutResponse(request);
-//							 logger.info(loginResp);
+//							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
+//								.sendWithResponse(request);
+							 processor.getSession().sendWithoutResponse(request);
+//							 Thread.sleep(1);
+							// logger.info(loginResp);
 						} catch (Exception e) {
 							System.out.println(num);
-							// e.printStackTrace();
-							// System.exit(0);
+//							e.printStackTrace();
+//							System.exit(0);
 						}
 					}
 					logger.info("安全消息结束" + (System.currentTimeMillis() - start));

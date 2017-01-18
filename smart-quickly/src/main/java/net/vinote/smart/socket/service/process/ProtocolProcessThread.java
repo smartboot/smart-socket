@@ -9,7 +9,7 @@ package net.vinote.smart.socket.service.process;
  */
 public abstract class ProtocolProcessThread<T> extends Thread {
 	/** 当前线程服务的处理器 */
-	protected ProtocolDataProcessor<T> processor;
+	protected final ProtocolDataProcessor<T> processor;
 	protected volatile boolean running = true;
 
 	public ProtocolProcessThread(String name, ProtocolDataProcessor<T> processor) {

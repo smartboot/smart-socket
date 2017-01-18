@@ -4,7 +4,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.P2PSession;
-import net.vinote.smart.socket.protocol.p2p.AbstractServiceMessageProcessor;
+import net.vinote.smart.socket.protocol.p2p.MessageHandler;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
@@ -26,7 +26,9 @@ public final class P2PServerMessageProcessor extends AbstractProtocolDataProcess
 		this.serviceMessageFactory = serviceMessageFactory;
 	}
 
+	/** 消息处理线程 */
 	private ProtocolProcessThread<BaseMessage>[] processThreads;
+	/** 消息缓存队列 */
 	private ArrayBlockingQueue<ProcessUnit> msgQueue;
 
 	private int msgQueueMaxSize;
@@ -54,19 +56,20 @@ public final class P2PServerMessageProcessor extends AbstractProtocolDataProcess
 	@Override
 	public void process(TransportSession<BaseMessage> tsession, BaseMessage entry) throws Exception {
 		P2PSession session = tsession.getAttribute(SESSION_KEY);
-		SmartFilter<BaseMessage>[] handlers = getQuicklyConfig().getFilters();
-		if (handlers != null && handlers.length > 0) {
-			for (SmartFilter<BaseMessage> h : handlers) {
+		SmartFilter<BaseMessage>[] filters = getQuicklyConfig().getFilters();
+		if (filters != null && filters.length > 0) {
+			for (SmartFilter<BaseMessage> h : filters) {
 				h.processFilter(tsession, entry);
 			}
 		}
-		AbstractServiceMessageProcessor processor = serviceMessageFactory.getProcessor(entry.getClass());
-		processor.processor(session, entry);
+		MessageHandler handler = serviceMessageFactory.getProcessor(entry.getClass());
+		handler.handler(session, entry);
 	}
 
 	@Override
 	public boolean receive(TransportSession<BaseMessage> session, BaseMessage entry) {
-		return msgQueue.offer(new ProcessUnit(session, entry));
+//		return msgQueue.offer(new ProcessUnit(session, entry));
+		return true;
 	}
 
 	@Override

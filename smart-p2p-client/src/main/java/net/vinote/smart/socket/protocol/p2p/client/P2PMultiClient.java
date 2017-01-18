@@ -17,7 +17,7 @@ import net.vinote.smart.socket.transport.nio.NioQuickClient;
 
 public class P2PMultiClient {
 	public static void main(String[] args) throws Exception {
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 20; i++) {
 			new Thread() {
 				private Logger logger = LogManager.getLogger(this.getClass());
 
@@ -50,13 +50,13 @@ public class P2PMultiClient {
 						DetectMessageReq request = new DetectMessageReq();
 						request.setDetectMessage("Hello");
 						try {
-							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
-								.sendWithResponse(request);
-							// processor.getSession().sendWithoutResponse(request);
+//							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
+//								.sendWithResponse(request);
+							 processor.getSession().sendWithoutResponse(request);
 							// logger.info(loginResp);
 						} catch (Exception e) {
 							System.out.println(num);
-							// e.printStackTrace();
+							 e.printStackTrace();
 							// System.exit(0);
 						}
 					}

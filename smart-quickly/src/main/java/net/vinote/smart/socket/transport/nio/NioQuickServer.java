@@ -71,7 +71,7 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 	@Override
 	protected void readFromChannel(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		NioSession<T> session = (NioSession) key.attachment();
+		NioSession<?> session = (NioSession<?>) key.attachment();
 		ByteBuffer buffer = session.getReadBuffer();
 		int readSize = 0;
 		int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
@@ -137,7 +137,7 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 	@Override
 	protected void writeToChannel(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		NioSession<T> session = (NioSession<T>) key.attachment();
+		NioSession<?> session = (NioSession<?>) key.attachment();
 		ByteBuffer buffer;
 		int loopTimes = WRITE_LOOP_TIMES;// 轮训次数,一遍及时让出资源
 		// buffer = session.getByteBuffer()若读取不到数据,则内部会移除写关注

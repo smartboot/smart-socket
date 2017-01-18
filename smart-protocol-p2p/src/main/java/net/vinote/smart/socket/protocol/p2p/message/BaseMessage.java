@@ -64,7 +64,7 @@ public abstract class BaseMessage {
 			throw new ProtocolException("Protocol head is unset!");
 		}
 		// 完成消息体编码便可获取实际消息大小
-		ByteBuffer bodyBuffer = ByteBuffer.allocate(1024);
+		ByteBuffer bodyBuffer = ByteBuffer.allocate(512);
 		bodyBuffer.position(HeadMessage.HEAD_MESSAGE_LENGTH);
 		encodeBody(bodyBuffer);// 编码消息体
 		bodyBuffer.flip();

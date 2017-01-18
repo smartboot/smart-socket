@@ -1,13 +1,13 @@
 package com.test.message;
 
-import net.vinote.smart.socket.protocol.p2p.AbstractServiceMessageProcessor;
+import net.vinote.smart.socket.protocol.p2p.MessageHandler;
 import net.vinote.smart.socket.protocol.p2p.Session;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 
-public class HelloWorldProcessor extends AbstractServiceMessageProcessor {
+public class HelloWorldHandler extends MessageHandler {
 
 	@Override
-	public void processor(Session session, BaseMessage message) {
+	public void handler(Session session, BaseMessage message) {
 		HelloWorldReq request = (HelloWorldReq) message;
 		HelloWorldResp resp = new HelloWorldResp(request.getHead());
 		resp.setSay(request.getName() + " say: Hello World,I'm " + request.getAge() + " years old. I'm a "
