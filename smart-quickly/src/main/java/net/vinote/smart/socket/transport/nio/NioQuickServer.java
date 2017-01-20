@@ -72,13 +72,10 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 	protected void readFromChannel(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		NioSession<?> session = (NioSession<?>) key.attachment();
-		ByteBuffer buffer = session.getReadBuffer();
 		int readSize = 0;
 		int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
-		do {
-			session.flushReadBuffer();
-		} while (key.isValid() && (key.interestOps() & SelectionKey.OP_READ) > 0 && --loopTimes > 0
-			&& (readSize = socketChannel.read(buffer)) > 0);// 读取管道中的数据块
+		while ((readSize = socketChannel.read(session.flushReadBuffer())) > 0 && --loopTimes > 0)
+			;// 读取管道中的数据块
 		// 达到流末尾则注销读关注
 		if (readSize == -1 || session.getStatus() == SessionStatusEnum.CLOSING) {
 			session.cancelReadAttention();

@@ -58,6 +58,7 @@ public class NioSession<T> extends TransportSession<T> {
 	 *            当前channel消息的处理器
 	 */
 	public NioSession(SelectionKey channelKey, final QuicklyConfig<T> config) {
+		super(ByteBuffer.allocate(config.getDataBufferSize()));
 		initBaseChannelInfo(channelKey);
 		super.protocol = config.getProtocolFactory().createProtocol();
 		super.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
@@ -144,9 +145,10 @@ public class NioSession<T> extends TransportSession<T> {
 			}
 			resumeReadAttention();
 			return null;
-		} /*else if (buffer.position() == 0) {// 首次输出执行过滤器
-			chain.doWriteFilter(this, buffer);
-		}*/
+		} /*
+			 * else if (buffer.position() == 0) {// 首次输出执行过滤器
+			 * chain.doWriteFilter(this, buffer); }
+			 */
 		return buffer;
 	}
 
@@ -196,13 +198,13 @@ public class NioSession<T> extends TransportSession<T> {
 	public final void write(ByteBuffer buffer) throws IOException {
 		chain.doWriteFilter(this, buffer);
 		boolean isNew = true;
-		
+
 		buffer.flip();
 		// 队列为空时直接输出
 		if (writeCacheQueue.isEmpty()) {
 			synchronized (this) {
 				if (writeCacheQueue.isEmpty()) {
-//					chain.doWriteFilter(this, buffer);
+					// chain.doWriteFilter(this, buffer);
 					int writeTimes = 8;// 控制循环次数防止低效输出流占用资源
 					while (((SocketChannel) channelKey.channel()).write(buffer) > 0 && writeTimes >> 1 > 0)
 						;

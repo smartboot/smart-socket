@@ -47,6 +47,10 @@ public abstract class TransportSession<T> {
 
 	protected SmartFilterChain<T> chain;
 
+	public TransportSession(ByteBuffer readBuffer) {
+		this.readBuffer = readBuffer;
+	}
+
 	/**
 	 * 取消读关注<br/>
 	 * 当协议解码失败时应该关闭读关注,防止异常码流继续进入服务器
@@ -85,41 +89,34 @@ public abstract class TransportSession<T> {
 	/**
 	 * 刷新缓存的数据流,对已读取到的数据进行一次协议解码操作
 	 */
-	public void flushReadBuffer() {
-		ByteBuffer buffer = getReadBuffer();
-		buffer.flip();
+	public ByteBuffer flushReadBuffer() {
+		readBuffer.flip();
 
 		// 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
 		try {
 			T dataEntry;
-			while ((dataEntry = protocol.decode(buffer, this)) != null) {
+			while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
 				chain.doReadFilter(this, dataEntry);
 			}
 		} catch (DecodeException e) {
 			logger.warn("", e);
 			cancelReadAttention();
 			close();// 解码失败断连
-			logger.warn("close transport because of decode exception, " + StringUtils.toHexString(buffer.array()));
+			logger.warn("close transport because of decode exception, " + StringUtils.toHexString(readBuffer.array()));
 		} finally {
 			// 仅当发生数据读取时调用compact,减少内存拷贝
 			// buffer.compact();
-			if (buffer.position() > 0) {
-				buffer.compact();
+			if (readBuffer.position() > 0) {
+				readBuffer.compact();
 			} else {
-				buffer.position(buffer.limit());
-				buffer.limit(buffer.capacity());
+				readBuffer.position(readBuffer.limit());
+				readBuffer.limit(readBuffer.capacity());
 			}
-		}
-	}
-
-	public abstract String getLocalAddress();
-
-	public ByteBuffer getReadBuffer() {
-		if (readBuffer == null) {
-			readBuffer = ByteBuffer.allocate(bufferSize);
 		}
 		return readBuffer;
 	}
+
+	public abstract String getLocalAddress();
 
 	/**
 	 * Returns the Internet Protocol (IP) address of the client or last proxy
