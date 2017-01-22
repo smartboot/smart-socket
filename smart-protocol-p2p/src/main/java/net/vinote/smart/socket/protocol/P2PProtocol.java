@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.DecodeException;
+import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.HeadMessage;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
@@ -37,7 +38,8 @@ final class P2PProtocol implements Protocol<BaseMessage> {
 		}
 		int magicNum = buffer.getInt(0);
 		if (magicNum != HeadMessage.MAGIC_NUMBER) {
-			throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum));
+			throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum) + " ,byteBuffer:"
+				+ StringUtils.toHexString(buffer.array()));
 		}
 		int msgLength = buffer.getInt(4);
 		if (msgLength <= 0) {
