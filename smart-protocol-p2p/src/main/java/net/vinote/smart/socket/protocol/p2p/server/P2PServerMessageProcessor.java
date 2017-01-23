@@ -48,8 +48,10 @@ public final class P2PServerMessageProcessor extends AbstractProtocolDataProcess
 	}
 
 	public void shutdown() {
-		for (ProtocolProcessThread<BaseMessage> thread : processThreads) {
-			thread.shutdown();
+		if (processThreads != null && processThreads.length > 0) {
+			for (ProtocolProcessThread<BaseMessage> thread : processThreads) {
+				thread.shutdown();
+			}
 		}
 	}
 
@@ -69,7 +71,7 @@ public final class P2PServerMessageProcessor extends AbstractProtocolDataProcess
 	@Override
 	public boolean receive(TransportSession<BaseMessage> session, BaseMessage entry) {
 		return msgQueue.offer(new ProcessUnit(session, entry));
-//		return true;
+		// return true;
 	}
 
 	@Override
