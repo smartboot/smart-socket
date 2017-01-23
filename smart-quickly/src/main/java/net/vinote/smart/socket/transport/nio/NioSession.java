@@ -133,7 +133,7 @@ public class NioSession<T> extends TransportSession<T> {
 		ByteBuffer buffer = null;
 		// 移除已输出的数据流
 		while ((buffer = writeCacheQueue.peek()) != null && buffer.remaining() == 0) {
-			writeCacheQueue.poll();
+			writeCacheQueue.remove(buffer);//不要用poll,因为该行线程不安全
 		}
 
 		// 缓存队列已空则注销写关注

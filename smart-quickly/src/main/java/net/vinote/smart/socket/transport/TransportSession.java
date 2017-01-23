@@ -99,10 +99,10 @@ public abstract class TransportSession<T> {
 				chain.doReadFilter(this, dataEntry);
 			}
 		} catch (DecodeException e) {
-			logger.warn("", e);
 			cancelReadAttention();
 			close();// 解码失败断连
-			logger.warn("close transport because of decode exception, " + StringUtils.toHexString(readBuffer.array()));
+			logger.warn("close transport because of decode exception, " + ",bytebuffer:" + readBuffer
+				+ StringUtils.toHexString(readBuffer.array()), e);
 		} finally {
 			// 仅当发生数据读取时调用compact,减少内存拷贝
 			// buffer.compact();
