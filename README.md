@@ -1,5 +1,3 @@
-<!-- ![输入图片说明](https://static.oschina.net/uploads/img/201508/26160044_Uvf4.png "在这里输入图片标题") -->
-
 ##框架结构
 - 传输层  
 	smart-quickly:NIO的具体实现，并提供协议解析接口
@@ -8,18 +6,6 @@
 - 应用层  
 	smart-p2p-server:基于smart-protocol-p2p开发的服务端应用  
 	smart-p2p-client:基于smart-protocol-p2p开发的客户端应用  
-
-##更新日志
-- 2016-01-16 完成代码重构的beta版，性能得到大幅提升
-
-##未来规划
-- 消息体支持加密通信
-- 提升传输层的安全级别，支持防御类似DDOS之类的网络攻击
-- 完善视频教程
-
->  原先的存储方式将致使大消息体产生的数组对象被直接存储于Tenured Gen，直至触发Full GC才释放内存  
-
-- 待补充...
 
 ##快速启动
 服务端: P2PServer.java
