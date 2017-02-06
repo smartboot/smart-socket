@@ -14,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 import net.vinote.smart.socket.exception.NotYetReconnectedException;
 import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
 import net.vinote.smart.socket.lang.ArrayBlockingQueue;
-import net.vinote.smart.socket.lang.NioAttachment;
 import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
@@ -229,14 +228,15 @@ public class NioSession<T> extends TransportSession<T> {
 			}
 		}
 		// 若当前正阻塞于读操作，则尽最大可能进行写操作
-		else {
-			NioAttachment attach = (NioAttachment) channelKey.attachment();
-			ByteBuffer preBuffer = null;
-			while (attach.getCurSelectionOP() == SelectionKey.OP_READ && (preBuffer = getWriteBuffer()) != null
-				&& ((SocketChannel) channelKey.channel()).write(preBuffer) > 0) {
-				;
-			}
-		}
+//		else {
+//			NioAttachment attach = (NioAttachment) channelKey.attachment();
+//			ByteBuffer preBuffer = null;
+//			while (attach.getCurSelectionOP() == SelectionKey.OP_READ && (preBuffer = getWriteBuffer()) != null
+//				&& ((SocketChannel) channelKey.channel()).write(preBuffer) > 0) {
+//				System.out.println("haha");
+//				;
+//			}
+//		}
 
 		try {
 			if (isNew) {

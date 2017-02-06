@@ -70,14 +70,14 @@ public final class P2PServerMessageProcessor extends AbstractProtocolDataProcess
 
 	@Override
 	public boolean receive(TransportSession<BaseMessage> session, BaseMessage entry) {
-//		return msgQueue.offer(new ProcessUnit(session, entry));
-		try {
-			msgQueue.put(new ProcessUnit(session, entry));
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		 return true;
+		return msgQueue.offer(new ProcessUnit(session, entry));
+//		try {
+//			msgQueue.put(new ProcessUnit(session, entry));
+//		} catch (InterruptedException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		 return true;
 	}
 
 	@Override
