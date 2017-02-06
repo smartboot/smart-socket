@@ -7,6 +7,13 @@
 	smart-p2p-server:基于smart-protocol-p2p开发的服务端应用  
 	smart-p2p-client:基于smart-protocol-p2p开发的客户端应用  
 
+##性能测试
+- 测试机配置: CPU i7-4790 3.6Ghz， 16G内存，64位 Win7
+- 测试方式：10个客户端无限循环发送大小为41B的消息体，不等待响应。
+- 测试结果：每分钟数据流量 6000MB、消息量15000W+
+
+> 上述的测试结果仅说明smart-socket的消息接受能力基本达到理论值，但消息的处理模型有待优化。
+
 ##快速启动
 服务端: P2PServer.java
 客户端: P2PMultiClient.java
