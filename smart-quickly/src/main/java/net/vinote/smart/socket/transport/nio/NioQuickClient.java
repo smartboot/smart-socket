@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.StatusException;
+import net.vinote.smart.socket.lang.NioAttachment;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
@@ -62,6 +63,9 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
 			session = new NioSession<T>(key, config);
 			logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
 			config.getProcessor().initChannel(session);
+			NioAttachment attach = new NioAttachment();
+			attach.setSession(session);
+			key.attach(attach);
 			synchronized (conenctLock) {
 				conenctLock.notifyAll();
 			}
@@ -91,7 +95,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
 	}
 
 	@Override
-	void readFromChannel(SelectionKey key) throws IOException {
+	void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException {
 		SocketChannel channel = (SocketChannel) key.channel();
 		int readSize = 0;
 		int loopTimes = READ_LOOP_TIMES;
@@ -201,7 +205,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
 	 * (java.nio.channels.SelectionKey, java.nio.channels.Selector)
 	 */
 	@Override
-	void writeToChannel(SelectionKey key) throws IOException {
+	void writeToChannel(SelectionKey key, NioAttachment attach) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		ByteBuffer buffer;
 		int loopTimes = WRITE_LOOP_TIMES;

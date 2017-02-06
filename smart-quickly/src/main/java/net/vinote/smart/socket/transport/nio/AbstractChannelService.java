@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.StatusException;
+import net.vinote.smart.socket.lang.NioAttachment;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.transport.ChannelService;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
@@ -81,12 +82,16 @@ abstract class AbstractChannelService<T> implements ChannelService {
 		// 执行本次已触发待处理的事件
 		while (keyIterator.hasNext()) {
 			SelectionKey key = keyIterator.next();
+			NioAttachment attach = null;
 			try {
+				attach = (NioAttachment) key.attachment();
 				// 读取客户端数据
 				if (key.isReadable()) {
-					readFromChannel(key);
+					attach.setCurSelectionOP(SelectionKey.OP_READ);
+					readFromChannel(key, attach);
 				} else if (key.isWritable()) {// 输出数据至客户端
-					writeToChannel(key);
+					attach.setCurSelectionOP(SelectionKey.OP_WRITE);
+					writeToChannel(key, attach);
 				} else if (key.isAcceptable() || key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
 					acceptConnect(key, selector);
 				} else {
@@ -97,6 +102,8 @@ abstract class AbstractChannelService<T> implements ChannelService {
 			} finally {
 				// 移除已处理的事件
 				keyIterator.remove();
+				if (attach != null)
+					attach.setCurSelectionOP(0);
 			}
 		}
 	}
@@ -142,7 +149,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
 	 * @param selector
 	 * @throws IOException
 	 */
-	abstract void readFromChannel(SelectionKey key) throws IOException;
+	abstract void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException;
 
 	/**
 	 * 更新服务状态
@@ -182,5 +189,5 @@ abstract class AbstractChannelService<T> implements ChannelService {
 	 * @param selector
 	 * @throws IOException
 	 */
-	abstract void writeToChannel(SelectionKey key) throws IOException;
+	abstract void writeToChannel(SelectionKey key, NioAttachment attach) throws IOException;
 }

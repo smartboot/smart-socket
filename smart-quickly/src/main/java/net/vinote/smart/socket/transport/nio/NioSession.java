@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import net.vinote.smart.socket.exception.NotYetReconnectedException;
 import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
 import net.vinote.smart.socket.lang.ArrayBlockingQueue;
+import net.vinote.smart.socket.lang.NioAttachment;
 import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
@@ -133,7 +134,7 @@ public class NioSession<T> extends TransportSession<T> {
 		ByteBuffer buffer = null;
 		// 移除已输出的数据流
 		while ((buffer = writeCacheQueue.peek()) != null && buffer.remaining() == 0) {
-			writeCacheQueue.remove(buffer);//不要用poll,因为该行线程不安全
+			writeCacheQueue.remove(buffer);// 不要用poll,因为该行线程不安全
 		}
 
 		// 缓存队列已空则注销写关注
@@ -225,6 +226,15 @@ public class NioSession<T> extends TransportSession<T> {
 					}
 					isNew = false;
 				}
+			}
+		}
+		// 若当前正阻塞于读操作，则尽最大可能进行写操作
+		else {
+			NioAttachment attach = (NioAttachment) channelKey.attachment();
+			ByteBuffer preBuffer = null;
+			while (attach.getCurSelectionOP() == SelectionKey.OP_READ && (preBuffer = getWriteBuffer()) != null
+				&& ((SocketChannel) channelKey.channel()).write(preBuffer) > 0) {
+				;
 			}
 		}
 

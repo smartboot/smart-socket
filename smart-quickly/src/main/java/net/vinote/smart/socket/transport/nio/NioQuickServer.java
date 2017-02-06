@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.StatusException;
+import net.vinote.smart.socket.lang.NioAttachment;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
@@ -46,7 +47,9 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 		socketChannel.configureBlocking(false);
 		SelectionKey socketKey = socketChannel.register(selector, SelectionKey.OP_READ);
 		NioSession<T> session = new NioSession<T>(socketKey, config);
-		socketKey.attach(session);
+		NioAttachment attach = new NioAttachment();
+		attach.setSession(session);
+		socketKey.attach(attach);
 		socketChannel.finishConnect();
 		config.getProcessor().initChannel(session);
 	}
@@ -55,8 +58,8 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 	protected void exceptionInSelectionKey(SelectionKey key, final Exception e) throws Exception {
 		logger.warn("Close Channel because of Exception", e);
 		final Object att = key.attach(null);
-		if (att instanceof NioSession) {
-			((NioSession<?>) att).close();
+		if (att instanceof NioAttachment) {
+			((NioAttachment) att).getSession().close();
 		}
 		key.channel().close();
 		logger.info("close connection " + key.channel());
@@ -69,9 +72,9 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 	}
 
 	@Override
-	protected void readFromChannel(SelectionKey key) throws IOException {
+	protected void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		NioSession<?> session = (NioSession<?>) key.attachment();
+		NioSession<?> session = attach.getSession();
 		int readSize = 0;
 		int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
 		while ((readSize = socketChannel.read(session.flushReadBuffer())) > 0 && --loopTimes > 0)
@@ -122,7 +125,7 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 			}
 			server.socket().bind(address);
 			selector = Selector.open();
-			server.register(selector, SelectionKey.OP_ACCEPT, config);
+			server.register(selector, SelectionKey.OP_ACCEPT);
 			serverThread = new Thread(this, "Nio-Server");
 			serverThread.start();
 		} catch (final IOException e) {
@@ -132,9 +135,9 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 	}
 
 	@Override
-	protected void writeToChannel(SelectionKey key) throws IOException {
+	protected void writeToChannel(SelectionKey key, NioAttachment attach) throws IOException {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		NioSession<?> session = (NioSession<?>) key.attachment();
+		NioSession<?> session = attach.getSession();
 		ByteBuffer buffer;
 		int loopTimes = WRITE_LOOP_TIMES;// 轮训次数,一遍及时让出资源
 		// buffer = session.getByteBuffer()若读取不到数据,则内部会移除写关注
