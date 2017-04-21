@@ -93,25 +93,16 @@ public abstract class TransportSession<T> {
 		readBuffer.flip();
 
 		// 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
-		try {
-			T dataEntry;
-			while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
-				chain.doReadFilter(this, dataEntry);
-			}
-		} catch (DecodeException e) {
-			cancelReadAttention();
-			close();// 解码失败断连
-			logger.warn("close transport because of decode exception, " + ",bytebuffer:" + readBuffer
-				+ StringUtils.toHexString(readBuffer.array()), e);
-		} finally {
-			// 仅当发生数据读取时调用compact,减少内存拷贝
-			// buffer.compact();
-			if (readBuffer.position() > 0) {
-				readBuffer.compact();
-			} else {
-				readBuffer.position(readBuffer.limit());
-				readBuffer.limit(readBuffer.capacity());
-			}
+		T dataEntry;
+		while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
+			chain.doReadFilter(this, dataEntry);
+		}
+		// 仅当发生数据读取时调用compact,减少内存拷贝
+		if (readBuffer.position() > 0) {
+			readBuffer.compact();
+		} else {
+			readBuffer.position(readBuffer.limit());
+			readBuffer.limit(readBuffer.capacity());
 		}
 		return readBuffer;
 	}

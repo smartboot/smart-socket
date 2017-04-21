@@ -57,7 +57,7 @@ public class P2PMultiClient {
 						} catch (Exception e) {
 							System.out.println(num);
 							 e.printStackTrace();
-							// System.exit(0);
+							 System.exit(0);
 						}
 					}
 					logger.info("安全消息结束" + (System.currentTimeMillis() - start));

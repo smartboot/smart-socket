@@ -13,7 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.lang.NioAttachment;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
@@ -63,9 +62,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
 			session = new NioSession<T>(key, config);
 			logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
 			config.getProcessor().initChannel(session);
-			NioAttachment attach = new NioAttachment();
-			attach.setSession(session);
-			key.attach(attach);
+			key.attach(new NioAttachment(session));
 			synchronized (conenctLock) {
 				conenctLock.notifyAll();
 			}

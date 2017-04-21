@@ -5,12 +5,12 @@ import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.lang.NioAttachment;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.transport.ChannelService;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
@@ -74,11 +74,12 @@ abstract class AbstractChannelService<T> implements ChannelService {
 	 * @throws Exception
 	 */
 	private void running() throws IOException, Exception {
-		// 此处会阻塞在selector.select()直至某个关注的事件将其唤醒
-		if (selector.selectNow() == 0 && selector.select() < 0) {
-			return;
+		// 优先获取SelectionKey,若无关注事件触发则阻塞在selector.select(),减少select被调用次数
+		Set<SelectionKey> keySet = selector.selectedKeys();
+		if (keySet.isEmpty()) {
+			selector.select();
 		}
-		Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
+		Iterator<SelectionKey> keyIterator = keySet.iterator();
 		// 执行本次已触发待处理的事件
 		while (keyIterator.hasNext()) {
 			SelectionKey key = keyIterator.next();
@@ -146,7 +147,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
 	 * 从管道流中读取数据
 	 *
 	 * @param key
-	 * @param selector
+	 * @param attach
 	 * @throws IOException
 	 */
 	abstract void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException;
@@ -186,7 +187,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
 	 * 往管道流中输出数据
 	 *
 	 * @param key
-	 * @param selector
+	 * @param attach
 	 * @throws IOException
 	 */
 	abstract void writeToChannel(SelectionKey key, NioAttachment attach) throws IOException;

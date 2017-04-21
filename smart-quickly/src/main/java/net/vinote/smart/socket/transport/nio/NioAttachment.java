@@ -1,6 +1,4 @@
-package net.vinote.smart.socket.lang;
-
-import net.vinote.smart.socket.transport.nio.NioSession;
+package net.vinote.smart.socket.transport.nio;
 
 /**
  * NIO attachment
@@ -8,11 +6,15 @@ import net.vinote.smart.socket.transport.nio.NioSession;
  * @author seer
  * @version Attachment.java, v 0.1 2017年2月6日 下午1:59:16 Seer Exp.
  */
-public class NioAttachment {
+ class NioAttachment {
 	/** 当前管道的Session对象 */
 	private NioSession<?> session;
 
 	private int curSelectionOP;
+
+	public NioAttachment(NioSession<?> session) {
+		this.session = session;
+	}
 
 	/**
 	 * Getter method for property <tt>session</tt>.
@@ -21,16 +23,6 @@ public class NioAttachment {
 	 */
 	public final NioSession<?> getSession() {
 		return session;
-	}
-
-	/**
-	 * Setter method for property <tt>session</tt>.
-	 *
-	 * @param session
-	 *            value to be assigned to property session
-	 */
-	public final void setSession(NioSession<?> session) {
-		this.session = session;
 	}
 
 	/**
