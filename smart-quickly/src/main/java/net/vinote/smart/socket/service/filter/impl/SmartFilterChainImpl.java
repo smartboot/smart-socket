@@ -16,10 +16,11 @@ import net.vinote.smart.socket.transport.TransportSession;
 public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 	private ProtocolDataReceiver<T> receiver;
 	private SmartFilter<T>[] handlers = null;
-
+	private boolean hasHandlers=false;
 	public SmartFilterChainImpl(ProtocolDataReceiver<T> receiver, SmartFilter<T>[] handlers) {
 		this.receiver = receiver;
 		this.handlers = handlers;
+		this.hasHandlers=(handlers != null && handlers.length > 0);
 	}
 
 	public void doReadFilter(TransportSession<T> session, T dataEntry) {
@@ -27,7 +28,6 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 			return;
 		}
 		// 接收到的消息进行预处理
-		boolean hasHandlers = handlers != null && handlers.length > 0;
 		if (hasHandlers) {
 			for (SmartFilter<T> h : handlers) {
 				h.readFilter(session, dataEntry);
@@ -43,11 +43,31 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 
 	}
 
-	public void doWriteFilter(TransportSession<T> session, ByteBuffer buffer) {
-		if (handlers != null && handlers.length > 0) {
+	@Override
+	public void doWriteFilterStart(TransportSession<T> session, ByteBuffer buffer) {
+		if (hasHandlers) {
 			for (SmartFilter<T> h : handlers) {
-				h.writeFilter(session, buffer);
+				h.beginWriteFilter(session, buffer);
 			}
 		}
 	}
+
+	@Override
+	public void doWriteFilterContinue(TransportSession<T> session, ByteBuffer buffer) {
+		if (hasHandlers) {
+			for (SmartFilter<T> h : handlers) {
+				h.continueWriteFilter(session, buffer);
+			}
+		}
+	}
+
+	@Override
+	public void doWriteFilterFinish(TransportSession<T> session, ByteBuffer buffer) {
+		if (hasHandlers) {
+			for (SmartFilter<T> h : handlers) {
+				h.finishWriteFilter(session, buffer);
+			}
+		}
+	}
+
 }

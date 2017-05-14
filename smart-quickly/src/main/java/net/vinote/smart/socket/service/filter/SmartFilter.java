@@ -33,5 +33,17 @@ public interface SmartFilter<T> {
 	 */
 	public void receiveFailHandler(TransportSession<T> session, T d);
 
-	public void writeFilter(TransportSession<T> session, ByteBuffer d);
+	/**
+	 *消息输出前置处理
+	 */
+	public void beginWriteFilter(TransportSession<T> session, ByteBuffer d);
+
+	/**
+	 *消息输出中
+	 */
+	public void continueWriteFilter(TransportSession<T> session, ByteBuffer d);
+	/**
+	 *消息输出后置处理
+	 */
+	public void finishWriteFilter(TransportSession<T> session, ByteBuffer d);
 }

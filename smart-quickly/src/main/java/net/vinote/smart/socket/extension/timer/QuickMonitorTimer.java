@@ -65,6 +65,21 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
 	}
 
 	@Override
+	public void beginWriteFilter(TransportSession<T> session, ByteBuffer d) {
+
+	}
+
+	@Override
+	public void continueWriteFilter(TransportSession<T> session, ByteBuffer d) {
+
+	}
+
+	@Override
+	public void finishWriteFilter(TransportSession<T> session, ByteBuffer d) {
+
+	}
+
+	@Override
 	public void run() {
 		long curFlow = flow.getAndSet(0);
 		int curRecMsgnum = recMsgnum.getAndSet(0);
@@ -77,8 +92,5 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
 			+ totleProcessMsgNum);
 	}
 
-	@Override
-	public void writeFilter(TransportSession<T> session, ByteBuffer d) {
-	}
 
 }
