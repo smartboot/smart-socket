@@ -161,6 +161,22 @@ public class NioSession<T> extends TransportSession<T> {
         return buffer;
     }
 
+    void flushWriteBuffer(int num) {
+        ByteBuffer buffer;
+        try {
+            if(num<=0) {
+                while ((buffer = getWriteBuffer()) != null) {
+                    ((SocketChannel) channelKey.channel()).write(buffer);
+                }
+            }else{
+                while ((buffer = getWriteBuffer()) != null&&((SocketChannel) channelKey.channel()).write(buffer)>0&&num-->0) ;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            close(true);
+        }
+    }
+
     void initBaseChannelInfo(SelectionKey channelKey) {
         Socket socket = ((SocketChannel) channelKey.channel()).socket();
         InetSocketAddress remoteAddr = (InetSocketAddress) socket.getRemoteSocketAddress();
@@ -241,15 +257,10 @@ public class NioSession<T> extends TransportSession<T> {
             }
         }
         // 若当前正阻塞于读操作，则尽最大可能进行写操作
-//		else {
-//			NioAttachment attach = (NioAttachment) channelKey.attachment();
-//			ByteBuffer preBuffer = null;
-//			while (attach.getCurSelectionOP() == SelectionKey.OP_READ && (preBuffer = getWriteBuffer()) != null
-//				&& ((SocketChannel) channelKey.channel()).write(preBuffer) > 0) {
-//				System.out.println("haha");
-//				;
-//			}
-//		}
+        if (writeCacheQueue.remainingCapacity() <= 2) {
+            flushWriteBuffer(0);
+//            System.out.println("flush");
+        }
 
         try {
             if (isNew) {

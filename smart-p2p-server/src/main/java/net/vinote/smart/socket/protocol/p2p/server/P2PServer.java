@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 import net.vinote.smart.socket.extension.timer.QuickMonitorTimer;
+import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
@@ -32,6 +33,7 @@ public class P2PServer {
 		// ProtocolDataProcessor processor = new P2PServerDisruptorProcessor();
 		P2PServerMessageProcessor processor = new P2PServerMessageProcessor(messageFactory);
 		config.setProcessor(processor);// 定义P2P协议的处理器,可以自定义
+//		config.setQueueOverflowStrategy(QueueOverflowStrategy.DISCARD.name());
 		NioQuickServer<BaseMessage> server = new NioQuickServer<BaseMessage>(config);
 		try {
 			server.start();

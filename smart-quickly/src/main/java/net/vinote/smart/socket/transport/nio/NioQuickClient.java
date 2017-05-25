@@ -203,12 +203,14 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
 	 */
 	@Override
 	void writeToChannel(SelectionKey key, NioAttachment attach) throws IOException {
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-		ByteBuffer buffer;
-		int loopTimes = WRITE_LOOP_TIMES;
-		while ((buffer = session.getWriteBuffer()) != null && socketChannel.write(buffer) > 0 && --loopTimes > 0) {
-			;
-		}
+		NioSession<?> session = attach.getSession();
+		session.flushWriteBuffer(WRITE_LOOP_TIMES);
+//		SocketChannel socketChannel = (SocketChannel) key.channel();
+//		ByteBuffer buffer;
+//		int loopTimes = WRITE_LOOP_TIMES;
+//		while ((buffer = session.getWriteBuffer()) != null && socketChannel.write(buffer) > 0 && --loopTimes > 0) {
+//			;
+//		}
 	}
 
 	@Override

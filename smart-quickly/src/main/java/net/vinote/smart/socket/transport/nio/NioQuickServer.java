@@ -134,16 +134,9 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 
 	@Override
 	protected void writeToChannel(SelectionKey key, NioAttachment attach) throws IOException {
-		SocketChannel socketChannel = (SocketChannel) key.channel();
 		NioSession<?> session = attach.getSession();
-		ByteBuffer buffer;
-		int loopTimes = WRITE_LOOP_TIMES;// 轮训次数,一遍及时让出资源
-		// buffer = session.getByteBuffer()若读取不到数据,则内部会移除写关注
-		// socketChannel.write(buffer) == 0则表示当前以不可写
-		while ((buffer = session.getWriteBuffer()) != null && socketChannel.write(buffer) > 0 && --loopTimes > 0) {
-			;
-		}
-		if (session.getStatus() == SessionStatusEnum.CLOSING && (buffer = session.getWriteBuffer()) == null) {
+		session.flushWriteBuffer(WRITE_LOOP_TIMES);
+		if (session.getStatus() == SessionStatusEnum.CLOSING &&  session.getWriteBuffer() == null) {
 			session.close();
 		}
 	}
