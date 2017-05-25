@@ -5,11 +5,6 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
@@ -23,7 +18,6 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  */
 public abstract class TransportSession<T> {
 
-	private Logger logger = LogManager.getLogger(TransportSession.class);
 	/** 会话ID */
 	private final String sessionId = String.valueOf(System.identityHashCode(this));
 

@@ -10,16 +10,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.vinote.smart.socket.protocol.p2p.Session;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.MessageType;
+import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
 /**
  * @author Seer
  *
  */
-public class P2PSession implements Session {
+public class P2PSession implements Session<BaseMessage> {
 	private Logger logger = LogManager.getLogger(P2PSession.class);
 	private String remoteIp;
 	private String localAddress;
@@ -110,8 +110,8 @@ public class P2PSession implements Session {
 	@Override
 	public String toString() {
 		return "OMCSession [remoteIp=" + remoteIp + ", session=" + session + ", creatTime=" + creatTime
-			+ ", lastAccessTime=" + lastAccessTime + ", maxInactiveInterval=" + maxInactiveInterval + ", sessionId="
-			+ sessionId + ", invalidated=" + invalidated + "]";
+				+ ", lastAccessTime=" + lastAccessTime + ", maxInactiveInterval=" + maxInactiveInterval + ", sessionId="
+				+ sessionId + ", invalidated=" + invalidated + "]";
 	}
 
 	public boolean isInvalid() {
@@ -182,7 +182,7 @@ public class P2PSession implements Session {
 
 		if (!isRequestMessage(reqMsg.getMessageType())) {
 			throw new InvalidParameterException("current message is not a requestMessage, messageType is 0x"
-				+ Integer.toHexString(reqMsg.getMessageType()));
+					+ Integer.toHexString(reqMsg.getMessageType()));
 		}
 		ByteBuffer buffer = reqMsg.encode();// 必须执行encode才可产生sequenceId
 		int sequenceId = reqMsg.getHead().getSequenceID();
@@ -230,9 +230,4 @@ public class P2PSession implements Session {
 	private boolean isRequestMessage(int msgType) {
 		return (MessageType.RESPONSE_MESSAGE & msgType) == MessageType.REQUEST_MESSAGE;
 	}
-
-	public TransportSession<BaseMessage> getTransportSession() {
-		return session;
-	}
-
 }

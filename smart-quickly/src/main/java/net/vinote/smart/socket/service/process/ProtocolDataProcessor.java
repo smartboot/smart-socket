@@ -1,7 +1,7 @@
 package net.vinote.smart.socket.service.process;
 
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.service.Session;
 
 /**
  * 协议消息处理器
@@ -25,10 +25,11 @@ public interface ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
 	 * @param session
 	 * @throws Exception
 	 */
-	public void process(TransportSession<T> session, T msg) throws Exception;
+	public void process(Session<T> session, T msg) throws Exception;
 
 	/**
 	 * 关闭处理器
 	 */
 	public void shutdown();
+
 }

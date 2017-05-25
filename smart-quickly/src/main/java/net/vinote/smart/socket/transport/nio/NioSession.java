@@ -1,18 +1,5 @@
 package net.vinote.smart.socket.transport.nio;
 
-import net.vinote.smart.socket.exception.NotYetReconnectedException;
-import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
-import net.vinote.smart.socket.lang.QueueOverflowStrategy;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
-import net.vinote.smart.socket.transport.TransportSession;
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -22,6 +9,19 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import net.vinote.smart.socket.exception.NotYetReconnectedException;
+import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
+import net.vinote.smart.socket.lang.QueueOverflowStrategy;
+import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.lang.StringUtils;
+import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
+import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 
 /**
  * 维护客户端-》服务端 或 服务端-》客户端 的当前会话
@@ -66,11 +66,11 @@ public class NioSession<T> extends TransportSession<T> {
         super.protocol = config.getProtocolFactory().createProtocol();
 //        super.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.isServer() ? (SmartFilter<T>[]) ArrayUtils.add(config.getFilters(), new FlowControlFilter()) : config.getFilters());
         if(config.isServer()){
-            config.setFilters((SmartFilter<T>[]) ArrayUtils.add(config.getFilters(), new FlowControlFilter()));
+//            config.setFilters((SmartFilter<T>[]) ArrayUtils.add(config.getFilters(), new FlowControlFilter()));
         }
         super.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
         super.cacheSize = config.getCacheSize();
-        writeCacheQueue = new ArrayBlockingQueue(cacheSize);
+        writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(cacheSize);
         this.strategy = QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy());
         this.autoRecover = config.isAutoRecover();
         super.bufferSize = config.getDataBufferSize();
@@ -324,7 +324,7 @@ public class NioSession<T> extends TransportSession<T> {
 
 
         @Override
-        public void beginWriteFilter(TransportSession session, ByteBuffer d) {
+        public void beginWriteFilter(TransportSession<T> session, ByteBuffer d) {
             AtomicInteger counter = getWriteBacklogCounter(session);
             int num = counter.incrementAndGet();
             //已经存在消息挤压,暂停读关注
@@ -335,7 +335,7 @@ public class NioSession<T> extends TransportSession<T> {
         }
 
         @Override
-        public void continueWriteFilter(TransportSession session, ByteBuffer d) {
+        public void continueWriteFilter(TransportSession<T> session, ByteBuffer d) {
             int times = getMessageSendTimesCounter(session).incrementAndGet();
             //单条消息发送次数超过3次还未发完，说明网络有问题，暂停其读关注
             if (times > 3) {
@@ -345,7 +345,7 @@ public class NioSession<T> extends TransportSession<T> {
         }
 
         @Override
-        public void finishWriteFilter(TransportSession session, ByteBuffer d) {
+        public void finishWriteFilter(TransportSession<T> session, ByteBuffer d) {
             AtomicInteger counter = getWriteBacklogCounter(session);
             int num = counter.decrementAndGet();//释放积压量
             if (num == 0) {

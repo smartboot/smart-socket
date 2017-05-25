@@ -1,6 +1,7 @@
 package net.vinote.smart.socket.protocol.p2p;
 
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
+import net.vinote.smart.socket.service.Session;
 
 /**
  * 消息处理Handler
@@ -12,7 +13,7 @@ public abstract class MessageHandler {
 	public void init() {
 	}
 
-	public abstract void handler(Session session, BaseMessage message);
+	public abstract void handler(Session<BaseMessage> session, BaseMessage message);
 
 	public void destory() {
 	}
