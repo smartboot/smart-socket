@@ -28,7 +28,7 @@ public final class P2PServerMessageProcessor extends AbstractServerDataProcessor
 	}
 
 	@Override
-	public void initChannel(TransportSession<BaseMessage> session) {
-		session.setAttribute(SESSION_KEY, new P2PSession(session));
+	public Session<BaseMessage> initSession(TransportSession<BaseMessage> session) {
+		return new P2PSession(session);
 	}
 }

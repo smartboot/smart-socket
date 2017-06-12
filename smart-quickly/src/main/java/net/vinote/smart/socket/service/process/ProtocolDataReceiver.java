@@ -1,5 +1,6 @@
 package net.vinote.smart.socket.service.process;
 
+import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
 /**
@@ -30,5 +31,5 @@ public interface ProtocolDataReceiver<T> {
 	 */
 	public boolean receive(TransportSession<T> session, T entry);
 
-	public void initChannel(TransportSession<T> session);
+	public Session<T> initSession(TransportSession<T> session);
 }

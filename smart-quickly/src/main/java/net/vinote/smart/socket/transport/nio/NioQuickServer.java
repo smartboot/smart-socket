@@ -1,21 +1,20 @@
 package net.vinote.smart.socket.transport.nio;
 
+import net.vinote.smart.socket.exception.StatusException;
+import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.lang.StringUtils;
+import net.vinote.smart.socket.service.process.AbstractServerDataProcessor;
+import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
+import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 
 /**
  * NIO服务器
@@ -45,10 +44,10 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 		SocketChannel socketChannel = serverChannel.accept();
 		socketChannel.configureBlocking(false);
 		SelectionKey socketKey = socketChannel.register(selector, SelectionKey.OP_READ);
-		NioSession<T> session = new NioSession<T>(socketKey, config);
-		socketKey.attach(new NioAttachment(session));
+		NioSession<T> nioSession= new NioSession<T>(socketKey, config);
+		socketKey.attach(new NioAttachment(nioSession));
 		socketChannel.finishConnect();
-		config.getProcessor().initChannel(session);
+		nioSession.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
 	}
 
 	@Override

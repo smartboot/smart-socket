@@ -61,7 +61,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
 		} else {
 			session = new NioSession<T>(key, config);
 			logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
-			config.getProcessor().initChannel(session);
+			config.getProcessor().initSession(session);
 			key.attach(new NioAttachment(session));
 			synchronized (conenctLock) {
 				conenctLock.notifyAll();
