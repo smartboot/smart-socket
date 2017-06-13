@@ -58,7 +58,7 @@ public class P2PClient {
 							// logger.info(loginResp);
 						} catch (Exception e) {
 							System.out.println(num);
-//							e.printStackTrace();
+							e.printStackTrace();
 //							System.exit(0);
 						}
 					}

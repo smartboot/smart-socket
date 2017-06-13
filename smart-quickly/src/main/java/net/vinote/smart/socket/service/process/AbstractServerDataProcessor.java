@@ -44,7 +44,10 @@ public abstract class AbstractServerDataProcessor<T> implements ProtocolDataProc
 	public boolean receive(TransportSession<T> session, T entry) {
 		// return msgQueue.offer(new ProcessUnit(session, entry));
 		try {
-			msgQueue.put(new ProcessUnit(session, entry));
+			ProcessUnit unit=new ProcessUnit(session, entry);
+			if(!msgQueue.offer(unit)) {
+				msgQueue.put(unit);
+			}
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

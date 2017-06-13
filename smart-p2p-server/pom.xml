@@ -12,4 +12,5 @@
   		<artifactId>smart-protocol-p2p</artifactId>
   	</dependency>
   </dependencies>
+
 </project>

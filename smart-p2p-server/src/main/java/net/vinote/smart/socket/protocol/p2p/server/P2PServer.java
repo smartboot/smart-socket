@@ -27,7 +27,7 @@ public class P2PServer {
 //		properties.put(SecureSocketMessageReq.class.getName(), SecureSocketProcessor.class.getName());
 		P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
 		messageFactory.loadFromProperties(properties);
-
+		config.setThreadNum(8);
 		config.setProtocolFactory(new P2PProtocolFactory(messageFactory));
 		config.setFilters(new SmartFilter[] { new QuickMonitorTimer<BaseMessage>() });
 		// ProtocolDataProcessor processor = new P2PServerDisruptorProcessor();

@@ -17,7 +17,7 @@ import net.vinote.smart.socket.transport.nio.NioQuickClient;
 
 public class P2PMultiClient {
 	public static void main(String[] args) throws Exception {
-		for (int i = 0; i < 20; i++) {
+		for (int i = 0; i <10; i++) {
 			new Thread() {
 				private Logger logger = LogManager.getLogger(this.getClass());
 
@@ -57,7 +57,7 @@ public class P2PMultiClient {
 						} catch (Exception e) {
 							System.out.println(num);
 							 e.printStackTrace();
-							 System.exit(0);
+							 break;
 						}
 					}
 					logger.info("安全消息结束" + (System.currentTimeMillis() - start));
