@@ -1,5 +1,14 @@
 package net.vinote.smart.socket.transport.nio;
 
+import net.vinote.smart.socket.exception.NotYetReconnectedException;
+import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
+import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -9,19 +18,6 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import net.vinote.smart.socket.exception.NotYetReconnectedException;
-import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
-import net.vinote.smart.socket.lang.QueueOverflowStrategy;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
-import net.vinote.smart.socket.transport.TransportSession;
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 
 /**
  * 维护客户端-》服务端 或 服务端-》客户端 的当前会话
@@ -45,12 +41,21 @@ public class NioSession<T> extends TransportSession<T> {
 
     private String localAddress;
 
+    private boolean isServer;
+    static ThreadLocal<SessionWriteThread> writeThread = new ThreadLocal<SessionWriteThread>() {
+        @Override
+        protected SessionWriteThread initialValue() {
+            SessionWriteThread thread = new SessionWriteThread();
+            thread.setName("SessionWriteThread-" + System.currentTimeMillis());
+            thread.start();
+            return thread;
+        }
+    };
     /**
      * 是否已注销读关注
      */
     private boolean readClosed = false;
 
-    private QueueOverflowStrategy strategy = QueueOverflowStrategy.DISCARD;
     /**
      * 是否自动修复链路
      */
@@ -65,13 +70,13 @@ public class NioSession<T> extends TransportSession<T> {
         initBaseChannelInfo(channelKey);
         super.protocol = config.getProtocolFactory().createProtocol();
 //        super.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.isServer() ? (SmartFilter<T>[]) ArrayUtils.add(config.getFilters(), new FlowControlFilter()) : config.getFilters());
-        if(config.isServer()){
+        isServer = config.isServer();
+        if (config.isServer()) {
 //            config.setFilters((SmartFilter<T>[]) ArrayUtils.add(config.getFilters(), new FlowControlFilter()));
         }
         super.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
         super.cacheSize = config.getCacheSize();
         writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(cacheSize);
-        this.strategy = QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy());
         this.autoRecover = config.isAutoRecover();
         super.bufferSize = config.getDataBufferSize();
         super.timeout = config.getTimeout();
@@ -95,20 +100,28 @@ public class NioSession<T> extends TransportSession<T> {
      */
     @Override
     protected void close0() {
+        writeCacheQueue.clear();
         if (getStatus() == SessionStatusEnum.CLOSED) {
             return;
         }
-        writeCacheQueue.clear();
         try {
             channelKey.channel().close();
             if (logger.isTraceEnabled()) {
                 logger.trace("close connection " + channelKey.channel());
             }
         } catch (IOException e) {
-            logger.warn(e.getMessage(), e);
+            logger.warn("NioSession close channel Exception");
         }
-        channelKey.cancel();
-        channelKey.selector().wakeup();// 必须唤醒一次选择器以便移除该Key,否则端口会处于CLOSE_WAIT状态
+        try {
+            channelKey.cancel();
+        } catch (Exception e) {
+            logger.warn("NioSession cancel channelKey Exception");
+        }
+        try {
+            channelKey.selector().wakeup();// 必须唤醒一次选择器以便移除该Key,否则端口会处于CLOSE_WAIT状态
+        } catch (Exception e) {
+            logger.warn("NioSession wakeup channelKey Exception");
+        }
     }
 
     @Override
@@ -146,9 +159,11 @@ public class NioSession<T> extends TransportSession<T> {
 
         // 缓存队列已空则注销写关注
         if (buffer == null) {
-            synchronized (writeLock) {
-                if (writeCacheQueue.isEmpty()) {
-                    channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_WRITE);
+            if (!isServer) {
+                synchronized (writeLock) {
+                    if (writeCacheQueue.isEmpty()) {
+                        channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_WRITE);
+                    }
                 }
             }
             resumeReadAttention();
@@ -161,19 +176,15 @@ public class NioSession<T> extends TransportSession<T> {
         return buffer;
     }
 
-    void flushWriteBuffer(int num) {
+    void flushWriteBuffer(int num) throws IOException {
         ByteBuffer buffer;
-        try {
-            if(num<=0) {
-                while ((buffer = getWriteBuffer()) != null) {
-                    ((SocketChannel) channelKey.channel()).write(buffer);
-                }
-            }else{
-                while ((buffer = getWriteBuffer()) != null&&((SocketChannel) channelKey.channel()).write(buffer)>0&&num-->0) ;
+        if (num <= 0) {
+            while ((buffer = getWriteBuffer()) != null) {
+                ((SocketChannel) channelKey.channel()).write(buffer);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            close(true);
+        } else {
+            while ((buffer = getWriteBuffer()) != null && ((SocketChannel) channelKey.channel()).write(buffer) > 0 && num-- > 0)
+                ;
         }
     }
 
@@ -187,10 +198,6 @@ public class NioSession<T> extends TransportSession<T> {
         this.channelKey = channelKey;
     }
 
-    @Override
-    public boolean isValid() {
-        return channelKey.isValid() && channelKey.channel().isOpen();
-    }
 
     @Override
     public final void pauseReadAttention() {
@@ -229,69 +236,65 @@ public class NioSession<T> extends TransportSession<T> {
 
         buffer.flip();
         // 队列为空时直接输出
-        if (writeCacheQueue.isEmpty()) {
-            synchronized (this) {
-                if (writeCacheQueue.isEmpty()) {
-                    // chain.doWriteFilter(this, buffer);
-                    int writeTimes = 8;// 控制循环次数防止低效输出流占用资源
-                    while (((SocketChannel) channelKey.channel()).write(buffer) > 0 && writeTimes >> 1 > 0)
-                        ;
-                    // 数据全部输出则return
-                    if (buffer.position() >= buffer.limit()) {
-                        chain.doWriteFilterFinish(this, buffer);
-                        return;
-                    }
+//        if (writeCacheQueue.isEmpty()) {
+//            synchronized (this) {
+//                if (writeCacheQueue.isEmpty()) {
+//                    // chain.doWriteFilter(this, buffer);
+//                    int writeTimes = 8;// 控制循环次数防止低效输出流占用资源
+//                    while (((SocketChannel) channelKey.channel()).write(buffer) > 0 && writeTimes >> 1 > 0)
+//                        ;
+//                    // 数据全部输出则return
+//                    if (buffer.position() >= buffer.limit()) {
+//                        chain.doWriteFilterFinish(this, buffer);
+//                        return;
+//                    }
+//
+//                    boolean cacheFlag = writeCacheQueue.offer(buffer);
+//                    // 已输出部分数据，但剩余数据缓存失败,则异常处理
+//                    if (!cacheFlag && buffer.position() > 0) {
+//                        throw new IOException("cache data fail, channel has become unavailable!");
+//                    }
+//                    // 缓存失败并无数据输出,则忽略本次数据包
+//                    if (!cacheFlag && buffer.position() == 0) {
+//                        logger.warn("cache data fail, ignore!");
+//                        return;
+//                    }
+//                    isNew = false;
+//                }
+//            }
+//        }
+//        // 若当前正阻塞于读操作，则尽最大可能进行写操作
+//        if (writeCacheQueue.remainingCapacity() <= 2) {
+//            flushWriteBuffer(0);
+////            System.out.println("flush");
+//        }
 
-                    boolean cacheFlag = writeCacheQueue.offer(buffer);
-                    // 已输出部分数据，但剩余数据缓存失败,则异常处理
-                    if (!cacheFlag && buffer.position() > 0) {
-                        throw new IOException("cache data fail, channel has become unavailable!");
-                    }
-                    // 缓存失败并无数据输出,则忽略本次数据包
-                    if (!cacheFlag && buffer.position() == 0) {
-                        logger.warn("cache data fail, ignore!");
-                        return;
-                    }
-                    isNew = false;
+        if (!writeCacheQueue.offer(buffer)) {
+            try {
+                if (isServer) {
+                    writeThread.get().notifySession(this);
                 }
+                writeCacheQueue.put(buffer);
+            } catch (InterruptedException e) {
+                logger.warn(e.getMessage(), e);
             }
         }
-        // 若当前正阻塞于读操作，则尽最大可能进行写操作
-        if (writeCacheQueue.remainingCapacity() <= 2) {
-            flushWriteBuffer(0);
-//            System.out.println("flush");
-        }
-
-        try {
-            if (isNew) {
-                switch (strategy) {
-                    case DISCARD:
-                        if (!writeCacheQueue.offer(buffer)) {
-                            logger.warn("cache is full now," + StringUtils.toHexString(buffer.array()));
-                        }
-                        break;
-                    case WAIT:
-                        writeCacheQueue.put(buffer);
-                        break;
-                    default:
-                        throw new QueueOverflowStrategyException("Invalid overflow strategy " + strategy);
-                }
-            }
-        } catch (InterruptedException e) {
-            logger.warn(e.getMessage(), e);
-        } finally {
-            if (channelKey.isValid()) {
+        if (channelKey.isValid()) {
+            if (isServer) {
+                writeThread.get().notifySession(this);
+            } else {
                 synchronized (writeLock) {
                     channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_WRITE);
                     channelKey.selector().wakeup();
                 }
+            }
+
+        } else {
+            if (autoRecover) {
+                throw new NotYetReconnectedException("Network anomaly, will reconnect");
             } else {
-                if (autoRecover) {
-                    throw new NotYetReconnectedException("Network anomaly, will reconnect");
-                } else {
-                    writeCacheQueue.clear();
-                    throw new IOException("Channel is invalid now!");
-                }
+                writeCacheQueue.clear();
+                throw new IOException("Channel is invalid now!");
             }
         }
 

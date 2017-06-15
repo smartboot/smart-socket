@@ -105,7 +105,13 @@ public abstract class AbstractServerDataProcessor<T> implements ProtocolDataProc
 						}
 					}
 					Session<T> session = unit.session.getAttribute(SESSION_KEY);
-					AbstractServerDataProcessor.this.process(session, unit.msg);
+					if(unit.session.isValid()) {
+						AbstractServerDataProcessor.this.process(session, unit.msg);
+					}else{
+						if(logger.isTraceEnabled()){
+							logger.trace("session invliad,discard message:"+unit.msg);
+						}
+					}
 				} catch (Exception e) {
 					if (running) {
 						logger.warn(e.getMessage(), e);

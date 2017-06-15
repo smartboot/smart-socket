@@ -48,6 +48,7 @@ public abstract class TransportSession<T> {
 
     protected int cacheSize;
     private Map<String, Object> attribute = new HashMap<String, Object>();
+
     /**
      * 会话状态
      */
@@ -163,7 +164,13 @@ public abstract class TransportSession<T> {
     /**
      * 当前会话是否已失效
      */
-    public abstract boolean isValid();
+    public boolean isValid(){
+        return status==SessionStatusEnum.ENABLED;
+    }
+
+    public void invalid() {
+        status=SessionStatusEnum.INVALID;
+    }
 
     /**
      * 暂停读关注
@@ -207,7 +214,7 @@ public abstract class TransportSession<T> {
     /**
      * Setter method for property <tt>attribute</tt>.
      *
-     * @param attribute value to be assigned to property attribute
+     * @param key value to be assigned to property attribute
      */
     public final void setAttribute(String key, Object value) {
         attribute.put(key, value);

@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDataProcessor<T> {
     private Logger logger = LogManager.getLogger(AbstractServerDataGroupProcessor.class);
     public static final String SESSION_KEY = "SESSION";
+    public static final String SESSION_PROCESS_THREAD = "_PROCESS_THREAD_";
     /**
      * 消息处理线程
      */
@@ -46,6 +47,16 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
     public boolean receive(TransportSession<T> session, T entry) {
         // return msgQueue.offer(new ProcessUnit(session, entry));
         ProcessUnit unit = new ProcessUnit(session, entry);
+        ServerDataProcessThread processThread = session.getAttribute(SESSION_PROCESS_THREAD);
+        //当前Session未绑定处理器,则先进行处理器选举
+        if (processThread == null) {
+            processThread = selectProcess();
+            session.setAttribute(SESSION_PROCESS_THREAD, processThread);
+        }
+        if (processThread.msgQueue.offer(unit)) {
+            return true;
+        }
+        //Session绑定的处理器处理能力不足，由其他处理器辅助
         int curIndex = index.getAndIncrement() % processThreads.length;
         while (!processThreads[curIndex].msgQueue.offer(unit)) {
             curIndex = ++curIndex % processThreads.length;
@@ -84,6 +95,16 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
         }
     }
 
+    private ServerDataProcessThread selectProcess() {
+        ServerDataProcessThread thread = processThreads[processThreads.length - 1];
+        for (int i = processThreads.length - 2; i >= 0; i--) {
+            if (processThreads[i].processNum.get() < thread.processNum.get()) {
+                thread = processThreads[i];
+            }
+        }
+        return thread;
+    }
+
     /**
      * 服务端消息处理线程
      *
@@ -101,11 +122,17 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
          */
         private ArrayBlockingQueue<ProcessUnit> msgQueue = new ArrayBlockingQueue<ProcessUnit>(1024);
 
+        /**
+         * 消息处理量计数器
+         */
+        private AtomicLong processNum = new AtomicLong(0);
+
         @Override
         public void run() {
             while (running) {
                 try {
                     ProcessUnit unit = msgQueue.take();
+                    processNum.getAndIncrement();
                     SmartFilter<T>[] filters = AbstractServerDataGroupProcessor.this.quickConfig.getFilters();
                     if (filters != null && filters.length > 0) {
                         for (SmartFilter<T> h : filters) {
@@ -113,7 +140,13 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
                         }
                     }
                     Session<T> session = unit.session.getAttribute(SESSION_KEY);
-                    AbstractServerDataGroupProcessor.this.process(session, unit.msg);
+                    if (unit.session.isValid()) {
+                        AbstractServerDataGroupProcessor.this.process(session, unit.msg);
+                    } else {
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("session invliad,discard message:" + unit.msg);
+                        }
+                    }
                 } catch (Exception e) {
                     if (running) {
                         logger.warn(e.getMessage(), e);
