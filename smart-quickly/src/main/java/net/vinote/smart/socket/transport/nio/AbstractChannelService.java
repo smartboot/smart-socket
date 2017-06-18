@@ -44,15 +44,9 @@ abstract class AbstractChannelService<T> implements ChannelService {
      */
     final int READ_LOOP_TIMES;
 
-    /**
-     * 写管道单论操作读取次数
-     */
-    final int WRITE_LOOP_TIMES;
-
     public AbstractChannelService(final QuicklyConfig<T> config) {
         this.config = config;
         READ_LOOP_TIMES = config.getReadLoopTimes();
-        WRITE_LOOP_TIMES = config.getWriteLoopTimes();
     }
 
     /*
