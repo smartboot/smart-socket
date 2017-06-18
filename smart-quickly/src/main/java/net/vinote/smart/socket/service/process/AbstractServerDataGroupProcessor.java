@@ -45,7 +45,6 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
 
     @Override
     public boolean receive(TransportSession<T> session, T entry) {
-        // return msgQueue.offer(new ProcessUnit(session, entry));
         ProcessUnit unit = new ProcessUnit(session, entry);
         ServerDataProcessThread processThread = session.getAttribute(SESSION_PROCESS_THREAD);
         //当前Session未绑定处理器,则先进行处理器选举
@@ -62,7 +61,7 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
             curIndex = ++curIndex % processThreads.length;
             if (curIndex == 0) {
                 try {
-                    Thread.sleep(0l, 100);
+                    Thread.sleep(0l, 100);//所有ServerDataProcessThread都满负荷运行,则放缓消息接受
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -95,6 +94,10 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
         }
     }
 
+    /**
+     * 新Channel的处理器选举策略
+     * @return
+     */
     private ServerDataProcessThread selectProcess() {
         ServerDataProcessThread thread = processThreads[processThreads.length - 1];
         for (int i = processThreads.length - 2; i >= 0; i--) {

@@ -9,16 +9,26 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * Socket写操作的处理线程。不通过NIO的写关注触发，因为发现效率并不高。而是由该线程进行监控，增强数据输出能力
  * Created by zhengjunwei on 2017/6/14.
  */
 public class SessionWriteThread extends Thread {
     private static final Logger logger = LogManager.getLogger(SessionWriteThread.class);
     private Set<NioSession> sessionSet = new HashSet<NioSession>();
+    /**
+     * 需要进行数据输出的Session集合
+     */
     private Set<NioSession> newSessionSet1 = new HashSet<NioSession>();
+    /**
+     * 需要进行数据输出的Session集合
+     */
     private Set<NioSession> newSessionSet2 = new HashSet<NioSession>();
+    /**
+     * 需要进行数据输出的Session集合存储控制标，true:newSessionSet1,false:newSessionSet2。由此减少锁竞争
+     */
     private volatile boolean switchFlag = false;
 
-    private volatile int waitTime = 100;
+    private volatile int waitTime = 1;
 
     public void notifySession(NioSession session) {
         if (switchFlag) {
@@ -26,7 +36,7 @@ public class SessionWriteThread extends Thread {
         } else {
             newSessionSet2.add(session);
         }
-        if (waitTime > 100) {
+        if (waitTime != 1) {
             synchronized (this) {
                 this.notifyAll();
             }
@@ -40,13 +50,18 @@ public class SessionWriteThread extends Thread {
                 synchronized (this) {
                     if (sessionSet.isEmpty() && newSessionSet1.isEmpty() && newSessionSet2.isEmpty()) {
                         try {
-                            long start=System.currentTimeMillis();
+                            long start = System.currentTimeMillis();
                             this.wait(waitTime);
+                            if (waitTime < 2000) {
+                                waitTime += 100;
+                            } else {
+                                waitTime = 0;
+                            }
                             if (logger.isTraceEnabled()) {
-                                logger.trace("nofity sessionWriteThread,waitTime:" + waitTime+" , real waitTime:"+(System.currentTimeMillis()-start));
+                                logger.trace("nofity sessionWriteThread,waitTime:" + waitTime + " , real waitTime:" + (System.currentTimeMillis() - start));
                             }
                         } catch (InterruptedException e) {
-                           logger.catching(e);
+                            logger.catching(e);
                         }
                     }
                 }
@@ -72,12 +87,9 @@ public class SessionWriteThread extends Thread {
                     session.close();
                     iterator.remove();
                 }
-                waitTime = 0;
+                waitTime = 1;
             }
 
-            if (waitTime < 2000) {
-                waitTime += 100;
-            }
         }
     }
 }

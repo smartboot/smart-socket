@@ -157,22 +157,13 @@ public class NioSession<T> extends TransportSession<T> {
             writeCacheQueue.remove(buffer);// 不要用poll,因为该行线程不安全
         }
 
-        // 缓存队列已空则注销写关注
+
         if (buffer == null) {
-            if (!isServer) {
-                synchronized (writeLock) {
-                    if (writeCacheQueue.isEmpty()) {
-                        channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_WRITE);
-                    }
-                }
-            }
-            resumeReadAttention();
-            return null;
-        } /*
-             * else if (buffer.position() == 0) {// 首次输出执行过滤器
-			 * chain.doWriteFilter(this, buffer); }
-			 */
-        chain.doWriteFilterContinue(this, buffer);
+            resumeReadAttention();// 此前若触发过流控,则在消息发送完毕后恢复读关注
+        } else {
+            chain.doWriteFilterContinue(this, buffer);
+        }
+
         return buffer;
     }
 
@@ -232,63 +223,18 @@ public class NioSession<T> extends TransportSession<T> {
             return;
         }
         chain.doWriteFilterStart(this, buffer);
-        boolean isNew = true;
-
         buffer.flip();
-        // 队列为空时直接输出
-//        if (writeCacheQueue.isEmpty()) {
-//            synchronized (this) {
-//                if (writeCacheQueue.isEmpty()) {
-//                    // chain.doWriteFilter(this, buffer);
-//                    int writeTimes = 8;// 控制循环次数防止低效输出流占用资源
-//                    while (((SocketChannel) channelKey.channel()).write(buffer) > 0 && writeTimes >> 1 > 0)
-//                        ;
-//                    // 数据全部输出则return
-//                    if (buffer.position() >= buffer.limit()) {
-//                        chain.doWriteFilterFinish(this, buffer);
-//                        return;
-//                    }
-//
-//                    boolean cacheFlag = writeCacheQueue.offer(buffer);
-//                    // 已输出部分数据，但剩余数据缓存失败,则异常处理
-//                    if (!cacheFlag && buffer.position() > 0) {
-//                        throw new IOException("cache data fail, channel has become unavailable!");
-//                    }
-//                    // 缓存失败并无数据输出,则忽略本次数据包
-//                    if (!cacheFlag && buffer.position() == 0) {
-//                        logger.warn("cache data fail, ignore!");
-//                        return;
-//                    }
-//                    isNew = false;
-//                }
-//            }
-//        }
-//        // 若当前正阻塞于读操作，则尽最大可能进行写操作
-//        if (writeCacheQueue.remainingCapacity() <= 2) {
-//            flushWriteBuffer(0);
-////            System.out.println("flush");
-//        }
 
         if (!writeCacheQueue.offer(buffer)) {
             try {
-                if (isServer) {
-                    writeThread.get().notifySession(this);
-                }
+                writeThread.get().notifySession(this);
                 writeCacheQueue.put(buffer);
             } catch (InterruptedException e) {
                 logger.warn(e.getMessage(), e);
             }
         }
         if (channelKey.isValid()) {
-            if (isServer) {
-                writeThread.get().notifySession(this);
-            } else {
-                synchronized (writeLock) {
-                    channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_WRITE);
-                    channelKey.selector().wakeup();
-                }
-            }
-
+            writeThread.get().notifySession(this);
         } else {
             if (autoRecover) {
                 throw new NotYetReconnectedException("Network anomaly, will reconnect");
