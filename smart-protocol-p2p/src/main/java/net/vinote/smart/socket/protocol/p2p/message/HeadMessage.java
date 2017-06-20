@@ -42,11 +42,6 @@ public final class HeadMessage {
 	 */
 	private int sequenceID;
 
-	/** 是否加密消息 */
-	private boolean secure;
-
-	private byte[] secretKey;
-
 	public int getLength() {
 		return length;
 	}
@@ -70,21 +65,4 @@ public final class HeadMessage {
 	void setSequenceID(int sequenceID) {
 		this.sequenceID = sequenceID;
 	}
-
-	public boolean isSecure() {
-		return secure;
-	}
-
-	void setSecure(boolean secure) {
-		this.secure = secure;
-	}
-
-	byte[] getSecretKey() {
-		return secretKey;
-	}
-
-	public void setSecretKey(byte[] secretKey) {
-		this.secretKey = secretKey;
-	}
-
 }

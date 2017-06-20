@@ -1,10 +1,7 @@
 package net.vinote.smart.socket.service.filter;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
-import net.vinote.smart.socket.protocol.DataEntry;
-import net.vinote.smart.socket.service.session.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
 /**
@@ -13,9 +10,7 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  *
  */
-public interface SmartFilter {
-
-	public void filterDataEntrys(TransportSession session, List<DataEntry> d);
+public interface SmartFilter<T> {
 
 	/**
 	 * 消息处理前置预处理
@@ -23,7 +18,7 @@ public interface SmartFilter {
 	 * @param session
 	 * @param d
 	 */
-	public void processFilter(Session session, DataEntry d);
+	public void processFilter(TransportSession<T> session, T d);
 
 	/**
 	 * 消息接受前置预处理
@@ -31,12 +26,24 @@ public interface SmartFilter {
 	 * @param session
 	 * @param d
 	 */
-	public void readFilter(TransportSession session, DataEntry d);
+	public void readFilter(TransportSession<T> session, T d);
 
 	/**
 	 * 消息接受失败处理
 	 */
-	public void receiveFailHandler(TransportSession session, DataEntry d);
+	public void receiveFailHandler(TransportSession<T> session, T d);
 
-	public void writeFilter(TransportSession session, ByteBuffer d);
+	/**
+	 *消息输出前置处理
+	 */
+	public void beginWriteFilter(TransportSession<T> session, ByteBuffer d);
+
+	/**
+	 *消息输出中
+	 */
+	public void continueWriteFilter(TransportSession<T> session, ByteBuffer d);
+	/**
+	 *消息输出后置处理
+	 */
+	public void finishWriteFilter(TransportSession<T> session, ByteBuffer d);
 }

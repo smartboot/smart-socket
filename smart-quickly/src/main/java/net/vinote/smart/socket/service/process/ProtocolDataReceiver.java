@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.protocol.DataEntry;
+import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.transport.TransportSession;
 
 /**
@@ -13,18 +13,7 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  * @version 1.0
  */
-public interface ProtocolDataReceiver {
-
-	/**
-	 * 消息的前置处理器
-	 * <p>
-	 * 若返回false,则本次消息不再进入receive方法
-	 *
-	 * @param session
-	 * @param entry
-	 * @return
-	 */
-	public boolean preReceive(TransportSession session, DataEntry entry);
+public interface ProtocolDataReceiver<T> {
 
 	/**
 	 * 接受业务消息
@@ -40,5 +29,7 @@ public interface ProtocolDataReceiver {
 	 *            待接收的消息
 	 * @return
 	 */
-	public boolean receive(TransportSession session, DataEntry entry);
+	public boolean receive(TransportSession<T> session, T entry);
+
+	public Session<T> initSession(TransportSession<T> session);
 }

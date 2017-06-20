@@ -1,9 +1,7 @@
 package net.vinote.smart.socket.service.filter;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
-import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.transport.TransportSession;
 
 /**
@@ -12,9 +10,28 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Seer
  *
  */
-public interface SmartFilterChain {
+public interface SmartFilterChain<T> {
 
-	public void doReadFilter(TransportSession session, List<DataEntry> dataList);
+	public void doReadFilter(TransportSession<T> session, T buffer);
 
-	public void doWriteFilter(TransportSession session, ByteBuffer buffer);
+	/**
+	 * 开始执行数据输出
+	 * @param session
+	 * @param buffer
+	 */
+	public void doWriteFilterStart(TransportSession<T> session, ByteBuffer buffer);
+
+	/**
+	 * 再次输出剩余的数据
+	 * @param session
+	 * @param buffer
+	 */
+	public void doWriteFilterContinue(TransportSession<T> session, ByteBuffer buffer);
+
+	/**
+	 * 完成数据输出
+	 * @param session
+	 * @param buffer
+	 */
+	public void doWriteFilterFinish(TransportSession<T> session, ByteBuffer buffer);
 }

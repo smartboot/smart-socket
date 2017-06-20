@@ -1,6 +1,7 @@
 package com.test.message;
 
 import java.net.ProtocolException;
+import java.nio.ByteBuffer;
 
 import net.vinote.smart.socket.exception.DecodeException;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
@@ -20,13 +21,13 @@ public class HelloWorldResp extends BaseMessage {
 	private String say;
 
 	@Override
-	protected void encodeBody() throws ProtocolException {
-		writeString(say);
+	protected void encodeBody(ByteBuffer buffer) throws ProtocolException {
+		writeString(buffer, say);
 	}
 
 	@Override
-	protected void decodeBody() throws DecodeException {
-		say = readString();
+	protected void decodeBody(ByteBuffer buffer) throws DecodeException {
+		say = readString(buffer);
 	}
 
 	public String getSay() {

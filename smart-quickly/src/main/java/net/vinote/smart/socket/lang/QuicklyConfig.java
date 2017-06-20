@@ -1,18 +1,16 @@
 package net.vinote.smart.socket.lang;
 
-import net.vinote.smart.socket.extension.cluster.balance.LoadBalancing;
-import net.vinote.smart.socket.extension.cluster.trigger.ClusterTriggerStrategy;
 import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.process.ProtocolDataProcessor;
 
 /**
- * Quickly服务端/客户端配置信息
+ * Quickly服务端/客户端配置信息 T:解码后生成的对象类型，S:
  * 
  * @author Seer
  * 
  */
-public class QuicklyConfig {
+public class QuicklyConfig<T> {
 
 	/** 自动修复链接 */
 	private boolean autoRecover = false;
@@ -23,31 +21,23 @@ public class QuicklyConfig {
 	/** 消息体缓存大小,字节 */
 	private int dataBufferSize = 1024;
 
-	/** 集群触发策略 */
-	private ClusterTriggerStrategy clusterTriggerStrategy;
-
-	/** 集群环境 */
-	private String[] clusterUrl;
-
 	/** 远程服务器IP */
 	private String host;
-
-	private LoadBalancing loadBalancing;
 
 	/** 本地IP */
 	private String localIp;
 
 	/** 服务器消息拦截器 */
-	private SmartFilter[] filters;
+	private SmartFilter<T>[] filters;
 
 	/** 服务器端口号 */
 	private int port = 8888;
 
 	/** 消息处理器 */
-	private ProtocolDataProcessor processor;
+	private ProtocolDataProcessor<T> processor;
 
 	/** 协议工厂 */
-	private ProtocolFactory protocolFactory;
+	private ProtocolFactory<T> protocolFactory;
 
 	/** 队列溢出策略[WAIT,DISCARD] */
 	private String queueOverflowStrategy = QueueOverflowStrategy.WAIT.name();
@@ -82,20 +72,8 @@ public class QuicklyConfig {
 		return cacheSize;
 	}
 
-	public final ClusterTriggerStrategy getClusterTriggerStrategy() {
-		return clusterTriggerStrategy;
-	}
-
-	public final String[] getClusterUrl() {
-		return clusterUrl;
-	}
-
 	public final String getHost() {
 		return host;
-	}
-
-	public final LoadBalancing getLoadBalancing() {
-		return loadBalancing;
 	}
 
 	public final String getLocalIp() {
@@ -104,14 +82,6 @@ public class QuicklyConfig {
 
 	public final int getPort() {
 		return port;
-	}
-
-	public final ProtocolDataProcessor getProcessor() {
-		return processor;
-	}
-
-	public final ProtocolFactory getProtocolFactory() {
-		return protocolFactory;
 	}
 
 	public final String getQueueOverflowStrategy() {
@@ -150,45 +120,16 @@ public class QuicklyConfig {
 		this.cacheSize = cacheSize;
 	}
 
-	public final void setClusterTriggerStrategy(
-			ClusterTriggerStrategy clusterTriggerStrategy) {
-		this.clusterTriggerStrategy = clusterTriggerStrategy;
-	}
-
-	public final void setClusterUrl(String[] clusterUrl) {
-		this.clusterUrl = clusterUrl;
-	}
-
 	public final void setHost(String host) {
 		this.host = host;
-	}
-
-	public final void setLoadBalancing(LoadBalancing loadBalancing) {
-		this.loadBalancing = loadBalancing;
 	}
 
 	public final void setLocalIp(String localIp) {
 		this.localIp = localIp;
 	}
 
-	public final SmartFilter[] getFilters() {
-		return filters;
-	}
-
-	public final void setFilters(SmartFilter[] filters) {
-		this.filters = filters;
-	}
-
 	public final void setPort(int port) {
 		this.port = port;
-	}
-
-	public final void setProcessor(ProtocolDataProcessor processor) {
-		this.processor = processor;
-	}
-
-	public final void setProtocolFactory(ProtocolFactory protocolFactory) {
-		this.protocolFactory = protocolFactory;
 	}
 
 	public final void setQueueOverflowStrategy(String queueOverflowStrategy) {
@@ -229,5 +170,62 @@ public class QuicklyConfig {
 
 	public final void setDataBufferSize(int dataBufferSize) {
 		this.dataBufferSize = dataBufferSize;
+	}
+
+	/**
+	 * Getter method for property <tt>filters</tt>.
+	 *
+	 * @return property value of filters
+	 */
+	public final SmartFilter<T>[] getFilters() {
+		return filters;
+	}
+
+	/**
+	 * Setter method for property <tt>filters</tt>.
+	 *
+	 * @param filters
+	 *            value to be assigned to property filters
+	 */
+	public final void setFilters(SmartFilter<T>[] filters) {
+		this.filters = filters;
+	}
+
+	/**
+	 * Getter method for property <tt>protocolFactory</tt>.
+	 *
+	 * @return property value of protocolFactory
+	 */
+	public final ProtocolFactory<T> getProtocolFactory() {
+		return protocolFactory;
+	}
+
+	/**
+	 * Setter method for property <tt>protocolFactory</tt>.
+	 *
+	 * @param protocolFactory
+	 *            value to be assigned to property protocolFactory
+	 */
+	public final void setProtocolFactory(ProtocolFactory<T> protocolFactory) {
+		this.protocolFactory = protocolFactory;
+	}
+
+	/**
+	 * Getter method for property <tt>processor</tt>.
+	 *
+	 * @return property value of processor
+	 */
+	public final ProtocolDataProcessor<T> getProcessor() {
+		return processor;
+	}
+
+	/**
+	 * Setter method for property <tt>processor</tt>.
+	 *
+	 * @param processor
+	 *            value to be assigned to property processor
+	 */
+	public final void setProcessor(ProtocolDataProcessor<T> processor) {
+		this.processor = processor;
 	}
 }

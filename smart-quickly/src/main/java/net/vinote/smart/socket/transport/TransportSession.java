@@ -2,13 +2,9 @@ package net.vinote.smart.socket.transport;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
+import java.util.HashMap;
+import java.util.Map;
 
-import net.vinote.smart.socket.exception.CacheFullException;
-import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.logger.RunLogger;
-import net.vinote.smart.socket.protocol.DataEntry;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
@@ -20,170 +16,221 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  * @author Seer
  * @version TransportSession.java, v 0.1 2015年8月24日 上午10:31:38 Seer Exp.
  */
-public abstract class TransportSession {
+public abstract class TransportSession<T> {
 
-	/** 会话ID */
-	private final String sessionId = String.valueOf(System
-			.identityHashCode(this));
-	/** 配置信息 */
-	protected QuicklyConfig quickConfig;
-	/** 消息通信协议 */
-	protected Protocol protocol;
+    /**
+     * 会话ID
+     */
+    private final String sessionId = String.valueOf(System.identityHashCode(this));
 
-	/** 缓存传输层读取到的数据流 */
-	private ByteBuffer readBuffer;
+    /**
+     * 本次读取的消息体大小
+     */
+    public static final String ATTRIBUTE_KEY_CUR_DATA_LENGTH = "_attr_key_curDataLength_";
 
-	/** 会话状态 */
-	private volatile SessionStatusEnum status = SessionStatusEnum.ENABLED;
+    /**
+     * 消息通信协议
+     */
+    protected Protocol<T> protocol;
+    /**
+     * 超时时间
+     */
+    protected int timeout;
 
-	protected SmartFilterChain chain;
+    /**
+     * 缓存大小
+     */
+    protected int bufferSize;
+    /**
+     * 缓存传输层读取到的数据流
+     */
+    private ByteBuffer readBuffer;
 
-	/**
-	 * 取消读关注<br/>
-	 * 当协议解码失败时应该关闭读关注,防止异常码流继续进入服务器
-	 */
-	protected abstract void cancelReadAttention();
+    protected int cacheSize;
+    private Map<String, Object> attribute = new HashMap<String, Object>();
 
-	public final void close() {
-		close(true);
-	}
+    /**
+     * 会话状态
+     */
+    private volatile SessionStatusEnum status = SessionStatusEnum.ENABLED;
 
-	/**
-	 * * 是否立即关闭会话
-	 *
-	 * @param immediate
-	 *            true:立即关闭,false:响应消息发送完后关闭
-	 */
-	public void close(boolean immediate) {
-		if (immediate) {
-			synchronized (TransportSession.this) {
-				close0();
-				status = SessionStatusEnum.CLOSED;
-			}
-		} else {
-			status = SessionStatusEnum.CLOSING;
-		}
-	}
+    protected SmartFilterChain<T> chain;
 
-	/**
-	 * * 关闭会话 *
-	 * <p>
-	 * * 会话的关闭将触发Socket通道的关闭 *
-	 * </p>
-	 */
-	protected abstract void close0();
+    public TransportSession(ByteBuffer readBuffer) {
+        this.readBuffer = readBuffer;
+    }
 
-	/**
-	 * 刷新缓存的数据流,对已读取到的数据进行一次协议解码操作
-	 */
-	public void flushReadBuffer() {
-		ByteBuffer buffer = getReadBuffer();
-		buffer.flip();
+    /**
+     * 取消读关注<br/>
+     * 当协议解码失败时应该关闭读关注,防止异常码流继续进入服务器
+     */
+    protected abstract void cancelReadAttention();
 
-		// 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
-		try {
-			chain.doReadFilter(this, protocol.decode(buffer));
-		} catch (DecodeException e) {
-			RunLogger.getLogger().log(Level.WARNING, e.getMessage());
-			cancelReadAttention();
-			close();// 解码失败断连
-			RunLogger.getLogger().log(Level.WARNING,
-					"close transport because of decode exception");
-		} finally {
-			buffer.compact();
-		}
-	}
+    public final void close() {
+        close(true);
+    }
 
-	public abstract String getLocalAddress();
+    /**
+     * * 是否立即关闭会话
+     *
+     * @param immediate true:立即关闭,false:响应消息发送完后关闭
+     */
+    public void close(boolean immediate) {
+        if (immediate) {
+            synchronized (TransportSession.this) {
+                close0();
+                status = SessionStatusEnum.CLOSED;
+            }
+        } else {
+            status = SessionStatusEnum.CLOSING;
+        }
+    }
 
-	public final QuicklyConfig getQuickConfig() {
-		return quickConfig;
-	}
+    /**
+     * * 关闭会话 *
+     * <p>
+     * * 会话的关闭将触发Socket通道的关闭 *
+     * </p>
+     */
+    protected abstract void close0();
 
-	public ByteBuffer getReadBuffer() {
-		if (readBuffer == null) {
-			readBuffer = ByteBuffer.allocate(quickConfig.getDataBufferSize());
-		}
-		return readBuffer;
-	}
+    /**
+     * 刷新缓存的数据流,对已读取到的数据进行一次协议解码操作
+     */
+    public ByteBuffer flushReadBuffer() {
+        readBuffer.flip();
 
-	/**
-	 * Returns the Internet Protocol (IP) address of the client or last proxy
-	 * that sent the request
-	 *
-	 * @return
-	 */
-	public abstract String getRemoteAddr();
+        // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
+        T dataEntry;
+        while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
+            chain.doReadFilter(this, dataEntry);
+        }
+        //数据读取完毕
+        if (readBuffer.remaining() == 0) {
+            readBuffer.clear();
+        } else if (readBuffer.position() > 0) {// 仅当发生数据读取时调用compact,减少内存拷贝
+            readBuffer.compact();
+        } else {
+            readBuffer.position(readBuffer.limit());
+            readBuffer.limit(readBuffer.capacity());
+        }
+        return readBuffer;
+    }
 
-	/**
-	 * Returns the fully qualified name of the client or the last proxy that
-	 * sent the request. If the engine cannot or chooses not to resolve the
-	 * hostname (to improve performance), this method returns the dotted-string
-	 * form of the IP address
-	 *
-	 * @return
-	 */
-	public abstract String getRemoteHost();
+    public abstract String getLocalAddress();
 
-	public abstract int getRemotePort();
+    /**
+     * Returns the Internet Protocol (IP) address of the client or last proxy
+     * that sent the request
+     *
+     * @return
+     */
+    public abstract String getRemoteAddr();
 
-	/**
-	 * 获取当前Session的唯一标识
-	 *
-	 * @return
-	 */
-	public final String getSessionID() {
-		return sessionId;
-	}
+    /**
+     * Returns the fully qualified name of the client or the last proxy that
+     * sent the request. If the engine cannot or chooses not to resolve the
+     * hostname (to improve performance), this method returns the dotted-string
+     * form of the IP address
+     *
+     * @return
+     */
+    public abstract String getRemoteHost();
 
-	public SessionStatusEnum getStatus() {
-		return status;
-	}
+    public abstract int getRemotePort();
 
-	/**
-	 * 获取超时时间
-	 *
-	 * @return
-	 */
-	public int getTimeout() {
-		return quickConfig.getTimeout();
-	}
+    /**
+     * 获取当前Session的唯一标识
+     *
+     * @return
+     */
+    public final String getSessionID() {
+        return sessionId;
+    }
 
-	/**
-	 * 当前会话是否已失效
-	 */
-	public abstract boolean isValid();
+    public SessionStatusEnum getStatus() {
+        return status;
+    }
 
-	/**
-	 * 暂停读关注
-	 */
-	public abstract void pauseReadAttention();
+    /**
+     * 获取超时时间
+     *
+     * @return
+     */
+    public int getTimeout() {
+        return timeout;
+    }
 
-	/**
-	 * 恢复读关注
-	 */
-	public abstract void resumeReadAttention();
+    /**
+     * 当前会话是否已失效
+     */
+    public boolean isValid(){
+        return status==SessionStatusEnum.ENABLED;
+    }
 
-	/**
-	 * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理
-	 *
-	 * @param data
-	 *            输出数据至对端
-	 * @return 是否输出成功
-	 * @throws Exception
-	 */
-	public abstract void write(byte[] data) throws IOException,
-			CacheFullException;
+    public void invalid() {
+        status=SessionStatusEnum.INVALID;
+    }
 
-	/**
-	 * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理
-	 *
-	 * @param data
-	 *            输出数据至对
-	 * @return 是否输出成功
-	 * @throws Exception
-	 */
-	public abstract void write(DataEntry data) throws IOException,
-			CacheFullException;
+    /**
+     * 暂停读关注
+     */
+    public abstract void pauseReadAttention();
+
+    /**
+     * 恢复读关注
+     */
+    public abstract void resumeReadAttention();
+
+    /**
+     * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理
+     *
+     * @param data 输出数据至对端
+     * @return 是否输出成功
+     * @throws Exception
+     */
+    public abstract void write(ByteBuffer data) throws IOException;
+
+    /**
+     * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理
+     *
+     * @param data
+     *            输出数据至对
+     * @return 是否输出成功
+     * @throws Exception
+     */
+    // public abstract void write(T data) throws IOException;
+
+    /**
+     * Getter method for property <tt>attribute</tt>.
+     *
+     * @return property value of attribute
+     */
+    @SuppressWarnings("unchecked")
+    public final <T1> T1 getAttribute(String key) {
+        return (T1) attribute.get(key);
+    }
+
+    /**
+     * Setter method for property <tt>attribute</tt>.
+     *
+     * @param key value to be assigned to property attribute
+     */
+    public final void setAttribute(String key, Object value) {
+        attribute.put(key, value);
+    }
+
+    public final void removeAttribute(String key) {
+        attribute.remove(key);
+    }
+
+    /**
+     * Getter method for property <tt>cacheSize</tt>.
+     *
+     * @return property value of cacheSize
+     */
+    public final int getCacheSize() {
+        return cacheSize;
+    }
 
 }
