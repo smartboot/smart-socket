@@ -223,9 +223,37 @@ public class NioSession<T> extends TransportSession<T> {
             return;
         }
         chain.doWriteFilterStart(this, buffer);
+        boolean isNew = true;
         buffer.flip();
+// 队列为空时直接输出
+        if (writeCacheQueue.isEmpty()) {
+            synchronized (this) {
+                if (writeCacheQueue.isEmpty()) {
+                    // chain.doWriteFilter(this, buffer);
+                    int writeTimes = 8;// 控制循环次数防止低效输出流占用资源
+                    while (((SocketChannel) channelKey.channel()).write(buffer) > 0 && writeTimes >> 1 > 0)
+                        ;
+                    // 数据全部输出则return
+                    if (buffer.position() >= buffer.limit()) {
+                        chain.doWriteFilterFinish(this, buffer);
+                        return;
+                    }
 
-        if (!writeCacheQueue.offer(buffer)) {
+                    boolean cacheFlag = writeCacheQueue.offer(buffer);
+                    // 已输出部分数据，但剩余数据缓存失败,则异常处理
+                    if (!cacheFlag && buffer.position() > 0) {
+                        throw new IOException("cache data fail, channel has become unavailable!");
+                    }
+                    // 缓存失败并无数据输出,则忽略本次数据包
+                    if (!cacheFlag && buffer.position() == 0) {
+                        logger.warn("cache data fail, ignore!");
+                        return;
+                    }
+                    isNew = false;
+                }
+            }
+        }
+        if (isNew && !writeCacheQueue.offer(buffer)) {
             try {
                 writeThread.get().notifySession(this);
                 writeCacheQueue.put(buffer);

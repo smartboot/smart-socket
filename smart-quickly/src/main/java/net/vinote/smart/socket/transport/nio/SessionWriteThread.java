@@ -18,11 +18,11 @@ public class SessionWriteThread extends Thread {
     /**
      * 需要进行数据输出的Session集合
      */
-    private Set<NioSession> newSessionSet1 = new HashSet<NioSession>();
+    private volatile Set<NioSession> newSessionSet1 = new HashSet<NioSession>();
     /**
      * 需要进行数据输出的Session集合
      */
-    private Set<NioSession> newSessionSet2 = new HashSet<NioSession>();
+    private volatile Set<NioSession> newSessionSet2 = new HashSet<NioSession>();
     /**
      * 需要进行数据输出的Session集合存储控制标，true:newSessionSet1,false:newSessionSet2。由此减少锁竞争
      */
