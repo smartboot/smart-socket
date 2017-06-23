@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
@@ -28,6 +29,10 @@ public abstract class TransportSession<T> {
      */
     public static final String ATTRIBUTE_KEY_CUR_DATA_LENGTH = "_attr_key_curDataLength_";
 
+    /**
+     * 消息读取线程
+     */
+    public static final String DATA_READ_THREAD="_read_thread_";
     /**
      * 消息通信协议
      */
@@ -56,6 +61,7 @@ public abstract class TransportSession<T> {
 
     protected SmartFilterChain<T> chain;
 
+    protected AtomicBoolean readPause=new AtomicBoolean(false);
     public TransportSession(ByteBuffer readBuffer) {
         this.readBuffer = readBuffer;
     }

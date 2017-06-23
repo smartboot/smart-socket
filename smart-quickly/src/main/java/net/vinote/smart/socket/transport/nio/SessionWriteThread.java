@@ -3,10 +3,11 @@ package net.vinote.smart.socket.transport.nio;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Socket写操作的处理线程。不通过NIO的写关注触发，因为发现效率并不高。而是由该线程进行监控，增强数据输出能力
@@ -14,27 +15,31 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class SessionWriteThread extends Thread {
     private static final Logger logger = LogManager.getLogger(SessionWriteThread.class);
-    private Set<NioSession> sessionSet = new HashSet<NioSession>();
+    private List<NioSession> sessionSet = new ArrayList<NioSession>();
     /**
      * 需要进行数据输出的Session集合
      */
-    private volatile Set<NioSession> newSessionSet1 = new HashSet<NioSession>();
+    private Set<NioSession> newSessionSet1 = new HashSet<NioSession>();
     /**
      * 需要进行数据输出的Session集合
      */
-    private volatile Set<NioSession> newSessionSet2 = new HashSet<NioSession>();
+    private Set<NioSession> newSessionSet2 = new HashSet<NioSession>();
     /**
      * 需要进行数据输出的Session集合存储控制标，true:newSessionSet1,false:newSessionSet2。由此减少锁竞争
      */
-    private volatile boolean switchFlag = false;
+    private boolean switchFlag = false;
 
-    private volatile int waitTime = 1;
+    private int waitTime = 1;
 
     public void notifySession(NioSession session) {
         if (switchFlag) {
-            newSessionSet1.add(session);
+            synchronized (newSessionSet1) {
+                newSessionSet1.add(session);
+            }
         } else {
-            newSessionSet2.add(session);
+            synchronized (newSessionSet2) {
+                newSessionSet2.add(session);
+            }
         }
         if (waitTime != 1) {
             synchronized (this) {
@@ -53,7 +58,7 @@ public class SessionWriteThread extends Thread {
                             long start = System.currentTimeMillis();
                             this.wait(waitTime);
                             if (waitTime < 2000) {
-                                waitTime += 100;
+                                waitTime++;
                             } else {
                                 waitTime = 0;
                             }
@@ -67,29 +72,35 @@ public class SessionWriteThread extends Thread {
                 }
             }
             if (switchFlag) {
-                sessionSet.addAll(newSessionSet2);
-                newSessionSet2.clear();
+                synchronized (newSessionSet2) {
+                    sessionSet.addAll(newSessionSet2);
+                    newSessionSet2.clear();
+                }
             } else {
-                sessionSet.addAll(newSessionSet1);
-                newSessionSet1.clear();
+                synchronized (newSessionSet1) {
+                    sessionSet.addAll(newSessionSet1);
+                    newSessionSet1.clear();
+                }
             }
             switchFlag = !switchFlag;
 
             Iterator<NioSession> iterator = sessionSet.iterator();
+            Set<NioSession> removeSession = new HashSet<NioSession>();
             while (iterator.hasNext()) {
                 NioSession session = iterator.next();
                 try {
                     session.flushWriteBuffer(3);
                     if (session.getWriteBuffer() == null) {
-                        iterator.remove();
+                        removeSession.add(session);
                     }
                 } catch (Exception e) {
+                    e.fillInStackTrace();
                     session.close();
-                    iterator.remove();
+                    removeSession.add(session);
                 }
                 waitTime = 1;
             }
-
+            sessionSet.removeAll(removeSession);
         }
     }
 }

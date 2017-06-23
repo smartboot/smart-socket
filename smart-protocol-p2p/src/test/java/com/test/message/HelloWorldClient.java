@@ -18,7 +18,7 @@ public class HelloWorldClient {
 		QuicklyConfig<BaseMessage> config = new QuicklyConfig<BaseMessage>(false);
 		P2PProtocolFactory factory = new P2PProtocolFactory(messageFactory);
 		config.setProtocolFactory(factory);
-		P2PClientMessageProcessor processor = new P2PClientMessageProcessor();
+		P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
 		config.setProcessor(processor);
 		config.setHost("127.0.0.1");
 		config.setTimeout(1000);
