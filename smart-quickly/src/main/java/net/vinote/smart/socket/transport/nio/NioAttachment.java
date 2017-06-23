@@ -12,6 +12,8 @@ package net.vinote.smart.socket.transport.nio;
 
 	private int curSelectionOP;
 
+	 int tryRead=0;
+
 	public NioAttachment(NioSession<?> session) {
 		this.session = session;
 	}

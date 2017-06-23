@@ -24,7 +24,7 @@ public class P2PMultiClient {
 				@Override
 				public void run() {
 					Properties properties = new Properties();
-					properties.put(DetectMessageResp.class.getName(), "");
+					properties.put(DetectMessageResp.class.getName(),  DetectRespMessageHandler.class.getName());
 					P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
 					try {
 						messageFactory.loadFromProperties(properties);
@@ -35,7 +35,7 @@ public class P2PMultiClient {
 
 					QuicklyConfig<BaseMessage> config = new QuicklyConfig<BaseMessage>(false);
 					config.setProtocolFactory(new P2PProtocolFactory(messageFactory));
-					P2PClientMessageProcessor processor = new P2PClientMessageProcessor();
+					P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
 					config.setProcessor(processor);
 					config.setFilters(new SmartFilter[] { new QuickMonitorTimer<BaseMessage>() });
 					config.setHost("127.0.0.1");
@@ -48,7 +48,7 @@ public class P2PMultiClient {
 					long start = System.currentTimeMillis();
 					while (num++ < Long.MAX_VALUE) {
 						DetectMessageReq request = new DetectMessageReq();
-						request.setDetectMessage("Hello");
+						request.setDetectMessage(System.currentTimeMillis()+"");
 						try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
 //								.sendWithResponse(request);

@@ -18,7 +18,7 @@ import net.vinote.smart.socket.transport.nio.NioQuickClient;
 public class P2PClient {
 	public static void main(String[] args) throws Exception {
 		Properties properties = new Properties();
-		properties.put(DetectMessageResp.class.getName(), "");
+		properties.put(DetectMessageResp.class.getName(), DetectRespMessageHandler.class.getName());
 		P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
 		try {
 			messageFactory.loadFromProperties(properties);
@@ -29,7 +29,7 @@ public class P2PClient {
 
 		QuicklyConfig<BaseMessage> config = new QuicklyConfig<BaseMessage>(false);
 		config.setProtocolFactory(new P2PProtocolFactory(messageFactory));
-		final P2PClientMessageProcessor processor = new P2PClientMessageProcessor();
+		final P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
 		config.setProcessor(processor);
 		config.setFilters(new SmartFilter[] { new QuickMonitorTimer<BaseMessage>() });
 		config.setHost("127.0.0.1");
@@ -38,7 +38,7 @@ public class P2PClient {
 		final NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>(config);
 		client.start();
 
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 1; i++) {
 			new Thread() {
 				private Logger logger = LogManager.getLogger(this.getClass());
 
@@ -49,7 +49,7 @@ public class P2PClient {
 					long start = System.currentTimeMillis();
 					while (num++ < Long.MAX_VALUE) {
 						DetectMessageReq request = new DetectMessageReq();
-						request.setDetectMessage("HelloWorldHelloWorldHelloWorldHelloWorldHelloWorld");
+						request.setDetectMessage(System.currentTimeMillis()+"");
 						try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
 //								.sendWithResponse(request);

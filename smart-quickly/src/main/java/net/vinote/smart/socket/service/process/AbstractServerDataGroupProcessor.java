@@ -28,8 +28,6 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
 
     private QuicklyConfig<T> quickConfig;
 
-    private AtomicInteger index = new AtomicInteger(0);
-
     @SuppressWarnings("unchecked")
     @Override
     public void init(QuicklyConfig<T> config) {
@@ -56,17 +54,18 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
             return true;
         }
         //Session绑定的处理器处理能力不足，由其他处理器辅助
-        int curIndex = index.getAndIncrement() % processThreads.length;
-        while (!processThreads[curIndex].msgQueue.offer(unit)) {
-            curIndex = ++curIndex % processThreads.length;
-            if (curIndex == 0) {
-                try {
-                    Thread.sleep(0l, 100);//所有ServerDataProcessThread都满负荷运行,则放缓消息接受
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        for (int i = processThreads.length - 1; i >= 0; i--) {
+            if (processThreads[i].msgQueue.offer(unit)) {
+                return true;
             }
         }
+        //所有线程都满负荷
+        try {
+            processThread.msgQueue.put(unit);
+        } catch (InterruptedException e) {
+            logger.catching(e);
+        }
+
         return true;
     }
 
@@ -96,6 +95,7 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
 
     /**
      * 新Channel的处理器选举策略
+     *
      * @return
      */
     private ServerDataProcessThread selectProcess() {
@@ -123,7 +123,7 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
         /**
          * 消息缓存队列
          */
-        private ArrayBlockingQueue<ProcessUnit> msgQueue = new ArrayBlockingQueue<ProcessUnit>(1024);
+        private ArrayBlockingQueue<ProcessUnit> msgQueue = new ArrayBlockingQueue<ProcessUnit>(4096);
 
         /**
          * 消息处理量计数器

@@ -4,8 +4,8 @@ import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.service.process.AbstractServerDataProcessor;
+import net.vinote.smart.socket.transport.TransportSession;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,9 +24,17 @@ import java.nio.channels.SocketChannel;
 public final class NioQuickServer<T> extends AbstractChannelService<T> {
     private Logger logger = LogManager.getLogger(NioQuickServer.class);
     private ServerSocketChannel server;
+    //数据读取线程
+    private SessionReadThread[] readThreads;
 
     public NioQuickServer(final QuicklyConfig<T> config) {
         super(config);
+        readThreads = new SessionReadThread[config.getThreadNum()];
+        for (int i = 0; i < readThreads.length; i++) {
+            readThreads[i] = new SessionReadThread();
+            readThreads[i].setName("SessionReadThread-" + System.currentTimeMillis());
+            readThreads[i].start();
+        }
     }
 
     /**
@@ -47,6 +55,32 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
         socketKey.attach(new NioAttachment(nioSession));
         socketChannel.finishConnect();
         nioSession.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
+        System.out.println(socketChannel);
+    }
+
+    /**
+     * 从管道流中读取数据
+     *
+     * @param key
+     * @param attach
+     * @throws IOException
+     */
+    protected void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException {
+        SessionReadThread readThread = attach.getSession().getAttribute(TransportSession.DATA_READ_THREAD);
+        //线程选举
+        if (readThread == null) {
+            int index = 0;
+            for (int i = readThreads.length - 1; i > 0; i--) {
+                if (readThreads[i].getConnectNums() < readThreads[index].getConnectNums()) {
+                    index = i;
+                }
+            }
+            readThread = readThreads[index];
+            attach.getSession().setAttribute(TransportSession.DATA_READ_THREAD, readThread);
+        }
+        //先取消读关注
+//        key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+        readThread.notifySession(key);
     }
 
     @Override
@@ -65,7 +99,6 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
     protected void exceptionInSelector(Exception e) {
         logger.warn(e.getMessage(), e);
     }
-
 
 
     public void shutdown() {

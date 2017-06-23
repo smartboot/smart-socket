@@ -3,6 +3,7 @@ package net.vinote.smart.socket.transport.nio;
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.transport.ChannelService;
+import net.vinote.smart.socket.transport.TransportSession;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 import org.apache.logging.log4j.LogManager;
@@ -119,25 +120,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
      * @param attach
      * @throws IOException
      */
-    private void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException {
-        SocketChannel socketChannel = (SocketChannel) key.channel();
-        NioSession<?> session = attach.getSession();
-        int readSize = 0;
-        int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
-        while ((readSize = socketChannel.read(session.flushReadBuffer())) > 0 && --loopTimes > 0)
-            ;// 读取管道中的数据块
-        // 达到流末尾则注销读关注
-        if (readSize == -1 || session.getStatus() == SessionStatusEnum.CLOSING) {
-            session.cancelReadAttention();
-            // key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
-            if (session.getWriteBuffer() == null || key.isValid()) {
-                session.close();
-                logger.info("关闭Socket[" + socketChannel + "]");
-            } else {
-                logger.info("注销Socket[" + socketChannel + "]读关注");
-            }
-        }
-    }
+    protected abstract void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException;
 
     /**
      * 接受并建立Socket连接
