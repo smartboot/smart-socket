@@ -8,6 +8,7 @@ import java.nio.channels.SocketChannel;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by zhengjunwei on 2017/6/21.
@@ -18,11 +19,11 @@ public class SessionReadThread extends Thread {
     /**
      * 需要进行数据输出的Session集合
      */
-    private Set<SelectionKey> newSelectionKeySet1 = new HashSet<SelectionKey>();
+    private ConcurrentLinkedQueue<SelectionKey> newSelectionKeySet1 = new ConcurrentLinkedQueue<SelectionKey>();
     /**
      * 需要进行数据输出的Session集合
      */
-    private Set<SelectionKey> newSelectionKeySet2 = new HashSet<SelectionKey>();
+    private ConcurrentLinkedQueue<SelectionKey> newSelectionKeySet2 = new ConcurrentLinkedQueue<SelectionKey>();
     /**
      * 需要进行数据输出的Session集合存储控制标，true:newSelectionKeySet1,false:newSelectionKeySet2。由此减少锁竞争
      */
@@ -35,13 +36,9 @@ public class SessionReadThread extends Thread {
     public void notifySession(SelectionKey session) {
         session.interestOps(session.interestOps() & ~SelectionKey.OP_READ);
         if (switchFlag) {
-            synchronized (newSelectionKeySet1) {
-                newSelectionKeySet1.add(session);
-            }
+            newSelectionKeySet1.add(session);
         } else {
-            synchronized (newSelectionKeySet2) {
-                newSelectionKeySet2.add(session);
-            }
+            newSelectionKeySet2.add(session);
         }
         if (waitTime != 1) {
             synchronized (this) {
@@ -74,19 +71,57 @@ public class SessionReadThread extends Thread {
                     }
                 }
             }
+
             if (switchFlag) {
-                synchronized (newSelectionKeySet2) {
-                    selectionKeySet.addAll(newSelectionKeySet2);
-                    newSelectionKeySet2.clear();
+//                synchronized (newSelectionKeySet2) {
+                while(true){
+                    SelectionKey key = newSelectionKeySet2.poll();
+                    if(key==null){
+                        break;
+                    }
+                    try {
+                        SocketChannel socketChannel = (SocketChannel) key.channel();
+                        NioAttachment attach = (NioAttachment) key.attachment();
+                        NioSession<?> session = attach.getSession();
+                        //未读到数据则关注读
+                        int readSize = 0;
+                        if ((readSize = socketChannel.read(session.flushReadBuffer())) == 0) {
+                            key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+                            key.selector().wakeup();//一定要唤醒一次selector
+                        } else if (readSize > 0) {
+                            selectionKeySet.add(key);
+                        }
+                    } catch (Exception e) {
+                        key.cancel();
+                    }
                 }
+
             } else {
-                synchronized (newSelectionKeySet1) {
-                    selectionKeySet.addAll(newSelectionKeySet1);
-                    newSelectionKeySet1.clear();
+                while(true){
+                    SelectionKey key = newSelectionKeySet1.poll();
+                    if(key==null){
+                        break;
+                    }
+                    try {
+                        SocketChannel socketChannel = (SocketChannel) key.channel();
+                        NioAttachment attach = (NioAttachment) key.attachment();
+                        NioSession<?> session = attach.getSession();
+                        //未读到数据则关注读
+                        int readSize = 0;
+                        if ((readSize = socketChannel.read(session.flushReadBuffer())) == 0) {
+                            key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+                            key.selector().wakeup();//一定要唤醒一次selector
+                        } else if (readSize > 0) {
+                            selectionKeySet.add(key);
+                        }
+                    } catch (Exception e) {
+                        key.cancel();
+                    }
                 }
             }
-            connectNums = selectionKeySet.size();
             switchFlag = !switchFlag;
+            connectNums = selectionKeySet.size();
+
 
             Iterator<SelectionKey> iterator = selectionKeySet.iterator();
             while (iterator.hasNext()) {
@@ -116,6 +151,7 @@ public class SessionReadThread extends Thread {
                 }
                 waitTime = 1;
             }
+
         }
     }
 
