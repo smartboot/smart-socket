@@ -4,39 +4,50 @@ import java.nio.ByteBuffer;
 
 /**
  * 探测消息响应
- * 
- * @author Seer
  *
+ * @author Seer
  */
 public class DetectMessageResp extends BaseMessage {
 
-	public DetectMessageResp() {
-		super();
-	}
+    public DetectMessageResp() {
+        super();
+    }
 
-	public DetectMessageResp(HeadMessage head) {
-		super(head);
-	}
+    public DetectMessageResp(HeadMessage head) {
+        super(head);
+    }
 
-	private String detectMessage;
+    private String detectMessage;
 
-	protected void encodeBody(ByteBuffer buffer) {
-		writeString(buffer, detectMessage);
-	}
+    private long sendTime;
 
-	protected void decodeBody(ByteBuffer buffer) {
-		detectMessage = readString(buffer);
-	}
+    public long getSendTime() {
+        return sendTime;
+    }
 
-	public int getMessageType() {
-		return MessageType.DETECT_MESSAGE_RSP;
-	}
+    public void setSendTime(long sendTime) {
+        this.sendTime = sendTime;
+    }
 
-	public String getDetectMessage() {
-		return detectMessage;
-	}
+    protected void encodeBody(ByteBuffer buffer) {
+        writeString(buffer, detectMessage);
+        writeLong(buffer, sendTime);
+    }
 
-	public void setDetectMessage(String detectMessage) {
-		this.detectMessage = detectMessage;
-	}
+    protected void decodeBody(ByteBuffer buffer) {
+        detectMessage = readString(buffer);
+        sendTime = readLong(buffer);
+    }
+
+    public int getMessageType() {
+        return MessageType.DETECT_MESSAGE_RSP;
+    }
+
+    public String getDetectMessage() {
+        return detectMessage;
+    }
+
+    public void setDetectMessage(String detectMessage) {
+        this.detectMessage = detectMessage;
+    }
 }

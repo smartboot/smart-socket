@@ -4,30 +4,40 @@ import java.nio.ByteBuffer;
 
 /**
  * 探测消息请求
- * 
- * @author Seer
  *
+ * @author Seer
  */
 public class DetectMessageReq extends BaseMessage {
-	private String detectMessage;
+    private String detectMessage;
+    private long sendTime;
 
-	protected void encodeBody(ByteBuffer buffer) {
-		writeString(buffer,detectMessage);
-	}
+    public long getSendTime() {
+        return sendTime;
+    }
 
-	protected void decodeBody(ByteBuffer buffer) {
-		detectMessage = readString(buffer);
-	}
+    public void setSendTime(long sendTime) {
+        this.sendTime = sendTime;
+    }
 
-	public int getMessageType() {
-		return MessageType.DETECT_MESSAGE_REQ;
-	}
+    protected void encodeBody(ByteBuffer buffer) {
+        writeString(buffer, detectMessage);
+        writeLong(buffer, sendTime);
+    }
 
-	public String getDetectMessage() {
-		return detectMessage;
-	}
+    protected void decodeBody(ByteBuffer buffer) {
+        detectMessage = readString(buffer);
+        sendTime = readLong(buffer);
+    }
 
-	public void setDetectMessage(String detectMessage) {
-		this.detectMessage = detectMessage;
-	}
+    public int getMessageType() {
+        return MessageType.DETECT_MESSAGE_REQ;
+    }
+
+    public String getDetectMessage() {
+        return detectMessage;
+    }
+
+    public void setDetectMessage(String detectMessage) {
+        this.detectMessage = detectMessage;
+    }
 }

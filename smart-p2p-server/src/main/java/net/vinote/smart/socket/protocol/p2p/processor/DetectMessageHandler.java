@@ -25,6 +25,7 @@ public class DetectMessageHandler extends MessageHandler {
 		DetectMessageReq msg = (DetectMessageReq) message;
 		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
 		rspMsg.setDetectMessage(msg.getDetectMessage());
+		rspMsg.setSendTime(msg.getSendTime());
 		try {
 			session.sendWithoutResponse(rspMsg);
 		} catch (IOException e) {

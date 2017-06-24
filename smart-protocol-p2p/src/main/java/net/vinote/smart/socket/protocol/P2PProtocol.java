@@ -34,12 +34,12 @@ final class P2PProtocol implements Protocol<BaseMessage> {
         if (buffer == null || buffer.remaining() < MESSAGE_SIGN_LENGTH) {
             return null;
         }
-        int magicNum = buffer.getInt(0);
+        int magicNum = buffer.getInt(buffer.position() + 0);
         if (magicNum != HeadMessage.MAGIC_NUMBER) {
-            throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum) + " ,byteBuffer:"
+            throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum) + "position:" + buffer.position() + " ,byteBuffer:"
                     + StringUtils.toHexString(buffer.array()));
         }
-        int msgLength = buffer.getInt(4);
+        int msgLength = buffer.getInt(buffer.position() + 4);
         if (msgLength <= 0 || msgLength > buffer.capacity()) {
             throw new DecodeException("Invalid Message Length " + msgLength);
         }
@@ -47,8 +47,8 @@ final class P2PProtocol implements Protocol<BaseMessage> {
         if (buffer.remaining() < msgLength) {
             return null;
         }
-        if(buffer.position()>=964){
-            System.err.println("position:"+buffer.position()+" ,remain:"+buffer.remaining()+" ,msglength:"+msgLength);
+        if (buffer.position() >= 964) {
+            System.err.println("position:" + buffer.position() + " ,remain:" + buffer.remaining() + " ,msglength:" + msgLength);
         }
         BaseMessage message = decode(buffer);
         if (message == null) {
@@ -59,7 +59,7 @@ final class P2PProtocol implements Protocol<BaseMessage> {
     }
 
     private BaseMessage decode(ByteBuffer buffer) {
-        int type = buffer.getInt(8);
+        int type = buffer.getInt(buffer.position() + 8);
 
         BaseMessage baseMsg = null;
         Class<?> c = serviceMessageFactory.getBaseMessage(type);

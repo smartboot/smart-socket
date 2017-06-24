@@ -202,6 +202,9 @@ public abstract class BaseMessage {
 		buffer.putInt(value);
 	}
 
+	protected final void writeLong(ByteBuffer buffer, long value) {
+		buffer.putLong(value);
+	}
 	/**
 	 * 输出布尔值
 	 *
@@ -248,6 +251,10 @@ public abstract class BaseMessage {
 
 	protected final int readInt(ByteBuffer buffer) {
 		return buffer.getInt();
+	}
+
+	protected final long readLong(ByteBuffer buffer) {
+		return buffer.getLong();
 	}
 
 	/**

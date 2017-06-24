@@ -15,15 +15,16 @@ import org.apache.logging.log4j.Logger;
 public class DetectRespMessageHandler extends MessageHandler {
     private Logger logger = LogManager.getLogger(DetectRespMessageHandler.class);
     long max = 0;
-    long outTime=System.currentTimeMillis();
+    long outTime = System.currentTimeMillis();
+
     @Override
     public void handler(Session<BaseMessage> session, BaseMessage message) {
         DetectMessageResp msg = (DetectMessageResp) message;
-        long useTime = System.currentTimeMillis() - Long.valueOf(msg.getDetectMessage());
+        long useTime = System.currentTimeMillis() - msg.getSendTime();
         if (useTime > max) {
             max = useTime;
-            if (max > 1000&&(System.currentTimeMillis()-outTime)>1000) {
-                outTime=System.currentTimeMillis();
+            if (max > 1000 && (System.currentTimeMillis() - outTime) > 1000) {
+                outTime = System.currentTimeMillis();
                 System.out.println(max);
             }
         }

@@ -156,7 +156,7 @@ public class NioSession<T> extends TransportSession<T> {
         return buffer;
     }
 
-    void flushWriteBuffer(int num) throws IOException {
+    synchronized void flushWriteBuffer(int num) throws IOException {
         ByteBuffer[] array = new ByteBuffer[cacheSize];
         Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
         int i = 0;
@@ -168,15 +168,16 @@ public class NioSession<T> extends TransportSession<T> {
         }
         ((SocketChannel) channelKey.channel()).write(array, 0, i);
 
-        ByteBuffer buffer;
-        if (num <= 0) {
-            while ((buffer = getWriteBuffer()) != null) {
-                ((SocketChannel) channelKey.channel()).write(buffer);
-            }
-        } else {
-            while ((buffer = getWriteBuffer()) != null && ((SocketChannel) channelKey.channel()).write(buffer) > 0 && num-- > 0)
-                ;
-        }
+        getWriteBuffer();
+//        ByteBuffer buffer;
+//        if (num <= 0) {
+//            while ((buffer = getWriteBuffer()) != null) {
+//                ((SocketChannel) channelKey.channel()).write(buffer);
+//            }
+//        } else {
+//            while ((buffer = getWriteBuffer()) != null && ((SocketChannel) channelKey.channel()).write(buffer) > 0 && num-- > 0)
+//                ;
+//        }
     }
 
     void initBaseChannelInfo(SelectionKey channelKey) {
