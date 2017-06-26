@@ -1,5 +1,6 @@
 package net.vinote.smart.socket.transport.nio;
 
+import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -92,6 +93,9 @@ public class SessionWriteThread extends Thread {
                     session.flushWriteBuffer(3);
                     if (session.getWriteBuffer() == null) {
                         removeSession.add(session);
+                        if(session.getStatus()== SessionStatusEnum.CLOSING){
+                            session.close();
+                        }
                     }
                 } catch (Exception e) {
                     e.fillInStackTrace();

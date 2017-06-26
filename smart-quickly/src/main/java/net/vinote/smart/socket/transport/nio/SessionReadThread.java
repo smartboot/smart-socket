@@ -105,6 +105,7 @@ public class SessionReadThread extends Thread {
                             if (!session.getReadPause().get()) {
                                 key.interestOps(key.interestOps() | SelectionKey.OP_READ);
                                 key.selector().wakeup();//一定要唤醒一次selector
+                                System.out.println("Wake Up Read1");
                             }
                             session.flushReadBuffer();
                             iterator.remove();
@@ -149,6 +150,7 @@ public class SessionReadThread extends Thread {
                         if (!session.getReadPause().get()) {
                             key.interestOps(key.interestOps() | SelectionKey.OP_READ);
                             key.selector().wakeup();//一定要唤醒一次selector
+                            System.out.println("Wake Up Read");
                         }
                         session.flushReadBuffer();
                         break;
