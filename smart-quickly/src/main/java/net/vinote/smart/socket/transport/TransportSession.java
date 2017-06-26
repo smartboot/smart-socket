@@ -106,9 +106,10 @@ public abstract class TransportSession<T> {
      * 刷新缓存的数据流,对已读取到的数据进行一次协议解码操作
      */
     public ByteBuffer flushReadBuffer() {
-//        if(readBuffer.position()==0){
-//            return readBuffer;
-//        }
+        //无可解析数据,直接返回
+        if (readBuffer.position() == 0 && readBuffer.limit() == readBuffer.capacity()) {
+            return readBuffer;
+        }
         readBuffer.flip();
 
         // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析

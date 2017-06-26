@@ -91,23 +91,29 @@ public class SessionReadThread extends Thread {
                     NioSession<?> session = attach.getSession();
                     //未读到数据则关注读
                     int readSize = 0;
-                    if ((readSize = socketChannel.read(session.flushReadBuffer())) == 0 && (readSize = socketChannel.read(session.flushReadBuffer())) == 0) {
-                        if (attach.tryRead++ > 10) {
+                    int readTime = 3;
+                    while ((readSize = socketChannel.read(session.flushReadBuffer())) >= 0 && --readTime > 0) ;
+                    switch (readSize) {
+                        case -1: {
+                            System.out.println("End Of Stream");
+                            session.reachEndOfStream();
+                            session.flushReadBuffer();
+                            iterator.remove();
+                            break;
+                        }
+                        case 0: {
                             if (!session.getReadPause().get()) {
                                 key.interestOps(key.interestOps() | SelectionKey.OP_READ);
                                 key.selector().wakeup();//一定要唤醒一次selector
                             }
+                            session.flushReadBuffer();
                             iterator.remove();
+                            break;
                         }
-                    } else if (readSize == -1) {
-                        session.flushReadBuffer();
-                        System.out.println("End Of Stream");
-                        session.reachEndOfStream();
-                        iterator.remove();
-                    } else {
-                        attach.tryRead = 0;
+                        default: {
+                            session.flushReadBuffer();
+                        }
                     }
-
                 } catch (Exception e) {
                     key.cancel();
                     iterator.remove();
@@ -130,15 +136,26 @@ public class SessionReadThread extends Thread {
                 NioSession<?> session = attach.getSession();
                 //未读到数据则关注读
                 int readSize = 0;
-                if ((readSize = socketChannel.read(session.flushReadBuffer())) == 0 && (readSize = socketChannel.read(session.flushReadBuffer())) == 0) {
-                    key.interestOps(key.interestOps() | SelectionKey.OP_READ);
-                    key.selector().wakeup();//一定要唤醒一次selector
-                } else if (readSize == -1) {
-                    session.flushReadBuffer();
-                    session.reachEndOfStream();
-                    System.out.println("readSize is -1");
-                } else if (readSize > 0) {
-                    selectionKeySet.add(key);
+                int readTime = 3;
+                while ((readSize = socketChannel.read(session.flushReadBuffer())) >= 0 && --readTime > 0) ;
+                switch (readSize) {
+                    case -1: {
+                        System.out.println("End Of Stream");
+                        session.reachEndOfStream();
+                        session.flushReadBuffer();
+                        break;
+                    }
+                    case 0: {
+                        if (!session.getReadPause().get()) {
+                            key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+                            key.selector().wakeup();//一定要唤醒一次selector
+                        }
+                        session.flushReadBuffer();
+                        break;
+                    }
+                    default: {
+                        selectionKeySet.add(key);
+                    }
                 }
             } catch (Exception e) {
                 key.cancel();
