@@ -32,7 +32,7 @@ public abstract class TransportSession<T> {
     /**
      * 消息读取线程
      */
-    public static final String DATA_READ_THREAD="_read_thread_";
+    public static final String DATA_READ_THREAD = "_read_thread_";
     /**
      * 消息通信协议
      */
@@ -53,6 +53,7 @@ public abstract class TransportSession<T> {
 
     protected int cacheSize;
     private Map<String, Object> attribute = new HashMap<String, Object>();
+    private boolean endOfStream = false;
 
     /**
      * 会话状态
@@ -61,7 +62,8 @@ public abstract class TransportSession<T> {
 
     protected SmartFilterChain<T> chain;
 
-    protected AtomicBoolean readPause=new AtomicBoolean(false);
+    protected AtomicBoolean readPause = new AtomicBoolean(false);
+
     public TransportSession(ByteBuffer readBuffer) {
         this.readBuffer = readBuffer;
     }
@@ -104,6 +106,9 @@ public abstract class TransportSession<T> {
      * 刷新缓存的数据流,对已读取到的数据进行一次协议解码操作
      */
     public ByteBuffer flushReadBuffer() {
+//        if(readBuffer.position()==0){
+//            return readBuffer;
+//        }
         readBuffer.flip();
 
         // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
@@ -170,12 +175,12 @@ public abstract class TransportSession<T> {
     /**
      * 当前会话是否已失效
      */
-    public boolean isValid(){
-        return status==SessionStatusEnum.ENABLED;
+    public boolean isValid() {
+        return status == SessionStatusEnum.ENABLED;
     }
 
     public void invalid() {
-        status=SessionStatusEnum.INVALID;
+        status = SessionStatusEnum.INVALID;
     }
 
     /**
@@ -239,4 +244,15 @@ public abstract class TransportSession<T> {
         return cacheSize;
     }
 
+    public void reachEndOfStream() {
+        endOfStream = true;
+    }
+
+    public boolean isEndOfStream() {
+        return endOfStream;
+    }
+
+    public AtomicBoolean getReadPause() {
+        return readPause;
+    }
 }

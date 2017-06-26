@@ -19,13 +19,13 @@ public class SessionReadThread extends Thread {
     /**
      * 需要进行数据输出的Session集合
      */
-    private ConcurrentLinkedQueue<SelectionKey> newSelectionKeySet1 = new ConcurrentLinkedQueue<SelectionKey>();
+    private ConcurrentLinkedQueue<SelectionKey> newSelectionKeyList1 = new ConcurrentLinkedQueue<SelectionKey>();
     /**
      * 需要进行数据输出的Session集合
      */
-    private ConcurrentLinkedQueue<SelectionKey> newSelectionKeySet2 = new ConcurrentLinkedQueue<SelectionKey>();
+    private ConcurrentLinkedQueue<SelectionKey> newSelectionKeyList2 = new ConcurrentLinkedQueue<SelectionKey>();
     /**
-     * 需要进行数据输出的Session集合存储控制标，true:newSelectionKeySet1,false:newSelectionKeySet2。由此减少锁竞争
+     * 需要进行数据输出的Session集合存储控制标，true:newSelectionKeyList1,false:newSelectionKeyList2。由此减少锁竞争
      */
     private boolean switchFlag = false;
 
@@ -36,9 +36,9 @@ public class SessionReadThread extends Thread {
     public void notifySession(SelectionKey session) {
         session.interestOps(session.interestOps() & ~SelectionKey.OP_READ);
         if (switchFlag) {
-            newSelectionKeySet1.add(session);
+            newSelectionKeyList1.add(session);
         } else {
-            newSelectionKeySet2.add(session);
+            newSelectionKeyList2.add(session);
         }
         if (waitTime != 1) {
             synchronized (this) {
@@ -51,9 +51,9 @@ public class SessionReadThread extends Thread {
     @Override
     public void run() {
         while (true) {
-            if (selectionKeySet.isEmpty() && newSelectionKeySet1.isEmpty() && newSelectionKeySet2.isEmpty()) {
+            if (selectionKeySet.isEmpty() && newSelectionKeyList1.isEmpty() && newSelectionKeyList2.isEmpty()) {
                 synchronized (this) {
-                    if (selectionKeySet.isEmpty() && newSelectionKeySet1.isEmpty() && newSelectionKeySet2.isEmpty()) {
+                    if (selectionKeySet.isEmpty() && newSelectionKeyList1.isEmpty() && newSelectionKeyList2.isEmpty()) {
                         try {
                             long start = System.currentTimeMillis();
                             this.wait(waitTime);
@@ -73,51 +73,10 @@ public class SessionReadThread extends Thread {
             }
 
             if (switchFlag) {
-//                synchronized (newSelectionKeySet2) {
-                while(true){
-                    SelectionKey key = newSelectionKeySet2.poll();
-                    if(key==null){
-                        break;
-                    }
-                    try {
-                        SocketChannel socketChannel = (SocketChannel) key.channel();
-                        NioAttachment attach = (NioAttachment) key.attachment();
-                        NioSession<?> session = attach.getSession();
-                        //未读到数据则关注读
-                        int readSize = 0;
-                        if ((readSize = socketChannel.read(session.flushReadBuffer())) == 0) {
-                            key.interestOps(key.interestOps() | SelectionKey.OP_READ);
-                            key.selector().wakeup();//一定要唤醒一次selector
-                        } else if (readSize > 0) {
-                            selectionKeySet.add(key);
-                        }
-                    } catch (Exception e) {
-                        key.cancel();
-                    }
-                }
+                readSelectionKeyList(newSelectionKeyList2);
 
             } else {
-                while(true){
-                    SelectionKey key = newSelectionKeySet1.poll();
-                    if(key==null){
-                        break;
-                    }
-                    try {
-                        SocketChannel socketChannel = (SocketChannel) key.channel();
-                        NioAttachment attach = (NioAttachment) key.attachment();
-                        NioSession<?> session = attach.getSession();
-                        //未读到数据则关注读
-                        int readSize = 0;
-                        if ((readSize = socketChannel.read(session.flushReadBuffer())) == 0) {
-                            key.interestOps(key.interestOps() | SelectionKey.OP_READ);
-                            key.selector().wakeup();//一定要唤醒一次selector
-                        } else if (readSize > 0) {
-                            selectionKeySet.add(key);
-                        }
-                    } catch (Exception e) {
-                        key.cancel();
-                    }
-                }
+                readSelectionKeyList(newSelectionKeyList1);
             }
             switchFlag = !switchFlag;
             connectNums = selectionKeySet.size();
@@ -132,14 +91,18 @@ public class SessionReadThread extends Thread {
                     NioSession<?> session = attach.getSession();
                     //未读到数据则关注读
                     int readSize = 0;
-                    if ((readSize = socketChannel.read(session.flushReadBuffer())) == 0) {
+                    if ((readSize = socketChannel.read(session.flushReadBuffer())) == 0 && (readSize = socketChannel.read(session.flushReadBuffer())) == 0) {
                         if (attach.tryRead++ > 10) {
-                            key.interestOps(key.interestOps() | SelectionKey.OP_READ);
-                            key.selector().wakeup();//一定要唤醒一次selector
+                            if (!session.getReadPause().get()) {
+                                key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+                                key.selector().wakeup();//一定要唤醒一次selector
+                            }
                             iterator.remove();
                         }
-
                     } else if (readSize == -1) {
+                        session.flushReadBuffer();
+                        System.out.println("End Of Stream");
+                        session.reachEndOfStream();
                         iterator.remove();
                     } else {
                         attach.tryRead = 0;
@@ -152,6 +115,34 @@ public class SessionReadThread extends Thread {
                 waitTime = 1;
             }
 
+        }
+    }
+
+    private void readSelectionKeyList(ConcurrentLinkedQueue<SelectionKey> keyList) {
+        while (true) {
+            SelectionKey key = keyList.poll();
+            if (key == null) {
+                break;
+            }
+            try {
+                SocketChannel socketChannel = (SocketChannel) key.channel();
+                NioAttachment attach = (NioAttachment) key.attachment();
+                NioSession<?> session = attach.getSession();
+                //未读到数据则关注读
+                int readSize = 0;
+                if ((readSize = socketChannel.read(session.flushReadBuffer())) == 0 && (readSize = socketChannel.read(session.flushReadBuffer())) == 0) {
+                    key.interestOps(key.interestOps() | SelectionKey.OP_READ);
+                    key.selector().wakeup();//一定要唤醒一次selector
+                } else if (readSize == -1) {
+                    session.flushReadBuffer();
+                    session.reachEndOfStream();
+                    System.out.println("readSize is -1");
+                } else if (readSize > 0) {
+                    selectionKeySet.add(key);
+                }
+            } catch (Exception e) {
+                key.cancel();
+            }
         }
     }
 
