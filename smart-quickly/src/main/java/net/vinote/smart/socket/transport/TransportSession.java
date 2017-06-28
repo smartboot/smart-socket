@@ -247,6 +247,7 @@ public abstract class TransportSession<T> {
 
     public void reachEndOfStream() {
         endOfStream = true;
+
     }
 
     public boolean isEndOfStream() {

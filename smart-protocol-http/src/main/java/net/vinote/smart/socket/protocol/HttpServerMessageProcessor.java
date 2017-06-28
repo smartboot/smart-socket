@@ -17,14 +17,14 @@ public final class HttpServerMessageProcessor extends AbstractServerDataGroupPro
 
     @Override
     public void process(Session<HttpEntity> session, HttpEntity entry) throws Exception {
-        for (HeadLine line : entry.getHeader().lineList) {
-            System.out.println(line.getLine());
+        for (String key : entry.getHeadMap().keySet()) {
+            System.out.println(key + ": " + entry.getHeadMap().get(key));
         }
         byte[] data = new byte[1024];
         InputStream in = entry.getBodyStream();
         int length = 0;
-        while (in.available()>0&&(length = in.read(data, 0, in.available())) != -1) {
-            System.out.println(new String(data, 0, length));
+        while ((length = in.read(data)) != -1) {
+            System.out.print(new String(data, 0, length));
         }
         session.sendWithoutResponse(null);
         System.out.println("body");

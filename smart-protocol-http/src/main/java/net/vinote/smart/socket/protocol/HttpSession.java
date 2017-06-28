@@ -163,7 +163,7 @@ public class HttpSession implements Session<HttpEntity> {
                 "Server: nginx/1.4.4\n" +
                 "Date: Mon, 26 Jun 2017 14:37:00 GMT\n" +
                 "Content-Type: application/json\n" +
-//                "Transfer-Encoding: chunked\n" +
+                "Transfer-Encoding: chunked\n" +
                 "Connection: keep-alive\n" +
                 "X-ASEN: YOU MAKE ME A SAD PANDA.\n" +
                 "X-Seraph-LoginReason: OK\n" +
@@ -173,7 +173,7 @@ public class HttpSession implements Session<HttpEntity> {
                 "\n" +
                 "29\n" +
                 "{\"count\":0,\"timeout\":30,\"maxTimeout\":300}\n" +
-                "0").getBytes());
+                "0\n").getBytes());
         session.write(buffer);
         session.close(false);
 //        throw new UnsupportedOperationException();
