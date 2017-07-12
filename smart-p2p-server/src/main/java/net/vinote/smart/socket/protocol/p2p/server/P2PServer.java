@@ -12,6 +12,8 @@ import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.processor.DetectMessageHandler;
 import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.transport.ChannelService;
+import net.vinote.smart.socket.transport.aio.AioQuickServer;
 import net.vinote.smart.socket.transport.nio.NioQuickServer;
 
 public class P2PServer {
@@ -34,7 +36,8 @@ public class P2PServer {
 		P2PServerMessageProcessor processor = new P2PServerMessageProcessor(messageFactory);
 		config.setProcessor(processor);// 定义P2P协议的处理器,可以自定义
 //		config.setQueueOverflowStrategy(QueueOverflowStrategy.DISCARD.name());
-		NioQuickServer<BaseMessage> server = new NioQuickServer<BaseMessage>(config);
+//		NioQuickServer<BaseMessage> server = new NioQuickServer<BaseMessage>(config);
+		NioQuickServer<BaseMessage> server=new NioQuickServer<BaseMessage>(config);
 		try {
 			server.start();
 		} catch (IOException e) {

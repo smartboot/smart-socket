@@ -146,9 +146,11 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
                     if (unit.session.isValid()) {
                         AbstractServerDataGroupProcessor.this.process(session, unit.msg);
                     } else {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("session invliad,discard message:" + unit.msg);
+                        if (logger.isInfoEnabled()) {
+                            logger.info("session invliad,discard message:" + unit.msg);
                         }
+                        System.out.println(unit.session.getStatus());
+                        System.exit(0);
                     }
                 } catch (Exception e) {
                     if (running) {

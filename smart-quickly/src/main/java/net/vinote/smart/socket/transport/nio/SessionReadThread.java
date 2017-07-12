@@ -33,12 +33,12 @@ public class SessionReadThread extends Thread {
 
     private int connectNums = 0;
 
-    public void notifySession(SelectionKey session) {
-        session.interestOps(session.interestOps() & ~SelectionKey.OP_READ);
+    public void notifySession(SelectionKey selectionKey) {
+        selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_READ);
         if (switchFlag) {
-            newSelectionKeyList1.add(session);
+            newSelectionKeyList1.add(selectionKey);
         } else {
-            newSelectionKeyList2.add(session);
+            newSelectionKeyList2.add(selectionKey);
         }
         if (waitTime != 1) {
             synchronized (this) {
@@ -96,8 +96,7 @@ public class SessionReadThread extends Thread {
                     switch (readSize) {
                         case -1: {
                             System.out.println("End Of Stream");
-                            session.reachEndOfStream();
-                            session.flushReadBuffer();
+                            session.shutdownInput();
                             iterator.remove();
                             break;
                         }
@@ -105,17 +104,15 @@ public class SessionReadThread extends Thread {
                             if (!session.getReadPause().get()) {
                                 key.interestOps(key.interestOps() | SelectionKey.OP_READ);
                                 key.selector().wakeup();//一定要唤醒一次selector
-                                System.out.println("Wake Up Read1");
+//                                System.out.println("Wake Up Read1");
                             }
-                            session.flushReadBuffer();
                             iterator.remove();
                             break;
                         }
-                        default: {
-                            session.flushReadBuffer();
-                        }
                     }
+                    session.flushReadBuffer();
                 } catch (Exception e) {
+                    logger.catching(e);
                     key.cancel();
                     iterator.remove();
                 }
@@ -142,7 +139,7 @@ public class SessionReadThread extends Thread {
                 switch (readSize) {
                     case -1: {
                         System.out.println("End Of Stream");
-                        session.reachEndOfStream();
+                        session.shutdownInput();
                         session.flushReadBuffer();
                         break;
                     }
@@ -150,7 +147,7 @@ public class SessionReadThread extends Thread {
                         if (!session.getReadPause().get()) {
                             key.interestOps(key.interestOps() | SelectionKey.OP_READ);
                             key.selector().wakeup();//一定要唤醒一次selector
-                            System.out.println("Wake Up Read");
+//                            System.out.println("Wake Up Read");
                         }
                         session.flushReadBuffer();
                         break;
@@ -160,6 +157,7 @@ public class SessionReadThread extends Thread {
                     }
                 }
             } catch (Exception e) {
+                logger.catching(e);
                 key.cancel();
             }
         }

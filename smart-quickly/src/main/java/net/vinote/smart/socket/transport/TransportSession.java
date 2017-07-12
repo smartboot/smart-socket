@@ -53,8 +53,15 @@ public abstract class TransportSession<T> {
 
     protected int cacheSize;
     private Map<String, Object> attribute = new HashMap<String, Object>();
-    private boolean endOfStream = false;
+    /**
+     * 读管道是否已关闭
+     */
+    private boolean readShutdown = false;
 
+    /**
+     * 暂停读操作,常用于流控
+     */
+    protected AtomicBoolean readPause = new AtomicBoolean(false);
     /**
      * 会话状态
      */
@@ -62,7 +69,6 @@ public abstract class TransportSession<T> {
 
     protected SmartFilterChain<T> chain;
 
-    protected AtomicBoolean readPause = new AtomicBoolean(false);
 
     public TransportSession(ByteBuffer readBuffer) {
         this.readBuffer = readBuffer;
@@ -245,12 +251,8 @@ public abstract class TransportSession<T> {
         return cacheSize;
     }
 
-    public void reachEndOfStream() {
-        endOfStream = true;
-    }
-
-    public boolean isEndOfStream() {
-        return endOfStream;
+    public void shutdownInput() {
+        readShutdown = true;
     }
 
     public AtomicBoolean getReadPause() {

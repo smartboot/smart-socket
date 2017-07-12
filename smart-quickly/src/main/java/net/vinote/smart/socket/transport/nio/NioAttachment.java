@@ -10,10 +10,6 @@ package net.vinote.smart.socket.transport.nio;
 	/** 当前管道的Session对象 */
 	private NioSession<?> session;
 
-	private int curSelectionOP;
-
-	 int tryRead=0;
-
 	public NioAttachment(NioSession<?> session) {
 		this.session = session;
 	}
@@ -25,25 +21,6 @@ package net.vinote.smart.socket.transport.nio;
 	 */
 	public final NioSession<?> getSession() {
 		return session;
-	}
-
-	/**
-	 * Getter method for property <tt>curSelectionOP</tt>.
-	 *
-	 * @return property value of curSelectionOP
-	 */
-	public final int getCurSelectionOP() {
-		return curSelectionOP;
-	}
-
-	/**
-	 * Setter method for property <tt>curSelectionOP</tt>.
-	 *
-	 * @param curSelectionOP
-	 *            value to be assigned to property curSelectionOP
-	 */
-	public final void setCurSelectionOP(int curSelectionOP) {
-		this.curSelectionOP = curSelectionOP;
 	}
 
 }

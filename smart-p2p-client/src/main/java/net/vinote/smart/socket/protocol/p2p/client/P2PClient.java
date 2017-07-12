@@ -53,13 +53,13 @@ public class P2PClient {
 						try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
 //								.sendWithResponse(request);
-							 processor.getSession().sendWithoutResponse(request);
+							 processor.getSession().sendWithResponse(request);
 //							 Thread.sleep(1);
 							// logger.info(loginResp);
 						} catch (Exception e) {
 							System.out.println(num);
 							e.printStackTrace();
-//							System.exit(0);
+							System.exit(0);
 						}
 					}
 					logger.info("安全消息结束" + (System.currentTimeMillis() - start));

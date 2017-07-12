@@ -19,11 +19,12 @@ public class DetectRespMessageHandler extends MessageHandler {
 
     @Override
     public void handler(Session<BaseMessage> session, BaseMessage message) {
+//        System.out.println("handler message:"+message);
         DetectMessageResp msg = (DetectMessageResp) message;
         long useTime = System.currentTimeMillis() - msg.getSendTime();
         if (useTime > max) {
             max = useTime;
-            if (max > 1000 && (System.currentTimeMillis() - outTime) > 1000) {
+            if ( (System.currentTimeMillis() - outTime) > 1000) {
                 outTime = System.currentTimeMillis();
                 System.out.println(max);
             }

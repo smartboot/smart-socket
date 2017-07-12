@@ -78,8 +78,6 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
             readThread = readThreads[index];
             attach.getSession().setAttribute(TransportSession.DATA_READ_THREAD, readThread);
         }
-        //先取消读关注
-//        key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
         readThread.notifySession(key);
     }
 

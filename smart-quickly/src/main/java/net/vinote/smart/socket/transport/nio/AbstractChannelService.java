@@ -3,9 +3,7 @@ package net.vinote.smart.socket.transport.nio;
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.transport.ChannelService;
-import net.vinote.smart.socket.transport.TransportSession;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,7 +11,6 @@ import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -92,7 +89,6 @@ abstract class AbstractChannelService<T> implements ChannelService {
                 attach = (NioAttachment) key.attachment();
                 // 读取客户端数据
                 if (key.isReadable()) {
-                    attach.setCurSelectionOP(SelectionKey.OP_READ);
                     readFromChannel(key, attach);
                 }/* else if (key.isWritable()) {// 输出数据至客户端
                     attach.setCurSelectionOP(SelectionKey.OP_WRITE);
@@ -107,8 +103,6 @@ abstract class AbstractChannelService<T> implements ChannelService {
             } finally {
                 // 移除已处理的事件
                 keyIterator.remove();
-                if (attach != null)
-                    attach.setCurSelectionOP(0);
             }
         }
     }
