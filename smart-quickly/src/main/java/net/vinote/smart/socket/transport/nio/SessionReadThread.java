@@ -88,7 +88,7 @@ public class SessionReadThread extends Thread {
                 try {
                     SocketChannel socketChannel = (SocketChannel) key.channel();
                     NioAttachment attach = (NioAttachment) key.attachment();
-                    NioSession<?> session = attach.getSession();
+                    NioChannel<?> session = attach.getSession();
                     //未读到数据则关注读
                     int readSize = 0;
                     int readTime = 3;
@@ -105,7 +105,6 @@ public class SessionReadThread extends Thread {
                             if (!session.getReadPause().get()) {
                                 key.interestOps(key.interestOps() | SelectionKey.OP_READ);
                                 key.selector().wakeup();//一定要唤醒一次selector
-                                System.out.println("Wake Up Read1");
                             }
                             session.flushReadBuffer();
                             iterator.remove();
@@ -134,7 +133,7 @@ public class SessionReadThread extends Thread {
             try {
                 SocketChannel socketChannel = (SocketChannel) key.channel();
                 NioAttachment attach = (NioAttachment) key.attachment();
-                NioSession<?> session = attach.getSession();
+                NioChannel<?> session = attach.getSession();
                 //未读到数据则关注读
                 int readSize = 0;
                 int readTime = 3;
@@ -150,7 +149,6 @@ public class SessionReadThread extends Thread {
                         if (!session.getReadPause().get()) {
                             key.interestOps(key.interestOps() | SelectionKey.OP_READ);
                             key.selector().wakeup();//一定要唤醒一次selector
-                            System.out.println("Wake Up Read");
                         }
                         session.flushReadBuffer();
                         break;

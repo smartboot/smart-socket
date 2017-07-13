@@ -9,7 +9,7 @@ import net.vinote.smart.socket.service.Session;
  * @author Seer
  * @version ProtocolDataProcessor.java, v 0.1 2015年3月13日 下午3:26:55 Seer Exp.
  */
-public interface ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
+public interface  ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
 
 	/**
 	 * 初始化处理器

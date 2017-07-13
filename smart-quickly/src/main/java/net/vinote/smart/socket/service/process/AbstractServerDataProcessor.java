@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.TransportChannel;
 
 /**
  * 服务器消息处理器,由服务器启动时构造
@@ -41,7 +41,7 @@ public abstract class AbstractServerDataProcessor<T> implements ProtocolDataProc
 	}
 
 	@Override
-	public boolean receive(TransportSession<T> session, T entry) {
+	public boolean receive(TransportChannel<T> session, T entry) {
 		// return msgQueue.offer(new ProcessUnit(session, entry));
 		try {
 			ProcessUnit unit=new ProcessUnit(session, entry);
@@ -71,10 +71,10 @@ public abstract class AbstractServerDataProcessor<T> implements ProtocolDataProc
 	 *
 	 */
 	final class ProcessUnit {
-		TransportSession<T> session;
+		TransportChannel<T> session;
 		T msg;
 
-		public ProcessUnit(TransportSession<T> session, T msg) {
+		public ProcessUnit(TransportChannel<T> session, T msg) {
 			this.session = session;
 			this.msg = msg;
 		}

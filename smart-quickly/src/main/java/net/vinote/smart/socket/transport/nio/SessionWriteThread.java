@@ -16,15 +16,15 @@ import java.util.Set;
  */
 public class SessionWriteThread extends Thread {
     private static final Logger logger = LogManager.getLogger(SessionWriteThread.class);
-    private List<NioSession> sessionSet = new ArrayList<NioSession>();
+    private List<NioChannel> sessionSet = new ArrayList<NioChannel>();
     /**
      * 需要进行数据输出的Session集合
      */
-    private Set<NioSession> newSessionSet1 = new HashSet<NioSession>();
+    private Set<NioChannel> newSessionSet1 = new HashSet<NioChannel>();
     /**
      * 需要进行数据输出的Session集合
      */
-    private Set<NioSession> newSessionSet2 = new HashSet<NioSession>();
+    private Set<NioChannel> newSessionSet2 = new HashSet<NioChannel>();
     /**
      * 需要进行数据输出的Session集合存储控制标，true:newSessionSet1,false:newSessionSet2。由此减少锁竞争
      */
@@ -32,7 +32,7 @@ public class SessionWriteThread extends Thread {
 
     private int waitTime = 1;
 
-    public void notifySession(NioSession session) {
+    public void notifySession(NioChannel session) {
         if (switchFlag) {
             synchronized (newSessionSet1) {
                 newSessionSet1.add(session);
@@ -85,10 +85,10 @@ public class SessionWriteThread extends Thread {
             }
             switchFlag = !switchFlag;
 
-            Iterator<NioSession> iterator = sessionSet.iterator();
-            Set<NioSession> removeSession = new HashSet<NioSession>();
+            Iterator<NioChannel> iterator = sessionSet.iterator();
+            Set<NioChannel> removeSession = new HashSet<NioChannel>();
             while (iterator.hasNext()) {
-                NioSession session = iterator.next();
+                NioChannel session = iterator.next();
                 try {
                     session.flushWriteBuffer(3);
                     if (session.getWriteBuffer() == null) {

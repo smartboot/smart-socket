@@ -8,13 +8,13 @@ package net.vinote.smart.socket.transport.nio;
  */
  class NioAttachment {
 	/** 当前管道的Session对象 */
-	private NioSession<?> session;
+	private NioChannel<?> session;
 
 	private int curSelectionOP;
 
 	 int tryRead=0;
 
-	public NioAttachment(NioSession<?> session) {
+	public NioAttachment(NioChannel<?> session) {
 		this.session = session;
 	}
 
@@ -23,7 +23,7 @@ package net.vinote.smart.socket.transport.nio;
 	 *
 	 * @return property value of session
 	 */
-	public final NioSession<?> getSession() {
+	public final NioChannel<?> getSession() {
 		return session;
 	}
 

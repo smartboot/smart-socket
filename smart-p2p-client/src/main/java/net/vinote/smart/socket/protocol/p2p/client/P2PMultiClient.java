@@ -41,6 +41,7 @@ public class P2PMultiClient {
                     config.setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()});
                     config.setHost("127.0.0.1");
                     config.setTimeout(1000);
+                    config.setThreadNum(1);
 
                     NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>(config);
                     client.start();
