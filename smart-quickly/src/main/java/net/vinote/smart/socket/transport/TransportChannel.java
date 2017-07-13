@@ -1,14 +1,14 @@
 package net.vinote.smart.socket.transport;
 
+import net.vinote.smart.socket.protocol.Protocol;
+import net.vinote.smart.socket.service.filter.SmartFilterChain;
+import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import net.vinote.smart.socket.protocol.Protocol;
-import net.vinote.smart.socket.service.filter.SmartFilterChain;
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 
 /**
  * 传输层会话<br/>
@@ -17,7 +17,7 @@ import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
  * @author Seer
  * @version TransportSession.java, v 0.1 2015年8月24日 上午10:31:38 Seer Exp.
  */
-public abstract class TransportSession<T> {
+public abstract class TransportChannel<T> {
 
     /**
      * 会话ID
@@ -33,6 +33,8 @@ public abstract class TransportSession<T> {
      * 消息读取线程
      */
     public static final String DATA_READ_THREAD = "_read_thread_";
+
+    public static final String DATA_WRITE_THREAD = "_write_thread_";
     /**
      * 消息通信协议
      */
@@ -64,7 +66,7 @@ public abstract class TransportSession<T> {
 
     protected AtomicBoolean readPause = new AtomicBoolean(false);
 
-    public TransportSession(ByteBuffer readBuffer) {
+    public TransportChannel(ByteBuffer readBuffer) {
         this.readBuffer = readBuffer;
     }
 
@@ -85,7 +87,7 @@ public abstract class TransportSession<T> {
      */
     public void close(boolean immediate) {
         if (immediate) {
-            synchronized (TransportSession.this) {
+            synchronized (TransportChannel.this) {
                 close0();
                 status = SessionStatusEnum.CLOSED;
             }
@@ -202,6 +204,10 @@ public abstract class TransportSession<T> {
      * @throws Exception
      */
     public abstract void write(ByteBuffer data) throws IOException;
+
+    public final void write(T t) throws IOException {
+        write(protocol.encode(t, this));
+    }
 
     /**
      * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理

@@ -3,9 +3,7 @@ package net.vinote.smart.socket.transport.nio;
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.transport.ChannelService;
-import net.vinote.smart.socket.transport.TransportSession;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,7 +11,6 @@ import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -44,10 +41,18 @@ abstract class AbstractChannelService<T> implements ChannelService {
      * 读管道单论操作读取次数
      */
     final int READ_LOOP_TIMES;
+    //数据读取线程
+    protected SessionWriteThread[] writeThreads;
 
     public AbstractChannelService(final QuicklyConfig<T> config) {
         this.config = config;
         READ_LOOP_TIMES = config.getReadLoopTimes();
+        writeThreads = new SessionWriteThread[config.getThreadNum()];
+        for (int i = 0; i < writeThreads.length; i++) {
+            writeThreads[i] = new SessionWriteThread();
+            writeThreads[i].setName("SessionReadThread-" + System.currentTimeMillis());
+            writeThreads[i].start();
+        }
     }
 
     /*

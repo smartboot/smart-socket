@@ -4,6 +4,7 @@ import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.service.process.AbstractServerDataProcessor;
+import net.vinote.smart.socket.transport.TransportChannel;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 import org.apache.logging.log4j.LogManager;
@@ -31,7 +32,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
     /**
      * 客户端会话信息
      */
-    private NioSession<T> session;
+    private NioChannel<T> session;
 
     private SocketChannel socketChannel;
 
@@ -59,9 +60,10 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
             session.initBaseChannelInfo(key);
             logger.info("Socket link has been recovered!");
         } else {
-            session = new NioSession<T>(key, config);
+            session = new NioChannel<T>(key, config);
             logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
             session.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(session));
+            session.setAttribute(TransportChannel.DATA_WRITE_THREAD, writeThreads[0]);
             key.attach(new NioAttachment(session));
             synchronized (conenctLock) {
                 conenctLock.notifyAll();
@@ -78,7 +80,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
      */
     protected void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException {
         SocketChannel socketChannel = (SocketChannel) key.channel();
-        NioSession<?> session = attach.getSession();
+        NioChannel<?> session = attach.getSession();
         int readSize = 0;
         int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
         while ((readSize = socketChannel.read(session.flushReadBuffer())) > 0 && --loopTimes > 0)

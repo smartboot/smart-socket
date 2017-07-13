@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.TransportChannel;
 
 /**
  * 服务器监测定时器
@@ -45,37 +45,37 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
 		return TimeUnit.MINUTES.toMillis(1);
 	}
 
-	public void processFilter(TransportSession<T> session, T d) {
+	public void processFilter(TransportChannel<T> session, T d) {
 		processMsgNum.incrementAndGet();
 		messageStorage.decrementAndGet();
 		totleProcessMsgNum++;
 	}
 
-	public void readFilter(TransportSession<T> session, T d) {
-		int length = session.getAttribute(TransportSession.ATTRIBUTE_KEY_CUR_DATA_LENGTH);
+	public void readFilter(TransportChannel<T> session, T d) {
+		int length = session.getAttribute(TransportChannel.ATTRIBUTE_KEY_CUR_DATA_LENGTH);
 		flow.addAndGet(length);
 		recMsgnum.incrementAndGet();
 		messageStorage.incrementAndGet();
 	}
 
-	public void receiveFailHandler(TransportSession<T> session, T d) {
+	public void receiveFailHandler(TransportChannel<T> session, T d) {
 		discardNum.incrementAndGet();
 		messageStorage.decrementAndGet();
 		// logger.info("HexData -->" + StringUtils.toHexString((byte[])d));
 	}
 
 	@Override
-	public void beginWriteFilter(TransportSession<T> session, ByteBuffer d) {
+	public void beginWriteFilter(TransportChannel<T> session, ByteBuffer d) {
 
 	}
 
 	@Override
-	public void continueWriteFilter(TransportSession<T> session, ByteBuffer d) {
+	public void continueWriteFilter(TransportChannel<T> session, ByteBuffer d) {
 
 	}
 
 	@Override
-	public void finishWriteFilter(TransportSession<T> session, ByteBuffer d) {
+	public void finishWriteFilter(TransportChannel<T> session, ByteBuffer d) {
 
 	}
 

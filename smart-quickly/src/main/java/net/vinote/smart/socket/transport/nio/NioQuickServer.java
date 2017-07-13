@@ -4,7 +4,7 @@ import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.service.process.AbstractServerDataProcessor;
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.TransportChannel;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,10 +51,19 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
         SocketChannel socketChannel = serverChannel.accept();
         socketChannel.configureBlocking(false);
         SelectionKey socketKey = socketChannel.register(selector, SelectionKey.OP_READ);
-        NioSession<T> nioSession = new NioSession<T>(socketKey, config);
+        NioChannel<T> nioSession = new NioChannel<T>(socketKey, config);
         socketKey.attach(new NioAttachment(nioSession));
-        socketChannel.finishConnect();
+        //线程选举
+        int index = 0;
+        for (int i = readThreads.length - 1; i > 0; i--) {
+            if (readThreads[i].getConnectNums() < readThreads[index].getConnectNums()) {
+                index = i;
+            }
+        }
+        nioSession.setAttribute(TransportChannel.DATA_READ_THREAD, readThreads[index]);
+        nioSession.setAttribute(TransportChannel.DATA_WRITE_THREAD, writeThreads[index]);
         nioSession.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
+        socketChannel.finishConnect();
         System.out.println(socketChannel);
     }
 
@@ -66,18 +75,7 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
      * @throws IOException
      */
     protected void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException {
-        SessionReadThread readThread = attach.getSession().getAttribute(TransportSession.DATA_READ_THREAD);
-        //线程选举
-        if (readThread == null) {
-            int index = 0;
-            for (int i = readThreads.length - 1; i > 0; i--) {
-                if (readThreads[i].getConnectNums() < readThreads[index].getConnectNums()) {
-                    index = i;
-                }
-            }
-            readThread = readThreads[index];
-            attach.getSession().setAttribute(TransportSession.DATA_READ_THREAD, readThread);
-        }
+        SessionReadThread readThread = attach.getSession().getAttribute(TransportChannel.DATA_READ_THREAD);
         //先取消读关注
 //        key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
         readThread.notifySession(key);
