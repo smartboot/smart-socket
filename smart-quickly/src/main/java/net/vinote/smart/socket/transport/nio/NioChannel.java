@@ -9,8 +9,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -32,24 +30,13 @@ public class NioChannel<T> extends TransportChannel<T> {
      */
     private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
 
-    private String remoteIp;
-    private String remoteHost;
-    private int remotePort;
-
-    private String localAddress;
-//    static ThreadLocal<SessionWriteThread> writeThread = new ThreadLocal<SessionWriteThread>() {
-//        @Override
-//        protected SessionWriteThread initialValue() {
-//            SessionWriteThread thread = new SessionWriteThread();
-//            thread.setName("SessionWriteThread-" + System.currentTimeMillis());
-//            thread.start();
-//            return thread;
-//        }
-//    };
     /**
      * 是否已注销读关注
      */
     private boolean readClosed = false;
+
+    SessionWriteThread sessionWriteThread;
+    SessionReadThread sessionReadThread;
 
     /**
      * @param channelKey 当前的Socket管道
@@ -109,24 +96,34 @@ public class NioChannel<T> extends TransportChannel<T> {
         }
     }
 
-    @Override
-    public String getLocalAddress() {
-        return localAddress;
-    }
 
-    @Override
-    public String getRemoteAddr() {
-        return remoteIp;
-    }
+    public int read(int readTimes) throws IOException {
+        SocketChannel socketChannel = (SocketChannel) channelKey.channel();
+        int readSize=0;
+        while (readTimes-- > 0) {
+            readSize = socketChannel.read(readBuffer);
+            if(readSize==0||readSize==-1){
+                break;
+            }
+            readBuffer.flip();
 
-    @Override
-    public String getRemoteHost() {
-        return remoteHost;
-    }
+            // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
+            T dataEntry;
+            while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
+                chain.doReadFilter(this, dataEntry);
+            }
+            //数据读取完毕
+            if (readBuffer.remaining() == 0) {
+                readBuffer.clear();
+            } else if (readBuffer.position() > 0) {// 仅当发生数据读取时调用compact,减少内存拷贝
+                readBuffer.compact();
+            } else {
+                readBuffer.position(readBuffer.limit());
+                readBuffer.limit(readBuffer.capacity());
+            }
+        }
 
-    @Override
-    public int getRemotePort() {
-        return remotePort;
+        return readSize;
     }
 
     /**
@@ -176,12 +173,6 @@ public class NioChannel<T> extends TransportChannel<T> {
     }
 
     void initBaseChannelInfo(SelectionKey channelKey) {
-        Socket socket = ((SocketChannel) channelKey.channel()).socket();
-        InetSocketAddress remoteAddr = (InetSocketAddress) socket.getRemoteSocketAddress();
-        remoteIp = remoteAddr.getAddress().getHostAddress();
-        localAddress = socket.getLocalAddress().getHostAddress();
-        remotePort = remoteAddr.getPort();
-        remoteHost = remoteAddr.getHostName();
         this.channelKey = channelKey;
     }
 
@@ -190,7 +181,7 @@ public class NioChannel<T> extends TransportChannel<T> {
     public final void pauseReadAttention() {
         if (!readPause.get() && (channelKey.interestOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
             channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
-            logger.info(getRemoteAddr() + ":" + getRemotePort() + "流控");
+//            logger.info(getRemoteAddr() + ":" + getRemotePort() + "流控");
             readPause.set(true);
         }
     }
@@ -203,7 +194,7 @@ public class NioChannel<T> extends TransportChannel<T> {
         if ((channelKey.interestOps() & SelectionKey.OP_READ) != SelectionKey.OP_READ) {
             channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_READ);
             if (logger.isDebugEnabled()) {
-                logger.debug(getRemoteAddr() + ":" + getRemotePort() + "释放流控");
+//                logger.debug(getRemoteAddr() + ":" + getRemotePort() + "释放流控");
             }
         }
     }
@@ -250,8 +241,7 @@ public class NioChannel<T> extends TransportChannel<T> {
 //            }
 //        }
         boolean suc = writeCacheQueue.offer(buffer);
-        SessionWriteThread thread=getAttribute(DATA_WRITE_THREAD);
-        thread.notifySession(this);
+        sessionWriteThread.notifySession(this);
         if (!suc) {
             try {
                 writeCacheQueue.put(buffer);

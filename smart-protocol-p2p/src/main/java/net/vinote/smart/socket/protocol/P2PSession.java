@@ -40,8 +40,8 @@ public class P2PSession implements Session<BaseMessage> {
 
 	public P2PSession(TransportChannel<BaseMessage> session) {
 		sessionId = session.getSessionID();
-		remoteIp = session.getRemoteAddr();
-		localAddress = session.getLocalAddress();
+//		remoteIp = session.getRemoteAddr();
+//		localAddress = session.getLocalAddress();
 		this.session = session;
 		maxInactiveInterval = session.getTimeout();
 		synchRespMap = new ConcurrentHashMap<Integer, BaseMessage>();
