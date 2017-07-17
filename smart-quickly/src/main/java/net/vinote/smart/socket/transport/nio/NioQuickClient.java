@@ -4,7 +4,6 @@ import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.service.process.AbstractServerDataProcessor;
-import net.vinote.smart.socket.transport.TransportChannel;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
 import org.apache.logging.log4j.LogManager;
@@ -63,7 +62,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
             session = new NioChannel<T>(key, config);
             logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
             session.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(session));
-            session.setAttribute(TransportChannel.DATA_WRITE_THREAD, writeThreads[0]);
+            session.sessionWriteThread = writeThreads[0];
             key.attach(new NioAttachment(session));
             synchronized (conenctLock) {
                 conenctLock.notifyAll();

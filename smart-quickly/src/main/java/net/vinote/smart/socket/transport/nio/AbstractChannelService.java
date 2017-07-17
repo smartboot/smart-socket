@@ -50,7 +50,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
         writeThreads = new SessionWriteThread[config.getThreadNum()];
         for (int i = 0; i < writeThreads.length; i++) {
             writeThreads[i] = new SessionWriteThread();
-            writeThreads[i].setName("SessionReadThread-" + System.currentTimeMillis());
+            writeThreads[i].setName("SessionWriteThread-" + System.currentTimeMillis());
             writeThreads[i].start();
         }
     }

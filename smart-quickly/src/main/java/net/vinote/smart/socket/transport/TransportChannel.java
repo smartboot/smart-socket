@@ -32,9 +32,9 @@ public abstract class TransportChannel<T> {
     /**
      * 消息读取线程
      */
-    public static final String DATA_READ_THREAD = "_read_thread_";
-
-    public static final String DATA_WRITE_THREAD = "_write_thread_";
+//    public static final String DATA_READ_THREAD = "_read_thread_";
+//
+//    public static final String DATA_WRITE_THREAD = "_write_thread_";
     /**
      * 消息通信协议
      */
@@ -51,7 +51,7 @@ public abstract class TransportChannel<T> {
     /**
      * 缓存传输层读取到的数据流
      */
-    private ByteBuffer readBuffer;
+    protected ByteBuffer readBuffer;
 
     protected int cacheSize;
     private Map<String, Object> attribute = new HashMap<String, Object>();
@@ -131,27 +131,12 @@ public abstract class TransportChannel<T> {
         return readBuffer;
     }
 
-    public abstract String getLocalAddress();
+    public ByteBuffer getReadBuffer(){
+        return readBuffer;
+    }
 
-    /**
-     * Returns the Internet Protocol (IP) address of the client or last proxy
-     * that sent the request
-     *
-     * @return
-     */
-    public abstract String getRemoteAddr();
 
-    /**
-     * Returns the fully qualified name of the client or the last proxy that
-     * sent the request. If the engine cannot or chooses not to resolve the
-     * hostname (to improve performance), this method returns the dotted-string
-     * form of the IP address
-     *
-     * @return
-     */
-    public abstract String getRemoteHost();
 
-    public abstract int getRemotePort();
 
     /**
      * 获取当前Session的唯一标识

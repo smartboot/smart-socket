@@ -15,6 +15,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * NIO服务器
@@ -27,6 +29,10 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
     //数据读取线程
     private SessionReadThread[] readThreads;
 
+    private Executor executor = Executors.newSingleThreadExecutor();
+
+    int num = 0;
+    long start=0;
     public NioQuickServer(final QuicklyConfig<T> config) {
         super(config);
         readThreads = new SessionReadThread[config.getThreadNum()];
@@ -46,25 +52,52 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
      */
     @Override
     protected void acceptConnect(final SelectionKey key, final Selector selector) throws IOException {
-
         ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel();
-        SocketChannel socketChannel = serverChannel.accept();
-        socketChannel.configureBlocking(false);
-        SelectionKey socketKey = socketChannel.register(selector, SelectionKey.OP_READ);
-        NioChannel<T> nioSession = new NioChannel<T>(socketKey, config);
-        socketKey.attach(new NioAttachment(nioSession));
-        //线程选举
-        int index = 0;
-        for (int i = readThreads.length - 1; i > 0; i--) {
-            if (readThreads[i].getConnectNums() < readThreads[index].getConnectNums()) {
-                index = i;
+        int i = 0;
+
+        while (key.isAcceptable() && ++i < 1000) {
+            final SocketChannel socketChannel = serverChannel.accept();
+            if (socketChannel == null) {
+                break;
             }
+            socketChannel.configureBlocking(false);
+            final SelectionKey socketKey = socketChannel.register(selector, 0);
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if(num++==0){
+                            start=System.currentTimeMillis();
+                        }
+//            socketChannel.socket().setReuseAddress(true);
+//            socketChannel.socket().setTcpNoDelay(true);
+//            socketChannel.socket().setSoLinger(true,0);
+
+                        NioChannel<T> nioSession = new NioChannel<T>(socketKey, config);
+                        socketKey.attach(new NioAttachment(nioSession));
+                        //线程选举
+                        int index = 0;
+                        for (int i = readThreads.length - 1; i > 0; i--) {
+                            if (readThreads[i].getConnectNums() < readThreads[index].getConnectNums()) {
+                                index = i;
+                            }
+                        }
+                        nioSession.sessionReadThread=readThreads[index];
+                        nioSession.sessionWriteThread=writeThreads[index];
+                        nioSession.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
+                        socketKey.interestOps(SelectionKey.OP_READ);
+                        socketChannel.finishConnect();
+                        if(num==1000){
+                            System.out.println("1万个链接，耗时:"+(System.currentTimeMillis()-start));
+//                            num=0;
+                        }
+                        System.out.println(num);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
         }
-        nioSession.setAttribute(TransportChannel.DATA_READ_THREAD, readThreads[index]);
-        nioSession.setAttribute(TransportChannel.DATA_WRITE_THREAD, writeThreads[index]);
-        nioSession.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
-        socketChannel.finishConnect();
-        System.out.println(socketChannel);
     }
 
     /**
@@ -74,8 +107,9 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
      * @param attach
      * @throws IOException
      */
+
     protected void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException {
-        SessionReadThread readThread = attach.getSession().getAttribute(TransportChannel.DATA_READ_THREAD);
+        SessionReadThread readThread = attach.getSession().sessionReadThread;
         //先取消读关注
 //        key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
         readThread.notifySession(key);
