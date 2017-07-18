@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
  * @author Seer
  */
 public class DetectMessageReq extends BaseMessage {
-    private String detectMessage;
     private long sendTime;
 
     public long getSendTime() {
@@ -20,12 +19,10 @@ public class DetectMessageReq extends BaseMessage {
     }
 
     protected void encodeBody(ByteBuffer buffer) {
-        writeString(buffer, detectMessage);
         writeLong(buffer, sendTime);
     }
 
     protected void decodeBody(ByteBuffer buffer) {
-        detectMessage = readString(buffer);
         sendTime = readLong(buffer);
     }
 
@@ -33,11 +30,4 @@ public class DetectMessageReq extends BaseMessage {
         return MessageType.DETECT_MESSAGE_REQ;
     }
 
-    public String getDetectMessage() {
-        return detectMessage;
-    }
-
-    public void setDetectMessage(String detectMessage) {
-        this.detectMessage = detectMessage;
-    }
 }

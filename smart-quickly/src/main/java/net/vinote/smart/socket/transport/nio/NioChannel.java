@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Administrator
  */
 public class NioChannel<T> extends TransportChannel<T> {
-    private Logger logger = LogManager.getLogger(NioChannel.class);
+    private static Logger logger = LogManager.getLogger(NioChannel.class);
     private SelectionKey channelKey = null;
 
     /**
@@ -43,8 +43,8 @@ public class NioChannel<T> extends TransportChannel<T> {
      * @param config     配置
      */
     public NioChannel(SelectionKey channelKey, final QuicklyConfig<T> config) {
-        super(ByteBuffer.allocate(config.getDataBufferSize()));
-        initBaseChannelInfo(channelKey);
+        super(ByteBuffer.allocateDirect(config.getDataBufferSize()));
+        this.channelKey = channelKey;
         super.protocol = config.getProtocolFactory().createProtocol();
 //        super.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.isServer() ? (SmartFilter<T>[]) ArrayUtils.add(config.getFilters(), new FlowControlFilter()) : config.getFilters());
         super.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
@@ -170,10 +170,6 @@ public class NioChannel<T> extends TransportChannel<T> {
 //            while ((buffer = getWriteBuffer()) != null && ((SocketChannel) channelKey.channel()).write(buffer) > 0 && num-- > 0)
 //                ;
 //        }
-    }
-
-    void initBaseChannelInfo(SelectionKey channelKey) {
-        this.channelKey = channelKey;
     }
 
 

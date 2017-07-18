@@ -18,13 +18,12 @@ import net.vinote.smart.socket.service.Session;
  *
  */
 public class DetectMessageHandler extends MessageHandler {
-	private Logger logger = LogManager.getLogger(DetectMessageHandler.class);
+	private static Logger logger = LogManager.getLogger(DetectMessageHandler.class);
 
 	@Override
 	public void handler(Session<BaseMessage> session, BaseMessage message) {
 		DetectMessageReq msg = (DetectMessageReq) message;
 		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
-		rspMsg.setDetectMessage(msg.getDetectMessage());
 		rspMsg.setSendTime(msg.getSendTime());
 		try {
 			session.sendWithoutResponse(rspMsg);

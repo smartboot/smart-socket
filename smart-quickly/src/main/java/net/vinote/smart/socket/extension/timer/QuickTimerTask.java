@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
  *
  */
 public abstract class QuickTimerTask extends TimerTask {
-	private Logger logger = LogManager.getLogger(QuickTimerTask.class);
+	private static Logger logger = LogManager.getLogger(QuickTimerTask.class);
 	private static Timer timer = new Timer("Quick Timer", true);
 
 	public QuickTimerTask() {

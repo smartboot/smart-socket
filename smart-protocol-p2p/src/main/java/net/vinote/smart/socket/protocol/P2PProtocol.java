@@ -19,7 +19,7 @@ import net.vinote.smart.socket.transport.TransportChannel;
  * @author Administrator
  */
 final class P2PProtocol implements Protocol<BaseMessage> {
-    private Logger LOGGER = LogManager.getLogger(P2PProtocol.class);
+    private static Logger LOGGER = LogManager.getLogger(P2PProtocol.class);
     /**
      * P2P消息标志性部分长度,消息头部的 幻数+消息大小 ,共8字节
      */

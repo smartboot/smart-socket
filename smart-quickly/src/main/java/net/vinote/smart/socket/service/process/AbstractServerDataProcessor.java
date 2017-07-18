@@ -17,7 +17,7 @@ import net.vinote.smart.socket.transport.TransportChannel;
  *
  */
 public abstract class AbstractServerDataProcessor<T> implements ProtocolDataProcessor<T> {
-	private Logger logger = LogManager.getLogger(AbstractServerDataProcessor.class);
+	private static Logger logger = LogManager.getLogger(AbstractServerDataProcessor.class);
 	public static final String SESSION_KEY = "SESSION";
 	/** 消息处理线程 */
 	private ServerDataProcessThread[] processThreads;

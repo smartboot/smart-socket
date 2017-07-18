@@ -10,15 +10,15 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import net.vinote.smart.socket.exception.DecodeException;
 
 /**
- * 
+ *
  * P2P协议基础消息体对象
  *
- * 
- * 
+ *
+ *
  * @author Seer
- * 
+ *
  * @version BaseMessage.java, v 0.1 2015年8月22日 上午11:24:03 Seer Exp.
- * 
+ *
  */
 public abstract class BaseMessage {
 	/** 消息头 */
@@ -39,25 +39,25 @@ public abstract class BaseMessage {
 	}
 
 	/**
-	 * 
+	 *
 	 * <p>
-	 * 
+	 *
 	 * 消息编码;
-	 * 
-	 * </p>
-	 * 
-	 * <p>
-	 * 
-	 * 若是请求消息,将自动为其生成唯一标识 sequenceID;<br/>
-	 * 
-	 * 响应消息需要自行从对应的请求消息中获取再设置
-	 * 
+	 *
 	 * </p>
 	 *
-	 * 
-	 * 
+	 * <p>
+	 *
+	 * 若是请求消息,将自动为其生成唯一标识 sequenceID;<br/>
+	 *
+	 * 响应消息需要自行从对应的请求消息中获取再设置
+	 *
+	 * </p>
+	 *
+	 *
+	 *
 	 * @throws ProtocolException
-	 * 
+	 *
 	 */
 	public final ByteBuffer encode() throws ProtocolException {
 		if (head == null) {
@@ -83,13 +83,13 @@ public abstract class BaseMessage {
 	}
 
 	/**
-	 * 
+	 *
 	 * 消息解码
 	 *
-	 * 
-	 * 
+	 *
+	 *
 	 * @throws ProtocolException
-	 * 
+	 *
 	 */
 	public final void decode(ByteBuffer buffer) throws DecodeException {
 		int bodyPosition = buffer.position() + HeadMessage.HEAD_MESSAGE_LENGTH;
@@ -100,40 +100,40 @@ public abstract class BaseMessage {
 
 	/**
 	 * 各消息类型各自实现消息体编码工作
-	 * 
+	 *
 	 * @throws ProtocolException
-	 * 
+	 *
 	 */
 	protected abstract void encodeBody(ByteBuffer buffer) throws ProtocolException;
 
 	/**
-	 * 
+	 *
 	 * 各消息类型各自实现消息体解码工作
-	 * 
+	 *
 	 * @param buffer
 	 *
-	 * 
-	 * 
+	 *
+	 *
 	 * @throws ProtocolException
-	 * 
+	 *
 	 */
 	protected abstract void decodeBody(ByteBuffer buffer) throws DecodeException;
 
 	/**
-	 * 
+	 *
 	 * 获取消息类型
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @return
-	 * 
+	 *
 	 */
 	public abstract int getMessageType();
 
 	/**
-	 * 
+	 *
 	 * 对消息头进行编码
-	 * 
+	 *
 	 */
 	protected final void encodeHead(ByteBuffer buffer) {
 		// 输出幻数
@@ -148,9 +148,9 @@ public abstract class BaseMessage {
 	}
 
 	/**
-	 * 
+	 *
 	 * 对消息头进行解码
-	 * 
+	 *
 	 */
 	protected final void decodeHead(ByteBuffer buffer) {
 		// 读取幻数
@@ -225,7 +225,7 @@ public abstract class BaseMessage {
 
 	/**
 	 * 从数据块的当前位置开始读取字符串
-	 * 
+	 *
 	 * @param buffer
 	 *
 	 * @return
@@ -259,7 +259,7 @@ public abstract class BaseMessage {
 
 	/**
 	 * 读取一个布尔值
-	 * 
+	 *
 	 * @param buffer
 	 *
 	 * @return
@@ -270,7 +270,7 @@ public abstract class BaseMessage {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

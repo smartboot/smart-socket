@@ -50,7 +50,6 @@ public class P2PMultiClient {
                     long start = System.currentTimeMillis();
                     while (num++ < Long.MAX_VALUE) {
                         DetectMessageReq request = new DetectMessageReq();
-                        request.setDetectMessage("温岭是个好地方" + getRandomString(32));
                         request.setSendTime(System.currentTimeMillis());
                         try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()

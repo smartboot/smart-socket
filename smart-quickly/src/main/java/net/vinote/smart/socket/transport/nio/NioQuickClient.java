@@ -22,7 +22,7 @@ import java.util.Set;
  * @version NioQuickClient.java, v 0.1 2015年3月20日 下午2:55:08 Seer Exp.
  */
 public class NioQuickClient<T> extends AbstractChannelService<T> {
-    private Logger logger = LogManager.getLogger(NioQuickClient.class);
+    private static Logger logger = LogManager.getLogger(NioQuickClient.class);
     /**
      * Socket连接锁,用于监听连接超时
      */
@@ -56,7 +56,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
         key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
         // 自动修复链路
         if (session != null && config.isAutoRecover()) {
-            session.initBaseChannelInfo(key);
+//            session.initBaseChannelInfo(key);
             logger.info("Socket link has been recovered!");
         } else {
             session = new NioChannel<T>(key, config);

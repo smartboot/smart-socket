@@ -1,10 +1,5 @@
 package net.vinote.smart.socket.protocol.p2p.client;
 
-import java.util.Properties;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import net.vinote.smart.socket.extension.timer.QuickMonitorTimer;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
@@ -14,6 +9,10 @@ import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.transport.nio.NioQuickClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.Properties;
 
 public class P2PClient {
 	public static void main(String[] args) throws Exception {
@@ -49,7 +48,6 @@ public class P2PClient {
 					long start = System.currentTimeMillis();
 					while (num++ < Long.MAX_VALUE) {
 						DetectMessageReq request = new DetectMessageReq();
-						request.setDetectMessage(System.currentTimeMillis()+"");
 						try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
 //								.sendWithResponse(request);
