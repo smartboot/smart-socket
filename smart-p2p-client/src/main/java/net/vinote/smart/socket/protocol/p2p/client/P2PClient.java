@@ -48,7 +48,6 @@ public class P2PClient {
 					long start = System.currentTimeMillis();
 					while (num++ < Long.MAX_VALUE) {
 						DetectMessageReq request = new DetectMessageReq();
-						request.setDetectMessage(System.currentTimeMillis()+"");
 						try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
 //								.sendWithResponse(request);

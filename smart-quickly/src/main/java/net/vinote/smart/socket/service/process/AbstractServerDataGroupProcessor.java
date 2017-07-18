@@ -32,7 +32,7 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
     public void init(QuicklyConfig<T> config) {
         this.quickConfig = config;
         // 启动线程池处理消息
-        processThreads = new AbstractServerDataGroupProcessor.ServerDataProcessThread[config.getThreadNum()];
+        processThreads = new AbstractServerDataGroupProcessor.ServerDataProcessThread[config.getThreadNum()<<1];
         for (int i = 0; i < processThreads.length; i++) {
             processThreads[i] = new ServerDataProcessThread("ServerProcess-Thread-" + i);
             processThreads[i].setPriority(Thread.MAX_PRIORITY);
@@ -53,11 +53,11 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
             return true;
         }
         //Session绑定的处理器处理能力不足，由其他处理器辅助
-        for (int i = processThreads.length - 1; i >= 0; i--) {
-            if (processThreads[i].msgQueue.offer(unit)) {
-                return true;
-            }
-        }
+//        for (int i = processThreads.length - 1; i >= 0; i--) {
+//            if (processThreads[i].msgQueue.offer(unit)) {
+//                return true;
+//            }
+//        }
         //所有线程都满负荷
         try {
             processThread.msgQueue.put(unit);

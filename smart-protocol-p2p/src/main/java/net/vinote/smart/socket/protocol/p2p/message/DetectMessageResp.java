@@ -17,8 +17,6 @@ public class DetectMessageResp extends BaseMessage {
         super(head);
     }
 
-    private String detectMessage;
-
     private long sendTime;
 
     public long getSendTime() {
@@ -30,12 +28,10 @@ public class DetectMessageResp extends BaseMessage {
     }
 
     protected void encodeBody(ByteBuffer buffer) {
-        writeString(buffer, detectMessage);
         writeLong(buffer, sendTime);
     }
 
     protected void decodeBody(ByteBuffer buffer) {
-        detectMessage = readString(buffer);
         sendTime = readLong(buffer);
     }
 
@@ -43,11 +39,4 @@ public class DetectMessageResp extends BaseMessage {
         return MessageType.DETECT_MESSAGE_RSP;
     }
 
-    public String getDetectMessage() {
-        return detectMessage;
-    }
-
-    public void setDetectMessage(String detectMessage) {
-        this.detectMessage = detectMessage;
-    }
 }
