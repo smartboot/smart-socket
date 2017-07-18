@@ -1,7 +1,7 @@
 package net.vinote.smart.socket.protocol;
 
 import net.vinote.smart.socket.service.Session;
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.TransportChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,10 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Seer
  */
 public class HttpSession implements Session<HttpEntity> {
-    private Logger logger = LogManager.getLogger(HttpSession.class);
-    private String remoteIp;
-    private String localAddress;
-    private TransportSession<HttpEntity> session;
+    private TransportChannel<HttpEntity> session;
     /**
      * 会话创建时间
      */
@@ -42,10 +39,8 @@ public class HttpSession implements Session<HttpEntity> {
 
     private Map<String, Object> attributeMap = new ConcurrentHashMap<String, Object>();
 
-    public HttpSession(TransportSession<HttpEntity> session) {
+    public HttpSession(TransportChannel<HttpEntity> session) {
         sessionId = session.getSessionID();
-        remoteIp = session.getRemoteAddr();
-        localAddress = session.getLocalAddress();
         this.session = session;
         maxInactiveInterval = session.getTimeout();
         synchRespMap = new ConcurrentHashMap<Integer, HttpEntity>();
@@ -76,9 +71,6 @@ public class HttpSession implements Session<HttpEntity> {
         return maxInactiveInterval;
     }
 
-    public String getRemoteIp() {
-        return remoteIp;
-    }
 
     public void invalidate(boolean immediate) {
 
@@ -113,7 +105,7 @@ public class HttpSession implements Session<HttpEntity> {
 
     @Override
     public String toString() {
-        return "OMCSession [remoteIp=" + remoteIp + ", session=" + session + ", creatTime=" + creatTime
+        return "OMCSession [ session=" + session + ", creatTime=" + creatTime
                 + ", lastAccessTime=" + lastAccessTime + ", maxInactiveInterval=" + maxInactiveInterval + ", sessionId="
                 + sessionId + ", invalidated=" + invalidated + "]";
     }
@@ -132,9 +124,6 @@ public class HttpSession implements Session<HttpEntity> {
         lastAccessTime = System.currentTimeMillis();
     }
 
-    public String getLocalAddress() {
-        return localAddress;
-    }
 
 	/*
      * (non-Javadoc)
@@ -150,7 +139,7 @@ public class HttpSession implements Session<HttpEntity> {
     }
 
 	/*
-	 * (non-Javadoc)
+     * (non-Javadoc)
 	 * 
 	 * @see
 	 * com.zjw.platform.quickly.service.session.Session#sendWithoutResponse(
@@ -158,24 +147,17 @@ public class HttpSession implements Session<HttpEntity> {
 	 */
 
     public void sendWithoutResponse(HttpEntity requestMsg) throws Exception {
-        ByteBuffer buffer=  ByteBuffer.allocate(1024);
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
         buffer.put(("HTTP/1.1 200 OK\n" +
-                "Server: nginx/1.4.4\n" +
-                "Date: Mon, 26 Jun 2017 14:37:00 GMT\n" +
-                "Content-Type: application/json\n" +
-                "Transfer-Encoding: chunked\n" +
+                "Server: seer/1.4.4\n" +
+                "Content-Length: 2\n" +
                 "Connection: keep-alive\n" +
-                "X-ASEN: YOU MAKE ME A SAD PANDA.\n" +
-                "X-Seraph-LoginReason: OK\n" +
-                "X-AUSERNAME: junwei.zheng\n" +
-                "Cache-Control: no-cache, no-store, no-transform\n" +
-                "X-Content-Type-Options: nosniff\n" +
                 "\n" +
-                "29\n" +
-                "{\"count\":0,\"timeout\":30,\"maxTimeout\":300}\n" +
-                "0\n").getBytes());
+                "OK").getBytes());
         session.write(buffer);
-        session.close(false);
+        if (!"Keep-Alive".equalsIgnoreCase(requestMsg.getHeadMap().get("Connection"))) {
+            session.close(false);
+        }
 //        throw new UnsupportedOperationException();
     }
 

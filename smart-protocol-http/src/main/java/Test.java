@@ -12,11 +12,12 @@ public class Test {
         QuicklyConfig<HttpEntity> config = new QuicklyConfig<HttpEntity>(true);
 
         // 定义服务器接受的消息类型以及各类消息对应的处理器
-        config.setThreadNum(4);
+        config.setThreadNum(32);
         config.setProtocolFactory(new HttpProtocolFactory());
 //        config.setFilters(new SmartFilter[] { new QuickMonitorTimer<HttpEntity>() });
         HttpServerMessageProcessor processor = new HttpServerMessageProcessor();
         config.setProcessor(processor);// 定义P2P协议的处理器,可以自定义
+        config.setCacheSize(8);
         NioQuickServer<HttpEntity> server = new NioQuickServer<HttpEntity>(config);
         try {
             server.start();

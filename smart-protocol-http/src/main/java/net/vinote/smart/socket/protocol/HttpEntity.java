@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.protocol;
 
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.TransportChannel;
 import org.apache.commons.lang.math.NumberUtils;
 
 import java.io.IOException;
@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by zhengjunwei on 2017/6/20.
@@ -34,7 +32,7 @@ public class HttpEntity {
     public static final String RANGE = "Range";
     public static final String LOCATION = "Location";
     public static final String CONNECTION = "Connection";
-    private TransportSession<HttpEntity> session;
+    private TransportChannel<HttpEntity> session;
     /**
      * 请求行
      */
@@ -97,7 +95,7 @@ public class HttpEntity {
     };
 
 
-    public HttpEntity(TransportSession<HttpEntity> session) {
+    public HttpEntity(TransportChannel<HttpEntity> session) {
         this.session = session;
     }
 
