@@ -31,8 +31,6 @@ public class SessionReadThread extends Thread {
 
     private int waitTime = 1;
 
-    private int connectNums = 0;
-
     public void notifySession(SelectionKey session) {
         session.interestOps(session.interestOps() & ~SelectionKey.OP_READ);
         if (switchFlag) {
@@ -79,8 +77,6 @@ public class SessionReadThread extends Thread {
                 readSelectionKeyList(newSelectionKeyList1);
             }
             switchFlag = !switchFlag;
-            connectNums = selectionKeySet.size();
-
 
             Iterator<SelectionKey> iterator = selectionKeySet.iterator();
             while (iterator.hasNext()) {
@@ -167,7 +163,4 @@ public class SessionReadThread extends Thread {
         }
     }
 
-    public int getConnectNums() {
-        return connectNums;
-    }
 }

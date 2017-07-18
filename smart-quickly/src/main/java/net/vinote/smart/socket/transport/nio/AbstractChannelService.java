@@ -13,6 +13,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Seer
@@ -42,17 +43,37 @@ abstract class AbstractChannelService<T> implements ChannelService {
      */
     final int READ_LOOP_TIMES;
     //数据读取线程
+    private SessionReadThread[] readThreads;
+
+    private AtomicInteger readThreadIndex = new AtomicInteger(0);
+    //数据读取线程
     protected SessionWriteThread[] writeThreads;
+
+    private AtomicInteger writeThreadIndex = new AtomicInteger(0);
 
     public AbstractChannelService(final QuicklyConfig<T> config) {
         this.config = config;
         READ_LOOP_TIMES = config.getReadLoopTimes();
         writeThreads = new SessionWriteThread[config.getThreadNum()];
-        for (int i = 0; i < writeThreads.length; i++) {
+        readThreads = new SessionReadThread[config.getThreadNum()];
+        for (int i = 0; i < config.getThreadNum(); i++) {
             writeThreads[i] = new SessionWriteThread();
-            writeThreads[i].setName("SessionWriteThread-" + System.currentTimeMillis());
+            writeThreads[i].setName("SessionWriteThread-" + i);
             writeThreads[i].start();
+
+            readThreads[i] = new SessionReadThread();
+            readThreads[i].setName("SessionReadThread-" + i);
+            readThreads[i].start();
         }
+
+    }
+
+    protected SessionReadThread selectReadThread() {
+        return readThreads[readThreadIndex.getAndIncrement() % readThreads.length];
+    }
+
+    protected SessionWriteThread selectWriteThread() {
+        return writeThreads[writeThreadIndex.getAndIncrement() % writeThreads.length];
     }
 
     /*
@@ -84,20 +105,19 @@ abstract class AbstractChannelService<T> implements ChannelService {
      */
     private void running() throws IOException, Exception {
         // 优先获取SelectionKey,若无关注事件触发则阻塞在selector.select(),减少select被调用次数
-        Set<SelectionKey> keySet = selector.selectedKeys();
-        if (keySet.isEmpty()) {
+        Set<SelectionKey> selectionKeys = selector.selectedKeys();
+        if (selectionKeys.isEmpty()) {
             selector.select();
         }
-        Iterator<SelectionKey> keyIterator = keySet.iterator();
+        Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
         // 执行本次已触发待处理的事件
         while (keyIterator.hasNext()) {
             SelectionKey key = keyIterator.next();
-            NioAttachment attach = null;
             try {
-                attach = (NioAttachment) key.attachment();
+
                 // 读取客户端数据
                 if (key.isReadable()) {
-                    attach.setCurSelectionOP(SelectionKey.OP_READ);
+                    NioAttachment attach = (NioAttachment) key.attachment();
                     readFromChannel(key, attach);
                 }/* else if (key.isWritable()) {// 输出数据至客户端
                     attach.setCurSelectionOP(SelectionKey.OP_WRITE);
@@ -109,13 +129,9 @@ abstract class AbstractChannelService<T> implements ChannelService {
                 }
             } catch (Exception e) {
                 exceptionInSelectionKey(key, e);
-            } finally {
-                // 移除已处理的事件
-                keyIterator.remove();
-                if (attach != null)
-                    attach.setCurSelectionOP(0);
             }
         }
+        selectionKeys.clear();
     }
 
     /**

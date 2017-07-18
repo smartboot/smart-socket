@@ -4,7 +4,6 @@ import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.service.process.AbstractServerDataProcessor;
-import net.vinote.smart.socket.transport.TransportChannel;
 import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,21 +25,12 @@ import java.util.concurrent.Executors;
 public final class NioQuickServer<T> extends AbstractChannelService<T> {
     private Logger logger = LogManager.getLogger(NioQuickServer.class);
     private ServerSocketChannel server;
-    //数据读取线程
-    private SessionReadThread[] readThreads;
+
 
     private Executor executor = Executors.newSingleThreadExecutor();
 
-    int num = 0;
-    long start=0;
     public NioQuickServer(final QuicklyConfig<T> config) {
         super(config);
-        readThreads = new SessionReadThread[config.getThreadNum()];
-        for (int i = 0; i < readThreads.length; i++) {
-            readThreads[i] = new SessionReadThread();
-            readThreads[i].setName("SessionReadThread-" + System.currentTimeMillis());
-            readThreads[i].start();
-        }
     }
 
     /**
@@ -53,9 +43,10 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
     @Override
     protected void acceptConnect(final SelectionKey key, final Selector selector) throws IOException {
         ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel();
-        int i = 0;
 
-        while (key.isAcceptable() && ++i < 1000) {
+        int batchNum = 1000;
+
+        while (key.isAcceptable() && batchNum-- > 0) {
             final SocketChannel socketChannel = serverChannel.accept();
             if (socketChannel == null) {
                 break;
@@ -66,32 +57,17 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
                 @Override
                 public void run() {
                     try {
-                        if(num++==0){
-                            start=System.currentTimeMillis();
-                        }
 //            socketChannel.socket().setReuseAddress(true);
 //            socketChannel.socket().setTcpNoDelay(true);
 //            socketChannel.socket().setSoLinger(true,0);
 
                         NioChannel<T> nioSession = new NioChannel<T>(socketKey, config);
                         socketKey.attach(new NioAttachment(nioSession));
-                        //线程选举
-                        int index = 0;
-                        for (int i = readThreads.length - 1; i > 0; i--) {
-                            if (readThreads[i].getConnectNums() < readThreads[index].getConnectNums()) {
-                                index = i;
-                            }
-                        }
-                        nioSession.sessionReadThread=readThreads[index];
-                        nioSession.sessionWriteThread=writeThreads[index];
+                        nioSession.sessionReadThread = selectReadThread();
+                        nioSession.sessionWriteThread = selectWriteThread();
                         nioSession.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
                         socketKey.interestOps(SelectionKey.OP_READ);
                         socketChannel.finishConnect();
-                        if(num==1000){
-                            System.out.println("1万个链接，耗时:"+(System.currentTimeMillis()-start));
-//                            num=0;
-                        }
-                        System.out.println(num);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
