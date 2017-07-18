@@ -20,7 +20,7 @@ import net.vinote.smart.socket.transport.TransportChannel;
  *
  */
 public class P2PSession implements Session<BaseMessage> {
-	private Logger logger = LogManager.getLogger(P2PSession.class);
+	private static Logger logger = LogManager.getLogger(P2PSession.class);
 	private String remoteIp;
 	private String localAddress;
 	private TransportChannel<BaseMessage> session;

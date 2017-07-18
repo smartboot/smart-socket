@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
  * @author Seer
  */
 public final class NioQuickServer<T> extends AbstractChannelService<T> {
-    private Logger logger = LogManager.getLogger(NioQuickServer.class);
+    private static Logger logger = LogManager.getLogger(NioQuickServer.class);
     private ServerSocketChannel server;
 
 

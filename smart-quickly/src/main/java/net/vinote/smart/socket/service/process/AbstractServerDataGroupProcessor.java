@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Seer
  */
 public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDataProcessor<T> {
-    private Logger logger = LogManager.getLogger(AbstractServerDataGroupProcessor.class);
+    private static Logger logger = LogManager.getLogger(AbstractServerDataGroupProcessor.class);
     public static final String SESSION_KEY = "SESSION";
     public static final String SESSION_PROCESS_THREAD = "_PROCESS_THREAD_";
     /**

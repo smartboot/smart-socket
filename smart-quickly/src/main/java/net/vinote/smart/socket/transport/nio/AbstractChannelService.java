@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version AbstractChannelService.java, v 0.1 2015年3月19日 下午6:57:01 Seer Exp.
  */
 abstract class AbstractChannelService<T> implements ChannelService {
-    private Logger logger = LogManager.getLogger(AbstractChannelService.class);
+    private static Logger logger = LogManager.getLogger(AbstractChannelService.class);
     /**
      * 服务状态
      */
@@ -37,7 +37,6 @@ abstract class AbstractChannelService<T> implements ChannelService {
      * 传输层Channel服务处理线程
      */
     Thread serverThread;
-
     /**
      * 读管道单论操作读取次数
      */
@@ -112,7 +111,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
         Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
         // 执行本次已触发待处理的事件
         while (keyIterator.hasNext()) {
-            SelectionKey key = keyIterator.next();
+            final SelectionKey key = keyIterator.next();
             try {
 
                 // 读取客户端数据

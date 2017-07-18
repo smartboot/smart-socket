@@ -18,7 +18,7 @@ import net.vinote.smart.socket.transport.TransportChannel;
  * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
  */
 public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<T> {
-	private Logger logger = LogManager.getLogger(QuickMonitorTimer.class);
+	private static Logger logger = LogManager.getLogger(QuickMonitorTimer.class);
 	/** 当前周期内消息 流量监控 */
 	private AtomicLong flow = new AtomicLong(0);
 	/** 当前周期内接受消息数 */
