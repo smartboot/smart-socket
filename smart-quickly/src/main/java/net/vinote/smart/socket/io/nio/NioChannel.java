@@ -1,10 +1,10 @@
-package net.vinote.smart.socket.transport.nio;
+package net.vinote.smart.socket.io.nio;
 
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
-import net.vinote.smart.socket.transport.TransportChannel;
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+import net.vinote.smart.socket.io.Channel;
+import net.vinote.smart.socket.enums.ChannelStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Administrator
  */
-public class NioChannel<T> extends TransportChannel<T> {
+public class NioChannel<T> extends Channel<T> {
     private static Logger logger = LogManager.getLogger(NioChannel.class);
     private SelectionKey channelKey = null;
 
@@ -73,7 +73,7 @@ public class NioChannel<T> extends TransportChannel<T> {
     @Override
     protected void close0() {
         writeCacheQueue.clear();
-        if (getStatus() == SessionStatusEnum.CLOSED) {
+        if (getStatus() == ChannelStatusEnum.CLOSED) {
             return;
         }
         try {
@@ -269,7 +269,7 @@ public class NioChannel<T> extends TransportChannel<T> {
         private static final String MESSAGE_SEND_TIMES = "_MESSAGE_SEND_TIMES_";
 
         @Override
-        public void readFilter(TransportChannel<T> session, T d) {
+        public void readFilter(Channel<T> session, T d) {
             //接收的消息积压量达到10个，则暂停读关注
             if (getReadBacklogCounter(session).incrementAndGet() > 10) {
 //                System.out.println("readFilter 流控");
@@ -278,7 +278,7 @@ public class NioChannel<T> extends TransportChannel<T> {
         }
 
         @Override
-        public void processFilter(TransportChannel<T> session, T d) {
+        public void processFilter(Channel<T> session, T d) {
             if (getReadBacklogCounter(session).decrementAndGet() == 0) {
 //                System.out.println("processFilter 释放流控");
                 session.resumeReadAttention();
@@ -287,7 +287,7 @@ public class NioChannel<T> extends TransportChannel<T> {
 
 
         @Override
-        public void beginWriteFilter(TransportChannel<T> session, ByteBuffer d) {
+        public void beginWriteFilter(Channel<T> session, ByteBuffer d) {
             AtomicInteger counter = getWriteBacklogCounter(session);
             int num = counter.incrementAndGet();
             //已经存在消息挤压,暂停读关注
@@ -298,7 +298,7 @@ public class NioChannel<T> extends TransportChannel<T> {
         }
 
         @Override
-        public void continueWriteFilter(TransportChannel<T> session, ByteBuffer d) {
+        public void continueWriteFilter(Channel<T> session, ByteBuffer d) {
             int times = getMessageSendTimesCounter(session).incrementAndGet();
             //单条消息发送次数超过3次还未发完，说明网络有问题，暂停其读关注
             if (times > 3) {
@@ -308,7 +308,7 @@ public class NioChannel<T> extends TransportChannel<T> {
         }
 
         @Override
-        public void finishWriteFilter(TransportChannel<T> session, ByteBuffer d) {
+        public void finishWriteFilter(Channel<T> session, ByteBuffer d) {
             AtomicInteger counter = getWriteBacklogCounter(session);
             int num = counter.decrementAndGet();//释放积压量
             if (num == 0) {
@@ -319,7 +319,7 @@ public class NioChannel<T> extends TransportChannel<T> {
         }
 
 
-        private AtomicInteger getReadBacklogCounter(TransportChannel<T> session) {
+        private AtomicInteger getReadBacklogCounter(Channel<T> session) {
             AtomicInteger counter = session.getAttribute(READ_BACKLOG);
             if (counter == null) {
                 counter = new AtomicInteger();
@@ -328,7 +328,7 @@ public class NioChannel<T> extends TransportChannel<T> {
             return counter;
         }
 
-        private AtomicInteger getWriteBacklogCounter(TransportChannel<T> session) {
+        private AtomicInteger getWriteBacklogCounter(Channel<T> session) {
             AtomicInteger counter = session.getAttribute(WRITE_BACKLOG);
             if (counter == null) {
                 counter = new AtomicInteger();
@@ -337,7 +337,7 @@ public class NioChannel<T> extends TransportChannel<T> {
             return counter;
         }
 
-        private AtomicInteger getMessageSendTimesCounter(TransportChannel<T> session) {
+        private AtomicInteger getMessageSendTimesCounter(Channel<T> session) {
             AtomicInteger counter = session.getAttribute(MESSAGE_SEND_TIMES);
             if (counter == null) {
                 counter = new AtomicInteger();
@@ -347,7 +347,7 @@ public class NioChannel<T> extends TransportChannel<T> {
         }
 
         @Override
-        public void receiveFailHandler(TransportChannel<T> session, T d) {
+        public void receiveFailHandler(Channel<T> session, T d) {
 
         }
     }

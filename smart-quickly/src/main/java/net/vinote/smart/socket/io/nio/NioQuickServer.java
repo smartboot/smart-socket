@@ -1,10 +1,10 @@
-package net.vinote.smart.socket.transport.nio;
+package net.vinote.smart.socket.io.nio;
 
+import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.service.process.AbstractServerDataProcessor;
-import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
+import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,10 +24,13 @@ import java.util.concurrent.Executors;
  */
 public final class NioQuickServer<T> extends AbstractChannelService<T> {
     private static Logger logger = LogManager.getLogger(NioQuickServer.class);
+
     private ServerSocketChannel server;
 
-
-    private Executor executor = Executors.newSingleThreadExecutor();
+    /**
+     * 客户端accpet处理线程池
+     */
+    private Executor acceptExecutor = Executors.newSingleThreadExecutor();
 
     public NioQuickServer(final QuicklyConfig<T> config) {
         super(config);
@@ -53,19 +56,15 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
             }
             socketChannel.configureBlocking(false);
             final SelectionKey socketKey = socketChannel.register(selector, 0);
-            executor.execute(new Runnable() {
+            acceptExecutor.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
-//            socketChannel.socket().setReuseAddress(true);
-//            socketChannel.socket().setTcpNoDelay(true);
-//            socketChannel.socket().setSoLinger(true,0);
-
                         NioChannel<T> nioSession = new NioChannel<T>(socketKey, config);
-                        socketKey.attach(new NioAttachment(nioSession));
+                        socketKey.attach(nioSession);
                         nioSession.sessionReadThread = selectReadThread();
                         nioSession.sessionWriteThread = selectWriteThread();
-                        nioSession.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
+                        nioSession.setAttribute(AbstractServerDataGroupProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
                         socketKey.interestOps(SelectionKey.OP_READ);
                         socketChannel.finishConnect();
                     } catch (Exception e) {
@@ -84,8 +83,8 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
      * @throws IOException
      */
 
-    protected void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException {
-        SessionReadThread readThread = attach.getSession().sessionReadThread;
+    protected void readFromChannel(SelectionKey key, NioChannel attach) throws IOException {
+        SessionReadThread readThread = attach.sessionReadThread;
         //先取消读关注
 //        key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
         readThread.notifySession(key);
@@ -95,8 +94,8 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
     protected void exceptionInSelectionKey(SelectionKey key, final Exception e) throws Exception {
         logger.warn("Close Channel because of Exception", e);
         final Object att = key.attach(null);
-        if (att instanceof NioAttachment) {
-            ((NioAttachment) att).getSession().close();
+        if (att instanceof NioChannel) {
+            ((NioChannel) att).close();
         }
         key.channel().close();
         logger.info("close connection " + key.channel());

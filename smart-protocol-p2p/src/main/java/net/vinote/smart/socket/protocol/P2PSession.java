@@ -3,7 +3,7 @@ package net.vinote.smart.socket.protocol;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.MessageType;
 import net.vinote.smart.socket.service.Session;
-import net.vinote.smart.socket.transport.TransportChannel;
+import net.vinote.smart.socket.io.Channel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,7 +21,7 @@ public class P2PSession implements Session<BaseMessage> {
     private static Logger logger = LogManager.getLogger(P2PSession.class);
     private String remoteIp;
     private String localAddress;
-    private TransportChannel<BaseMessage> session;
+    private Channel<BaseMessage> session;
     /**
      * 会话创建时间
      */
@@ -42,7 +42,7 @@ public class P2PSession implements Session<BaseMessage> {
 
     private Map<String, Object> attributeMap = new ConcurrentHashMap<String, Object>();
 
-    public P2PSession(TransportChannel<BaseMessage> session) {
+    public P2PSession(Channel<BaseMessage> session) {
         sessionId = session.getSessionID();
 //		remoteIp = session.getRemoteAddr();
 //		localAddress = session.getLocalAddress();

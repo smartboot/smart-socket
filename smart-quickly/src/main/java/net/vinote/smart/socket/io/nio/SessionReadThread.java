@@ -1,10 +1,9 @@
-package net.vinote.smart.socket.transport.nio;
+package net.vinote.smart.socket.io.nio;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -82,9 +81,7 @@ public class SessionReadThread extends Thread {
             while (iterator.hasNext()) {
                 SelectionKey key = iterator.next();
                 try {
-                    SocketChannel socketChannel = (SocketChannel) key.channel();
-                    NioAttachment attach = (NioAttachment) key.attachment();
-                    NioChannel<?> session = attach.getSession();
+                    NioChannel<?> session = (NioChannel<?>) key.attachment();
                     //未读到数据则关注读
                     int readSize = session.read(3);
                     switch (readSize) {
@@ -129,9 +126,7 @@ public class SessionReadThread extends Thread {
                 break;
             }
             try {
-                SocketChannel socketChannel = (SocketChannel) key.channel();
-                NioAttachment attach = (NioAttachment) key.attachment();
-                NioChannel<?> session = attach.getSession();
+                NioChannel<?> session = (NioChannel) key.attachment();
                 //未读到数据则关注读
                 int readSize = session.read(3);
                 switch (readSize) {

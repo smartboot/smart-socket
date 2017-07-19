@@ -17,22 +17,22 @@ public class DetectMessageResp extends BaseMessage {
         super(head);
     }
 
-    private long sendTime;
+    private byte sendTime;
 
     public long getSendTime() {
         return sendTime;
     }
 
-    public void setSendTime(long sendTime) {
+    public void setSendTime(byte sendTime) {
         this.sendTime = sendTime;
     }
 
     protected void encodeBody(ByteBuffer buffer) {
-        writeLong(buffer, sendTime);
+        writeByte(buffer, sendTime);
     }
 
     protected void decodeBody(ByteBuffer buffer) {
-        sendTime = readLong(buffer);
+        sendTime = readByte(buffer);
     }
 
     public int getMessageType() {

@@ -1,9 +1,9 @@
-package net.vinote.smart.socket.transport.nio;
+package net.vinote.smart.socket.io.nio;
 
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.transport.ChannelService;
-import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
+import net.vinote.smart.socket.io.ChannelService;
+import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -116,7 +116,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
 
                 // 读取客户端数据
                 if (key.isReadable()) {
-                    NioAttachment attach = (NioAttachment) key.attachment();
+                    NioChannel attach = (NioChannel) key.attachment();
                     readFromChannel(key, attach);
                 }/* else if (key.isWritable()) {// 输出数据至客户端
                     attach.setCurSelectionOP(SelectionKey.OP_WRITE);
@@ -140,7 +140,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
      * @param attach
      * @throws IOException
      */
-    protected abstract void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException;
+    protected abstract void readFromChannel(SelectionKey key, NioChannel attach) throws IOException;
 
     /**
      * 接受并建立Socket连接

@@ -2,7 +2,7 @@ package net.vinote.smart.socket.protocol;
 
 import java.nio.ByteBuffer;
 
-import net.vinote.smart.socket.transport.TransportChannel;
+import net.vinote.smart.socket.io.Channel;
 
 /**
  *
@@ -18,9 +18,9 @@ public interface Protocol<T> {
 	 * @param data
 	 * @return 本次解码所成功解析的消息实例集合,不允许返回null
 	 */
-	public T decode(ByteBuffer data, TransportChannel<T> session);
+	public T decode(ByteBuffer data, Channel<T> session);
 
 
-	public ByteBuffer encode(T t,TransportChannel<T> session);
+	public ByteBuffer encode(T t,Channel<T> session);
 
 }

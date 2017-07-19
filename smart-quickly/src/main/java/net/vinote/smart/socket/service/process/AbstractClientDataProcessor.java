@@ -9,7 +9,7 @@ import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
 import net.vinote.smart.socket.lang.QueueOverflowStrategy;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.service.Session;
-import net.vinote.smart.socket.transport.TransportChannel;
+import net.vinote.smart.socket.io.Channel;
 
 /**
  * 客户端业务消息抽象处理器
@@ -30,7 +30,7 @@ public abstract class AbstractClientDataProcessor<T> implements ProtocolDataProc
 	}
 
 	@Override
-	public boolean receive(TransportChannel<T> session, T entry) {
+	public boolean receive(Channel<T> session, T entry) {
 		if (!this.session.notifySyncMessage(entry)) {
 			// 同步响应消息若出现超时情况,也会进到if里面
 			processThread.put(entry);

@@ -6,7 +6,7 @@ import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.service.process.AbstractClientDataProcessor;
-import net.vinote.smart.socket.transport.TransportChannel;
+import net.vinote.smart.socket.io.Channel;
 
 public class P2PClientMessageProcessor extends AbstractClientDataProcessor<BaseMessage> {
 	private P2pServiceMessageFactory serviceMessageFactory;
@@ -21,7 +21,7 @@ public class P2PClientMessageProcessor extends AbstractClientDataProcessor<BaseM
 	}
 
 	@Override
-	public Session<BaseMessage> initSession(TransportChannel<BaseMessage> session) {
+	public Session<BaseMessage> initSession(Channel<BaseMessage> session) {
 		this.session = new P2PSession(session);
 		return this.session;
 	}

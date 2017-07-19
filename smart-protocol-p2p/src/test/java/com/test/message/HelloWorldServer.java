@@ -8,7 +8,7 @@ import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.server.P2PServerMessageProcessor;
-import net.vinote.smart.socket.transport.nio.NioQuickServer;
+import net.vinote.smart.socket.io.nio.NioQuickServer;
 
 public class HelloWorldServer {
 	public static void main(String[] args) throws ClassNotFoundException {
