@@ -50,7 +50,7 @@ public class P2PMultiClient {
                     long start = System.currentTimeMillis();
                     while (num++ < Long.MAX_VALUE) {
                         DetectMessageReq request = new DetectMessageReq();
-                        request.setSendTime(System.currentTimeMillis());
+                        request.setSendTime((byte)1);
                         try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
 //								.sendWithResponse(request);

@@ -48,9 +48,9 @@ final class P2PProtocol implements Protocol<BaseMessage> {
         if (buffer.remaining() < msgLength) {
             return null;
         }
-        if (buffer.position() >= 964) {
-            System.err.println("position:" + buffer.position() + " ,remain:" + buffer.remaining() + " ,msglength:" + msgLength);
-        }
+//        if (buffer.position() >= 964) {
+//            System.err.println("position:" + buffer.position() + " ,remain:" + buffer.remaining() + " ,msglength:" + msgLength);
+//        }
         BaseMessage message = decode(buffer);
         if (message == null) {
             throw new DecodeException("");

@@ -25,7 +25,7 @@ public class DetectRespMessageHandler extends MessageHandler {
             max = useTime;
             if (max > 1000 && (System.currentTimeMillis() - outTime) > 1000) {
                 outTime = System.currentTimeMillis();
-                System.out.println(max);
+//                System.out.println(max);
             }
         }
 

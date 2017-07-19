@@ -62,7 +62,7 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
 //            socketChannel.socket().setSoLinger(true,0);
 
                         NioChannel<T> nioSession = new NioChannel<T>(socketKey, config);
-                        socketKey.attach(new NioAttachment(nioSession));
+                        socketKey.attach(nioSession);
                         nioSession.sessionReadThread = selectReadThread();
                         nioSession.sessionWriteThread = selectWriteThread();
                         nioSession.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
@@ -84,8 +84,8 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
      * @throws IOException
      */
 
-    protected void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException {
-        SessionReadThread readThread = attach.getSession().sessionReadThread;
+    protected void readFromChannel(SelectionKey key, NioChannel attach) throws IOException {
+        SessionReadThread readThread = attach.sessionReadThread;
         //先取消读关注
 //        key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
         readThread.notifySession(key);
@@ -95,8 +95,8 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
     protected void exceptionInSelectionKey(SelectionKey key, final Exception e) throws Exception {
         logger.warn("Close Channel because of Exception", e);
         final Object att = key.attach(null);
-        if (att instanceof NioAttachment) {
-            ((NioAttachment) att).getSession().close();
+        if (att instanceof NioChannel) {
+            ((NioChannel) att).close();
         }
         key.channel().close();
         logger.info("close connection " + key.channel());

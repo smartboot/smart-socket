@@ -63,7 +63,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
             logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
             session.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(session));
             session.sessionWriteThread = writeThreads[0];
-            key.attach(new NioAttachment(session));
+            key.attach(session);
             synchronized (conenctLock) {
                 conenctLock.notifyAll();
             }
@@ -74,12 +74,11 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
      * 从管道流中读取数据
      *
      * @param key
-     * @param attach
+     * @param session
      * @throws IOException
      */
-    protected void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException {
+    protected void readFromChannel(SelectionKey key, NioChannel session) throws IOException {
         SocketChannel socketChannel = (SocketChannel) key.channel();
-        NioChannel<?> session = attach.getSession();
         int readSize = 0;
         int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
         while ((readSize = socketChannel.read(session.flushReadBuffer())) > 0 && --loopTimes > 0)

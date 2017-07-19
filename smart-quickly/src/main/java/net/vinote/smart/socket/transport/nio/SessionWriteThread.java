@@ -56,15 +56,11 @@ public class SessionWriteThread extends Thread {
                 synchronized (this) {
                     if (sessionSet.isEmpty() && newSessionSet1.isEmpty() && newSessionSet2.isEmpty()) {
                         try {
-                            long start = System.currentTimeMillis();
                             this.wait(waitTime);
                             if (waitTime < 2000) {
                                 waitTime++;
                             } else {
                                 waitTime = 0;
-                            }
-                            if (logger.isTraceEnabled()) {
-                                logger.trace("nofity sessionWriteThread,waitTime:" + waitTime + " , real waitTime:" + (System.currentTimeMillis() - start));
                             }
                         } catch (InterruptedException e) {
                             logger.catching(e);

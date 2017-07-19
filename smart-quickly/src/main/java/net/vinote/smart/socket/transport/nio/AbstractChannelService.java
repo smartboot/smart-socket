@@ -116,7 +116,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
 
                 // 读取客户端数据
                 if (key.isReadable()) {
-                    NioAttachment attach = (NioAttachment) key.attachment();
+                    NioChannel attach = (NioChannel) key.attachment();
                     readFromChannel(key, attach);
                 }/* else if (key.isWritable()) {// 输出数据至客户端
                     attach.setCurSelectionOP(SelectionKey.OP_WRITE);
@@ -140,7 +140,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
      * @param attach
      * @throws IOException
      */
-    protected abstract void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException;
+    protected abstract void readFromChannel(SelectionKey key, NioChannel attach) throws IOException;
 
     /**
      * 接受并建立Socket连接
