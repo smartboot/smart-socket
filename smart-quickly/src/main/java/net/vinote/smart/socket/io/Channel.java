@@ -1,8 +1,8 @@
-package net.vinote.smart.socket.transport;
+package net.vinote.smart.socket.io;
 
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+import net.vinote.smart.socket.enums.ChannelStatusEnum;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -11,18 +11,17 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 传输层会话<br/>
- * 维护客户端-》服务端 或 服务端-》客户端 的当前会话
+ * 定义底层通信管道对象<br/>
  *
  * @author Seer
- * @version TransportSession.java, v 0.1 2015年8月24日 上午10:31:38 Seer Exp.
+ * @version Channel.java, v 0.1 2015年8月24日 上午10:31:38 Seer Exp.
  */
-public abstract class TransportChannel<T> {
+public abstract class Channel<T> {
 
     /**
-     * 会话ID
+     * Channel唯一标识
      */
-    private final String sessionId = String.valueOf(System.identityHashCode(this));
+    private final String channelId = String.valueOf(System.identityHashCode(this));
 
     /**
      * 本次读取的消息体大小
@@ -30,15 +29,10 @@ public abstract class TransportChannel<T> {
     public static final String ATTRIBUTE_KEY_CUR_DATA_LENGTH = "_attr_key_curDataLength_";
 
     /**
-     * 消息读取线程
-     */
-//    public static final String DATA_READ_THREAD = "_read_thread_";
-//
-//    public static final String DATA_WRITE_THREAD = "_write_thread_";
-    /**
      * 消息通信协议
      */
     protected Protocol<T> protocol;
+
     /**
      * 超时时间
      */
@@ -48,6 +42,7 @@ public abstract class TransportChannel<T> {
      * 缓存大小
      */
     protected int bufferSize;
+
     /**
      * 缓存传输层读取到的数据流
      */
@@ -60,13 +55,19 @@ public abstract class TransportChannel<T> {
     /**
      * 会话状态
      */
-    private volatile SessionStatusEnum status = SessionStatusEnum.ENABLED;
+    private volatile ChannelStatusEnum status = ChannelStatusEnum.ENABLED;
 
+    /**
+     * 消息过滤器
+     */
     protected SmartFilterChain<T> chain;
 
+    /**
+     * 读操作暂停标识
+     */
     protected AtomicBoolean readPause = new AtomicBoolean(false);
 
-    public TransportChannel(ByteBuffer readBuffer) {
+    public Channel(ByteBuffer readBuffer) {
         this.readBuffer = readBuffer;
     }
 
@@ -87,12 +88,12 @@ public abstract class TransportChannel<T> {
      */
     public void close(boolean immediate) {
         if (immediate) {
-            synchronized (TransportChannel.this) {
+            synchronized (Channel.this) {
                 close0();
-                status = SessionStatusEnum.CLOSED;
+                status = ChannelStatusEnum.CLOSED;
             }
         } else {
-            status = SessionStatusEnum.CLOSING;
+            status = ChannelStatusEnum.CLOSING;
         }
     }
 
@@ -144,10 +145,10 @@ public abstract class TransportChannel<T> {
      * @return
      */
     public final String getSessionID() {
-        return sessionId;
+        return channelId;
     }
 
-    public SessionStatusEnum getStatus() {
+    public ChannelStatusEnum getStatus() {
         return status;
     }
 
@@ -164,11 +165,11 @@ public abstract class TransportChannel<T> {
      * 当前会话是否已失效
      */
     public boolean isValid() {
-        return status == SessionStatusEnum.ENABLED;
+        return status == ChannelStatusEnum.ENABLED;
     }
 
     public void invalid() {
-        status = SessionStatusEnum.INVALID;
+        status = ChannelStatusEnum.INVALID;
     }
 
     /**

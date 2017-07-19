@@ -14,7 +14,7 @@ import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.transport.nio.NioQuickClient;
+import net.vinote.smart.socket.io.nio.NioQuickClient;
 
 public class P2PMultiClient {
     public static void main(String[] args) throws Exception {

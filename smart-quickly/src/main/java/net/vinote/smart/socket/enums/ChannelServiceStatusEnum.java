@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.transport.enums;
+package net.vinote.smart.socket.enums;
 
 /**
  * 传输层服务状态

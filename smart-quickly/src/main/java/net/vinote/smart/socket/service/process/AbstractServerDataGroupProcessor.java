@@ -3,7 +3,7 @@ package net.vinote.smart.socket.service.process;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.transport.TransportChannel;
+import net.vinote.smart.socket.io.Channel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,7 +41,7 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
     }
 
     @Override
-    public boolean receive(TransportChannel<T> session, T entry) {
+    public boolean receive(Channel<T> session, T entry) {
         ProcessUnit unit = new ProcessUnit(session, entry);
         ServerDataProcessThread processThread = session.getAttribute(SESSION_PROCESS_THREAD);
         //当前Session未绑定处理器,则先进行处理器选举
@@ -83,10 +83,10 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
      * @author zhengjunwei
      */
     final class ProcessUnit {
-        TransportChannel<T> session;
+        Channel<T> session;
         T msg;
 
-        public ProcessUnit(TransportChannel<T> session, T msg) {
+        public ProcessUnit(Channel<T> session, T msg) {
             this.session = session;
             this.msg = msg;
         }

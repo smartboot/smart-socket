@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.transport.nio;
+package net.vinote.smart.socket.io.nio;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

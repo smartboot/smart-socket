@@ -1,11 +1,11 @@
-package net.vinote.smart.socket.transport.nio;
+package net.vinote.smart.socket.io.nio;
 
+import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
+import net.vinote.smart.socket.enums.ChannelStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.service.process.AbstractServerDataProcessor;
-import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -61,7 +61,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
         } else {
             session = new NioChannel<T>(key, config);
             logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
-            session.setAttribute(AbstractServerDataProcessor.SESSION_KEY, config.getProcessor().initSession(session));
+            session.setAttribute(AbstractServerDataGroupProcessor.SESSION_KEY, config.getProcessor().initSession(session));
             session.sessionWriteThread = writeThreads[0];
             key.attach(session);
             synchronized (conenctLock) {
@@ -84,7 +84,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
         while ((readSize = socketChannel.read(session.flushReadBuffer())) > 0 && --loopTimes > 0)
             ;// 读取管道中的数据块
         // 达到流末尾则注销读关注
-        if (readSize == -1 || session.getStatus() == SessionStatusEnum.CLOSING) {
+        if (readSize == -1 || session.getStatus() == ChannelStatusEnum.CLOSING) {
             session.cancelReadAttention();
             // key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
             if (session.getWriteBuffer() == null || key.isValid()) {
