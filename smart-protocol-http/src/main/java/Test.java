@@ -2,7 +2,7 @@ import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.HttpEntity;
 import net.vinote.smart.socket.protocol.HttpProtocolFactory;
 import net.vinote.smart.socket.protocol.HttpServerMessageProcessor;
-import net.vinote.smart.socket.transport.nio.NioQuickServer;
+import net.vinote.smart.socket.io.nio.NioQuickServer;
 
 import java.io.IOException;
 
@@ -12,7 +12,7 @@ public class Test {
         QuicklyConfig<HttpEntity> config = new QuicklyConfig<HttpEntity>(true);
 
         // 定义服务器接受的消息类型以及各类消息对应的处理器
-        config.setThreadNum(32);
+        config.setThreadNum(8);
         config.setProtocolFactory(new HttpProtocolFactory());
 //        config.setFilters(new SmartFilter[] { new QuickMonitorTimer<HttpEntity>() });
         HttpServerMessageProcessor processor = new HttpServerMessageProcessor();

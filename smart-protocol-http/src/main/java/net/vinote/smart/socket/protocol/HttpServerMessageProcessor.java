@@ -1,10 +1,8 @@
 package net.vinote.smart.socket.protocol;
 
+import net.vinote.smart.socket.io.Channel;
 import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
-import net.vinote.smart.socket.transport.TransportChannel;
-
-import java.io.InputStream;
 
 /**
  * 服务器消息处理器,由服务器启动时构造
@@ -29,7 +27,7 @@ public final class HttpServerMessageProcessor extends AbstractServerDataGroupPro
     }
 
     @Override
-    public Session<HttpEntity> initSession(TransportChannel<HttpEntity> session) {
+    public Session<HttpEntity> initSession(Channel<HttpEntity> session) {
         return new HttpSession(session);
     }
 }

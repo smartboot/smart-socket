@@ -1,7 +1,7 @@
 package net.vinote.smart.socket.protocol;
 
+import net.vinote.smart.socket.io.Channel;
 import net.vinote.smart.socket.lang.StringUtils;
-import net.vinote.smart.socket.transport.TransportChannel;
 
 import java.nio.ByteBuffer;
 
@@ -14,7 +14,7 @@ public class HttpProtocol implements Protocol<HttpEntity> {
     private static final String HTTP_ENTITY = "_http_entity_";
 
     @Override
-    public HttpEntity decode(ByteBuffer buffer, TransportChannel<HttpEntity> session) {
+    public HttpEntity decode(ByteBuffer buffer, Channel<HttpEntity> session) {
         HttpEntity entity = session.getAttribute(HTTP_ENTITY);
         if (entity == null) {
             entity = new HttpEntity(session);
@@ -51,7 +51,7 @@ public class HttpProtocol implements Protocol<HttpEntity> {
     }
 
     @Override
-    public ByteBuffer encode(HttpEntity httpEntity, TransportChannel<HttpEntity> session) {
+    public ByteBuffer encode(HttpEntity httpEntity, Channel<HttpEntity> session) {
         return null;
     }
 
