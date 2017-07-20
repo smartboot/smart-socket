@@ -1,10 +1,10 @@
 package net.vinote.smart.socket.io.nio;
 
+import net.vinote.smart.socket.enums.ChannelStatusEnum;
+import net.vinote.smart.socket.io.Channel;
 import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
-import net.vinote.smart.socket.io.Channel;
-import net.vinote.smart.socket.enums.ChannelStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -99,10 +99,10 @@ public class NioChannel<T> extends Channel<T> {
 
     public int read(int readTimes) throws IOException {
         SocketChannel socketChannel = (SocketChannel) channelKey.channel();
-        int readSize=0;
+        int readSize = 0;
         while (readTimes-- > 0) {
             readSize = socketChannel.read(readBuffer);
-            if(readSize==0||readSize==-1){
+            if (readSize == 0 || readSize == -1) {
                 break;
             }
             readBuffer.flip();
@@ -148,7 +148,10 @@ public class NioChannel<T> extends Channel<T> {
         return buffer;
     }
 
-    synchronized void flushWriteBuffer(int num) throws IOException {
+    void flushWriteBuffer(int num) throws IOException {
+        if (writeCacheQueue.isEmpty()) {
+            return;
+        }
         ByteBuffer[] array = new ByteBuffer[cacheSize];
         Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
         int i = 0;
