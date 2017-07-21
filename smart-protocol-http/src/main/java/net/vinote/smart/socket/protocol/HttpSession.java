@@ -1,7 +1,7 @@
 package net.vinote.smart.socket.protocol;
 
-import net.vinote.smart.socket.io.Channel;
 import net.vinote.smart.socket.service.Session;
+import net.vinote.smart.socket.transport.IoSession;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Seer
  */
 public class HttpSession implements Session<HttpEntity> {
-    private Channel<HttpEntity> session;
+    private IoSession<HttpEntity> session;
     /**
      * 会话创建时间
      */
@@ -28,7 +28,7 @@ public class HttpSession implements Session<HttpEntity> {
     /**
      * 当前会话唯一标识
      */
-    private String sessionId = null;
+    private int sessionId = 0;
     /**
      * 失效标识
      */
@@ -37,7 +37,7 @@ public class HttpSession implements Session<HttpEntity> {
 
     private Map<String, Object> attributeMap = new ConcurrentHashMap<String, Object>();
 
-    public HttpSession(Channel<HttpEntity> session) {
+    public HttpSession(IoSession<HttpEntity> session) {
         sessionId = session.getSessionID();
         this.session = session;
         maxInactiveInterval = session.getTimeout();
@@ -56,10 +56,6 @@ public class HttpSession implements Session<HttpEntity> {
         return creatTime;
     }
 
-    public String getId() {
-        refreshAccessedTime();
-        return sessionId;
-    }
 
     public long getLastAccessedTime() {
         return lastAccessTime;

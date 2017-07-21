@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.protocol;
 
-import net.vinote.smart.socket.io.Channel;
+import net.vinote.smart.socket.transport.IoSession;
 import org.apache.commons.lang.math.NumberUtils;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class HttpEntity {
     public static final String RANGE = "Range";
     public static final String LOCATION = "Location";
     public static final String CONNECTION = "Connection";
-    private Channel<HttpEntity> session;
+    private IoSession<HttpEntity> session;
     /**
      * 请求行
      */
@@ -95,7 +95,7 @@ public class HttpEntity {
     };
 
 
-    public HttpEntity(Channel<HttpEntity> session) {
+    public HttpEntity(IoSession<HttpEntity> session) {
         this.session = session;
     }
 

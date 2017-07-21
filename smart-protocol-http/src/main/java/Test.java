@@ -1,8 +1,8 @@
-import net.vinote.smart.socket.lang.QuicklyConfig;
 import net.vinote.smart.socket.protocol.HttpEntity;
 import net.vinote.smart.socket.protocol.HttpProtocolFactory;
 import net.vinote.smart.socket.protocol.HttpServerMessageProcessor;
-import net.vinote.smart.socket.io.nio.NioQuickServer;
+import net.vinote.smart.socket.transport.nio.NioQuickServer;
+import net.vinote.smart.socket.util.QuicklyConfig;
 
 import java.io.IOException;
 
