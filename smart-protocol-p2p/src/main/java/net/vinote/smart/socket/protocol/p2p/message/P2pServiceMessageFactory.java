@@ -9,7 +9,7 @@ import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.vinote.smart.socket.lang.StringUtils;
+import net.vinote.smart.socket.util.StringUtils;
 import net.vinote.smart.socket.protocol.p2p.MessageHandler;
 
 public class P2pServiceMessageFactory {

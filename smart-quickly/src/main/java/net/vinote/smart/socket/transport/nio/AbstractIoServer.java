@@ -1,8 +1,8 @@
-package net.vinote.smart.socket.io.nio;
+package net.vinote.smart.socket.transport.nio;
 
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.io.ChannelService;
+import net.vinote.smart.socket.util.QuicklyConfig;
+import net.vinote.smart.socket.transport.IoServer;
 import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Seer
  * @version AbstractChannelService.java, v 0.1 2015年3月19日 下午6:57:01 Seer Exp.
  */
-abstract class AbstractChannelService<T> implements ChannelService {
-    private static Logger logger = LogManager.getLogger(AbstractChannelService.class);
+abstract class AbstractIoServer<T> implements IoServer {
+    private static Logger logger = LogManager.getLogger(AbstractIoServer.class);
     /**
      * 服务状态
      */
@@ -50,7 +50,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
 
     private AtomicInteger writeThreadIndex = new AtomicInteger(0);
 
-    public AbstractChannelService(final QuicklyConfig<T> config) {
+    public AbstractIoServer(final QuicklyConfig<T> config) {
         this.config = config;
         READ_LOOP_TIMES = config.getReadLoopTimes();
         writeThreads = new SessionWriteThread[config.getThreadNum()];
@@ -116,7 +116,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
 
                 // 读取客户端数据
                 if (key.isReadable()) {
-                    NioChannel attach = (NioChannel) key.attachment();
+                    NioSession attach = (NioSession) key.attachment();
                     readFromChannel(key, attach);
                 }/* else if (key.isWritable()) {// 输出数据至客户端
                     attach.setCurSelectionOP(SelectionKey.OP_WRITE);
@@ -140,7 +140,10 @@ abstract class AbstractChannelService<T> implements ChannelService {
      * @param attach
      * @throws IOException
      */
-    protected abstract void readFromChannel(SelectionKey key, NioChannel attach) throws IOException;
+    private final void readFromChannel(SelectionKey key, NioSession attach) throws IOException{
+        SessionReadThread readThread = attach.sessionReadThread;
+        readThread.notifySession(key);
+    }
 
     /**
      * 接受并建立Socket连接

@@ -2,7 +2,7 @@ package net.vinote.smart.socket.service.filter;
 
 import java.nio.ByteBuffer;
 
-import net.vinote.smart.socket.io.Channel;
+import net.vinote.smart.socket.transport.IoSession;
 
 /**
  * 业务层消息预处理器
@@ -18,7 +18,7 @@ public interface SmartFilter<T> {
 	 * @param session
 	 * @param d
 	 */
-	public void processFilter(Channel<T> session, T d);
+	public void processFilter(IoSession<T> session, T d);
 
 	/**
 	 * 消息接受前置预处理
@@ -26,24 +26,24 @@ public interface SmartFilter<T> {
 	 * @param session
 	 * @param d
 	 */
-	public void readFilter(Channel<T> session, T d);
+	public void readFilter(IoSession<T> session, T d);
 
 	/**
 	 * 消息接受失败处理
 	 */
-	public void receiveFailHandler(Channel<T> session, T d);
+	public void receiveFailHandler(IoSession<T> session, T d);
 
 	/**
 	 *消息输出前置处理
 	 */
-	public void beginWriteFilter(Channel<T> session, ByteBuffer d);
+	public void beginWriteFilter(IoSession<T> session, ByteBuffer d);
 
 	/**
 	 *消息输出中
 	 */
-	public void continueWriteFilter(Channel<T> session, ByteBuffer d);
+	public void continueWriteFilter(IoSession<T> session, ByteBuffer d);
 	/**
 	 *消息输出后置处理
 	 */
-	public void finishWriteFilter(Channel<T> session, ByteBuffer d);
+	public void finishWriteFilter(IoSession<T> session, ByteBuffer d);
 }

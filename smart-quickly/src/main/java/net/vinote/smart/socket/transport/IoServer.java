@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.io;
+package net.vinote.smart.socket.transport;
 
 import java.io.IOException;
 
@@ -19,7 +19,7 @@ import java.io.IOException;
  * @author Seer
  * @version ChannelService.java, v 0.1 2015年8月24日 上午10:31:23 Seer Exp.
  */
-public interface ChannelService extends Runnable {
+public interface IoServer extends Runnable {
 
 	/**
 	 *

@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.lang;
+package net.vinote.smart.socket.util;
 
 import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;

@@ -1,12 +1,12 @@
 package net.vinote.demo;
 
-import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.service.process.AbstractClientDataProcessor;
-import net.vinote.smart.socket.io.Channel;
-import net.vinote.smart.socket.io.nio.NioQuickClient;
+import net.vinote.smart.socket.transport.IoSession;
+import net.vinote.smart.socket.transport.nio.NioQuickClient;
 
 import java.nio.ByteBuffer;
 
@@ -27,7 +27,7 @@ public class SimpleClient {
 
 
             @Override
-            public Session<String> initSession(final Channel<String> transportSession) {
+            public Session<String> initSession(final IoSession<String> transportSession) {
                 this.session = new Session<String>() {
                     @Override
                     public void sendWithoutResponse(String requestMsg) throws Exception {

@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.io.nio;
+package net.vinote.smart.socket.transport.nio;
 
 import net.vinote.smart.socket.enums.ChannelStatusEnum;
 import org.apache.logging.log4j.LogManager;
@@ -14,11 +14,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SessionWriteThread2 extends SessionWriteThread {
     private static final Logger logger = LogManager.getLogger(SessionWriteThread2.class);
-    private Map<NioChannel, AtomicInteger> sessionMap = new ConcurrentHashMap<NioChannel, AtomicInteger>();
+    private Map<NioSession, AtomicInteger> sessionMap = new ConcurrentHashMap<NioSession, AtomicInteger>();
 
     private int waitTime = 1;
 
-    public void notifySession(NioChannel session) {
+    public void notifySession(NioSession session) {
         AtomicInteger notifyTimes = sessionMap.get(session);
         if (notifyTimes == null) {
             synchronized (session) {
@@ -68,8 +68,8 @@ public class SessionWriteThread2 extends SessionWriteThread {
                 }
             }
 
-            for (Map.Entry<NioChannel, AtomicInteger> entry : sessionMap.entrySet()) {
-                NioChannel session = entry.getKey();
+            for (Map.Entry<NioSession, AtomicInteger> entry : sessionMap.entrySet()) {
+                NioSession session = entry.getKey();
                 AtomicInteger notifyTimes = entry.getValue();
                 if (notifyTimes.get() > 1) {
                     notifyTimes.set(1);

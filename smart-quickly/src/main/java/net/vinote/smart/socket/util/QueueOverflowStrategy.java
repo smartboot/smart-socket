@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.lang;
+package net.vinote.smart.socket.util;
 
 /**
  * 队列溢出处理策略

@@ -1,10 +1,10 @@
-package net.vinote.smart.socket.io.nio;
+package net.vinote.smart.socket.transport.nio;
 
 import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.enums.ChannelStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.lang.StringUtils;
+import net.vinote.smart.socket.util.QuicklyConfig;
+import net.vinote.smart.socket.util.StringUtils;
 import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +21,7 @@ import java.util.Set;
  * @author Seer
  * @version NioQuickClient.java, v 0.1 2015年3月20日 下午2:55:08 Seer Exp.
  */
-public class NioQuickClient<T> extends AbstractChannelService<T> {
+public class NioQuickClient<T> extends AbstractIoServer<T> {
     private static Logger logger = LogManager.getLogger(NioQuickClient.class);
     /**
      * Socket连接锁,用于监听连接超时
@@ -31,7 +31,7 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
     /**
      * 客户端会话信息
      */
-    private NioChannel<T> session;
+    private NioSession<T> session;
 
     private SocketChannel socketChannel;
 
@@ -59,10 +59,11 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
 //            session.initBaseChannelInfo(key);
             logger.info("Socket link has been recovered!");
         } else {
-            session = new NioChannel<T>(key, config);
+            session = new NioSession<T>(key, config);
             logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
             session.setAttribute(AbstractServerDataGroupProcessor.SESSION_KEY, config.getProcessor().initSession(session));
             session.sessionWriteThread = writeThreads[0];
+            session.sessionReadThread = selectReadThread();
             key.attach(session);
             synchronized (conenctLock) {
                 conenctLock.notifyAll();
@@ -77,24 +78,24 @@ public class NioQuickClient<T> extends AbstractChannelService<T> {
      * @param session
      * @throws IOException
      */
-    protected void readFromChannel(SelectionKey key, NioChannel session) throws IOException {
-        SocketChannel socketChannel = (SocketChannel) key.channel();
-        int readSize = 0;
-        int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
-        while ((readSize = socketChannel.read(session.flushReadBuffer())) > 0 && --loopTimes > 0)
-            ;// 读取管道中的数据块
-        // 达到流末尾则注销读关注
-        if (readSize == -1 || session.getStatus() == ChannelStatusEnum.CLOSING) {
-            session.cancelReadAttention();
-            // key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
-            if (session.getWriteBuffer() == null || key.isValid()) {
-                session.close();
-                logger.info("关闭Socket[" + socketChannel + "]");
-            } else {
-                logger.info("注销Socket[" + socketChannel + "]读关注");
-            }
-        }
-    }
+//    protected void readFromChannel(SelectionKey key, NioSession session) throws IOException {
+//        SocketChannel socketChannel = (SocketChannel) key.channel();
+//        int readSize = 0;
+//        int loopTimes = READ_LOOP_TIMES;// 轮训次数,以便及时让出资源
+//        while ((readSize = socketChannel.read(session.flushReadBuffer())) > 0 && --loopTimes > 0)
+//            ;// 读取管道中的数据块
+//        // 达到流末尾则注销读关注
+//        if (readSize == -1 || session.getStatus() == ChannelStatusEnum.CLOSING) {
+//            session.cancelReadAttention();
+//            // key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+//            if (session.getWriteBuffer() == null || key.isValid()) {
+//                session.close();
+//                logger.info("关闭Socket[" + socketChannel + "]");
+//            } else {
+//                logger.info("注销Socket[" + socketChannel + "]读关注");
+//            }
+//        }
+//    }
 
     /*
      * (non-Javadoc)

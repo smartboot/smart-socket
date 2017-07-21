@@ -6,7 +6,7 @@ import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
-import net.vinote.smart.socket.io.Channel;
+import net.vinote.smart.socket.transport.IoSession;
 
 /**
  * 服务器消息处理器,由服务器启动时构造
@@ -28,7 +28,7 @@ public final class P2PServerMessageProcessor extends AbstractServerDataGroupProc
 	}
 
 	@Override
-	public Session<BaseMessage> initSession(Channel<BaseMessage> session) {
+	public Session<BaseMessage> initSession(IoSession<BaseMessage> session) {
 		return new P2PSession(session);
 	}
 }
