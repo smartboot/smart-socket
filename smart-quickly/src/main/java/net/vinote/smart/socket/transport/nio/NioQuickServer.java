@@ -2,7 +2,6 @@ package net.vinote.smart.socket.transport.nio;
 
 import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
 import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -69,7 +68,7 @@ public final class NioQuickServer<T> extends AbstractIoServer<T> {
                         socketKey.attach(nioSession);
                         nioSession.sessionReadThread = selectReadThread();
                         nioSession.sessionWriteThread = selectWriteThread();
-                        nioSession.setAttribute(AbstractServerDataGroupProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
+                        nioSession.registSession(config.getProcessor().initSession(nioSession));
                         socketKey.interestOps(SelectionKey.OP_READ);
                         socketChannel.finishConnect();
                     } catch (Exception e) {

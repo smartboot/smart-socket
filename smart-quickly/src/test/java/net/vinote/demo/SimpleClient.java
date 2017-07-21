@@ -28,7 +28,7 @@ public class SimpleClient {
 
             @Override
             public Session<String> initSession(final IoSession<String> transportSession) {
-                this.session = new Session<String>() {
+                return new Session<String>() {
                     @Override
                     public void sendWithoutResponse(String requestMsg) throws Exception {
                         ByteBuffer buffer = ByteBuffer.wrap(requestMsg.getBytes());
@@ -51,7 +51,6 @@ public class SimpleClient {
                         return false;
                     }
                 };
-                return this.session;
             }
 
             @Override
@@ -63,7 +62,7 @@ public class SimpleClient {
         NioQuickClient client = new NioQuickClient(config);
         client.start();
         for (int i = 0; i < 10; i++)
-            processor.getSession().sendWithoutResponse("Hi,Server\r\n");
+            client.getSession().sendWithoutResponse("Hi,Server\r\n");
         Thread.sleep(1);
     }
 }

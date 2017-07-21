@@ -21,7 +21,7 @@ public class P2PSession implements Session<BaseMessage> {
     private static Logger logger = LogManager.getLogger(P2PSession.class);
     private String remoteIp;
     private String localAddress;
-    private IoSession<BaseMessage> session;
+    private IoSession<BaseMessage> ioSession;
     /**
      * 会话创建时间
      */
@@ -42,12 +42,10 @@ public class P2PSession implements Session<BaseMessage> {
 
     private Map<String, Object> attributeMap = new ConcurrentHashMap<String, Object>();
 
-    public P2PSession(IoSession<BaseMessage> session) {
-        sessionId = session.getSessionID();
-//		remoteIp = session.getRemoteAddr();
-//		localAddress = session.getLocalAddress();
-        this.session = session;
-        maxInactiveInterval = session.getTimeout();
+    public P2PSession(IoSession<BaseMessage> ioSession) {
+        sessionId = ioSession.getSessionID();
+        this.ioSession = ioSession;
+        maxInactiveInterval = ioSession.getTimeout();
         synchRespMap = new ConcurrentHashMap<Integer, BaseMessage>();
         creatTime = System.currentTimeMillis();
     }
@@ -79,7 +77,7 @@ public class P2PSession implements Session<BaseMessage> {
             }
         }
         attributeMap.clear();
-        session.close(immediate);
+        ioSession.close(immediate);
     }
 
     public void invalidate() {
@@ -101,7 +99,7 @@ public class P2PSession implements Session<BaseMessage> {
 
     @Override
     public String toString() {
-        return "OMCSession [remoteIp=" + remoteIp + ", session=" + session + ", creatTime=" + creatTime
+        return "OMCSession [remoteIp=" + remoteIp + ", ioSession=" + ioSession + ", creatTime=" + creatTime
                 + ", maxInactiveInterval=" + maxInactiveInterval + ", sessionId="
                 + sessionId + ", invalidated=" + invalidated + "]";
     }
@@ -111,7 +109,7 @@ public class P2PSession implements Session<BaseMessage> {
     }
 
     private void assertTransactionSession() throws IOException {
-        if (session == null || !session.isValid()) {
+        if (ioSession == null || !ioSession.isValid()) {
             throw new IOException("Socket Channel is invalid now");
         }
     }
@@ -120,14 +118,6 @@ public class P2PSession implements Session<BaseMessage> {
     public String getLocalAddress() {
         return localAddress;
     }
-
-	/*
-     * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.zjw.platform.quickly.service.session.Session#notifySyncMessage(com
-	 * .zjw.platform.quickly.protocol.DataEntry)
-	 */
 
     public boolean notifySyncMessage(BaseMessage baseMsg) {
         BaseMessage respMsg = (BaseMessage) baseMsg;
@@ -149,18 +139,11 @@ public class P2PSession implements Session<BaseMessage> {
 
     }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.zjw.platform.quickly.service.session.Session#sendWithoutResponse(
-	 * com.zjw.platform.quickly.protocol.DataEntry)
-	 */
 
     public void sendWithoutResponse(BaseMessage requestMsg) throws Exception {
         assertTransactionSession();
         ByteBuffer buffer = requestMsg.encode();
-        session.write(buffer);
+        ioSession.write(buffer);
     }
 
     public BaseMessage sendWithResponse(BaseMessage requestMsg, long timeout) throws Exception {
@@ -174,7 +157,7 @@ public class P2PSession implements Session<BaseMessage> {
         ByteBuffer buffer = reqMsg.encode();// 必须执行encode才可产生sequenceId
         int sequenceId = reqMsg.getHead().getSequenceID();
         synchRespMap.put(sequenceId, reqMsg);
-        session.write(buffer);
+        ioSession.write(buffer);
         if (synchRespMap.get(sequenceId) == reqMsg) {
             synchronized (reqMsg) {
                 if (synchRespMap.get(sequenceId) == reqMsg) {
@@ -197,15 +180,8 @@ public class P2PSession implements Session<BaseMessage> {
 
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * net.vinote.smart.socket.service.session.Session#sendWithResponse(net.
-     * vinote.smart.socket.protocol.DataEntry)
-     */
     public BaseMessage sendWithResponse(BaseMessage requestMsg) throws Exception {
-        return sendWithResponse(requestMsg, session.getTimeout());
+        return sendWithResponse(requestMsg, ioSession.getTimeout());
     }
 
     /**

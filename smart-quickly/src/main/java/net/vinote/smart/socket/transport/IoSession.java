@@ -1,8 +1,9 @@
 package net.vinote.smart.socket.transport;
 
-import net.vinote.smart.socket.protocol.Protocol;
-import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.enums.ChannelStatusEnum;
+import net.vinote.smart.socket.protocol.Protocol;
+import net.vinote.smart.socket.service.Session;
+import net.vinote.smart.socket.service.filter.SmartFilterChain;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -28,6 +29,8 @@ public abstract class IoSession<T> {
      * 本次读取的消息体大小
      */
     public static final String ATTRIBUTE_KEY_CUR_DATA_LENGTH = "_attr_key_curDataLength_";
+
+    private Session<T> session;
 
     /**
      * 消息通信协议
@@ -70,6 +73,15 @@ public abstract class IoSession<T> {
 
     public IoSession(ByteBuffer readBuffer) {
         this.readBuffer = readBuffer;
+    }
+
+
+    public void registSession(Session<T> session) {
+        this.session = session;
+    }
+
+    public Session<T> getServiceSession(){
+        return session;
     }
 
     /**
@@ -133,11 +145,9 @@ public abstract class IoSession<T> {
         return readBuffer;
     }
 
-    public ByteBuffer getReadBuffer(){
+    public ByteBuffer getReadBuffer() {
         return readBuffer;
     }
-
-
 
 
     /**

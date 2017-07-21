@@ -2,7 +2,7 @@ package net.vinote.smart.socket.transport.nio;
 
 import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
+import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -30,7 +30,9 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
     /**
      * 客户端会话信息
      */
-    private NioSession<T> session;
+//    private NioSession<T> session;
+
+    private Session<T> session;
 
     private SocketChannel socketChannel;
 
@@ -53,20 +55,15 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
         SocketChannel channel = (SocketChannel) key.channel();
         channel.finishConnect();
         key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
-        // 自动修复链路
-        if (session != null && config.isAutoRecover()) {
-//            session.initBaseChannelInfo(key);
-            logger.info("Socket link has been recovered!");
-        } else {
-            session = new NioSession<T>(key, config);
-            logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
-            session.setAttribute(AbstractServerDataGroupProcessor.SESSION_KEY, config.getProcessor().initSession(session));
-            session.sessionWriteThread = writeThreads[0];
-            session.sessionReadThread = selectReadThread();
-            key.attach(session);
-            synchronized (conenctLock) {
-                conenctLock.notifyAll();
-            }
+        NioSession nioSession = new NioSession<T>(key, config);
+        logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
+        nioSession.sessionWriteThread = writeThreads[0];
+        nioSession.sessionReadThread = selectReadThread();
+        session = config.getProcessor().initSession(nioSession);
+        nioSession.registSession(session);
+        key.attach(nioSession);
+        synchronized (conenctLock) {
+            conenctLock.notifyAll();
         }
     }
 
@@ -203,5 +200,9 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
             default:
                 break;
         }
+    }
+
+    public Session<T> getSession() {
+        return session;
     }
 }

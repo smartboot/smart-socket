@@ -22,8 +22,7 @@ public class P2PClientMessageProcessor extends AbstractClientDataProcessor<BaseM
 
 	@Override
 	public Session<BaseMessage> initSession(IoSession<BaseMessage> session) {
-		this.session = new P2PSession(session);
-		return this.session;
+		return new P2PSession(session);
 	}
 
 }

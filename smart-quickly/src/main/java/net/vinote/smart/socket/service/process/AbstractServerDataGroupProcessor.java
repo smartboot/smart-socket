@@ -1,9 +1,9 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.transport.IoSession;
-import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.transport.IoSession;
+import net.vinote.smart.socket.util.QuicklyConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDataProcessor<T> {
     private static Logger logger = LogManager.getLogger(AbstractServerDataGroupProcessor.class);
-    public static final String SESSION_KEY = "SESSION";
     public static final String SESSION_PROCESS_THREAD = "_PROCESS_THREAD_";
     /**
      * 消息处理线程
@@ -121,7 +120,7 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
                             h.processFilter(unit.session, unit.msg);
                         }
                     }
-                    Session<T> session = unit.session.getAttribute(SESSION_KEY);
+                    Session<T> session = unit.session.getServiceSession();
                     if (unit.session.isValid()) {
                         AbstractServerDataGroupProcessor.this.process(session, unit.msg);
                     } else {
