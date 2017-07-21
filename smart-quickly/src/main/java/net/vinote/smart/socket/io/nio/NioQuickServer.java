@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -55,6 +56,10 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
                 break;
             }
             socketChannel.configureBlocking(false);
+            socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+            socketChannel.setOption(StandardSocketOptions.SO_RCVBUF, 32 * 1024);
+            socketChannel.setOption(StandardSocketOptions.SO_SNDBUF, 32 * 1024);
+            socketChannel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
             final SelectionKey socketKey = socketChannel.register(selector, 0);
             acceptExecutor.execute(new Runnable() {
                 @Override

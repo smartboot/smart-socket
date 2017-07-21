@@ -42,7 +42,7 @@ public class SessionWriteThread extends Thread {
                 newSessionSet2.add(session);
             }
         }
-        if (waitTime != 1) {
+        if (waitTime == 0 || waitTime > 10) {
             synchronized (this) {
                 this.notifyAll();
             }
