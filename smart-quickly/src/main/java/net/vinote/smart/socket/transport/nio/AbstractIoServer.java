@@ -37,10 +37,6 @@ abstract class AbstractIoServer<T> implements IoServer {
      * 传输层Channel服务处理线程
      */
     Thread serverThread;
-    /**
-     * 读管道单论操作读取次数
-     */
-    final int READ_LOOP_TIMES;
     //数据读取线程
     private SessionReadThread[] readThreads;
 
@@ -52,7 +48,6 @@ abstract class AbstractIoServer<T> implements IoServer {
 
     public AbstractIoServer(final QuicklyConfig<T> config) {
         this.config = config;
-        READ_LOOP_TIMES = config.getReadLoopTimes();
         writeThreads = new SessionWriteThread[config.getThreadNum()];
         readThreads = new SessionReadThread[config.getThreadNum()];
         for (int i = 0; i < config.getThreadNum(); i++) {

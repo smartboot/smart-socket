@@ -2,9 +2,9 @@ package net.vinote.smart.socket.transport.nio;
 
 import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
+import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
 import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.util.StringUtils;
-import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -79,21 +79,6 @@ public final class NioQuickServer<T> extends AbstractIoServer<T> {
             });
         }
     }
-
-    /**
-     * 从管道流中读取数据
-     *
-     * @param key
-     * @param attach
-     * @throws IOException
-     */
-
-//    protected void readFromChannel(SelectionKey key, NioSession attach) throws IOException {
-//        SessionReadThread readThread = attach.sessionReadThread;
-//        //先取消读关注
-////        key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
-//        readThread.notifySession(key);
-//    }
 
     @Override
     protected void exceptionInSelectionKey(SelectionKey key, final Exception e) throws Exception {
