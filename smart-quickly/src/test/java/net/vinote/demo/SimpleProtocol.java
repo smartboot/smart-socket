@@ -1,7 +1,7 @@
 package net.vinote.demo;
 
 import net.vinote.smart.socket.protocol.Protocol;
-import net.vinote.smart.socket.io.Channel;
+import net.vinote.smart.socket.transport.IoSession;
 
 import java.nio.ByteBuffer;
 
@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
  */
 public class SimpleProtocol implements Protocol<String> {
     @Override
-    public String decode(ByteBuffer data, Channel<String> session) {
+    public String decode(ByteBuffer data, IoSession<String> session) {
         if (data.remaining() < 2)
             return null;
         for (int i = 1; i < data.remaining(); i++) {
@@ -24,7 +24,7 @@ public class SimpleProtocol implements Protocol<String> {
     }
 
     @Override
-    public ByteBuffer encode(String s, Channel<String> session) {
+    public ByteBuffer encode(String s, IoSession<String> session) {
         return null;
     }
 }

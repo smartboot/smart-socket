@@ -1,10 +1,10 @@
-package net.vinote.smart.socket.io.nio;
+package net.vinote.smart.socket.transport.nio;
 
 import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.lang.StringUtils;
 import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
+import net.vinote.smart.socket.util.QuicklyConfig;
+import net.vinote.smart.socket.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
  *
  * @author Seer
  */
-public final class NioQuickServer<T> extends AbstractChannelService<T> {
+public final class NioQuickServer<T> extends AbstractIoServer<T> {
     private static Logger logger = LogManager.getLogger(NioQuickServer.class);
 
     private ServerSocketChannel server;
@@ -65,7 +65,7 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
                 @Override
                 public void run() {
                     try {
-                        NioChannel<T> nioSession = new NioChannel<T>(socketKey, config);
+                        NioSession<T> nioSession = new NioSession<T>(socketKey, config);
                         socketKey.attach(nioSession);
                         nioSession.sessionReadThread = selectReadThread();
                         nioSession.sessionWriteThread = selectWriteThread();
@@ -80,27 +80,12 @@ public final class NioQuickServer<T> extends AbstractChannelService<T> {
         }
     }
 
-    /**
-     * 从管道流中读取数据
-     *
-     * @param key
-     * @param attach
-     * @throws IOException
-     */
-
-    protected void readFromChannel(SelectionKey key, NioChannel attach) throws IOException {
-        SessionReadThread readThread = attach.sessionReadThread;
-        //先取消读关注
-//        key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
-        readThread.notifySession(key);
-    }
-
     @Override
     protected void exceptionInSelectionKey(SelectionKey key, final Exception e) throws Exception {
         logger.warn("Close Channel because of Exception", e);
         final Object att = key.attach(null);
-        if (att instanceof NioChannel) {
-            ((NioChannel) att).close();
+        if (att instanceof NioSession) {
+            ((NioSession) att).close();
         }
         key.channel().close();
         logger.info("close connection " + key.channel());

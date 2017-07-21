@@ -1,7 +1,7 @@
 package net.vinote.smart.socket.service.process;
 
 import net.vinote.smart.socket.service.Session;
-import net.vinote.smart.socket.io.Channel;
+import net.vinote.smart.socket.transport.IoSession;
 
 /**
  * 协议消息接受器
@@ -22,14 +22,14 @@ public interface ProtocolDataReceiver<T> {
 	 * </p>
 	 * <b>注:NIO实现中消息接受与发送处于同一线程中,因此若receive的实现类中存在阻塞情况,将导致数据发送同步阻塞</b>
 	 *
-	 * @see Channel#flushReadBuffer()
+	 * @see IoSession#flushReadBuffer()
 	 * @param session
 	 *            本次消息的来源
 	 * @param entry
 	 *            待接收的消息
 	 * @return
 	 */
-	public boolean receive(Channel<T> session, T entry);
+	public boolean receive(IoSession<T> session, T entry);
 
-	public Session<T> initSession(Channel<T> session);
+	public Session<T> initSession(IoSession<T> session);
 }

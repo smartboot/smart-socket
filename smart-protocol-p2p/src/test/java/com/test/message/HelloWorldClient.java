@@ -2,12 +2,12 @@ package com.test.message;
 
 import java.util.Properties;
 
-import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.client.P2PClientMessageProcessor;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
-import net.vinote.smart.socket.io.nio.NioQuickClient;
+import net.vinote.smart.socket.transport.nio.NioQuickClient;
 
 public class HelloWorldClient {
 	public static void main(String[] args) throws Exception {

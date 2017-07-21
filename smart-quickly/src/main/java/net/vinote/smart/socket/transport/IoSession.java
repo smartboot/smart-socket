@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.io;
+package net.vinote.smart.socket.transport;
 
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 定义底层通信管道对象<br/>
@@ -16,12 +17,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Seer
  * @version Channel.java, v 0.1 2015年8月24日 上午10:31:38 Seer Exp.
  */
-public abstract class Channel<T> {
-
+public abstract class IoSession<T> {
+    private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
     /**
      * Channel唯一标识
      */
-    private final String channelId = String.valueOf(System.identityHashCode(this));
+    private final int sessionId = NEXT_ID.getAndIncrement();
 
     /**
      * 本次读取的消息体大小
@@ -67,7 +68,7 @@ public abstract class Channel<T> {
      */
     protected AtomicBoolean readPause = new AtomicBoolean(false);
 
-    public Channel(ByteBuffer readBuffer) {
+    public IoSession(ByteBuffer readBuffer) {
         this.readBuffer = readBuffer;
     }
 
@@ -88,7 +89,7 @@ public abstract class Channel<T> {
      */
     public void close(boolean immediate) {
         if (immediate) {
-            synchronized (Channel.this) {
+            synchronized (IoSession.this) {
                 close0();
                 status = ChannelStatusEnum.CLOSED;
             }
@@ -144,8 +145,8 @@ public abstract class Channel<T> {
      *
      * @return
      */
-    public final String getSessionID() {
-        return channelId;
+    public final int getSessionID() {
+        return sessionId;
     }
 
     public ChannelStatusEnum getStatus() {

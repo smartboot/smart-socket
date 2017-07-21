@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.lang;
+package net.vinote.smart.socket.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;

@@ -7,11 +7,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.lang.StringUtils;
+import net.vinote.smart.socket.util.StringUtils;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.HeadMessage;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
-import net.vinote.smart.socket.io.Channel;
+import net.vinote.smart.socket.transport.IoSession;
 
 /**
  * Point to Point消息协议实现
@@ -30,7 +30,7 @@ final class P2PProtocol implements Protocol<BaseMessage> {
         this.serviceMessageFactory = serviceMessageFactory;
     }
 
-    public BaseMessage decode(ByteBuffer buffer, Channel<BaseMessage> session) {
+    public BaseMessage decode(ByteBuffer buffer, IoSession<BaseMessage> session) {
         // 未读取到数据则直接返回
         if (buffer == null || buffer.remaining() < MESSAGE_SIGN_LENGTH) {
             return null;
@@ -55,12 +55,12 @@ final class P2PProtocol implements Protocol<BaseMessage> {
         if (message == null) {
             throw new DecodeException("");
         }
-        session.setAttribute(Channel.ATTRIBUTE_KEY_CUR_DATA_LENGTH, msgLength);// 设置消息体大小
+        session.setAttribute(IoSession.ATTRIBUTE_KEY_CUR_DATA_LENGTH, msgLength);// 设置消息体大小
         return message;
     }
 
     @Override
-    public ByteBuffer encode(BaseMessage baseMessage, Channel<BaseMessage> session) {
+    public ByteBuffer encode(BaseMessage baseMessage, IoSession<BaseMessage> session) {
         try {
             return baseMessage.encode();
         } catch (ProtocolException e) {

@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.service.Session;
 
 /**

@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.protocol.enums;
 
-import net.vinote.smart.socket.lang.StringUtils;
+import net.vinote.smart.socket.util.StringUtils;
 
 /**
  * 状态返回码枚举

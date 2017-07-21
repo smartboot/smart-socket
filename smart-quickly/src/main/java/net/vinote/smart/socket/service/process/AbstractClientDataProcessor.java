@@ -6,10 +6,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
-import net.vinote.smart.socket.lang.QueueOverflowStrategy;
-import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.util.QueueOverflowStrategy;
+import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.service.Session;
-import net.vinote.smart.socket.io.Channel;
+import net.vinote.smart.socket.transport.IoSession;
 
 /**
  * 客户端业务消息抽象处理器
@@ -30,7 +30,7 @@ public abstract class AbstractClientDataProcessor<T> implements ProtocolDataProc
 	}
 
 	@Override
-	public boolean receive(Channel<T> session, T entry) {
+	public boolean receive(IoSession<T> session, T entry) {
 		if (!this.session.notifySyncMessage(entry)) {
 			// 同步响应消息若出现超时情况,也会进到if里面
 			processThread.put(entry);
