@@ -1,9 +1,8 @@
 package net.vinote.smart.socket.transport.nio;
 
-import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.util.QuicklyConfig;
-import net.vinote.smart.socket.transport.IoServer;
 import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
+import net.vinote.smart.socket.exception.StatusException;
+import net.vinote.smart.socket.transport.IoServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,7 +28,7 @@ abstract class AbstractIoServer<T> implements IoServer {
     /**
      * 服务配置
      */
-    QuicklyConfig<T> config;
+    IoServerConfig<T> config;
 
     Selector selector;
 
@@ -39,35 +38,41 @@ abstract class AbstractIoServer<T> implements IoServer {
     Thread serverThread;
     //数据读取线程
     private SessionReadThread[] readThreads;
-
-    private AtomicInteger readThreadIndex = new AtomicInteger(0);
     //数据读取线程
     protected SessionWriteThread[] writeThreads;
 
-    private AtomicInteger writeThreadIndex = new AtomicInteger(0);
+    //读写线程组索引标识
+    private AtomicInteger readWriteIndex = new AtomicInteger(0);
 
-    public AbstractIoServer(final QuicklyConfig<T> config) {
+    /**
+     * 初始化NIO服务
+     *
+     * @param config
+     */
+    protected void init(final IoServerConfig<T> config) {
         this.config = config;
         writeThreads = new SessionWriteThread[config.getThreadNum()];
         readThreads = new SessionReadThread[config.getThreadNum()];
         for (int i = 0; i < config.getThreadNum(); i++) {
+            //启动写线程
             writeThreads[i] = new SessionWriteThread();
             writeThreads[i].setName("SessionWriteThread-" + i);
             writeThreads[i].start();
-
+            //启动读线程
             readThreads[i] = new SessionReadThread();
             readThreads[i].setName("SessionReadThread-" + i);
             readThreads[i].start();
         }
-
     }
 
+
+
     protected SessionReadThread selectReadThread() {
-        return readThreads[readThreadIndex.getAndIncrement() % readThreads.length];
+        return readThreads[(readWriteIndex.getAndIncrement() % readThreads.length + readThreads.length) % readThreads.length];//避免出现负数
     }
 
     protected SessionWriteThread selectWriteThread() {
-        return writeThreads[writeThreadIndex.getAndIncrement() % writeThreads.length];
+        return writeThreads[(readWriteIndex.getAndIncrement() % writeThreads.length + writeThreads.length) % writeThreads.length];
     }
 
     /*
@@ -108,15 +113,11 @@ abstract class AbstractIoServer<T> implements IoServer {
         while (keyIterator.hasNext()) {
             final SelectionKey key = keyIterator.next();
             try {
-
                 // 读取客户端数据
                 if (key.isReadable()) {
                     NioSession attach = (NioSession) key.attachment();
                     readFromChannel(key, attach);
-                }/* else if (key.isWritable()) {// 输出数据至客户端
-                    attach.setCurSelectionOP(SelectionKey.OP_WRITE);
-					writeToChannel(key, attach);
-				}*/ else if (key.isAcceptable() || key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
+                } else if (key.isAcceptable() || key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
                     acceptConnect(key, selector);
                 } else {
                     logger.warn("奇怪了...");
@@ -135,7 +136,7 @@ abstract class AbstractIoServer<T> implements IoServer {
      * @param attach
      * @throws IOException
      */
-    private final void readFromChannel(SelectionKey key, NioSession attach) throws IOException{
+    private final void readFromChannel(SelectionKey key, NioSession attach) throws IOException {
         SessionReadThread readThread = attach.sessionReadThread;
         readThread.notifySession(key);
     }
@@ -192,15 +193,20 @@ abstract class AbstractIoServer<T> implements IoServer {
             throw new NullPointerException(getClass().getSimpleName() + "'s config is null");
         }
         if (config.getProtocolFactory() == null) {
-            throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s protocolFactory is null");
+            throw new NullPointerException(IoServerConfig.class.getSimpleName() + "'s protocolFactory is null");
         }
 
         if (config.getProcessor() == null) {
-            throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s receiver is null");
+            throw new NullPointerException(IoServerConfig.class.getSimpleName() + "'s receiver is null");
         }
 
     }
 
+    /**
+     * 当服务状态发送变更是触发的通知
+     *
+     * @param status
+     */
     protected void notifyWhenUpdateStatus(final ChannelServiceStatusEnum status) {
 
     }

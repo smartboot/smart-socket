@@ -1,9 +1,7 @@
 package net.vinote.smart.socket.service.process;
 
 import net.vinote.smart.socket.service.Session;
-import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.transport.IoSession;
-import net.vinote.smart.socket.util.QuicklyConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,14 +22,12 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
     private ServerDataProcessThread[] processThreads;
 
     private AtomicInteger processThreadIndex = new AtomicInteger(0);
-    private QuicklyConfig<T> quickConfig;
 
     @SuppressWarnings("unchecked")
     @Override
-    public void init(QuicklyConfig<T> config) {
-        this.quickConfig = config;
+    public void init(int threadNum) {
         // 启动线程池处理消息
-        processThreads = new AbstractServerDataGroupProcessor.ServerDataProcessThread[config.getThreadNum() << 1];
+        processThreads = new AbstractServerDataGroupProcessor.ServerDataProcessThread[threadNum];
         for (int i = 0; i < processThreads.length; i++) {
             processThreads[i] = new ServerDataProcessThread("ServerProcess-Thread-" + i);
             processThreads[i].setPriority(Thread.MAX_PRIORITY);
@@ -114,12 +110,7 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
             while (running) {
                 try {
                     ProcessUnit unit = msgQueue.take();
-                    SmartFilter<T>[] filters = AbstractServerDataGroupProcessor.this.quickConfig.getFilters();
-                    if (filters != null && filters.length > 0) {
-                        for (SmartFilter<T> h : filters) {
-                            h.processFilter(unit.session, unit.msg);
-                        }
-                    }
+                    unit.session.getFilterChain().doProcessFilter(unit.session, unit.msg);
                     Session<T> session = unit.session.getServiceSession();
                     if (unit.session.isValid()) {
                         AbstractServerDataGroupProcessor.this.process(session, unit.msg);

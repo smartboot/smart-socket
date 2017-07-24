@@ -2,8 +2,10 @@ package net.vinote.smart.socket.transport.nio;
 
 import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
+import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.service.Session;
-import net.vinote.smart.socket.util.QuicklyConfig;
+import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.service.process.AbstractClientDataProcessor;
 import net.vinote.smart.socket.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,11 +38,59 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
 
     private SocketChannel socketChannel;
 
+    public NioQuickClient() {
+        super.init(new IoServerConfig<T>(false));
+        this.config.setThreadNum(1);
+    }
+
     /**
-     * @param config
+     * 设置远程连接的地址、端口
+     *
+     * @param host
+     * @param port
+     * @return
      */
-    public NioQuickClient(final QuicklyConfig<T> config) {
-        super(config);
+    public NioQuickClient<T> connect(String host, int port) {
+        this.config.setHost(host);
+        this.config.setPort(port);
+        return this;
+    }
+
+    public NioQuickClient<T> setProtocolFactory(ProtocolFactory<T> protocolFactory) {
+        this.config.setProtocolFactory(protocolFactory);
+        return this;
+    }
+
+    /**
+     * 设置消息过滤器,执行顺序以数组中的顺序为准
+     *
+     * @param filters
+     * @return
+     */
+    public NioQuickClient<T> setFilters(SmartFilter<T>[] filters) {
+        this.config.setFilters(filters);
+        return this;
+    }
+
+    /**
+     * 设置消息处理器
+     *
+     * @param processor
+     * @return
+     */
+    public NioQuickClient<T> setProcessor(AbstractClientDataProcessor<T> processor) {
+        this.config.setProcessor(processor);
+        return this;
+    }
+
+    /**
+     * 定义同步消息的超时时间
+     * @param timeout
+     * @return
+     */
+    public NioQuickClient<T> setTimeout(int timeout) {
+        this.config.setTimeout(timeout);
+        return this;
     }
 
     /**
@@ -190,7 +240,7 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
         switch (status) {
             case RUNING:
                 try {
-                    config.getProcessor().init(config);
+                    config.getProcessor().init(1);
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();

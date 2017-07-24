@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Socket写操作的处理线程。不通过NIO的写关注触发，因为发现效率并不高。而是由该线程进行监控，增强数据输出能力
  * Created by zhengjunwei on 2017/6/14.
  */
-public class SessionWriteThread2 extends SessionWriteThread {
+class SessionWriteThread2 extends SessionWriteThread {
     private static final Logger logger = LogManager.getLogger(SessionWriteThread2.class);
     private Map<NioSession, AtomicInteger> sessionMap = new ConcurrentHashMap<NioSession, AtomicInteger>();
 

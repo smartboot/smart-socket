@@ -5,7 +5,6 @@ import net.vinote.smart.socket.protocol.p2p.client.P2PClientMessageProcessor;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.transport.nio.NioQuickClient;
-import net.vinote.smart.socket.util.QuicklyConfig;
 
 import java.util.Properties;
 
@@ -15,14 +14,10 @@ public class HelloWorldClient {
         properties.put(HelloWorldResp.class.getName(), "");
         P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
         messageFactory.loadFromProperties(properties);
-        QuicklyConfig<BaseMessage> config = new QuicklyConfig<BaseMessage>(false);
-        P2PProtocolFactory factory = new P2PProtocolFactory(messageFactory);
-        config.setProtocolFactory(factory);
-        P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-        config.setProcessor(processor);
-        config.setHost("127.0.0.1");
-        config.setTimeout(1000);
-        NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>(config);
+        NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>().connect("localhost", 8888)
+                .setTimeout(1000)
+                .setProcessor(new P2PClientMessageProcessor(messageFactory))
+                .setProtocolFactory(new P2PProtocolFactory(messageFactory));
         client.start();
         int num = 10;
         while (num-- > 0) {

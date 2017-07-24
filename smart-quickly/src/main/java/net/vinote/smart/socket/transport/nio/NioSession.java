@@ -1,10 +1,9 @@
 package net.vinote.smart.socket.transport.nio;
 
 import net.vinote.smart.socket.enums.ChannelStatusEnum;
-import net.vinote.smart.socket.transport.IoSession;
-import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
+import net.vinote.smart.socket.transport.IoSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,7 +41,7 @@ public class NioSession<T> extends IoSession<T> {
      * @param channelKey 当前的Socket管道
      * @param config     配置
      */
-    public NioSession(SelectionKey channelKey, final QuicklyConfig<T> config) {
+    public NioSession(SelectionKey channelKey, final IoServerConfig<T> config) {
         super(ByteBuffer.allocateDirect(config.getDataBufferSize()));
         this.channelKey = channelKey;
         super.protocol = config.getProtocolFactory().createProtocol();

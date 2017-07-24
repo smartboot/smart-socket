@@ -1,6 +1,5 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.service.Session;
 
 /**
@@ -16,7 +15,7 @@ public interface  ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
 	 *
 	 * @throws Exception
 	 */
-	public void init(QuicklyConfig<T> config);
+	public void init(int threadNum);
 
 	/**
 	 * 用于处理指定session内的一个消息实例,若直接在该方法内处理消息,则实现的是同步处理方式.

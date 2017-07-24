@@ -52,6 +52,8 @@ public abstract class IoSession<T> {
      */
     protected ByteBuffer readBuffer;
 
+//    private SmartFilterChain
+
     protected int cacheSize;
     private Map<String, Object> attribute = new HashMap<String, Object>();
     private boolean endOfStream = false;
@@ -258,5 +260,9 @@ public abstract class IoSession<T> {
 
     public AtomicBoolean getReadPause() {
         return readPause;
+    }
+
+    public SmartFilterChain<T> getFilterChain() {
+        return chain;
     }
 }

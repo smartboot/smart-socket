@@ -1,10 +1,7 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
 import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.transport.IoSession;
-import net.vinote.smart.socket.util.QueueOverflowStrategy;
-import net.vinote.smart.socket.util.QuicklyConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,9 +17,8 @@ public abstract class AbstractClientDataProcessor<T> implements ProtocolDataProc
     private ClientDataProcessThread processThread;
 
     @Override
-    public void init(QuicklyConfig<T> config) {
-        processThread = new ClientDataProcessThread("ClientProcessor-Thread", this,
-                QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy()));
+    public void init(int threadNum) {
+        processThread = new ClientDataProcessThread("ClientProcessor-Thread", this);
         processThread.start();
     }
 
@@ -48,32 +44,18 @@ public abstract class AbstractClientDataProcessor<T> implements ProtocolDataProc
      */
     class ClientDataProcessThread extends Thread {
         private Logger logger = LogManager.getLogger(ClientDataProcessThread.class);
-        private QueueOverflowStrategy strategy;
         private ArrayBlockingQueue<T> list = new ArrayBlockingQueue<T>(1024);
         protected volatile boolean running = true;
 
-        public ClientDataProcessThread(String name, ProtocolDataProcessor<T> processor,
-                                       QueueOverflowStrategy strategy) {
+        public ClientDataProcessThread(String name, ProtocolDataProcessor<T> processor) {
             super(name);
-            this.strategy = strategy;
         }
 
         public void put(T msg) {
-            switch (strategy) {
-                case DISCARD:
-                    if (!list.offer(msg)) {
-                        logger.info("message queue is full!");
-                    }
-                    break;
-                case WAIT:
-                    try {
-                        list.put(msg);
-                    } catch (InterruptedException e) {
-                        logger.warn("", e);
-                    }
-                    break;
-                default:
-                    throw new QueueOverflowStrategyException("Invalid overflow strategy " + strategy);
+            try {
+                list.put(msg);
+            } catch (InterruptedException e) {
+                logger.warn("", e);
             }
         }
 

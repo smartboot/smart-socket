@@ -8,7 +8,6 @@ import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.transport.nio.NioQuickClient;
-import net.vinote.smart.socket.util.QuicklyConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,15 +25,11 @@ public class P2PClient {
             e1.printStackTrace();
         }
 
-        QuicklyConfig<BaseMessage> config = new QuicklyConfig<BaseMessage>(false);
-        config.setProtocolFactory(new P2PProtocolFactory(messageFactory));
-        final P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-        config.setProcessor(processor);
-        config.setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()});
-        config.setHost("127.0.0.1");
-        config.setTimeout(1000);
-
-        final NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>(config);
+        final NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
+                .setProtocolFactory(new P2PProtocolFactory(messageFactory))
+                .setProcessor(new P2PClientMessageProcessor(messageFactory))
+                .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
+                .setTimeout(1000);
         client.start();
 
         for (int i = 0; i < 1; i++) {

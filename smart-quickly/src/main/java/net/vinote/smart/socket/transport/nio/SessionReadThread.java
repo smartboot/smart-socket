@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * Created by zhengjunwei on 2017/6/21.
  */
-public class SessionReadThread extends Thread {
+class SessionReadThread extends Thread {
     private static final Logger logger = LogManager.getLogger(SessionReadThread.class);
     private Set<SelectionKey> selectionKeySet = new HashSet<SelectionKey>();
     /**

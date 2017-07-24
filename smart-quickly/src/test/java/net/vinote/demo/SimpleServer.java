@@ -1,6 +1,5 @@
 package net.vinote.demo;
 
-import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.service.Session;
@@ -16,14 +15,13 @@ import java.nio.ByteBuffer;
  */
 public class SimpleServer {
     public static void main(String[] args) {
-        QuicklyConfig<String> config = new QuicklyConfig<String>(true);
-        config.setProtocolFactory(new ProtocolFactory<String>() {
+        ProtocolFactory<String> factory = new ProtocolFactory<String>() {
             @Override
             public Protocol<String> createProtocol() {
                 return new SimpleProtocol();
             }
-        });
-        config.setProcessor(new AbstractServerDataGroupProcessor<String>() {
+        };
+        AbstractServerDataGroupProcessor processor = new AbstractServerDataGroupProcessor<String>() {
 
             @Override
             public Session<String> initSession(final IoSession<String> session) {
@@ -58,8 +56,10 @@ public class SimpleServer {
                 session.sendWithoutResponse("Hi,Client\r\n");
 
             }
-        });
-        NioQuickServer server = new NioQuickServer(config);
+        };
+        NioQuickServer server = new NioQuickServer()
+                .setProtocolFactory(factory)
+                .setProcessor(processor);
         try {
             server.start();
         } catch (IOException e) {
