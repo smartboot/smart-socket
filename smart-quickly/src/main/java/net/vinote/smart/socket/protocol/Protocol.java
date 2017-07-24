@@ -21,6 +21,13 @@ public interface Protocol<T> {
 	public T decode(ByteBuffer data, IoSession<T> session);
 
 
+	/**
+	 * 将业务消息实体编码成ByteBuffer用于输出至对端。
+	 * <b>切勿在encode中直接调用session.write,编码后的byteuffer需交由框架本身来输出</b>
+	 * @param t
+	 * @param session
+	 * @return
+	 */
 	public ByteBuffer encode(T t,IoSession<T> session);
 
 }

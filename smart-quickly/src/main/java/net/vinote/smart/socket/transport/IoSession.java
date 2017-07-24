@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 定义底层通信管道对象<br/>
+ * 定义底层通信管道会话<br/>
  *
  * @author Seer
  * @version Channel.java, v 0.1 2015年8月24日 上午10:31:38 Seer Exp.
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class IoSession<T> {
     private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
     /**
-     * Channel唯一标识
+     * 唯一标识
      */
     private final int sessionId = NEXT_ID.getAndIncrement();
 
@@ -52,8 +52,6 @@ public abstract class IoSession<T> {
      */
     protected ByteBuffer readBuffer;
 
-//    private SmartFilterChain
-
     protected int cacheSize;
     private Map<String, Object> attribute = new HashMap<String, Object>();
     private boolean endOfStream = false;
@@ -82,7 +80,7 @@ public abstract class IoSession<T> {
         this.session = session;
     }
 
-    public Session<T> getServiceSession(){
+    public Session<T> getServiceSession() {
         return session;
     }
 
@@ -123,30 +121,29 @@ public abstract class IoSession<T> {
     /**
      * 刷新缓存的数据流,对已读取到的数据进行一次协议解码操作
      */
-    public ByteBuffer flushReadBuffer() {
-        //无可解析数据,直接返回
-        if (readBuffer.position() == 0 && readBuffer.limit() == readBuffer.capacity()) {
-            return readBuffer;
-        }
-        readBuffer.flip();
-
-        // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
-        T dataEntry;
-        while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
-            chain.doReadFilter(this, dataEntry);
-        }
-        //数据读取完毕
-        if (readBuffer.remaining() == 0) {
-            readBuffer.clear();
-        } else if (readBuffer.position() > 0) {// 仅当发生数据读取时调用compact,减少内存拷贝
-            readBuffer.compact();
-        } else {
-            readBuffer.position(readBuffer.limit());
-            readBuffer.limit(readBuffer.capacity());
-        }
-        return readBuffer;
-    }
-
+//    public ByteBuffer flushReadBuffer() {
+//        //无可解析数据,直接返回
+//        if (readBuffer.position() == 0 && readBuffer.limit() == readBuffer.capacity()) {
+//            return readBuffer;
+//        }
+//        readBuffer.flip();
+//
+//        // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
+//        T dataEntry;
+//        while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
+//            chain.doReadFilter(this, dataEntry);
+//        }
+//        //数据读取完毕
+//        if (readBuffer.remaining() == 0) {
+//            readBuffer.clear();
+//        } else if (readBuffer.position() > 0) {// 仅当发生数据读取时调用compact,减少内存拷贝
+//            readBuffer.compact();
+//        } else {
+//            readBuffer.position(readBuffer.limit());
+//            readBuffer.limit(readBuffer.capacity());
+//        }
+//        return readBuffer;
+//    }
     public ByteBuffer getReadBuffer() {
         return readBuffer;
     }
