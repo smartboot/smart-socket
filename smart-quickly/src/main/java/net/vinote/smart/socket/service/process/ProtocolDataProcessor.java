@@ -13,7 +13,7 @@ public interface  ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
 	/**
 	 * 初始化处理器
 	 *
-	 * @throws Exception
+	 * @param threadNum 处理器内部线程数
 	 */
 	public void init(int threadNum);
 
