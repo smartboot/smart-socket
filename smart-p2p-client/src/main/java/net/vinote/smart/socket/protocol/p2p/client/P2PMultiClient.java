@@ -31,11 +31,11 @@ public class P2PMultiClient {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
-
+                    P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
                     NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
                             .setProtocolFactory(new P2PProtocolFactory(messageFactory))
                             .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
-                            .setProcessor(new P2PClientMessageProcessor(messageFactory))
+                            .setProcessor(processor)
                             .setTimeout(1000);
                     client.start();
 
@@ -47,7 +47,7 @@ public class P2PMultiClient {
                         try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
 //								.sendWithResponse(request);
-                            client.getSession().sendWithoutResponse(request);
+                            processor.getSession().sendWithoutResponse(request);
                             // logger.info(loginResp);
                         } catch (Exception e) {
                             System.out.println(num);

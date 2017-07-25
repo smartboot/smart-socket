@@ -1,7 +1,6 @@
 package net.vinote.smart.socket.transport.nio;
 
 import net.vinote.smart.socket.enums.ChannelStatusEnum;
-import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
 import net.vinote.smart.socket.transport.IoSession;
 import org.apache.logging.log4j.LogManager;
@@ -13,7 +12,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 维护客户端-》服务端 或 服务端-》客户端 的当前会话
@@ -51,12 +49,6 @@ public class NioSession<T> extends IoSession<T> {
         writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(cacheSize);
         super.bufferSize = config.getDataBufferSize();
         super.timeout = config.getTimeout();
-    }
-
-    @Override
-    protected void cancelReadAttention() {
-        readClosed = true;
-        channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
     }
 
     @Override
@@ -139,9 +131,7 @@ public class NioSession<T> extends IoSession<T> {
         }
 
 
-        if (buffer == null) {
-            resumeReadAttention();// 此前若触发过流控,则在消息发送完毕后恢复读关注
-        } else {
+        if (buffer != null) {
             chain.doWriteFilterContinue(this, buffer);
         }
         return buffer;
@@ -174,28 +164,6 @@ public class NioSession<T> extends IoSession<T> {
 //        }
     }
 
-
-    @Override
-    public final void pauseReadAttention() {
-        if (!readPause.get() && (channelKey.interestOps() & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
-            channelKey.interestOps(channelKey.interestOps() & ~SelectionKey.OP_READ);
-//            logger.info(getRemoteAddr() + ":" + getRemotePort() + "流控");
-            readPause.set(true);
-        }
-    }
-
-    @Override
-    public final void resumeReadAttention() {
-        if (readClosed || !readPause.get()) {
-            return;
-        }
-        if ((channelKey.interestOps() & SelectionKey.OP_READ) != SelectionKey.OP_READ) {
-            channelKey.interestOps(channelKey.interestOps() | SelectionKey.OP_READ);
-            if (logger.isDebugEnabled()) {
-//                logger.debug(getRemoteAddr() + ":" + getRemotePort() + "释放流控");
-            }
-        }
-    }
 
     @Override
     public String toString() {
@@ -251,106 +219,5 @@ public class NioSession<T> extends IoSession<T> {
 
     }
 
-    /**
-     * 流控
-     */
-    class FlowControlFilter implements SmartFilter<T> {
-        /**
-         * 输入消息挤压量
-         */
-        private static final String READ_BACKLOG = "_READ_BACKLOG_";
 
-        /**
-         * 输出消息积压量
-         */
-        private static final String WRITE_BACKLOG = "_WRITE_BACKLOG_";
-
-        /**
-         * 消息发送次数
-         */
-        private static final String MESSAGE_SEND_TIMES = "_MESSAGE_SEND_TIMES_";
-
-        @Override
-        public void readFilter(IoSession<T> session, T d) {
-            //接收的消息积压量达到10个，则暂停读关注
-            if (getReadBacklogCounter(session).incrementAndGet() > 10) {
-//                System.out.println("readFilter 流控");
-                session.pauseReadAttention();
-            }
-        }
-
-        @Override
-        public void processFilter(IoSession<T> session, T d) {
-            if (getReadBacklogCounter(session).decrementAndGet() == 0) {
-//                System.out.println("processFilter 释放流控");
-                session.resumeReadAttention();
-            }
-        }
-
-
-        @Override
-        public void beginWriteFilter(IoSession<T> session, ByteBuffer d) {
-            AtomicInteger counter = getWriteBacklogCounter(session);
-            int num = counter.incrementAndGet();
-            //已经存在消息挤压,暂停读关注
-            if (num * 1.0 / session.getCacheSize() > 0.618) {
-//                System.out.println("beginWriteFilter 流控");
-                session.pauseReadAttention();
-            }
-        }
-
-        @Override
-        public void continueWriteFilter(IoSession<T> session, ByteBuffer d) {
-            int times = getMessageSendTimesCounter(session).incrementAndGet();
-            //单条消息发送次数超过3次还未发完，说明网络有问题，暂停其读关注
-            if (times > 3) {
-//                System.out.println("continueWriteFilter 流控");
-                session.pauseReadAttention();
-            }
-        }
-
-        @Override
-        public void finishWriteFilter(IoSession<T> session, ByteBuffer d) {
-            AtomicInteger counter = getWriteBacklogCounter(session);
-            int num = counter.decrementAndGet();//释放积压量
-            if (num == 0) {
-//                System.out.println("finishWriteFilter 释放流控");
-                session.resumeReadAttention();
-            }
-            getMessageSendTimesCounter(session).set(0);//清除记录
-        }
-
-
-        private AtomicInteger getReadBacklogCounter(IoSession<T> session) {
-            AtomicInteger counter = session.getAttribute(READ_BACKLOG);
-            if (counter == null) {
-                counter = new AtomicInteger();
-                session.setAttribute(READ_BACKLOG, counter);
-            }
-            return counter;
-        }
-
-        private AtomicInteger getWriteBacklogCounter(IoSession<T> session) {
-            AtomicInteger counter = session.getAttribute(WRITE_BACKLOG);
-            if (counter == null) {
-                counter = new AtomicInteger();
-                session.setAttribute(WRITE_BACKLOG, counter);
-            }
-            return counter;
-        }
-
-        private AtomicInteger getMessageSendTimesCounter(IoSession<T> session) {
-            AtomicInteger counter = session.getAttribute(MESSAGE_SEND_TIMES);
-            if (counter == null) {
-                counter = new AtomicInteger();
-                session.setAttribute(MESSAGE_SEND_TIMES, counter);
-            }
-            return counter;
-        }
-
-        @Override
-        public void receiveFailHandler(IoSession<T> session, T d) {
-
-        }
-    }
 }

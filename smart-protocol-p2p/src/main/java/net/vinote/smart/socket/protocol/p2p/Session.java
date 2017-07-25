@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.service;
+package net.vinote.smart.socket.protocol.p2p;
 
 /**
  * 定义业务层Session对象。

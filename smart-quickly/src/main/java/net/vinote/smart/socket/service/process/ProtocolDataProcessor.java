@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.service.Session;
+import net.vinote.smart.socket.transport.IoSession;
 
 /**
  * 协议消息处理器
@@ -24,7 +24,7 @@ public interface  ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
 	 * @param session
 	 * @throws Exception
 	 */
-	public void process(Session<T> session, T msg) throws Exception;
+	public void process(IoSession<T> session, T msg) throws Exception;
 
 	/**
 	 * 关闭处理器

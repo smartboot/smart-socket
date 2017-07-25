@@ -1,6 +1,5 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.transport.IoSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,11 +23,15 @@ public abstract class AbstractClientDataProcessor<T> implements ProtocolDataProc
 
     @Override
     public boolean receive(IoSession<T> ioSession, T entry) {
-        Session<T> session = ioSession.getServiceSession();
-        if (!session.notifySyncMessage(entry)) {
-            // 同步响应消息若出现超时情况,也会进到if里面
-            processThread.put(entry);
+//        Session<T> session = ioSession.getServiceSession();
+//        if (!session.notifySyncMessage(entry)) {
+        // 同步响应消息若出现超时情况,也会进到if里面
+        try {
+            processThread.list.put(entry);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+//        }
         return true;
     }
 
@@ -49,14 +52,6 @@ public abstract class AbstractClientDataProcessor<T> implements ProtocolDataProc
 
         public ClientDataProcessThread(String name, ProtocolDataProcessor<T> processor) {
             super(name);
-        }
-
-        public void put(T msg) {
-            try {
-                list.put(msg);
-            } catch (InterruptedException e) {
-                logger.warn("", e);
-            }
         }
 
         @Override

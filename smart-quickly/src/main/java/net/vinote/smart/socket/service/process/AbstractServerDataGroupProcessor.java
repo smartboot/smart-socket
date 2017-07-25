@@ -1,6 +1,5 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.transport.IoSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -111,9 +110,8 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
                 try {
                     ProcessUnit unit = msgQueue.take();
                     unit.session.getFilterChain().doProcessFilter(unit.session, unit.msg);
-                    Session<T> session = unit.session.getServiceSession();
                     if (unit.session.isValid()) {
-                        AbstractServerDataGroupProcessor.this.process(session, unit.msg);
+                        AbstractServerDataGroupProcessor.this.process(unit.session, unit.msg);
                     } else {
                         if (logger.isTraceEnabled()) {
                             logger.trace("session invliad,discard message:" + unit.msg);

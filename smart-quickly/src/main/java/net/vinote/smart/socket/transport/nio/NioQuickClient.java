@@ -3,7 +3,6 @@ package net.vinote.smart.socket.transport.nio;
 import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.protocol.ProtocolFactory;
-import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.process.AbstractClientDataProcessor;
 import net.vinote.smart.socket.util.StringUtils;
@@ -32,9 +31,7 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
     /**
      * 客户端会话信息
      */
-//    private NioSession<T> session;
-
-    private Session<T> session;
+    NioSession<T> nioSession;
 
     private SocketChannel socketChannel;
 
@@ -85,6 +82,7 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
 
     /**
      * 定义同步消息的超时时间
+     *
      * @param timeout
      * @return
      */
@@ -105,12 +103,11 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
         SocketChannel channel = (SocketChannel) key.channel();
         channel.finishConnect();
         key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
-        NioSession nioSession = new NioSession<T>(key, config);
+        nioSession = new NioSession<T>(key, config);
         logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
         nioSession.sessionWriteThread = writeThreads[0];
         nioSession.sessionReadThread = selectReadThread();
-        session = config.getProcessor().initSession(nioSession);
-        nioSession.registSession(session);
+        config.getProcessor().initSession(nioSession);
         key.attach(nioSession);
         synchronized (conenctLock) {
             conenctLock.notifyAll();
@@ -202,11 +199,11 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
             serverThread.start();
             socketChannel.socket().setSoTimeout(config.getTimeout());
 
-            if (session != null) {
+            if (nioSession != null) {
                 return;
             }
             synchronized (conenctLock) {
-                if (session != null) {
+                if (nioSession != null) {
                     return;
                 }
                 try {
@@ -252,7 +249,4 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
         }
     }
 
-    public Session<T> getSession() {
-        return session;
-    }
 }

@@ -87,7 +87,6 @@ class SessionReadThread extends Thread {
                     switch (readSize) {
                         case -1: {
 //                            System.out.println("End Of Stream");
-                            session.reachEndOfStream();
 //                            session.flushReadBuffer();
                             iterator.remove();
                             if (session.getWriteBuffer() == null) {
@@ -132,7 +131,6 @@ class SessionReadThread extends Thread {
                 switch (readSize) {
                     case -1: {
 //                        System.out.println("End Of Stream");
-                        session.reachEndOfStream();
 //                        session.flushReadBuffer();
                         if (session.getWriteBuffer() == null) {
                             session.close();

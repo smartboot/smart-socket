@@ -2,7 +2,6 @@ package net.vinote.smart.socket.transport;
 
 import net.vinote.smart.socket.enums.ChannelStatusEnum;
 import net.vinote.smart.socket.protocol.Protocol;
-import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 
 import java.io.IOException;
@@ -30,8 +29,6 @@ public abstract class IoSession<T> {
      */
     public static final String ATTRIBUTE_KEY_CUR_DATA_LENGTH = "_attr_key_curDataLength_";
 
-    private Session<T> session;
-
     /**
      * 消息通信协议
      */
@@ -54,7 +51,6 @@ public abstract class IoSession<T> {
 
     protected int cacheSize;
     private Map<String, Object> attribute = new HashMap<String, Object>();
-    private boolean endOfStream = false;
 
     /**
      * 会话状态
@@ -75,20 +71,6 @@ public abstract class IoSession<T> {
         this.readBuffer = readBuffer;
     }
 
-
-    public void registSession(Session<T> session) {
-        this.session = session;
-    }
-
-    public Session<T> getServiceSession() {
-        return session;
-    }
-
-    /**
-     * 取消读关注<br/>
-     * 当协议解码失败时应该关闭读关注,防止异常码流继续进入服务器
-     */
-    protected abstract void cancelReadAttention();
 
     public final void close() {
         close(true);
@@ -144,9 +126,6 @@ public abstract class IoSession<T> {
 //        }
 //        return readBuffer;
 //    }
-    public ByteBuffer getReadBuffer() {
-        return readBuffer;
-    }
 
 
     /**
@@ -177,20 +156,6 @@ public abstract class IoSession<T> {
     public boolean isValid() {
         return status == ChannelStatusEnum.ENABLED;
     }
-
-    public void invalid() {
-        status = ChannelStatusEnum.INVALID;
-    }
-
-    /**
-     * 暂停读关注
-     */
-    public abstract void pauseReadAttention();
-
-    /**
-     * 恢复读关注
-     */
-    public abstract void resumeReadAttention();
 
     /**
      * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理
@@ -236,23 +201,6 @@ public abstract class IoSession<T> {
 
     public final void removeAttribute(String key) {
         attribute.remove(key);
-    }
-
-    /**
-     * Getter method for property <tt>cacheSize</tt>.
-     *
-     * @return property value of cacheSize
-     */
-    public final int getCacheSize() {
-        return cacheSize;
-    }
-
-    public void reachEndOfStream() {
-        endOfStream = true;
-    }
-
-    public boolean isEndOfStream() {
-        return endOfStream;
     }
 
     public AtomicBoolean getReadPause() {

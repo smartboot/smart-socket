@@ -14,9 +14,10 @@ public class HelloWorldClient {
         properties.put(HelloWorldResp.class.getName(), "");
         P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
         messageFactory.loadFromProperties(properties);
+        P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
         NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>().connect("localhost", 8888)
                 .setTimeout(1000)
-                .setProcessor(new P2PClientMessageProcessor(messageFactory))
+                .setProcessor(processor)
                 .setProtocolFactory(new P2PProtocolFactory(messageFactory));
         client.start();
         int num = 10;
@@ -25,7 +26,7 @@ public class HelloWorldClient {
             req.setName("seer" + num);
             req.setAge(num);
             req.setMale(num % 2 == 0);
-            BaseMessage msg = client.getSession().sendWithResponse(req);
+            BaseMessage msg = processor.getSession().sendWithResponse(req);
             System.out.println(msg);
         }
         client.shutdown();

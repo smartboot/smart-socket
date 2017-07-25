@@ -2,7 +2,7 @@ package net.vinote.smart.socket.protocol;
 
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.MessageType;
-import net.vinote.smart.socket.service.Session;
+import net.vinote.smart.socket.protocol.p2p.Session;
 import net.vinote.smart.socket.transport.IoSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class P2PSession implements Session<BaseMessage> {
     private static Logger logger = LogManager.getLogger(P2PSession.class);
+    public static final String SESSION_KEY="session";
     private String remoteIp;
     private String localAddress;
     private IoSession<BaseMessage> ioSession;

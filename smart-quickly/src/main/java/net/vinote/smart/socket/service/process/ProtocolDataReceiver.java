@@ -1,6 +1,5 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.service.Session;
 import net.vinote.smart.socket.transport.IoSession;
 
 /**
@@ -35,5 +34,5 @@ public interface ProtocolDataReceiver<T> {
 	 * @param ioSession 传输层ioSession
 	 * @return
 	 */
-	public Session<T> initSession(IoSession<T> ioSession);
+	public void initSession(IoSession<T> ioSession);
 }

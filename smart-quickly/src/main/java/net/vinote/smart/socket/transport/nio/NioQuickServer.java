@@ -119,7 +119,7 @@ public final class NioQuickServer<T> extends AbstractIoServer<T> {
                         socketKey.attach(nioSession);
                         nioSession.sessionReadThread = selectReadThread();
                         nioSession.sessionWriteThread = selectWriteThread();
-                        nioSession.registSession(config.getProcessor().initSession(nioSession));
+                        config.getProcessor().initSession(nioSession);
                         socketKey.interestOps(SelectionKey.OP_READ);
                         socketChannel.finishConnect();
                     } catch (Exception e) {
