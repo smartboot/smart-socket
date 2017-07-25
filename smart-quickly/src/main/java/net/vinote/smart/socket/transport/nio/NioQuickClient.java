@@ -36,8 +36,10 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
     private SocketChannel socketChannel;
 
     public NioQuickClient() {
-        super.init(new IoServerConfig<T>(false));
-        this.config.setThreadNum(1);
+        IoServerConfig config=new IoServerConfig<T>(false);
+        config.setThreadNum(1);
+        super.init(config);
+
     }
 
     /**

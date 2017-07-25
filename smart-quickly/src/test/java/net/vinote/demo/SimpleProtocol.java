@@ -15,8 +15,9 @@ public class SimpleProtocol implements Protocol<String> {
             return null;
         for (int i = 1; i < data.remaining(); i++) {
             if (data.get(i) == '\n' && data.get(i - 1) == '\r') {
-                byte[] d = new byte[i];
+                byte[] d = new byte[i+1];
                 data.get(d);
+                System.out.println("decode");
                 return new String(d);
             }
         }
@@ -25,6 +26,8 @@ public class SimpleProtocol implements Protocol<String> {
 
     @Override
     public ByteBuffer encode(String s, IoSession<String> session) {
-        return null;
+        ByteBuffer b=ByteBuffer.wrap(s.getBytes());
+        b.position(b.limit());
+        return b;
     }
 }

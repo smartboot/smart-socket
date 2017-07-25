@@ -122,6 +122,7 @@ public final class NioQuickServer<T> extends AbstractIoServer<T> {
                         config.getProcessor().initSession(nioSession);
                         socketKey.interestOps(SelectionKey.OP_READ);
                         socketChannel.finishConnect();
+                        socketKey.selector().wakeup();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
