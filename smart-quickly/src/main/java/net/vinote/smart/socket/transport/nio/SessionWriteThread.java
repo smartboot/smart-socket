@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.transport.nio;
 
-import net.vinote.smart.socket.enums.ChannelStatusEnum;
+import net.vinote.smart.socket.enums.IoSessionStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -89,7 +89,7 @@ class SessionWriteThread extends Thread {
                     session.flushWriteBuffer(3);
                     if (session.getWriteBuffer() == null) {
                         removeSession.add(session);
-                        if(session.getStatus()== ChannelStatusEnum.CLOSING){
+                        if(session.getStatus()== IoSessionStatusEnum.CLOSING){
                             session.close();
                         }
                     }

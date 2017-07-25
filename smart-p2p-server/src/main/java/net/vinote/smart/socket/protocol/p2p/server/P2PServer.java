@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.protocol.p2p.server;
 
-import net.vinote.smart.socket.extension.timer.QuickMonitorTimer;
+import net.vinote.smart.socket.protocol.p2p.QuickMonitorTimer;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;

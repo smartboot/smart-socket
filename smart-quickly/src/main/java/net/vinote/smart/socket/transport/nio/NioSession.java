@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.transport.nio;
 
-import net.vinote.smart.socket.enums.ChannelStatusEnum;
+import net.vinote.smart.socket.enums.IoSessionStatusEnum;
 import net.vinote.smart.socket.service.filter.impl.SmartFilterChainImpl;
 import net.vinote.smart.socket.transport.IoSession;
 import org.apache.logging.log4j.LogManager;
@@ -26,11 +26,6 @@ public class NioSession<T> extends IoSession<T> {
      * 响应消息缓存队列
      */
     private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
-
-    /**
-     * 是否已注销读关注
-     */
-    private boolean readClosed = false;
 
     SessionWriteThread sessionWriteThread;
     SessionReadThread sessionReadThread;
@@ -64,7 +59,7 @@ public class NioSession<T> extends IoSession<T> {
     @Override
     protected void close0() {
         writeCacheQueue.clear();
-        if (getStatus() == ChannelStatusEnum.CLOSED) {
+        if (getStatus() == IoSessionStatusEnum.CLOSED) {
             return;
         }
         try {

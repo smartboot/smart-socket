@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.transport;
 
-import net.vinote.smart.socket.enums.ChannelStatusEnum;
+import net.vinote.smart.socket.enums.IoSessionStatusEnum;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 
@@ -55,7 +55,7 @@ public abstract class IoSession<T> {
     /**
      * 会话状态
      */
-    private volatile ChannelStatusEnum status = ChannelStatusEnum.ENABLED;
+    private volatile IoSessionStatusEnum status = IoSessionStatusEnum.ENABLED;
 
     /**
      * 消息过滤器
@@ -85,10 +85,10 @@ public abstract class IoSession<T> {
         if (immediate) {
             synchronized (IoSession.this) {
                 close0();
-                status = ChannelStatusEnum.CLOSED;
+                status = IoSessionStatusEnum.CLOSED;
             }
         } else {
-            status = ChannelStatusEnum.CLOSING;
+            status = IoSessionStatusEnum.CLOSING;
         }
     }
 
@@ -137,7 +137,7 @@ public abstract class IoSession<T> {
         return sessionId;
     }
 
-    public ChannelStatusEnum getStatus() {
+    public IoSessionStatusEnum getStatus() {
         return status;
     }
 
@@ -154,7 +154,7 @@ public abstract class IoSession<T> {
      * 当前会话是否已失效
      */
     public boolean isValid() {
-        return status == ChannelStatusEnum.ENABLED;
+        return status == IoSessionStatusEnum.ENABLED;
     }
 
     /**

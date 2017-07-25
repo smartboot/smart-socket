@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.transport.nio;
 
-import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
+import net.vinote.smart.socket.enums.IoServerStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.transport.IoServer;
 import org.apache.logging.log4j.LogManager;
@@ -23,7 +23,7 @@ abstract class AbstractIoServer<T> implements IoServer {
     /**
      * 服务状态
      */
-    volatile ChannelServiceStatusEnum status = ChannelServiceStatusEnum.Init;
+    volatile IoServerStatusEnum status = IoServerStatusEnum.Init;
 
     /**
      * 服务配置
@@ -81,18 +81,18 @@ abstract class AbstractIoServer<T> implements IoServer {
      * @see java.lang.Runnable#run()
      */
     public final void run() {
-        updateServiceStatus(ChannelServiceStatusEnum.RUNING);
+        updateServiceStatus(IoServerStatusEnum.RUNING);
         // 通过检查状态使之一直保持服务状态
-        while (ChannelServiceStatusEnum.RUNING == status) {
+        while (IoServerStatusEnum.RUNING == status) {
             try {
                 running();
             } catch (ClosedSelectorException e) {
-                updateServiceStatus(ChannelServiceStatusEnum.Abnormal);// Selector关闭触发服务终止
+                updateServiceStatus(IoServerStatusEnum.Abnormal);// Selector关闭触发服务终止
             } catch (Exception e) {
                 exceptionInSelector(e);
             }
         }
-        updateServiceStatus(ChannelServiceStatusEnum.STOPPED);
+        updateServiceStatus(IoServerStatusEnum.STOPPED);
         logger.info("Channel is stop!");
     }
 
@@ -154,7 +154,7 @@ abstract class AbstractIoServer<T> implements IoServer {
      * 判断状态是否有异常
      */
     final void assertAbnormalStatus() {
-        if (status == ChannelServiceStatusEnum.Abnormal) {
+        if (status == IoServerStatusEnum.Abnormal) {
             throw new StatusException("channel service's status is abnormal");
         }
     }
@@ -180,7 +180,7 @@ abstract class AbstractIoServer<T> implements IoServer {
      *
      * @param status
      */
-    final void updateServiceStatus(final ChannelServiceStatusEnum status) {
+    final void updateServiceStatus(final IoServerStatusEnum status) {
         this.status = status;
         notifyWhenUpdateStatus(status);
     }
@@ -207,7 +207,7 @@ abstract class AbstractIoServer<T> implements IoServer {
      *
      * @param status
      */
-    protected void notifyWhenUpdateStatus(final ChannelServiceStatusEnum status) {
+    protected void notifyWhenUpdateStatus(final IoServerStatusEnum status) {
 
     }
 

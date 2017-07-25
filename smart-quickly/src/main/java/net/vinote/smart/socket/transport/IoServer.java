@@ -8,7 +8,7 @@ import java.io.IOException;
  * 为服务器/客户端的传输层提供基本的数据交互服务控制功能
  * </p>
  * <p>
- * 服务的状态{@link SessionStatusEnum.Status}需要进行实时监控:
+ * 服务的状态{@link net.vinote.smart.socket.enums.IoServerStatusEnum}需要进行实时监控:
  * <li>Init:ChannelService对象创建即为Init状态</li>
  * <li>STARTING:调用了start()方法后状态立刻切换至STARTING</li>
  * <li>RUNING:服务启动成功后切换至RUNNING</li>

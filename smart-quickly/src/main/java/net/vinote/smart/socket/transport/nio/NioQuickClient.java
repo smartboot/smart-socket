@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.transport.nio;
 
-import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
+import net.vinote.smart.socket.enums.IoServerStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
 import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
@@ -130,7 +130,7 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
     @Override
     void exceptionInSelector(final Exception e) {
         logger.catching(e);
-        if (ChannelServiceStatusEnum.RUNING == status && config.isAutoRecover()) {
+        if (IoServerStatusEnum.RUNING == status && config.isAutoRecover()) {
             restart();
         } else {
             shutdown();
@@ -165,7 +165,7 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
      * @see net.vinote.smart.socket.transport.ChannelService#shutdown()
      */
     public final void shutdown() {
-        updateServiceStatus(ChannelServiceStatusEnum.STOPPING);
+        updateServiceStatus(IoServerStatusEnum.STOPPING);
         config.getProcessor().shutdown();
         try {
             selector.close();
@@ -189,7 +189,7 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
         try {
             checkStart();
             assertAbnormalStatus();
-            updateServiceStatus(ChannelServiceStatusEnum.STARTING);
+            updateServiceStatus(IoServerStatusEnum.STARTING);
             selector = Selector.open();
             socketChannel = SocketChannel.open();
             socketChannel.configureBlocking(false);
@@ -230,7 +230,7 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
     }
 
     @Override
-    protected void notifyWhenUpdateStatus(ChannelServiceStatusEnum status) {
+    protected void notifyWhenUpdateStatus(IoServerStatusEnum status) {
         if (status == null) {
             return;
         }
