@@ -1,24 +1,28 @@
 import net.vinote.smart.socket.protocol.HttpEntity;
-import net.vinote.smart.socket.protocol.HttpProtocolFactory;
+import net.vinote.smart.socket.protocol.HttpProtocol;
 import net.vinote.smart.socket.protocol.HttpServerMessageProcessor;
+import net.vinote.smart.socket.protocol.Protocol;
+import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.transport.nio.NioQuickServer;
-import net.vinote.smart.socket.util.QuicklyConfig;
 
 import java.io.IOException;
 
 public class Test {
 
     public static void main(String[] args) throws ClassNotFoundException {
-        QuicklyConfig<HttpEntity> config = new QuicklyConfig<HttpEntity>(true);
 
         // 定义服务器接受的消息类型以及各类消息对应的处理器
-        config.setThreadNum(8);
-        config.setProtocolFactory(new HttpProtocolFactory());
 //        config.setFilters(new SmartFilter[] { new QuickMonitorTimer<HttpEntity>() });
         HttpServerMessageProcessor processor = new HttpServerMessageProcessor();
-        config.setProcessor(processor);// 定义P2P协议的处理器,可以自定义
-        config.setCacheSize(8);
-        NioQuickServer<HttpEntity> server = new NioQuickServer<HttpEntity>(config);
+        NioQuickServer<HttpEntity> server = new NioQuickServer<HttpEntity>()
+                .setThreadNum(8)
+                .setProtocolFactory(new ProtocolFactory<HttpEntity>() {
+                    @Override
+                    public Protocol<HttpEntity> createProtocol() {
+                        return new HttpProtocol();
+                    }
+                })
+                .setProcessor(processor);
         try {
             server.start();
         } catch (IOException e) {

@@ -3,13 +3,10 @@ package net.vinote.smart.socket.protocol;
 import net.vinote.smart.socket.transport.IoSession;
 import org.apache.commons.lang.math.NumberUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -51,48 +48,48 @@ public class HttpEntity {
     private AtomicInteger readBodyLength = new AtomicInteger(0);
     private int contentLength = -1;
     private int chunked=-1;
-    private InputStream bodyStream = new InputStream() {
-        ByteBuffer currentBuffer;
-
-        @Override
-        public int read() throws IOException {
-            try {
-                //到达流的末尾
-                if ((currentBuffer == null || !currentBuffer.hasRemaining()) && bodyStreamQueue.peek() == null && session.isEndOfStream()) {
-                    return -1;
-                }
-
-                if (currentBuffer != null && currentBuffer.hasRemaining()) {
-                    byte b = currentBuffer.get();
-                    return b;
-                }
-                while (true) {
-                    currentBuffer = bodyStreamQueue.poll(100, TimeUnit.MILLISECONDS);
-                    if ((currentBuffer != null && currentBuffer.hasRemaining()) || session.isEndOfStream()) {
-                        break;
-                    }
-                }
-                return read();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                throw new IOException(e);
-            }
-        }
-
-        @Override
-        public int available() throws IOException {
-            if(contentLength>0){
-                return contentLength-readBodyLength.get();
-            }
-            if(chunked>0){
-                return chunked-readBodyLength.get();
-            }
-            if (currentBuffer != null && currentBuffer.hasRemaining()) {
-                return currentBuffer.remaining();
-            }
-            return bodyStreamQueue.peek() == null ? 0 : bodyStreamQueue.peek().remaining();
-        }
-    };
+//    private InputStream bodyStream = new InputStream() {
+//        ByteBuffer currentBuffer;
+//
+//        @Override
+//        public int read() throws IOException {
+//            try {
+//                //到达流的末尾
+//                if ((currentBuffer == null || !currentBuffer.hasRemaining()) && bodyStreamQueue.peek() == null && session.isEndOfStream()) {
+//                    return -1;
+//                }
+//
+//                if (currentBuffer != null && currentBuffer.hasRemaining()) {
+//                    byte b = currentBuffer.get();
+//                    return b;
+//                }
+//                while (true) {
+//                    currentBuffer = bodyStreamQueue.poll(100, TimeUnit.MILLISECONDS);
+//                    if ((currentBuffer != null && currentBuffer.hasRemaining()) || session.isEndOfStream()) {
+//                        break;
+//                    }
+//                }
+//                return read();
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//                throw new IOException(e);
+//            }
+//        }
+//
+//        @Override
+//        public int available() throws IOException {
+//            if(contentLength>0){
+//                return contentLength-readBodyLength.get();
+//            }
+//            if(chunked>0){
+//                return chunked-readBodyLength.get();
+//            }
+//            if (currentBuffer != null && currentBuffer.hasRemaining()) {
+//                return currentBuffer.remaining();
+//            }
+//            return bodyStreamQueue.peek() == null ? 0 : bodyStreamQueue.peek().remaining();
+//        }
+//    };
 
 
     public HttpEntity(IoSession<HttpEntity> session) {
@@ -118,10 +115,10 @@ public class HttpEntity {
         return headMap;
     }
 
-    public InputStream getBodyStream() {
-        this.session.resumeReadAttention();
-        return bodyStream;
-    }
+//    public InputStream getBodyStream() {
+//        this.session.resumeReadAttention();
+//        return bodyStream;
+//    }
 
 
     public void appendBodyStream(ByteBuffer buffer) {
