@@ -1,116 +1,80 @@
 package net.vinote.smart.socket.service.process;
 
-import java.util.concurrent.ArrayBlockingQueue;
-
+import net.vinote.smart.socket.transport.IoSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.vinote.smart.socket.exception.QueueOverflowStrategyException;
-import net.vinote.smart.socket.util.QueueOverflowStrategy;
-import net.vinote.smart.socket.util.QuicklyConfig;
-import net.vinote.smart.socket.service.Session;
-import net.vinote.smart.socket.transport.IoSession;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * 客户端业务消息抽象处理器
- * 
- * @author zhengjunwei
  *
  * @param <T>
+ * @author zhengjunwei
  */
 public abstract class AbstractClientDataProcessor<T> implements ProtocolDataProcessor<T> {
-	private ClientDataProcessThread processThread;
-	protected Session<T> session;
+    private ClientDataProcessThread processThread;
 
-	@Override
-	public void init(QuicklyConfig<T> config) {
-		processThread = new ClientDataProcessThread("ClientProcessor-Thread", this,
-				QueueOverflowStrategy.valueOf(config.getQueueOverflowStrategy()));
-		processThread.start();
-	}
+    @Override
+    public void init(int threadNum) {
+        processThread = new ClientDataProcessThread("ClientProcessor-Thread", this);
+        processThread.start();
+    }
 
-	@Override
-	public boolean receive(IoSession<T> session, T entry) {
-		if (!this.session.notifySyncMessage(entry)) {
-			// 同步响应消息若出现超时情况,也会进到if里面
-			processThread.put(entry);
-		}
-		return true;
-	}
+    @Override
+    public boolean receive(IoSession<T> ioSession, T entry) {
+//        Session<T> session = ioSession.getServiceSession();
+//        if (!session.notifySyncMessage(entry)) {
+        // 同步响应消息若出现超时情况,也会进到if里面
+        try {
+            processThread.list.put(entry);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+//        }
+        return true;
+    }
 
-	@Override
-	public void shutdown() {
-		processThread.shutdown();
-	}
+    @Override
+    public void shutdown() {
+        processThread.shutdown();
+    }
 
-	/**
-	 * Getter method for property <tt>sesson</tt>.
-	 *
-	 * @return property value of sesson
-	 */
-	public final Session<T> getSession() {
-		return session;
-	}
+    /**
+     * 业务消息处理线程
+     *
+     * @author Seer
+     */
+    class ClientDataProcessThread extends Thread {
+        private Logger logger = LogManager.getLogger(ClientDataProcessThread.class);
+        private ArrayBlockingQueue<T> list = new ArrayBlockingQueue<T>(1024);
+        protected volatile boolean running = true;
 
-	/**
-	 *
-	 * 业务消息处理线程
-	 *
-	 * @author Seer
-	 *
-	 */
-	class ClientDataProcessThread extends Thread {
-		private Logger logger = LogManager.getLogger(ClientDataProcessThread.class);
-		private QueueOverflowStrategy strategy;
-		private ArrayBlockingQueue<T> list = new ArrayBlockingQueue<T>(1024);
-		protected volatile boolean running = true;
+        public ClientDataProcessThread(String name, ProtocolDataProcessor<T> processor) {
+            super(name);
+        }
 
-		public ClientDataProcessThread(String name, ProtocolDataProcessor<T> processor,
-				QueueOverflowStrategy strategy) {
-			super(name);
-			this.strategy = strategy;
-		}
+        @Override
+        public void run() {
 
-		public void put(T msg) {
-			switch (strategy) {
-			case DISCARD:
-				if (!list.offer(msg)) {
-					logger.info("message queue is full!");
-				}
-				break;
-			case WAIT:
-				try {
-					list.put(msg);
-				} catch (InterruptedException e) {
-					logger.warn("", e);
-				}
-				break;
-			default:
-				throw new QueueOverflowStrategyException("Invalid overflow strategy " + strategy);
-			}
-		}
+            while (running) {
+                try {
+                    T msg = list.take();
+                    AbstractClientDataProcessor.this.process(null, msg);
+                } catch (Exception e) {
+                    if (running) {
+                        logger.warn(e.getMessage(), e);
+                    }
+                }
+            }
+        }
 
-		@Override
-		public void run() {
-
-			while (running) {
-				try {
-					T msg = list.take();
-					AbstractClientDataProcessor.this.process(null, msg);
-				} catch (Exception e) {
-					if (running) {
-						logger.warn(e.getMessage(), e);
-					}
-				}
-			}
-		}
-
-		/**
-		 * 停止消息处理线程
-		 */
-		public void shutdown() {
-			running = false;
-			this.interrupt();
-		}
-	}
+        /**
+         * 停止消息处理线程
+         */
+        public void shutdown() {
+            running = false;
+            this.interrupt();
+        }
+    }
 }

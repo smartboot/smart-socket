@@ -1,10 +1,11 @@
-package net.vinote.smart.socket.extension.timer;
+package net.vinote.smart.socket.protocol.p2p;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import net.vinote.smart.socket.extension.timer.QuickTimerTask;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

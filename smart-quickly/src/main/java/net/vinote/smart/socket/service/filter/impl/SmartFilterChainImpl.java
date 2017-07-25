@@ -1,11 +1,11 @@
 package net.vinote.smart.socket.service.filter.impl;
 
-import java.nio.ByteBuffer;
-
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.service.process.ProtocolDataReceiver;
 import net.vinote.smart.socket.transport.IoSession;
+
+import java.nio.ByteBuffer;
 
 /**
  * 业务层消息预处理器
@@ -66,6 +66,15 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 		if (hasHandlers) {
 			for (SmartFilter<T> h : handlers) {
 				h.finishWriteFilter(session, buffer);
+			}
+		}
+	}
+
+	@Override
+	public void doProcessFilter(IoSession<T> session, T d) {
+		if(hasHandlers){
+			for (SmartFilter<T> h : handlers) {
+				h.processFilter(session, d);
 			}
 		}
 	}

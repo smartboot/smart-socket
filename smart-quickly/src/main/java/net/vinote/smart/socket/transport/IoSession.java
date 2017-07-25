@@ -1,8 +1,8 @@
 package net.vinote.smart.socket.transport;
 
+import net.vinote.smart.socket.enums.IoSessionStatusEnum;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
-import net.vinote.smart.socket.enums.ChannelStatusEnum;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 定义底层通信管道对象<br/>
+ * 定义底层通信管道会话<br/>
  *
  * @author Seer
  * @version Channel.java, v 0.1 2015年8月24日 上午10:31:38 Seer Exp.
@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class IoSession<T> {
     private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
     /**
-     * Channel唯一标识
+     * 唯一标识
      */
     private final int sessionId = NEXT_ID.getAndIncrement();
 
@@ -51,12 +51,11 @@ public abstract class IoSession<T> {
 
     protected int cacheSize;
     private Map<String, Object> attribute = new HashMap<String, Object>();
-    private boolean endOfStream = false;
 
     /**
      * 会话状态
      */
-    private volatile ChannelStatusEnum status = ChannelStatusEnum.ENABLED;
+    private volatile IoSessionStatusEnum status = IoSessionStatusEnum.ENABLED;
 
     /**
      * 消息过滤器
@@ -72,11 +71,6 @@ public abstract class IoSession<T> {
         this.readBuffer = readBuffer;
     }
 
-    /**
-     * 取消读关注<br/>
-     * 当协议解码失败时应该关闭读关注,防止异常码流继续进入服务器
-     */
-    protected abstract void cancelReadAttention();
 
     public final void close() {
         close(true);
@@ -91,10 +85,10 @@ public abstract class IoSession<T> {
         if (immediate) {
             synchronized (IoSession.this) {
                 close0();
-                status = ChannelStatusEnum.CLOSED;
+                status = IoSessionStatusEnum.CLOSED;
             }
         } else {
-            status = ChannelStatusEnum.CLOSING;
+            status = IoSessionStatusEnum.CLOSING;
         }
     }
 
@@ -109,35 +103,29 @@ public abstract class IoSession<T> {
     /**
      * 刷新缓存的数据流,对已读取到的数据进行一次协议解码操作
      */
-    public ByteBuffer flushReadBuffer() {
-        //无可解析数据,直接返回
-        if (readBuffer.position() == 0 && readBuffer.limit() == readBuffer.capacity()) {
-            return readBuffer;
-        }
-        readBuffer.flip();
-
-        // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
-        T dataEntry;
-        while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
-            chain.doReadFilter(this, dataEntry);
-        }
-        //数据读取完毕
-        if (readBuffer.remaining() == 0) {
-            readBuffer.clear();
-        } else if (readBuffer.position() > 0) {// 仅当发生数据读取时调用compact,减少内存拷贝
-            readBuffer.compact();
-        } else {
-            readBuffer.position(readBuffer.limit());
-            readBuffer.limit(readBuffer.capacity());
-        }
-        return readBuffer;
-    }
-
-    public ByteBuffer getReadBuffer(){
-        return readBuffer;
-    }
-
-
+//    public ByteBuffer flushReadBuffer() {
+//        //无可解析数据,直接返回
+//        if (readBuffer.position() == 0 && readBuffer.limit() == readBuffer.capacity()) {
+//            return readBuffer;
+//        }
+//        readBuffer.flip();
+//
+//        // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
+//        T dataEntry;
+//        while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
+//            chain.doReadFilter(this, dataEntry);
+//        }
+//        //数据读取完毕
+//        if (readBuffer.remaining() == 0) {
+//            readBuffer.clear();
+//        } else if (readBuffer.position() > 0) {// 仅当发生数据读取时调用compact,减少内存拷贝
+//            readBuffer.compact();
+//        } else {
+//            readBuffer.position(readBuffer.limit());
+//            readBuffer.limit(readBuffer.capacity());
+//        }
+//        return readBuffer;
+//    }
 
 
     /**
@@ -149,7 +137,7 @@ public abstract class IoSession<T> {
         return sessionId;
     }
 
-    public ChannelStatusEnum getStatus() {
+    public IoSessionStatusEnum getStatus() {
         return status;
     }
 
@@ -166,22 +154,8 @@ public abstract class IoSession<T> {
      * 当前会话是否已失效
      */
     public boolean isValid() {
-        return status == ChannelStatusEnum.ENABLED;
+        return status == IoSessionStatusEnum.ENABLED;
     }
-
-    public void invalid() {
-        status = ChannelStatusEnum.INVALID;
-    }
-
-    /**
-     * 暂停读关注
-     */
-    public abstract void pauseReadAttention();
-
-    /**
-     * 恢复读关注
-     */
-    public abstract void resumeReadAttention();
 
     /**
      * * 将参数中传入的数据输出至对端;处于性能考虑,通常对数据进行缓存处理
@@ -229,25 +203,11 @@ public abstract class IoSession<T> {
         attribute.remove(key);
     }
 
-    /**
-     * Getter method for property <tt>cacheSize</tt>.
-     *
-     * @return property value of cacheSize
-     */
-    public final int getCacheSize() {
-        return cacheSize;
-    }
-
-    public void reachEndOfStream() {
-        endOfStream = true;
-
-    }
-
-    public boolean isEndOfStream() {
-        return endOfStream;
-    }
-
     public AtomicBoolean getReadPause() {
         return readPause;
+    }
+
+    public SmartFilterChain<T> getFilterChain() {
+        return chain;
     }
 }

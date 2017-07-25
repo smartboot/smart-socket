@@ -1,9 +1,6 @@
 package net.vinote.smart.socket.service.process;
 
 import net.vinote.smart.socket.transport.IoSession;
-import net.vinote.smart.socket.util.QuicklyConfig;
-import net.vinote.smart.socket.service.Session;
-import net.vinote.smart.socket.service.filter.SmartFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,7 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDataProcessor<T> {
     private static Logger logger = LogManager.getLogger(AbstractServerDataGroupProcessor.class);
-    public static final String SESSION_KEY = "SESSION";
     public static final String SESSION_PROCESS_THREAD = "_PROCESS_THREAD_";
     /**
      * 消息处理线程
@@ -25,14 +21,12 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
     private ServerDataProcessThread[] processThreads;
 
     private AtomicInteger processThreadIndex = new AtomicInteger(0);
-    private QuicklyConfig<T> quickConfig;
 
     @SuppressWarnings("unchecked")
     @Override
-    public void init(QuicklyConfig<T> config) {
-        this.quickConfig = config;
+    public void init(int threadNum) {
         // 启动线程池处理消息
-        processThreads = new AbstractServerDataGroupProcessor.ServerDataProcessThread[config.getThreadNum() << 1];
+        processThreads = new AbstractServerDataGroupProcessor.ServerDataProcessThread[threadNum];
         for (int i = 0; i < processThreads.length; i++) {
             processThreads[i] = new ServerDataProcessThread("ServerProcess-Thread-" + i);
             processThreads[i].setPriority(Thread.MAX_PRIORITY);
@@ -115,15 +109,9 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
             while (running) {
                 try {
                     ProcessUnit unit = msgQueue.take();
-                    SmartFilter<T>[] filters = AbstractServerDataGroupProcessor.this.quickConfig.getFilters();
-                    if (filters != null && filters.length > 0) {
-                        for (SmartFilter<T> h : filters) {
-                            h.processFilter(unit.session, unit.msg);
-                        }
-                    }
-                    Session<T> session = unit.session.getAttribute(SESSION_KEY);
+                    unit.session.getFilterChain().doProcessFilter(unit.session, unit.msg);
                     if (unit.session.isValid()) {
-                        AbstractServerDataGroupProcessor.this.process(session, unit.msg);
+                        AbstractServerDataGroupProcessor.this.process(unit.session, unit.msg);
                     } else {
                         if (logger.isTraceEnabled()) {
                             logger.trace("session invliad,discard message:" + unit.msg);

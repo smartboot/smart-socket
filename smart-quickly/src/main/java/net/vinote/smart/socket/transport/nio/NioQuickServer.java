@@ -1,9 +1,10 @@
 package net.vinote.smart.socket.transport.nio;
 
-import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
+import net.vinote.smart.socket.enums.IoServerStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
+import net.vinote.smart.socket.protocol.ProtocolFactory;
+import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
-import net.vinote.smart.socket.util.QuicklyConfig;
 import net.vinote.smart.socket.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,8 +34,57 @@ public final class NioQuickServer<T> extends AbstractIoServer<T> {
      */
     private Executor acceptExecutor = Executors.newSingleThreadExecutor();
 
-    public NioQuickServer(final QuicklyConfig<T> config) {
-        super(config);
+    public NioQuickServer() {
+        super.init(new IoServerConfig<T>(true));
+    }
+
+    /**
+     * 设置服务绑定的端口
+     *
+     * @param port
+     * @return
+     */
+    public NioQuickServer<T> bind(int port) {
+        this.config.setPort(port);
+        return this;
+    }
+
+    /**
+     * 设置处理线程数量
+     *
+     * @param num
+     * @return
+     */
+    public NioQuickServer<T> setThreadNum(int num) {
+        this.config.setThreadNum(num);
+        return this;
+    }
+
+    public NioQuickServer<T> setProtocolFactory(ProtocolFactory<T> protocolFactory) {
+        this.config.setProtocolFactory(protocolFactory);
+        return this;
+    }
+
+    /**
+     * 设置消息过滤器,执行顺序以数组中的顺序为准
+     *
+     * @param filters
+     * @return
+     */
+    public NioQuickServer<T> setFilters(SmartFilter<T>[] filters) {
+        this.config.setFilters(filters);
+        return this;
+    }
+
+    /**
+     * 设置消息处理器
+     *
+     * @param processor
+     * @return
+     */
+    public NioQuickServer<T> setProcessor(AbstractServerDataGroupProcessor<T> processor) {
+        this.config.setProcessor(processor);
+        return this;
     }
 
     /**
@@ -69,9 +119,10 @@ public final class NioQuickServer<T> extends AbstractIoServer<T> {
                         socketKey.attach(nioSession);
                         nioSession.sessionReadThread = selectReadThread();
                         nioSession.sessionWriteThread = selectWriteThread();
-                        nioSession.setAttribute(AbstractServerDataGroupProcessor.SESSION_KEY, config.getProcessor().initSession(nioSession));
+                        config.getProcessor().initSession(nioSession);
                         socketKey.interestOps(SelectionKey.OP_READ);
                         socketChannel.finishConnect();
+                        socketKey.selector().wakeup();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -99,7 +150,7 @@ public final class NioQuickServer<T> extends AbstractIoServer<T> {
 
 
     public void shutdown() {
-        updateServiceStatus(ChannelServiceStatusEnum.STOPPING);
+        updateServiceStatus(IoServerStatusEnum.STOPPING);
         config.getProcessor().shutdown();
         try {
             if (selector != null) {
@@ -120,7 +171,7 @@ public final class NioQuickServer<T> extends AbstractIoServer<T> {
         try {
             checkStart();
             assertAbnormalStatus();
-            updateServiceStatus(ChannelServiceStatusEnum.STARTING);
+            updateServiceStatus(IoServerStatusEnum.STARTING);
             server = ServerSocketChannel.open();
             server.configureBlocking(false);
             InetSocketAddress address = null;
@@ -142,14 +193,14 @@ public final class NioQuickServer<T> extends AbstractIoServer<T> {
     }
 
     @Override
-    protected void notifyWhenUpdateStatus(ChannelServiceStatusEnum status) {
+    protected void notifyWhenUpdateStatus(IoServerStatusEnum status) {
         if (status == null) {
             return;
         }
         switch (status) {
             case RUNING:
                 logger.info("Running with " + config.getPort() + " port");
-                config.getProcessor().init(config);
+                config.getProcessor().init(config.getThreadNum() << 1);
                 break;
 
             default:

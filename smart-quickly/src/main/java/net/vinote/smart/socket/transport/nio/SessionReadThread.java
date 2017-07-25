@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 /**
  * Created by zhengjunwei on 2017/6/21.
  */
-public class SessionReadThread extends Thread {
+class SessionReadThread extends Thread {
     private static final Logger logger = LogManager.getLogger(SessionReadThread.class);
     private Set<SelectionKey> selectionKeySet = new HashSet<SelectionKey>();
     /**
@@ -87,7 +87,6 @@ public class SessionReadThread extends Thread {
                     switch (readSize) {
                         case -1: {
 //                            System.out.println("End Of Stream");
-                            session.reachEndOfStream();
 //                            session.flushReadBuffer();
                             iterator.remove();
                             if (session.getWriteBuffer() == null) {
@@ -132,7 +131,6 @@ public class SessionReadThread extends Thread {
                 switch (readSize) {
                     case -1: {
 //                        System.out.println("End Of Stream");
-                        session.reachEndOfStream();
 //                        session.flushReadBuffer();
                         if (session.getWriteBuffer() == null) {
                             session.close();

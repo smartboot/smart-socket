@@ -1,8 +1,8 @@
 package net.vinote.smart.socket.service.filter;
 
-import java.nio.ByteBuffer;
-
 import net.vinote.smart.socket.transport.IoSession;
+
+import java.nio.ByteBuffer;
 
 /**
  * 业务层消息预处理器

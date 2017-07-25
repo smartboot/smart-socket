@@ -1,9 +1,10 @@
 package net.vinote.smart.socket.transport.nio;
 
-import net.vinote.smart.socket.enums.ChannelServiceStatusEnum;
+import net.vinote.smart.socket.enums.IoServerStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
-import net.vinote.smart.socket.util.QuicklyConfig;
+import net.vinote.smart.socket.protocol.ProtocolFactory;
+import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.service.process.AbstractClientDataProcessor;
 import net.vinote.smart.socket.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,15 +31,66 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
     /**
      * 客户端会话信息
      */
-    private NioSession<T> session;
+    NioSession<T> nioSession;
 
     private SocketChannel socketChannel;
 
+    public NioQuickClient() {
+        IoServerConfig config=new IoServerConfig<T>(false);
+        config.setThreadNum(1);
+        super.init(config);
+
+    }
+
     /**
-     * @param config
+     * 设置远程连接的地址、端口
+     *
+     * @param host
+     * @param port
+     * @return
      */
-    public NioQuickClient(final QuicklyConfig<T> config) {
-        super(config);
+    public NioQuickClient<T> connect(String host, int port) {
+        this.config.setHost(host);
+        this.config.setPort(port);
+        return this;
+    }
+
+    public NioQuickClient<T> setProtocolFactory(ProtocolFactory<T> protocolFactory) {
+        this.config.setProtocolFactory(protocolFactory);
+        return this;
+    }
+
+    /**
+     * 设置消息过滤器,执行顺序以数组中的顺序为准
+     *
+     * @param filters
+     * @return
+     */
+    public NioQuickClient<T> setFilters(SmartFilter<T>[] filters) {
+        this.config.setFilters(filters);
+        return this;
+    }
+
+    /**
+     * 设置消息处理器
+     *
+     * @param processor
+     * @return
+     */
+    public NioQuickClient<T> setProcessor(AbstractClientDataProcessor<T> processor) {
+        this.config.setProcessor(processor);
+        return this;
+    }
+
+    /**
+     * 定义同步消息的超时时间
+     *
+     * @param timeout
+     * @return
+     */
+    public NioQuickClient<T> setTimeout(int timeout) {
+        this.config.setTimeout(timeout);
+        return this;
     }
 
     /**
@@ -53,20 +105,14 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
         SocketChannel channel = (SocketChannel) key.channel();
         channel.finishConnect();
         key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
-        // 自动修复链路
-        if (session != null && config.isAutoRecover()) {
-//            session.initBaseChannelInfo(key);
-            logger.info("Socket link has been recovered!");
-        } else {
-            session = new NioSession<T>(key, config);
-            logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
-            session.setAttribute(AbstractServerDataGroupProcessor.SESSION_KEY, config.getProcessor().initSession(session));
-            session.sessionWriteThread = writeThreads[0];
-            session.sessionReadThread = selectReadThread();
-            key.attach(session);
-            synchronized (conenctLock) {
-                conenctLock.notifyAll();
-            }
+        nioSession = new NioSession<T>(key, config);
+        logger.info("success connect to " + channel.socket().getRemoteSocketAddress().toString());
+        nioSession.sessionWriteThread = writeThreads[0];
+        nioSession.sessionReadThread = selectReadThread();
+        config.getProcessor().initSession(nioSession);
+        key.attach(nioSession);
+        synchronized (conenctLock) {
+            conenctLock.notifyAll();
         }
     }
 
@@ -86,7 +132,7 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
     @Override
     void exceptionInSelector(final Exception e) {
         logger.catching(e);
-        if (ChannelServiceStatusEnum.RUNING == status && config.isAutoRecover()) {
+        if (IoServerStatusEnum.RUNING == status && config.isAutoRecover()) {
             restart();
         } else {
             shutdown();
@@ -121,7 +167,7 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
      * @see net.vinote.smart.socket.transport.ChannelService#shutdown()
      */
     public final void shutdown() {
-        updateServiceStatus(ChannelServiceStatusEnum.STOPPING);
+        updateServiceStatus(IoServerStatusEnum.STOPPING);
         config.getProcessor().shutdown();
         try {
             selector.close();
@@ -145,7 +191,7 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
         try {
             checkStart();
             assertAbnormalStatus();
-            updateServiceStatus(ChannelServiceStatusEnum.STARTING);
+            updateServiceStatus(IoServerStatusEnum.STARTING);
             selector = Selector.open();
             socketChannel = SocketChannel.open();
             socketChannel.configureBlocking(false);
@@ -155,11 +201,11 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
             serverThread.start();
             socketChannel.socket().setSoTimeout(config.getTimeout());
 
-            if (session != null) {
+            if (nioSession != null) {
                 return;
             }
             synchronized (conenctLock) {
-                if (session != null) {
+                if (nioSession != null) {
                     return;
                 }
                 try {
@@ -186,14 +232,14 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
     }
 
     @Override
-    protected void notifyWhenUpdateStatus(ChannelServiceStatusEnum status) {
+    protected void notifyWhenUpdateStatus(IoServerStatusEnum status) {
         if (status == null) {
             return;
         }
         switch (status) {
             case RUNING:
                 try {
-                    config.getProcessor().init(config);
+                    config.getProcessor().init(1);
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -204,4 +250,5 @@ public class NioQuickClient<T> extends AbstractIoServer<T> {
                 break;
         }
     }
+
 }
