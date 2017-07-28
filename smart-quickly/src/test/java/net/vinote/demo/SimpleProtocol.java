@@ -17,7 +17,7 @@ public class SimpleProtocol implements Protocol<String> {
             if (data.get(i) == '\n' && data.get(i - 1) == '\r') {
                 byte[] d = new byte[i+1];
                 data.get(d);
-                System.out.println("decode");
+//                System.out.println("decode");
                 return new String(d);
             }
         }

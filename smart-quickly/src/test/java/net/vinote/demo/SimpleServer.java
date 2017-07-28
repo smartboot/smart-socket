@@ -28,14 +28,15 @@ public class SimpleServer {
 
             @Override
             public void process(IoSession<String> session, String msg) throws Exception {
-                System.out.println("receive:" + msg);
+//                System.out.println("receive:" + msg);
                 session.write("Hi,Client\r\n");
 
             }
         };
         NioQuickServer server = new NioQuickServer()
                 .setProtocolFactory(factory)
-                .setProcessor(processor);
+                .setProcessor(processor)
+                .setFilters(new SimpleMonitorTimer());
         try {
             server.start();
         } catch (IOException e) {

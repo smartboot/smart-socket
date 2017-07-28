@@ -71,7 +71,7 @@ public final class NioQuickServer<T> extends AbstractIoServer<T> {
      * @param filters
      * @return
      */
-    public NioQuickServer<T> setFilters(SmartFilter<T>[] filters) {
+    public NioQuickServer<T> setFilters(SmartFilter<T>... filters) {
         this.config.setFilters(filters);
         return this;
     }
