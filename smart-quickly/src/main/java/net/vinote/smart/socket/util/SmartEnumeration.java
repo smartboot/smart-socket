@@ -1,4 +1,4 @@
-package net.vinote.smart.socket.lang;
+package net.vinote.smart.socket.util;
 
 import java.util.Enumeration;
 import java.util.Iterator;

@@ -3,7 +3,7 @@ package net.vinote.smart.socket.protocol.p2p.client;
 import net.vinote.smart.socket.protocol.p2p.MessageHandler;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
-import net.vinote.smart.socket.service.Session;
+import net.vinote.smart.socket.protocol.p2p.Session;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
  * @author Seer
  */
 public class DetectRespMessageHandler extends MessageHandler {
-    private Logger logger = LogManager.getLogger(DetectRespMessageHandler.class);
+    private static Logger logger = LogManager.getLogger(DetectRespMessageHandler.class);
     long max = 0;
     long outTime = System.currentTimeMillis();
 
@@ -26,7 +26,7 @@ public class DetectRespMessageHandler extends MessageHandler {
             max = useTime;
             if ( (System.currentTimeMillis() - outTime) > 1000) {
                 outTime = System.currentTimeMillis();
-                System.out.println(max);
+//                System.out.println(max);
             }
         }
 

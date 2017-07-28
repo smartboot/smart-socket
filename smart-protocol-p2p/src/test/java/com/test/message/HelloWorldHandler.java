@@ -2,7 +2,7 @@ package com.test.message;
 
 import net.vinote.smart.socket.protocol.p2p.MessageHandler;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
-import net.vinote.smart.socket.service.Session;
+import net.vinote.smart.socket.protocol.p2p.Session;
 
 public class HelloWorldHandler extends MessageHandler {
 

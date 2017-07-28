@@ -1,15 +1,16 @@
-package net.vinote.smart.socket.extension.timer;
+package net.vinote.smart.socket.protocol.p2p;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import net.vinote.smart.socket.extension.timer.QuickTimerTask;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.IoSession;
 
 /**
  * 服务器监测定时器
@@ -18,7 +19,7 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
  */
 public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<T> {
-	private Logger logger = LogManager.getLogger(QuickMonitorTimer.class);
+	private static Logger logger = LogManager.getLogger(QuickMonitorTimer.class);
 	/** 当前周期内消息 流量监控 */
 	private AtomicLong flow = new AtomicLong(0);
 	/** 当前周期内接受消息数 */
@@ -45,37 +46,37 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
 		return TimeUnit.MINUTES.toMillis(1);
 	}
 
-	public void processFilter(TransportSession<T> session, T d) {
+	public void processFilter(IoSession<T> session, T d) {
 		processMsgNum.incrementAndGet();
 		messageStorage.decrementAndGet();
 		totleProcessMsgNum++;
 	}
 
-	public void readFilter(TransportSession<T> session, T d) {
-		int length = session.getAttribute(TransportSession.ATTRIBUTE_KEY_CUR_DATA_LENGTH);
+	public void readFilter(IoSession<T> session, T d) {
+		int length = session.getAttribute(IoSession.ATTRIBUTE_KEY_CUR_DATA_LENGTH);
 		flow.addAndGet(length);
 		recMsgnum.incrementAndGet();
 		messageStorage.incrementAndGet();
 	}
 
-	public void receiveFailHandler(TransportSession<T> session, T d) {
+	public void receiveFailHandler(IoSession<T> session, T d) {
 		discardNum.incrementAndGet();
 		messageStorage.decrementAndGet();
 		// logger.info("HexData -->" + StringUtils.toHexString((byte[])d));
 	}
 
 	@Override
-	public void beginWriteFilter(TransportSession<T> session, ByteBuffer d) {
+	public void beginWriteFilter(IoSession<T> session, ByteBuffer d) {
 
 	}
 
 	@Override
-	public void continueWriteFilter(TransportSession<T> session, ByteBuffer d) {
+	public void continueWriteFilter(IoSession<T> session, ByteBuffer d) {
 
 	}
 
 	@Override
-	public void finishWriteFilter(TransportSession<T> session, ByteBuffer d) {
+	public void finishWriteFilter(IoSession<T> session, ByteBuffer d) {
 
 	}
 

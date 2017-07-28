@@ -9,7 +9,7 @@ import net.vinote.smart.socket.protocol.p2p.MessageHandler;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
-import net.vinote.smart.socket.service.Session;
+import net.vinote.smart.socket.protocol.p2p.Session;
 
 /**
  * 探测消息处理器
@@ -18,13 +18,12 @@ import net.vinote.smart.socket.service.Session;
  *
  */
 public class DetectMessageHandler extends MessageHandler {
-	private Logger logger = LogManager.getLogger(DetectMessageHandler.class);
+	private static Logger logger = LogManager.getLogger(DetectMessageHandler.class);
 
 	@Override
 	public void handler(Session<BaseMessage> session, BaseMessage message) {
 		DetectMessageReq msg = (DetectMessageReq) message;
 		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
-		rspMsg.setDetectMessage(msg.getDetectMessage());
 		rspMsg.setSendTime(msg.getSendTime());
 		try {
 			session.sendWithoutResponse(rspMsg);

@@ -1,15 +1,11 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.service.Session;
-import net.vinote.smart.socket.service.filter.SmartFilter;
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.IoSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 服务器消息处理器,由服务器启动时构造
@@ -17,23 +13,20 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Seer
  */
 public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDataProcessor<T> {
-    private Logger logger = LogManager.getLogger(AbstractServerDataGroupProcessor.class);
-    public static final String SESSION_KEY = "SESSION";
+    private static Logger logger = LogManager.getLogger(AbstractServerDataGroupProcessor.class);
     public static final String SESSION_PROCESS_THREAD = "_PROCESS_THREAD_";
     /**
      * 消息处理线程
      */
     private ServerDataProcessThread[] processThreads;
 
-
-    private QuicklyConfig<T> quickConfig;
+    private AtomicInteger processThreadIndex = new AtomicInteger(0);
 
     @SuppressWarnings("unchecked")
     @Override
-    public void init(QuicklyConfig<T> config) {
-        this.quickConfig = config;
+    public void init(int threadNum) {
         // 启动线程池处理消息
-        processThreads = new AbstractServerDataGroupProcessor.ServerDataProcessThread[config.getThreadNum()];
+        processThreads = new AbstractServerDataGroupProcessor.ServerDataProcessThread[threadNum];
         for (int i = 0; i < processThreads.length; i++) {
             processThreads[i] = new ServerDataProcessThread("ServerProcess-Thread-" + i);
             processThreads[i].setPriority(Thread.MAX_PRIORITY);
@@ -42,23 +35,23 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
     }
 
     @Override
-    public boolean receive(TransportSession<T> session, T entry) {
+    public boolean receive(IoSession<T> session, T entry) {
         ProcessUnit unit = new ProcessUnit(session, entry);
         ServerDataProcessThread processThread = session.getAttribute(SESSION_PROCESS_THREAD);
         //当前Session未绑定处理器,则先进行处理器选举
         if (processThread == null) {
-            processThread = selectProcess();
+            processThread = processThreads[processThreadIndex.getAndIncrement() % processThreads.length];
             session.setAttribute(SESSION_PROCESS_THREAD, processThread);
         }
         if (processThread.msgQueue.offer(unit)) {
             return true;
         }
         //Session绑定的处理器处理能力不足，由其他处理器辅助
-        for (int i = processThreads.length - 1; i >= 0; i--) {
-            if (processThreads[i].msgQueue.offer(unit)) {
-                return true;
-            }
-        }
+//        for (int i = processThreads.length - 1; i >= 0; i--) {
+//            if (processThreads[i].msgQueue.offer(unit)) {
+//                return true;
+//            }
+//        }
         //所有线程都满负荷
         try {
             processThread.msgQueue.put(unit);
@@ -84,29 +77,15 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
      * @author zhengjunwei
      */
     final class ProcessUnit {
-        TransportSession<T> session;
+        IoSession<T> session;
         T msg;
 
-        public ProcessUnit(TransportSession<T> session, T msg) {
+        public ProcessUnit(IoSession<T> session, T msg) {
             this.session = session;
             this.msg = msg;
         }
     }
 
-    /**
-     * 新Channel的处理器选举策略
-     *
-     * @return
-     */
-    private ServerDataProcessThread selectProcess() {
-        ServerDataProcessThread thread = processThreads[processThreads.length - 1];
-        for (int i = processThreads.length - 2; i >= 0; i--) {
-            if (processThreads[i].processNum.get() < thread.processNum.get()) {
-                thread = processThreads[i];
-            }
-        }
-        return thread;
-    }
 
     /**
      * 服务端消息处理线程
@@ -125,26 +104,14 @@ public abstract class AbstractServerDataGroupProcessor<T> implements ProtocolDat
          */
         private ArrayBlockingQueue<ProcessUnit> msgQueue = new ArrayBlockingQueue<ProcessUnit>(4096);
 
-        /**
-         * 消息处理量计数器
-         */
-        private AtomicLong processNum = new AtomicLong(0);
-
         @Override
         public void run() {
             while (running) {
                 try {
                     ProcessUnit unit = msgQueue.take();
-                    processNum.getAndIncrement();
-                    SmartFilter<T>[] filters = AbstractServerDataGroupProcessor.this.quickConfig.getFilters();
-                    if (filters != null && filters.length > 0) {
-                        for (SmartFilter<T> h : filters) {
-                            h.processFilter(unit.session, unit.msg);
-                        }
-                    }
-                    Session<T> session = unit.session.getAttribute(SESSION_KEY);
+                    unit.session.getFilterChain().doProcessFilter(unit.session, unit.msg);
                     if (unit.session.isValid()) {
-                        AbstractServerDataGroupProcessor.this.process(session, unit.msg);
+                        AbstractServerDataGroupProcessor.this.process(unit.session, unit.msg);
                     } else {
                         if (logger.isInfoEnabled()) {
                             logger.info("session invliad,discard message:" + unit.msg);

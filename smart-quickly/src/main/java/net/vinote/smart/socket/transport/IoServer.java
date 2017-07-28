@@ -8,7 +8,7 @@ import java.io.IOException;
  * 为服务器/客户端的传输层提供基本的数据交互服务控制功能
  * </p>
  * <p>
- * 服务的状态{@link ChannelService.Status}需要进行实时监控:
+ * 服务的状态{@link net.vinote.smart.socket.enums.IoServerStatusEnum}需要进行实时监控:
  * <li>Init:ChannelService对象创建即为Init状态</li>
  * <li>STARTING:调用了start()方法后状态立刻切换至STARTING</li>
  * <li>RUNING:服务启动成功后切换至RUNNING</li>
@@ -19,7 +19,7 @@ import java.io.IOException;
  * @author Seer
  * @version ChannelService.java, v 0.1 2015年8月24日 上午10:31:23 Seer Exp.
  */
-public interface ChannelService extends Runnable {
+public interface IoServer extends Runnable {
 
 	/**
 	 *

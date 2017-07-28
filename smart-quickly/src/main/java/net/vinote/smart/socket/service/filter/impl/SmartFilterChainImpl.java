@@ -1,11 +1,11 @@
 package net.vinote.smart.socket.service.filter.impl;
 
-import java.nio.ByteBuffer;
-
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.filter.SmartFilterChain;
 import net.vinote.smart.socket.service.process.ProtocolDataReceiver;
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.IoSession;
+
+import java.nio.ByteBuffer;
 
 /**
  * 业务层消息预处理器
@@ -23,7 +23,7 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 		this.hasHandlers=(handlers != null && handlers.length > 0);
 	}
 
-	public void doReadFilter(TransportSession<T> session, T dataEntry) {
+	public void doReadFilter(IoSession<T> session, T dataEntry) {
 		if (dataEntry == null) {
 			return;
 		}
@@ -44,7 +44,7 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 	}
 
 	@Override
-	public void doWriteFilterStart(TransportSession<T> session, ByteBuffer buffer) {
+	public void doWriteFilterStart(IoSession<T> session, ByteBuffer buffer) {
 		if (hasHandlers) {
 			for (SmartFilter<T> h : handlers) {
 				h.beginWriteFilter(session, buffer);
@@ -53,7 +53,7 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 	}
 
 	@Override
-	public void doWriteFilterContinue(TransportSession<T> session, ByteBuffer buffer) {
+	public void doWriteFilterContinue(IoSession<T> session, ByteBuffer buffer) {
 		if (hasHandlers) {
 			for (SmartFilter<T> h : handlers) {
 				h.continueWriteFilter(session, buffer);
@@ -62,10 +62,19 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 	}
 
 	@Override
-	public void doWriteFilterFinish(TransportSession<T> session, ByteBuffer buffer) {
+	public void doWriteFilterFinish(IoSession<T> session, ByteBuffer buffer) {
 		if (hasHandlers) {
 			for (SmartFilter<T> h : handlers) {
 				h.finishWriteFilter(session, buffer);
+			}
+		}
+	}
+
+	@Override
+	public void doProcessFilter(IoSession<T> session, T d) {
+		if(hasHandlers){
+			for (SmartFilter<T> h : handlers) {
+				h.processFilter(session, d);
 			}
 		}
 	}

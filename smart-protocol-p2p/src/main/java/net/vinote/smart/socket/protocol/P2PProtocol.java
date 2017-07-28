@@ -1,16 +1,17 @@
 package net.vinote.smart.socket.protocol;
 
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.lang.StringUtils;
+import net.vinote.smart.socket.util.StringUtils;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.HeadMessage;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.IoSession;
 
 /**
  * Point to Point消息协议实现
@@ -18,7 +19,7 @@ import net.vinote.smart.socket.transport.TransportSession;
  * @author Administrator
  */
 final class P2PProtocol implements Protocol<BaseMessage> {
-    private Logger LOGGER = LogManager.getLogger(P2PProtocol.class);
+    private static Logger LOGGER = LogManager.getLogger(P2PProtocol.class);
     /**
      * P2P消息标志性部分长度,消息头部的 幻数+消息大小 ,共8字节
      */
@@ -29,7 +30,7 @@ final class P2PProtocol implements Protocol<BaseMessage> {
         this.serviceMessageFactory = serviceMessageFactory;
     }
 
-    public BaseMessage decode(ByteBuffer buffer, TransportSession<BaseMessage> session) {
+    public BaseMessage decode(ByteBuffer buffer, IoSession<BaseMessage> session) {
         // 未读取到数据则直接返回
         if (buffer == null || buffer.remaining() < MESSAGE_SIGN_LENGTH) {
             return null;
@@ -47,15 +48,25 @@ final class P2PProtocol implements Protocol<BaseMessage> {
         if (buffer.remaining() < msgLength) {
             return null;
         }
-        if (buffer.position() >= 964) {
-            System.err.println("position:" + buffer.position() + " ,remain:" + buffer.remaining() + " ,msglength:" + msgLength);
-        }
+//        if (buffer.position() >= 964) {
+//            System.err.println("position:" + buffer.position() + " ,remain:" + buffer.remaining() + " ,msglength:" + msgLength);
+//        }
         BaseMessage message = decode(buffer);
         if (message == null) {
             throw new DecodeException("");
         }
-        session.setAttribute(TransportSession.ATTRIBUTE_KEY_CUR_DATA_LENGTH, msgLength);// 设置消息体大小
+        session.setAttribute(IoSession.ATTRIBUTE_KEY_CUR_DATA_LENGTH, msgLength);// 设置消息体大小
         return message;
+    }
+
+    @Override
+    public ByteBuffer encode(BaseMessage baseMessage, IoSession<BaseMessage> session) {
+        try {
+            return baseMessage.encode();
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private BaseMessage decode(ByteBuffer buffer) {

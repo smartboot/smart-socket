@@ -1,13 +1,6 @@
 package net.vinote.smart.socket.protocol.p2p.client;
 
-import java.util.Properties;
-import java.util.Random;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import net.vinote.smart.socket.extension.timer.QuickMonitorTimer;
-import net.vinote.smart.socket.lang.QuicklyConfig;
+import net.vinote.smart.socket.protocol.p2p.QuickMonitorTimer;
 import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
@@ -15,6 +8,11 @@ import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.transport.nio.NioQuickClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.Properties;
+import java.util.Random;
 
 public class P2PMultiClient {
     public static void main(String[] args) throws Exception {
@@ -33,24 +31,19 @@ public class P2PMultiClient {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
-
-                    QuicklyConfig<BaseMessage> config = new QuicklyConfig<BaseMessage>(false);
-                    config.setProtocolFactory(new P2PProtocolFactory(messageFactory));
                     P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-                    config.setProcessor(processor);
-                    config.setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()});
-                    config.setHost("127.0.0.1");
-                    config.setTimeout(1000);
-
-                    NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>(config);
+                    NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
+                            .setProtocolFactory(new P2PProtocolFactory(messageFactory))
+                            .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
+                            .setProcessor(processor)
+                            .setTimeout(1000);
                     client.start();
 
                     long num = 0;
                     long start = System.currentTimeMillis();
                     while (num++ < Long.MAX_VALUE) {
                         DetectMessageReq request = new DetectMessageReq();
-                        request.setDetectMessage("温岭是个好地方" + getRandomString(32));
-                        request.setSendTime(System.currentTimeMillis());
+                        request.setSendTime((byte) 1);
                         try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
 //								.sendWithResponse(request);

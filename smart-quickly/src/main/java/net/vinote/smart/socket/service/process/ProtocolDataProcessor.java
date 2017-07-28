@@ -1,7 +1,6 @@
 package net.vinote.smart.socket.service.process;
 
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.service.Session;
+import net.vinote.smart.socket.transport.IoSession;
 
 /**
  * 协议消息处理器
@@ -9,14 +8,14 @@ import net.vinote.smart.socket.service.Session;
  * @author Seer
  * @version ProtocolDataProcessor.java, v 0.1 2015年3月13日 下午3:26:55 Seer Exp.
  */
-public interface ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
+public interface  ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
 
 	/**
 	 * 初始化处理器
 	 *
-	 * @throws Exception
+	 * @param threadNum 处理器内部线程数
 	 */
-	public void init(QuicklyConfig<T> config);
+	public void init(int threadNum);
 
 	/**
 	 * 用于处理指定session内的一个消息实例,若直接在该方法内处理消息,则实现的是同步处理方式.
@@ -25,7 +24,7 @@ public interface ProtocolDataProcessor<T> extends ProtocolDataReceiver<T> {
 	 * @param session
 	 * @throws Exception
 	 */
-	public void process(Session<T> session, T msg) throws Exception;
+	public void process(IoSession<T> session, T msg) throws Exception;
 
 	/**
 	 * 关闭处理器

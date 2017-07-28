@@ -1,6 +1,6 @@
 package net.vinote.smart.socket.transport.nio;
 
-import net.vinote.smart.socket.transport.enums.SessionStatusEnum;
+import net.vinote.smart.socket.enums.IoSessionStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,7 +14,7 @@ import java.util.Set;
  * Socket写操作的处理线程。不通过NIO的写关注触发，因为发现效率并不高。而是由该线程进行监控，增强数据输出能力
  * Created by zhengjunwei on 2017/6/14.
  */
-public class SessionWriteThread extends Thread {
+class SessionWriteThread extends Thread {
     private static final Logger logger = LogManager.getLogger(SessionWriteThread.class);
     private List<NioSession> sessionSet = new ArrayList<NioSession>();
     /**
@@ -42,7 +42,7 @@ public class SessionWriteThread extends Thread {
                 newSessionSet2.add(session);
             }
         }
-        if (waitTime != 1) {
+        if (waitTime == 0 || waitTime > 10) {
             synchronized (this) {
                 this.notifyAll();
             }
@@ -56,15 +56,11 @@ public class SessionWriteThread extends Thread {
                 synchronized (this) {
                     if (sessionSet.isEmpty() && newSessionSet1.isEmpty() && newSessionSet2.isEmpty()) {
                         try {
-                            long start = System.currentTimeMillis();
                             this.wait(waitTime);
                             if (waitTime < 2000) {
                                 waitTime++;
                             } else {
                                 waitTime = 0;
-                            }
-                            if (logger.isTraceEnabled()) {
-                                logger.trace("nofity sessionWriteThread,waitTime:" + waitTime + " , real waitTime:" + (System.currentTimeMillis() - start));
                             }
                         } catch (InterruptedException e) {
                             logger.catching(e);
@@ -93,7 +89,7 @@ public class SessionWriteThread extends Thread {
                     session.flushWriteBuffer(3);
                     if (session.getWriteBuffer() == null) {
                         removeSession.add(session);
-                        if(session.getStatus()== SessionStatusEnum.CLOSING){
+                        if(session.getStatus()== IoSessionStatusEnum.CLOSING){
                             session.close();
                         }
                     }

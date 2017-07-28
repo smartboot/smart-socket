@@ -2,7 +2,7 @@ package net.vinote.smart.socket.protocol;
 
 import java.nio.ByteBuffer;
 
-import net.vinote.smart.socket.transport.TransportSession;
+import net.vinote.smart.socket.transport.IoSession;
 
 /**
  *
@@ -18,6 +18,16 @@ public interface Protocol<T> {
 	 * @param data
 	 * @return 本次解码所成功解析的消息实例集合,不允许返回null
 	 */
-	public T decode(ByteBuffer data, TransportSession<T> session);
+	public T decode(ByteBuffer data, IoSession<T> session);
+
+
+	/**
+	 * 将业务消息实体编码成ByteBuffer用于输出至对端。
+	 * <b>切勿在encode中直接调用session.write,编码后的byteuffer需交由框架本身来输出</b>
+	 * @param t
+	 * @param session
+	 * @return
+	 */
+	public ByteBuffer encode(T t,IoSession<T> session);
 
 }

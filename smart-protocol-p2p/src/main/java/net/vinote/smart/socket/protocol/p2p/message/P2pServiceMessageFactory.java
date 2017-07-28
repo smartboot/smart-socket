@@ -9,11 +9,11 @@ import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.vinote.smart.socket.lang.StringUtils;
+import net.vinote.smart.socket.util.StringUtils;
 import net.vinote.smart.socket.protocol.p2p.MessageHandler;
 
 public class P2pServiceMessageFactory {
-	private Logger logger = LogManager.getLogger(P2pServiceMessageFactory.class);
+	private static Logger logger = LogManager.getLogger(P2pServiceMessageFactory.class);
 	private Map<Integer, Class<? extends BaseMessage>> msgHaspMap = new HashMap<Integer, Class<? extends BaseMessage>>();
 	private Map<Class<? extends BaseMessage>, MessageHandler> processorMap = new HashMap<Class<? extends BaseMessage>, MessageHandler>();
 

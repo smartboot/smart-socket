@@ -1,9 +1,8 @@
 package net.vinote.smart.socket.transport.nio;
 
+import net.vinote.smart.socket.enums.IoServerStatusEnum;
 import net.vinote.smart.socket.exception.StatusException;
-import net.vinote.smart.socket.lang.QuicklyConfig;
-import net.vinote.smart.socket.transport.ChannelService;
-import net.vinote.smart.socket.transport.enums.ChannelServiceStatusEnum;
+import net.vinote.smart.socket.transport.IoServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,22 +12,23 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Seer
  * @version AbstractChannelService.java, v 0.1 2015年3月19日 下午6:57:01 Seer Exp.
  */
-abstract class AbstractChannelService<T> implements ChannelService {
-    private Logger logger = LogManager.getLogger(AbstractChannelService.class);
+abstract class AbstractIoServer<T> implements IoServer {
+    private static Logger logger = LogManager.getLogger(AbstractIoServer.class);
     /**
      * 服务状态
      */
-    volatile ChannelServiceStatusEnum status = ChannelServiceStatusEnum.Init;
+    volatile IoServerStatusEnum status = IoServerStatusEnum.Init;
 
     /**
      * 服务配置
      */
-    QuicklyConfig<T> config;
+    IoServerConfig<T> config;
 
     Selector selector;
 
@@ -36,15 +36,43 @@ abstract class AbstractChannelService<T> implements ChannelService {
      * 传输层Channel服务处理线程
      */
     Thread serverThread;
+    //数据读取线程
+    private SessionReadThread[] readThreads;
+    //数据读取线程
+    protected SessionWriteThread[] writeThreads;
+
+    //读写线程组索引标识
+    private AtomicInteger readWriteIndex = new AtomicInteger(0);
 
     /**
-     * 读管道单论操作读取次数
+     * 初始化NIO服务
+     *
+     * @param config
      */
-    final int READ_LOOP_TIMES;
-
-    public AbstractChannelService(final QuicklyConfig<T> config) {
+    protected void init(final IoServerConfig<T> config) {
         this.config = config;
-        READ_LOOP_TIMES = config.getReadLoopTimes();
+        writeThreads = new SessionWriteThread[config.getThreadNum()];
+        readThreads = new SessionReadThread[config.getThreadNum()];
+        for (int i = 0; i < config.getThreadNum(); i++) {
+            //启动写线程
+            writeThreads[i] = new SessionWriteThread();
+            writeThreads[i].setName("SessionWriteThread-" + i);
+            writeThreads[i].start();
+            //启动读线程
+            readThreads[i] = new SessionReadThread();
+            readThreads[i].setName("SessionReadThread-" + i);
+            readThreads[i].start();
+        }
+    }
+
+
+
+    protected SessionReadThread selectReadThread() {
+        return readThreads[(readWriteIndex.getAndIncrement() % readThreads.length + readThreads.length) % readThreads.length];//避免出现负数
+    }
+
+    protected SessionWriteThread selectWriteThread() {
+        return writeThreads[(readWriteIndex.getAndIncrement() % writeThreads.length + writeThreads.length) % writeThreads.length];
     }
 
     /*
@@ -53,18 +81,18 @@ abstract class AbstractChannelService<T> implements ChannelService {
      * @see java.lang.Runnable#run()
      */
     public final void run() {
-        updateServiceStatus(ChannelServiceStatusEnum.RUNING);
+        updateServiceStatus(IoServerStatusEnum.RUNING);
         // 通过检查状态使之一直保持服务状态
-        while (ChannelServiceStatusEnum.RUNING == status) {
+        while (IoServerStatusEnum.RUNING == status) {
             try {
                 running();
             } catch (ClosedSelectorException e) {
-                updateServiceStatus(ChannelServiceStatusEnum.Abnormal);// Selector关闭触发服务终止
+                updateServiceStatus(IoServerStatusEnum.Abnormal);// Selector关闭触发服务终止
             } catch (Exception e) {
                 exceptionInSelector(e);
             }
         }
-        updateServiceStatus(ChannelServiceStatusEnum.STOPPED);
+        updateServiceStatus(IoServerStatusEnum.STOPPED);
         logger.info("Channel is stop!");
     }
 
@@ -76,35 +104,29 @@ abstract class AbstractChannelService<T> implements ChannelService {
      */
     private void running() throws IOException, Exception {
         // 优先获取SelectionKey,若无关注事件触发则阻塞在selector.select(),减少select被调用次数
-        Set<SelectionKey> keySet = selector.selectedKeys();
-        if (keySet.isEmpty()) {
+        Set<SelectionKey> selectionKeys = selector.selectedKeys();
+        if (selectionKeys.isEmpty()) {
             selector.select();
         }
-        Iterator<SelectionKey> keyIterator = keySet.iterator();
+        Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
         // 执行本次已触发待处理的事件
         while (keyIterator.hasNext()) {
-            SelectionKey key = keyIterator.next();
-            NioAttachment attach = null;
+            final SelectionKey key = keyIterator.next();
             try {
-                attach = (NioAttachment) key.attachment();
                 // 读取客户端数据
                 if (key.isReadable()) {
+                    NioSession attach = (NioSession) key.attachment();
                     readFromChannel(key, attach);
-                }/* else if (key.isWritable()) {// 输出数据至客户端
-                    attach.setCurSelectionOP(SelectionKey.OP_WRITE);
-					writeToChannel(key, attach);
-				}*/ else if (key.isAcceptable() || key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
+                } else if (key.isAcceptable() || key.isConnectable()) {// 建立新连接,Client触发Connect,Server触发Accept
                     acceptConnect(key, selector);
                 } else {
                     logger.warn("奇怪了...");
                 }
             } catch (Exception e) {
                 exceptionInSelectionKey(key, e);
-            } finally {
-                // 移除已处理的事件
-                keyIterator.remove();
             }
         }
+        selectionKeys.clear();
     }
 
     /**
@@ -114,7 +136,10 @@ abstract class AbstractChannelService<T> implements ChannelService {
      * @param attach
      * @throws IOException
      */
-    protected abstract void readFromChannel(SelectionKey key, NioAttachment attach) throws IOException;
+    private final void readFromChannel(SelectionKey key, NioSession attach) throws IOException {
+        SessionReadThread readThread = attach.sessionReadThread;
+        readThread.notifySession(key);
+    }
 
     /**
      * 接受并建立Socket连接
@@ -129,7 +154,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
      * 判断状态是否有异常
      */
     final void assertAbnormalStatus() {
-        if (status == ChannelServiceStatusEnum.Abnormal) {
+        if (status == IoServerStatusEnum.Abnormal) {
             throw new StatusException("channel service's status is abnormal");
         }
     }
@@ -155,7 +180,7 @@ abstract class AbstractChannelService<T> implements ChannelService {
      *
      * @param status
      */
-    final void updateServiceStatus(final ChannelServiceStatusEnum status) {
+    final void updateServiceStatus(final IoServerStatusEnum status) {
         this.status = status;
         notifyWhenUpdateStatus(status);
     }
@@ -168,16 +193,21 @@ abstract class AbstractChannelService<T> implements ChannelService {
             throw new NullPointerException(getClass().getSimpleName() + "'s config is null");
         }
         if (config.getProtocolFactory() == null) {
-            throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s protocolFactory is null");
+            throw new NullPointerException(IoServerConfig.class.getSimpleName() + "'s protocolFactory is null");
         }
 
         if (config.getProcessor() == null) {
-            throw new NullPointerException(QuicklyConfig.class.getSimpleName() + "'s receiver is null");
+            throw new NullPointerException(IoServerConfig.class.getSimpleName() + "'s receiver is null");
         }
 
     }
 
-    protected void notifyWhenUpdateStatus(final ChannelServiceStatusEnum status) {
+    /**
+     * 当服务状态发送变更是触发的通知
+     *
+     * @param status
+     */
+    protected void notifyWhenUpdateStatus(final IoServerStatusEnum status) {
 
     }
 

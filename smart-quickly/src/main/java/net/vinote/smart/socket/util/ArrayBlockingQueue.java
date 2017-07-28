@@ -33,7 +33,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package net.vinote.smart.socket.lang;
+package net.vinote.smart.socket.util;
 
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;

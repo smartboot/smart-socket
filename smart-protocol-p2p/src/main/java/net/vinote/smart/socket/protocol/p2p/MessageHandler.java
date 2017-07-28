@@ -1,7 +1,6 @@
 package net.vinote.smart.socket.protocol.p2p;
 
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
-import net.vinote.smart.socket.service.Session;
 
 /**
  * 消息处理Handler
