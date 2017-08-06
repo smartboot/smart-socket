@@ -34,7 +34,7 @@ public class SimpleClient {
 
                         @Override
                         public void process(IoSession<String> session, String msg) throws Exception {
-//                System.out.println("Receive:" + msg);
+                System.out.println("Receive:" + msg);
                         }
 
                     };

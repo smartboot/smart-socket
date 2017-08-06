@@ -4,6 +4,7 @@ import net.vinote.smart.socket.protocol.P2PSession;
 import net.vinote.smart.socket.protocol.p2p.MessageHandler;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
+import net.vinote.smart.socket.service.process.AbstractAIOServerProcessor;
 import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
 import net.vinote.smart.socket.transport.IoSession;
 
@@ -12,7 +13,7 @@ import net.vinote.smart.socket.transport.IoSession;
  *
  * @author Seer
  */
-public final class P2PServerMessageProcessor extends AbstractServerDataGroupProcessor<BaseMessage> {
+public final class P2PServerMessageProcessor extends AbstractAIOServerProcessor<BaseMessage> {
     private P2pServiceMessageFactory serviceMessageFactory;
 
     public P2PServerMessageProcessor(P2pServiceMessageFactory serviceMessageFactory) {

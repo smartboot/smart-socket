@@ -7,6 +7,7 @@ import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.protocol.p2p.processor.DetectMessageHandler;
 import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.transport.aio.AioQuickServer;
 import net.vinote.smart.socket.transport.nio.NioQuickServer;
 
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class P2PServer {
         P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
         messageFactory.loadFromProperties(properties);
 
-        NioQuickServer<BaseMessage> server = new NioQuickServer<BaseMessage>().bind(8888).setThreadNum(4)
+        AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>().bind(8888).setThreadNum(4)
                 .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
                 .setProtocolFactory(new P2PProtocolFactory(messageFactory))
                 .setProcessor(new P2PServerMessageProcessor(messageFactory));

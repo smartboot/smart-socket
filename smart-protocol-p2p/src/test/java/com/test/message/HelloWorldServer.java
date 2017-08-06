@@ -19,7 +19,7 @@ public class HelloWorldServer {
         // 启动服务
 
         NioQuickServer<BaseMessage> server = new NioQuickServer<BaseMessage>()
-                .setProcessor(new P2PServerMessageProcessor(messageFactory))
+//                .setProcessor(new P2PServerMessageProcessor(messageFactory))
                 .setProtocolFactory(new P2PProtocolFactory(messageFactory));
         try {
             server.start();

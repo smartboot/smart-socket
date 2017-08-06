@@ -47,7 +47,7 @@ public class P2PClient {
                         try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
 //								.sendWithResponse(request);
-                            processor.getSession().sendWithoutResponse(request);
+                            System.out.println(processor.getSession().sendWithResponse(request));
 //							 Thread.sleep(1);
                             // logger.info(loginResp);
                         } catch (Exception e) {

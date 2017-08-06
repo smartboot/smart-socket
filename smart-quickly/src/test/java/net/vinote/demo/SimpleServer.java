@@ -4,6 +4,7 @@ import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
 import net.vinote.smart.socket.transport.IoSession;
+import net.vinote.smart.socket.transport.aio.AioQuickServer;
 import net.vinote.smart.socket.transport.nio.NioQuickServer;
 
 import java.io.IOException;
@@ -28,14 +29,14 @@ public class SimpleServer {
 
             @Override
             public void process(IoSession<String> session, String msg) throws Exception {
-//                System.out.println("receive:" + msg);
+                System.out.println("receive:" + msg);
                 session.write("Hi,Client\r\n");
 
             }
         };
-        NioQuickServer server = new NioQuickServer()
+        AioQuickServer server = new AioQuickServer()
                 .setProtocolFactory(factory)
-                .setProcessor(processor)
+//                .setProcessor(processor)
                 .setFilters(new SimpleMonitorTimer());
         try {
             server.start();

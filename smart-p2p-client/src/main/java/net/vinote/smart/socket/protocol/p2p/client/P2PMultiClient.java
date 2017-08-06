@@ -16,7 +16,7 @@ import java.util.Random;
 
 public class P2PMultiClient {
     public static void main(String[] args) throws Exception {
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 10; i++) {
             new Thread() {
                 private Logger logger = LogManager.getLogger(this.getClass());
 
@@ -47,7 +47,7 @@ public class P2PMultiClient {
                         try {
 //							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
 //								.sendWithResponse(request);
-                            processor.getSession().sendWithoutResponse(request);
+                             processor.getSession().sendWithoutResponse(request);
                             // logger.info(loginResp);
                         } catch (Exception e) {
                             System.out.println(num);
