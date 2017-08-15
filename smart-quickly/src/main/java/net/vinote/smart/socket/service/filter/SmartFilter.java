@@ -36,14 +36,14 @@ public interface SmartFilter<T> {
 	/**
 	 *消息输出前置处理
 	 */
-	public void beginWriteFilter(IoSession<T> session, ByteBuffer d);
+//	public void beginWriteFilter(IoSession<T> session, ByteBuffer d);
 
 	/**
 	 *消息输出中
 	 */
-	public void continueWriteFilter(IoSession<T> session, ByteBuffer d);
+//	public void continueWriteFilter(IoSession<T> session, ByteBuffer d);
 	/**
 	 *消息输出后置处理
 	 */
-	public void finishWriteFilter(IoSession<T> session, ByteBuffer d);
+//	public void finishWriteFilter(IoSession<T> session, ByteBuffer d);
 }

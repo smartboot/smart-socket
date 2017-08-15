@@ -28,7 +28,7 @@ public class P2PClient {
         final P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
         final NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
                 .setProtocolFactory(new P2PProtocolFactory(messageFactory))
-                .setProcessor(processor)
+//                .setProcessor(processor)
                 .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
                 .setTimeout(1000);
         client.start();

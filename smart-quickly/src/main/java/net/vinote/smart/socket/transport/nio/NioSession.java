@@ -35,7 +35,7 @@ public class NioSession<T> extends IoSession<T> {
      * @param config     配置
      */
     public NioSession(SelectionKey channelKey, final IoServerConfig<T> config) {
-        super(ByteBuffer.allocateDirect(config.getDataBufferSize()));
+        super(ByteBuffer.allocate(config.getDataBufferSize()));
         this.channelKey = channelKey;
         super.protocol = config.getProtocolFactory().createProtocol();
 //        super.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.isServer() ? (SmartFilter<T>[]) ArrayUtils.add(config.getFilters(), new FlowControlFilter()) : config.getFilters());
@@ -121,14 +121,14 @@ public class NioSession<T> extends IoSession<T> {
         ByteBuffer buffer = null;
         // 移除已输出的数据流
         while ((buffer = writeCacheQueue.peek()) != null && buffer.remaining() == 0) {
-            chain.doWriteFilterFinish(this, buffer);
+//            chain.doWriteFilterFinish(this, buffer);
             writeCacheQueue.remove(buffer);// 不要用poll,因为该行线程不安全
         }
 
 
-        if (buffer != null) {
-            chain.doWriteFilterContinue(this, buffer);
-        }
+//        if (buffer != null) {
+//            chain.doWriteFilterContinue(this, buffer);
+//        }
         return buffer;
     }
 
@@ -171,7 +171,7 @@ public class NioSession<T> extends IoSession<T> {
         if (!isValid()) {
             return;
         }
-        chain.doWriteFilterStart(this, buffer);
+//        chain.doWriteFilterStart(this, buffer);
         buffer.flip();
 // 队列为空时直接输出
 //        if (writeCacheQueue.isEmpty()) {

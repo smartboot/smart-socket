@@ -17,7 +17,7 @@ public class HelloWorldClient {
         P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
         NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>().connect("localhost", 8888)
                 .setTimeout(1000)
-                .setProcessor(processor)
+//                .setProcessor(processor)
                 .setProtocolFactory(new P2PProtocolFactory(messageFactory));
         client.start();
         int num = 10;

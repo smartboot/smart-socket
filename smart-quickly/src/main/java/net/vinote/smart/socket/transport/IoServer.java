@@ -1,6 +1,7 @@
 package net.vinote.smart.socket.transport;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Server/Client基本开关功能
@@ -38,5 +39,5 @@ public interface IoServer extends Runnable {
 	 *
 	 * @throws IOException
 	 */
-	public void start() throws IOException;
+	public void start() throws IOException, ExecutionException, InterruptedException;
 }

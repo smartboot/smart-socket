@@ -1,5 +1,6 @@
 package net.vinote.smart.socket.protocol;
 
+import net.vinote.smart.socket.service.process.AbstractAIOServerProcessor;
 import net.vinote.smart.socket.service.process.AbstractServerDataGroupProcessor;
 import net.vinote.smart.socket.transport.IoSession;
 
@@ -10,7 +11,7 @@ import java.nio.ByteBuffer;
  *
  * @author Seer
  */
-public final class HttpServerMessageProcessor extends AbstractServerDataGroupProcessor<HttpEntity> {
+public final class HttpServerMessageProcessor extends AbstractAIOServerProcessor<HttpEntity> {
 
     @Override
     public void process(IoSession<HttpEntity> session, HttpEntity entry) throws Exception {

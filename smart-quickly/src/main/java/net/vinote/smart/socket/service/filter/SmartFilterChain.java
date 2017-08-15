@@ -19,21 +19,21 @@ public interface SmartFilterChain<T> {
 	 * @param session
 	 * @param buffer
 	 */
-	public void doWriteFilterStart(IoSession<T> session, ByteBuffer buffer);
+//	public void doWriteFilterStart(IoSession<T> session, ByteBuffer buffer);
 
 	/**
 	 * 再次输出剩余的数据
 	 * @param session
 	 * @param buffer
 	 */
-	public void doWriteFilterContinue(IoSession<T> session, ByteBuffer buffer);
+//	public void doWriteFilterContinue(IoSession<T> session, ByteBuffer buffer);
 
 	/**
 	 * 完成数据输出
 	 * @param session
 	 * @param buffer
 	 */
-	public void doWriteFilterFinish(IoSession<T> session, ByteBuffer buffer);
+//	public void doWriteFilterFinish(IoSession<T> session, ByteBuffer buffer);
 
 	/**
 	 * 处理业务消息

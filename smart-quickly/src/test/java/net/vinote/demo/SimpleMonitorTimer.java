@@ -74,20 +74,20 @@ public class SimpleMonitorTimer extends QuickTimerTask implements SmartFilter<St
         // logger.info("HexData -->" + StringUtils.toHexString((byte[])d));
     }
 
-    @Override
-    public void beginWriteFilter(IoSession<String> session, ByteBuffer d) {
-
-    }
-
-    @Override
-    public void continueWriteFilter(IoSession<String> session, ByteBuffer d) {
-
-    }
-
-    @Override
-    public void finishWriteFilter(IoSession<String> session, ByteBuffer d) {
-
-    }
+//    @Override
+//    public void beginWriteFilter(IoSession<String> session, ByteBuffer d) {
+//
+//    }
+//
+//    @Override
+//    public void continueWriteFilter(IoSession<String> session, ByteBuffer d) {
+//
+//    }
+//
+//    @Override
+//    public void finishWriteFilter(IoSession<String> session, ByteBuffer d) {
+//
+//    }
 
     @Override
     public void run() {

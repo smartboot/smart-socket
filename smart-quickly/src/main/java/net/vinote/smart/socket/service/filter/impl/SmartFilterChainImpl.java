@@ -43,32 +43,32 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
 
 	}
 
-	@Override
-	public void doWriteFilterStart(IoSession<T> session, ByteBuffer buffer) {
-		if (hasHandlers) {
-			for (SmartFilter<T> h : handlers) {
-				h.beginWriteFilter(session, buffer);
-			}
-		}
-	}
-
-	@Override
-	public void doWriteFilterContinue(IoSession<T> session, ByteBuffer buffer) {
-		if (hasHandlers) {
-			for (SmartFilter<T> h : handlers) {
-				h.continueWriteFilter(session, buffer);
-			}
-		}
-	}
-
-	@Override
-	public void doWriteFilterFinish(IoSession<T> session, ByteBuffer buffer) {
-		if (hasHandlers) {
-			for (SmartFilter<T> h : handlers) {
-				h.finishWriteFilter(session, buffer);
-			}
-		}
-	}
+//	@Override
+//	public void doWriteFilterStart(IoSession<T> session, ByteBuffer buffer) {
+//		if (hasHandlers) {
+//			for (SmartFilter<T> h : handlers) {
+//				h.beginWriteFilter(session, buffer);
+//			}
+//		}
+//	}
+//
+//	@Override
+//	public void doWriteFilterContinue(IoSession<T> session, ByteBuffer buffer) {
+//		if (hasHandlers) {
+//			for (SmartFilter<T> h : handlers) {
+//				h.continueWriteFilter(session, buffer);
+//			}
+//		}
+//	}
+//
+//	@Override
+//	public void doWriteFilterFinish(IoSession<T> session, ByteBuffer buffer) {
+//		if (hasHandlers) {
+//			for (SmartFilter<T> h : handlers) {
+//				h.finishWriteFilter(session, buffer);
+//			}
+//		}
+//	}
 
 	@Override
 	public void doProcessFilter(IoSession<T> session, T d) {

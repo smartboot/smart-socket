@@ -3,6 +3,7 @@ import net.vinote.smart.socket.protocol.HttpProtocol;
 import net.vinote.smart.socket.protocol.HttpServerMessageProcessor;
 import net.vinote.smart.socket.protocol.Protocol;
 import net.vinote.smart.socket.protocol.ProtocolFactory;
+import net.vinote.smart.socket.transport.aio.AioQuickServer;
 import net.vinote.smart.socket.transport.nio.NioQuickServer;
 
 import java.io.IOException;
@@ -14,7 +15,7 @@ public class Test {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
 //        config.setFilters(new SmartFilter[] { new QuickMonitorTimer<HttpEntity>() });
         HttpServerMessageProcessor processor = new HttpServerMessageProcessor();
-        NioQuickServer<HttpEntity> server = new NioQuickServer<HttpEntity>()
+        AioQuickServer<HttpEntity> server = new AioQuickServer<HttpEntity>()
                 .setThreadNum(8)
                 .setProtocolFactory(new ProtocolFactory<HttpEntity>() {
                     @Override

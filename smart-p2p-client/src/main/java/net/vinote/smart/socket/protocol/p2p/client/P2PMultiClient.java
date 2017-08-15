@@ -7,17 +7,27 @@ import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
+import net.vinote.smart.socket.transport.aio.AioQuickClient;
 import net.vinote.smart.socket.transport.nio.NioQuickClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.nio.channels.AsynchronousChannelGroup;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.ThreadFactory;
 
 public class P2PMultiClient {
     public static void main(String[] args) throws Exception {
+      final  AsynchronousChannelGroup  asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r);
+            }
+        });
         for (int i = 0; i < 10; i++) {
-            new Thread() {
+            new Thread("CLient-Thread-"+i) {
                 private Logger logger = LogManager.getLogger(this.getClass());
 
                 @Override
@@ -32,12 +42,16 @@ public class P2PMultiClient {
                         e1.printStackTrace();
                     }
                     P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-                    NioQuickClient<BaseMessage> client = new NioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
+                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>(asynchronousChannelGroup).connect("127.0.0.1", 8888)
                             .setProtocolFactory(new P2PProtocolFactory(messageFactory))
                             .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
                             .setProcessor(processor)
                             .setTimeout(1000);
-                    client.start();
+                    try {
+                        client.start();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
                     long num = 0;
                     long start = System.currentTimeMillis();

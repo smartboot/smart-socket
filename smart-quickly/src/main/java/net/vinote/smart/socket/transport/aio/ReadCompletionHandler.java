@@ -37,11 +37,15 @@ class ReadCompletionHandler implements CompletionHandler<Integer, Object> {
             readBuffer.position(readBuffer.limit());
             readBuffer.limit(readBuffer.capacity());
         }
-        if (session.writeCacheQueue.size() < AioSession.FLOW_LIMIT_LINE) {
-            channel.read(readBuffer, attachment, this);
-        } else {
+        if(session.isServer) {
+            if (session.writeCacheQueue.size() < AioSession.FLOW_LIMIT_LINE) {
+                channel.read(readBuffer, attachment, this);
+            } else {
 //            System.err.println("流控");
-            session.flowLimit.set(true);
+                session.flowLimit.set(true);
+            }
+        }else{
+            channel.read(readBuffer, attachment, this);
         }
     }
 
