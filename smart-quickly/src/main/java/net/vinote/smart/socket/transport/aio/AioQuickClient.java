@@ -3,14 +3,12 @@ package net.vinote.smart.socket.transport.aio;
 import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.process.AbstractAioClientDataProcessor;
-import net.vinote.smart.socket.service.process.AbstractClientDataProcessor;
 import net.vinote.smart.socket.transport.IoServer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -79,27 +77,21 @@ public class AioQuickClient<T> implements IoServer {
 
     @Override
     public void shutdown() {
-
+        config.getProcessor().shutdown();
     }
 
     @Override
     public void start() throws IOException, ExecutionException, InterruptedException {
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
-        this.config.getProcessor().init(4);
+        this.config.getProcessor().init(config.getThreadNum());
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        final AioSession session = new AioSession(socketChannel, config);
+        final AioSession session = new AioSession(socketChannel, config, new ReadCompletionHandler(),new WriteCompletionHandler());
         config.getProcessor().initSession(session);
-        session.registerReadHandler();
-        System.out.println("finish Connect:" + socketChannel);
+        session.registerReadHandler(true);
     }
 
     @Override
     public void run() {
-
-    }
-
-
-    public static void main(String[] args) throws IOException {
-//        new AioQuickClient<Object>().start();
+        throw new UnsupportedOperationException();
     }
 }

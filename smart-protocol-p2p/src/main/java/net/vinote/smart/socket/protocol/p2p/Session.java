@@ -40,4 +40,6 @@ public interface Session<T> {
 	 * @return
 	 */
 	public boolean notifySyncMessage(T baseMsg);
+
+	void close();
 }

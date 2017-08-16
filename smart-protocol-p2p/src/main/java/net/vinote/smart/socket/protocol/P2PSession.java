@@ -185,6 +185,11 @@ public class P2PSession implements Session<BaseMessage> {
         return sendWithResponse(requestMsg, ioSession.getTimeout());
     }
 
+    @Override
+    public void close() {
+        ioSession.close();
+    }
+
     /**
      * 是否为请求消息类型
      *

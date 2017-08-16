@@ -7,11 +7,13 @@ import net.vinote.smart.socket.transport.IoServer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by zhengjunwei on 2017/6/28.
@@ -20,6 +22,8 @@ public class AioQuickServer<T> implements IoServer {
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private IoServerConfig<T> config;
+    private ReadCompletionHandler readCompletionHandler;
+    private WriteCompletionHandler writeCompletionHandler;
 
     public AioQuickServer() {
         this.config = new IoServerConfig<T>(true);
@@ -76,30 +80,40 @@ public class AioQuickServer<T> implements IoServer {
 
     @Override
     public void shutdown() {
-
+        try {
+            serverSocketChannel.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        asynchronousChannelGroup.shutdown();
     }
 
     @Override
     public void start() throws IOException {
-        asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+        readCompletionHandler = new ReadCompletionHandler();
+        writeCompletionHandler = new WriteCompletionHandler();
+        final AtomicInteger threadIndex = new AtomicInteger(0);
+        asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r);
+                return new Thread(r, "AIO-Server-" + threadIndex.incrementAndGet());
             }
         });
 
-        this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress("localhost", 8888));
-        this.config.getProcessor().init(4);
+        this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()));
+        this.config.getProcessor().init(config.getThreadNum());
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
             @Override
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
-                System.out.println("new Connect:" + channel);
                 serverSocketChannel.accept(attachment, this);
-                final AioSession session = new AioSession(channel, config);
+                try {
+                    channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                final AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler);
                 config.getProcessor().initSession(session);
-                session.registerReadHandler();
-
-                System.out.println("finiash Connect:" + channel);
+                session.registerReadHandler(true);
             }
 
             @Override
@@ -111,11 +125,7 @@ public class AioQuickServer<T> implements IoServer {
 
     @Override
     public void run() {
-
+        throw new UnsupportedOperationException();
     }
 
-
-    public static void main(String[] args) throws IOException {
-        new AioQuickServer<Object>().start();
-    }
 }

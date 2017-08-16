@@ -28,6 +28,11 @@ public class P2PClientMessageProcessor extends AbstractAioClientDataProcessor<Ba
     }
 
     @Override
+    public void shutdown() {
+        session.close();
+    }
+
+    @Override
     public void initSession(IoSession<BaseMessage> ioSession) {
         session = new P2PSession(ioSession);
     }

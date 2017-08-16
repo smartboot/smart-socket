@@ -13,7 +13,6 @@ public abstract class AbstractAIOServerProcessor<T> implements ProtocolDataProce
     private static Logger logger = LogManager.getLogger(AbstractAIOServerProcessor.class);
     public static final String SESSION_PROCESS_THREAD = "_PROCESS_THREAD_";
 
-    @SuppressWarnings("unchecked")
     @Override
     public void init(int threadNum) {
     }
