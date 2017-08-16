@@ -111,7 +111,7 @@ public class AioQuickServer<T> implements IoServer {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                final AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler);
+                 AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler);
                 config.getProcessor().initSession(session);
                 session.registerReadHandler(true);
             }
