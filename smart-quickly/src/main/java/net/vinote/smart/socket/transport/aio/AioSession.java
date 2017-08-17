@@ -117,6 +117,8 @@ public class AioSession<T> extends IoSession<T> {
             channel.write(buffer, new AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer>(this, buffer), writeCompletionHandler);
         }
     }
-
+    public void close(boolean immediate) {
+        super.close(immediate || writeCacheQueue.isEmpty());
+    }
 
 }

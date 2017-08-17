@@ -1,5 +1,6 @@
 package net.vinote.smart.socket.transport.aio;
 
+import net.vinote.smart.socket.enums.IoSessionStatusEnum;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,6 +37,9 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
         }
         if (aioSession.writeCacheQueue.isEmpty()) {
             aioSession.semaphore.release();
+            if (aioSession.getStatus() != IoSessionStatusEnum.ENABLED) {
+                aioSession.close();
+            }
             if (!aioSession.writeCacheQueue.isEmpty()) {
                 aioSession.trigeWrite(true);
             }
@@ -48,5 +52,6 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
     @Override
     public void failed(Throwable exc, AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer> attachment) {
         logger.warn(exc.getMessage());
+        attachment.getKey().close();
     }
 }

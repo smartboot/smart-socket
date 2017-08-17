@@ -18,9 +18,9 @@ class ReadCompletionHandler implements CompletionHandler<Integer, AioSession> {
             aioSession.close();
             return;
         }
+
         ByteBuffer readBuffer = aioSession.readBuffer;
         readBuffer.flip();
-
         aioSession.read(readBuffer);
 
         //会话已不可用,终止读
@@ -49,12 +49,13 @@ class ReadCompletionHandler implements CompletionHandler<Integer, AioSession> {
     }
 
     @Override
-    public void failed(Throwable exc, AioSession attachment) {
+    public void failed(Throwable exc, AioSession aioSession) {
         if (exc instanceof AsynchronousCloseException) {
             logger.debug(exc);
         } else {
             exc.printStackTrace();
         }
+        aioSession.close();
 
     }
 }
