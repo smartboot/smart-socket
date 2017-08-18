@@ -1,13 +1,14 @@
 package net.vinote.smart.socket.protocol.p2p.client;
 
-import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.QuickMonitorTimer;
+import net.vinote.smart.socket.protocol.P2PProtocolFactory;
 import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageReq;
 import net.vinote.smart.socket.protocol.p2p.message.DetectMessageResp;
 import net.vinote.smart.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.transport.aio.AioQuickClient;
+import net.vinote.smart.socket.transport.nio.NioQuickClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,23 +20,18 @@ import java.util.concurrent.ThreadFactory;
 
 public class P2PMultiClient {
     public static void main(String[] args) throws Exception {
+        final  AsynchronousChannelGroup  asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r);
+            }
+        });
         for (int i = 0; i < 10; i++) {
             new Thread("CLient-Thread-"+i) {
                 private Logger logger = LogManager.getLogger(this.getClass());
 
                 @Override
                 public void run() {
-                    AsynchronousChannelGroup asynchronousChannelGroup = null;
-                    try {
-                        asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-                            @Override
-                            public Thread newThread(Runnable r) {
-                                return new Thread(r);
-                            }
-                        });
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
                     Properties properties = new Properties();
                     properties.put(DetectMessageResp.class.getName(), DetectRespMessageHandler.class.getName());
                     P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
