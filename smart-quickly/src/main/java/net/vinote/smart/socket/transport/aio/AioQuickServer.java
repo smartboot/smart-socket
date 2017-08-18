@@ -4,6 +4,8 @@ import net.vinote.smart.socket.protocol.ProtocolFactory;
 import net.vinote.smart.socket.service.filter.SmartFilter;
 import net.vinote.smart.socket.service.process.AbstractAIOServerProcessor;
 import net.vinote.smart.socket.transport.IoServer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -19,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by zhengjunwei on 2017/6/28.
  */
 public class AioQuickServer<T> implements IoServer {
+    private static final Logger LOGGER = LogManager.getLogger(AioQuickServer.class);
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private IoServerConfig<T> config;
@@ -89,6 +92,8 @@ public class AioQuickServer<T> implements IoServer {
         asynchronousChannelGroup.shutdown();
     }
 
+    static int i;
+
     @Override
     public void start() throws IOException {
         readCompletionHandler = new ReadCompletionHandler();
@@ -106,10 +111,11 @@ public class AioQuickServer<T> implements IoServer {
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
             @Override
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
+                LOGGER.debug("accept channel {}:{}", i++, channel);
                 serverSocketChannel.accept(attachment, this);
                 try {
                     channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-                    channel.setOption(StandardSocketOptions.SO_KEEPALIVE,true);
+                    channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

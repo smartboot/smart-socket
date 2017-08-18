@@ -119,7 +119,7 @@ public class AioSession<T> extends IoSession<T> {
             int totalSize = 0;
             while (iterable.hasNext()) {
                 totalSize += iterable.next().remaining();
-                if (totalSize >= 1024) {
+                if (totalSize >= 32 * 1024) {
                     break;
                 }
             }
