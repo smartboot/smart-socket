@@ -92,8 +92,6 @@ public class AioQuickServer<T> implements IoServer {
         asynchronousChannelGroup.shutdown();
     }
 
-    static int i;
-
     @Override
     public void start() throws IOException {
         readCompletionHandler = new ReadCompletionHandler();
@@ -111,7 +109,7 @@ public class AioQuickServer<T> implements IoServer {
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
             @Override
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
-                LOGGER.debug("accept channel {}:{}", i++, channel);
+                LOGGER.debug("accept channel: {}", channel);
                 serverSocketChannel.accept(attachment, this);
                 try {
                     channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
