@@ -85,9 +85,9 @@ public class AioQuickClient<T> implements IoServer {
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         this.config.getProcessor().init(config.getThreadNum());
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        final AioSession session = new AioSession(socketChannel, config, new ReadCompletionHandler(),new WriteCompletionHandler());
+        final AioSession session = new AioSession(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler());
         config.getProcessor().initSession(session);
-        session.registerReadHandler(true);
+        session.registerReadHandler();
     }
 
     @Override

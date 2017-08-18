@@ -15,11 +15,12 @@ class ReadCompletionHandler implements CompletionHandler<Integer, AioSession> {
     @Override
     public void completed(Integer result, AioSession aioSession) {
         if (result == -1) {
-            aioSession.close();
+            logger.info("read end:" + aioSession);
+            aioSession.close(false);
             return;
         }
 
-        ByteBuffer readBuffer = aioSession.readBuffer;
+        ByteBuffer readBuffer = aioSession.getReadBuffer();
         readBuffer.flip();
         aioSession.read(readBuffer);
 
@@ -36,15 +37,12 @@ class ReadCompletionHandler implements CompletionHandler<Integer, AioSession> {
             readBuffer.position(readBuffer.limit());
             readBuffer.limit(readBuffer.capacity());
         }
-        if (aioSession.isServer) {
-            if (aioSession.writeCacheQueue.size() < AioSession.FLOW_LIMIT_LINE) {
-                aioSession.registerReadHandler(false);
-            } else {
-                aioSession.flowLimit.set(true);
-                aioSession.readSemaphore.release();
-            }
+
+        //是否触发流控
+        if (aioSession.serverFlowLimit != null && aioSession.writeCacheQueue.size() > aioSession.FLOW_LIMIT_LINE) {
+            aioSession.serverFlowLimit.set(true);
         } else {
-            aioSession.registerReadHandler(false);
+            aioSession.registerReadHandler();
         }
     }
 

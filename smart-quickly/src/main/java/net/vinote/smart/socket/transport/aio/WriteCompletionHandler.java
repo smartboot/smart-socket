@@ -16,9 +16,9 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
         AioSession<T> aioSession = attachment.getKey();
         ByteBuffer writeBuffer = attachment.getValue();
         //服务端Session才具备流控功能
-        if (aioSession.isServer && aioSession.writeCacheQueue.size() < aioSession.RELEASE_LINE && aioSession.flowLimit.get()) {
-            aioSession.flowLimit.set(false);
-            aioSession.registerReadHandler(true);
+        if (aioSession.serverFlowLimit != null && aioSession.writeCacheQueue.size() < aioSession.RELEASE_LINE && aioSession.serverFlowLimit.get()) {
+            aioSession.serverFlowLimit.set(false);
+            aioSession.registerReadHandler();
         }
         if (writeBuffer.hasRemaining()) {
             //复用输出流
@@ -36,10 +36,11 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
             return;
         }
         if (aioSession.writeCacheQueue.isEmpty()) {
-            aioSession.semaphore.release();
             if (aioSession.getStatus() != IoSessionStatusEnum.ENABLED) {
                 aioSession.close();
             }
+            aioSession.semaphore.release();
+
             if (!aioSession.writeCacheQueue.isEmpty()) {
                 aioSession.trigeWrite(true);
             }

@@ -25,6 +25,7 @@ public class AioQuickServer<T> implements IoServer {
     private ReadCompletionHandler readCompletionHandler;
     private WriteCompletionHandler writeCompletionHandler;
 
+
     public AioQuickServer() {
         this.config = new IoServerConfig<T>(true);
     }
@@ -108,12 +109,13 @@ public class AioQuickServer<T> implements IoServer {
                 serverSocketChannel.accept(attachment, this);
                 try {
                     channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+                    channel.setOption(StandardSocketOptions.SO_KEEPALIVE,true);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                 AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler);
+                AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler);
                 config.getProcessor().initSession(session);
-                session.registerReadHandler(true);
+                session.registerReadHandler();
             }
 
             @Override

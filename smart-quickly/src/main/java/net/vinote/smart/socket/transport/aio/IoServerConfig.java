@@ -19,7 +19,7 @@ final class IoServerConfig<T> {
     /**
      * 消息队列缓存大小
      */
-    private int cacheSize = 256;
+    private int cacheSize = 1024;
 
     /**
      * 消息体缓存大小,字节
@@ -56,11 +56,6 @@ final class IoServerConfig<T> {
      */
     private ProtocolFactory<T> protocolFactory;
 
-    /**
-     * 读管道单论循环操作次数
-     */
-    private int readLoopTimes = 5;
-
 
     /**
      * 服务器处理线程数
@@ -71,11 +66,6 @@ final class IoServerConfig<T> {
      * 超时时间
      */
     private int timeout = Integer.MAX_VALUE;
-
-    /**
-     * 写管道单论循环操作次数
-     */
-    private int writeLoopTimes = 10;
 
     /**
      * true:服务器,false:客户端
@@ -105,10 +95,6 @@ final class IoServerConfig<T> {
         return port;
     }
 
-    public final int getReadLoopTimes() {
-        return readLoopTimes;
-    }
-
 
     public final int getThreadNum() {
         return threadNum;
@@ -118,9 +104,6 @@ final class IoServerConfig<T> {
         return timeout;
     }
 
-    public final int getWriteLoopTimes() {
-        return writeLoopTimes;
-    }
 
     public final boolean isAutoRecover() {
         return autoRecover;
@@ -146,10 +129,6 @@ final class IoServerConfig<T> {
         this.port = port;
     }
 
-    public final void setReadLoopTimes(int readLoopTimes) {
-        this.readLoopTimes = readLoopTimes;
-    }
-
 
     public final void setThreadNum(int threadNum) {
         this.threadNum = threadNum;
@@ -159,9 +138,6 @@ final class IoServerConfig<T> {
         this.timeout = timeout;
     }
 
-    public final void setWriteLoopTimes(int writeLoopTimes) {
-        this.writeLoopTimes = writeLoopTimes;
-    }
 
     public final boolean isServer() {
         return serverOrClient;
