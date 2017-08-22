@@ -3,10 +3,10 @@ package com.test.message;
 import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 
-import net.vinote.smart.socket.exception.DecodeException;
-import net.vinote.smart.socket.protocol.p2p.message.BaseMessage;
-import net.vinote.smart.socket.protocol.p2p.message.HeadMessage;
-import net.vinote.smart.socket.protocol.p2p.message.MessageType;
+import org.smartboot.socket.exception.DecodeException;
+import org.smartboot.socket.protocol.p2p.message.BaseMessage;
+import org.smartboot.socket.protocol.p2p.message.HeadMessage;
+import org.smartboot.socket.protocol.p2p.message.MessageType;
 
 public class HelloWorldResp extends BaseMessage {
 
