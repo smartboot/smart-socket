@@ -1,15 +1,15 @@
 package org.smartboot.socket.protocol.p2p.client;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.protocol.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.QuickMonitorTimer;
-import org.smartboot.socket.protocol.P2PProtocolFactory;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import org.smartboot.socket.service.filter.SmartFilter;
 import org.smartboot.socket.transport.AioQuickClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.nio.channels.AsynchronousChannelGroup;
 import java.util.Properties;
@@ -41,7 +41,7 @@ public class P2PMultiClient {
                     }
                     P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
                     AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>(asynchronousChannelGroup).connect("127.0.0.1", 8888)
-                            .setProtocolFactory(new P2PProtocolFactory(messageFactory))
+                            .setProtocol(new P2PProtocol(messageFactory))
                             .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
                             .setProcessor(processor)
                             .setTimeout(1000);

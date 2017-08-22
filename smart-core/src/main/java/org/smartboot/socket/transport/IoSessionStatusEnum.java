@@ -1,4 +1,4 @@
-package org.smartboot.socket.enums;
+package org.smartboot.socket.transport;
 
 /**
  * 传输层通道状态

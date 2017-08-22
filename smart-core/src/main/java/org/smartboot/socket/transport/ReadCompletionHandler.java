@@ -2,7 +2,6 @@ package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.enums.IoSessionStatusEnum;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
@@ -15,7 +14,7 @@ class ReadCompletionHandler implements CompletionHandler<Integer, AioSession> {
     @Override
     public void completed(Integer result, AioSession aioSession) {
         if (result == -1) {
-            logger.info("read end:" + aioSession);
+            logger.debug("read end:" + aioSession);
             aioSession.close(false);
             return;
         }

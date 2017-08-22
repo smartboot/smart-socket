@@ -1,6 +1,6 @@
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.protocol.ProtocolFactory;
+import org.smartboot.socket.protocol.Protocol;
 import org.smartboot.socket.service.filter.SmartFilter;
 import org.smartboot.socket.service.process.ProtocolDataProcessor;
 
@@ -52,9 +52,9 @@ final class IoServerConfig<T> {
     private ProtocolDataProcessor<T> processor;
 
     /**
-     * 协议工厂
+     * 协议编解码
      */
-    private ProtocolFactory<T> protocolFactory;
+    private Protocol<T> protocol;
 
 
     /**
@@ -163,12 +163,12 @@ final class IoServerConfig<T> {
         this.filters = filters;
     }
 
-    public final ProtocolFactory<T> getProtocolFactory() {
-        return protocolFactory;
+    public Protocol<T> getProtocol() {
+        return protocol;
     }
 
-    public final void setProtocolFactory(ProtocolFactory<T> protocolFactory) {
-        this.protocolFactory = protocolFactory;
+    public void setProtocol(Protocol<T> protocol) {
+        this.protocol = protocol;
     }
 
     public final ProtocolDataProcessor<T> getProcessor() {

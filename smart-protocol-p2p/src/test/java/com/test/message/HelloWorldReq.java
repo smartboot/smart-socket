@@ -1,11 +1,11 @@
 package com.test.message;
 
-import java.net.ProtocolException;
-import java.nio.ByteBuffer;
-
-import org.smartboot.socket.exception.DecodeException;
+import org.smartboot.socket.protocol.DecodeException;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.MessageType;
+
+import java.net.ProtocolException;
+import java.nio.ByteBuffer;
 
 public class HelloWorldReq extends BaseMessage {
 

@@ -2,10 +2,8 @@ package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.enums.IoSessionStatusEnum;
 import org.smartboot.socket.protocol.Protocol;
 import org.smartboot.socket.service.filter.SmartFilterChain;
-import org.smartboot.socket.service.filter.impl.SmartFilterChainImpl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -87,14 +85,14 @@ public class AioSession<T> {
      */
     AtomicBoolean serverFlowLimit;
 
-    public AioSession(AsynchronousSocketChannel channel, IoServerConfig config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler) {
+    public AioSession(AsynchronousSocketChannel channel, IoServerConfig config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, SmartFilterChain smartFilterChain) {
         this.readBuffer = ByteBuffer.allocate(config.getDataBufferSize());
         this.channel = channel;
-        this.protocol = config.getProtocolFactory().createProtocol();
+        this.protocol = config.getProtocol();
         if (config.isServer()) {
             serverFlowLimit = new AtomicBoolean(false);
         }
-        this.chain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
+        this.chain = smartFilterChain;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getCacheSize());
@@ -122,14 +120,6 @@ public class AioSession<T> {
             channel.read(readBuffer, this, readCompletionHandler);
         } else {
             logger.warn("session is " + getStatus() + " , can't do read");
-        }
-    }
-
-    private void close0() {
-        try {
-            channel.close();
-        } catch (Exception e) {
-            logger.catching(e);
         }
     }
 
@@ -188,7 +178,11 @@ public class AioSession<T> {
     public void close(boolean immediate) {
         if (immediate) {
             synchronized (AioSession.this) {
-                close0();
+                try {
+                    channel.close();
+                } catch (IOException e) {
+                    logger.debug(e);
+                }
                 status = IoSessionStatusEnum.CLOSED;
             }
         } else {

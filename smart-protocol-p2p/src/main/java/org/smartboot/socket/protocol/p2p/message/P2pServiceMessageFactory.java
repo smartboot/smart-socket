@@ -1,16 +1,15 @@
 package org.smartboot.socket.protocol.p2p.message;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.protocol.p2p.MessageHandler;
+import org.smartboot.socket.util.StringUtils;
+
 import java.lang.reflect.Method;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import org.smartboot.socket.util.StringUtils;
-import org.smartboot.socket.protocol.p2p.MessageHandler;
 
 public class P2pServiceMessageFactory {
 	private static Logger logger = LogManager.getLogger(P2pServiceMessageFactory.class);

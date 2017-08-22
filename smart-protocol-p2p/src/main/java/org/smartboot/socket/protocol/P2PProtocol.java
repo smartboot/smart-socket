@@ -2,7 +2,6 @@ package org.smartboot.socket.protocol;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.exception.DecodeException;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.HeadMessage;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
@@ -17,7 +16,7 @@ import java.nio.ByteBuffer;
  *
  * @author Administrator
  */
-final class P2PProtocol implements Protocol<BaseMessage> {
+public final class P2PProtocol implements Protocol<BaseMessage> {
     private static Logger LOGGER = LogManager.getLogger(P2PProtocol.class);
     /**
      * P2P消息标志性部分长度,消息头部的 幻数+消息大小 ,共8字节

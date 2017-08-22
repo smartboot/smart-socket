@@ -1,11 +1,11 @@
 package org.smartboot.socket.protocol.p2p.client;
 
-import org.smartboot.socket.protocol.p2p.MessageHandler;
-import org.smartboot.socket.protocol.p2p.message.BaseMessage;
-import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
-import org.smartboot.socket.protocol.p2p.Session;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.protocol.p2p.MessageHandler;
+import org.smartboot.socket.protocol.p2p.Session;
+import org.smartboot.socket.protocol.p2p.message.BaseMessage;
+import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
 
 /**
  * 探测消息处理器

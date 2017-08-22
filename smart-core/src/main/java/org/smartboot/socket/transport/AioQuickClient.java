@@ -1,7 +1,8 @@
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.protocol.ProtocolFactory;
+import org.smartboot.socket.protocol.Protocol;
 import org.smartboot.socket.service.filter.SmartFilter;
+import org.smartboot.socket.service.filter.impl.SmartFilterChainImpl;
 import org.smartboot.socket.service.process.ProtocolDataProcessor;
 
 import java.io.IOException;
@@ -14,7 +15,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * Created by zhengjunwei on 2017/6/28.
  */
-public class AioQuickClient<T> implements IoServer {
+public class AioQuickClient<T> {
     private AsynchronousSocketChannel socketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private IoServerConfig<T> config;
@@ -49,11 +50,12 @@ public class AioQuickClient<T> implements IoServer {
 
     /**
      * 设置协议对象的构建工厂
-     * @param protocolFactory
+     *
+     * @param protocol
      * @return
      */
-    public AioQuickClient<T> setProtocolFactory(ProtocolFactory<T> protocolFactory) {
-        this.config.setProtocolFactory(protocolFactory);
+    public AioQuickClient<T> setProtocol(Protocol<T> protocol) {
+        this.config.setProtocol(protocol);
         return this;
     }
 
@@ -91,16 +93,14 @@ public class AioQuickClient<T> implements IoServer {
     }
 
 
-    @Override
     public void start() throws IOException, ExecutionException, InterruptedException {
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        final AioSession session = new AioSession(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler());
+        final AioSession session = new AioSession(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(),new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters()));
         config.getProcessor().initSession(session);
         session.registerReadHandler();
     }
 
-    @Override
     public void shutdown() {
         if (socketChannel != null) {
             try {

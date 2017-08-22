@@ -1,6 +1,6 @@
 package org.smartboot.socket.protocol.p2p.server;
 
-import org.smartboot.socket.protocol.P2PProtocolFactory;
+import org.smartboot.socket.protocol.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.QuickMonitorTimer;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
@@ -25,7 +25,7 @@ public class P2PServer {
 
         AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>().bind(8888).setThreadNum(4)
                 .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
-                .setProtocolFactory(new P2PProtocolFactory(messageFactory))
+                .setProtocol(new P2PProtocol(messageFactory))
                 .setProcessor(new P2PServerMessageProcessor(messageFactory));
         try {
             server.start();

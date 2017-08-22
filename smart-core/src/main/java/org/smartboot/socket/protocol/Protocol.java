@@ -6,7 +6,8 @@ import java.nio.ByteBuffer;
 
 /**
  *
- * 消息传输采用的协议 注意:同一个协议解析器切勿同时用于多个socket链路,否则将出息码流错乱情况
+ * 消息传输采用的协议
+ * 框架本身的所有Socket链路复用同一个Protocol，请无在其实现类的成员变量中存储特定链路的数据
  *
  * @author Seer
  * @version Protocol.java, v 0.1 2015年3月13日 下午3:30:57 Seer Exp.

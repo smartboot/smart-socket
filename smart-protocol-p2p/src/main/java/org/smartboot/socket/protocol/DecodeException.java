@@ -1,4 +1,4 @@
-package org.smartboot.socket.exception;
+package org.smartboot.socket.protocol;
 
 /**
  * 消息解码异常

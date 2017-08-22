@@ -2,8 +2,10 @@ package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.protocol.ProtocolFactory;
+import org.smartboot.socket.protocol.Protocol;
 import org.smartboot.socket.service.filter.SmartFilter;
+import org.smartboot.socket.service.filter.SmartFilterChain;
+import org.smartboot.socket.service.filter.impl.SmartFilterChainImpl;
 import org.smartboot.socket.service.process.ProtocolDataProcessor;
 
 import java.io.IOException;
@@ -19,14 +21,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by zhengjunwei on 2017/6/28.
  */
-public class AioQuickServer<T> implements IoServer {
+public class AioQuickServer<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickServer.class);
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private IoServerConfig<T> config;
     private ReadCompletionHandler readCompletionHandler;
     private WriteCompletionHandler writeCompletionHandler;
-
+    private SmartFilterChain<T> smartFilterChain;
 
     public AioQuickServer() {
         this.config = new IoServerConfig<T>(true);
@@ -54,8 +56,8 @@ public class AioQuickServer<T> implements IoServer {
         return this;
     }
 
-    public AioQuickServer<T> setProtocolFactory(ProtocolFactory<T> protocolFactory) {
-        this.config.setProtocolFactory(protocolFactory);
+    public AioQuickServer<T> setProtocol(Protocol<T> protocol) {
+        this.config.setProtocol(protocol);
         return this;
     }
 
@@ -81,7 +83,6 @@ public class AioQuickServer<T> implements IoServer {
         return this;
     }
 
-    @Override
     public void shutdown() {
         try {
             serverSocketChannel.close();
@@ -91,10 +92,10 @@ public class AioQuickServer<T> implements IoServer {
         asynchronousChannelGroup.shutdown();
     }
 
-    @Override
     public void start() throws IOException {
         readCompletionHandler = new ReadCompletionHandler();
         writeCompletionHandler = new WriteCompletionHandler();
+        smartFilterChain=new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
         final AtomicInteger threadIndex = new AtomicInteger(0);
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
             @Override
@@ -103,7 +104,7 @@ public class AioQuickServer<T> implements IoServer {
             }
         });
 
-        this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()),1000);
+        this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()), 1000);
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
             @Override
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
@@ -112,16 +113,16 @@ public class AioQuickServer<T> implements IoServer {
                     channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
                     channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
                 } catch (IOException e) {
-                   LOGGER.catching(e);
+                    LOGGER.catching(e);
                 }
-                AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler);
+                AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler,smartFilterChain);
                 config.getProcessor().initSession(session);
                 session.registerReadHandler();
             }
 
             @Override
             public void failed(Throwable exc, Object attachment) {
-                exc.printStackTrace();
+                LOGGER.warn(exc);
             }
         });
     }

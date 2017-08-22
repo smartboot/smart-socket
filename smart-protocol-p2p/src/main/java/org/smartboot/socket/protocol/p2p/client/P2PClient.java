@@ -2,7 +2,7 @@ package org.smartboot.socket.protocol.p2p.client;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.protocol.P2PProtocolFactory;
+import org.smartboot.socket.protocol.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.QuickMonitorTimer;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
@@ -35,7 +35,7 @@ public class P2PClient {
 
         final P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
         final AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>(asynchronousChannelGroup).connect("127.0.0.1", 8888)
-                .setProtocolFactory(new P2PProtocolFactory(messageFactory))
+                .setProtocol(new P2PProtocol(messageFactory))
 //                .setProcessor(processor)
                 .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
                 .setTimeout(1000);

@@ -1,15 +1,14 @@
 package org.smartboot.socket.protocol.p2p.server;
 
-import java.io.IOException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.smartboot.socket.protocol.p2p.MessageHandler;
+import org.smartboot.socket.protocol.p2p.Session;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
-import org.smartboot.socket.protocol.p2p.Session;
+
+import java.io.IOException;
 
 /**
  * 探测消息处理器
