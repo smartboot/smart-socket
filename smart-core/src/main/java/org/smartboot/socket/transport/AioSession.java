@@ -101,13 +101,15 @@ public class AioSession<T> {
         this.timeout = config.getTimeout();
     }
 
+
     void read(ByteBuffer readBuffer) {
 
         // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
         T dataEntry;
         int remain = readBuffer.remaining();
         while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
-            chain.doChain(this, dataEntry, remain-readBuffer.remaining() );
+            chain.doChain(this, dataEntry, remain - readBuffer.remaining());
+            remain = readBuffer.remaining();
         }
     }
 
