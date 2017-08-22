@@ -15,7 +15,7 @@ public class Test {
 //        config.setFilters(new SmartFilter[] { new QuickMonitorTimer<HttpEntity>() });
         HttpServerMessageProcessor processor = new HttpServerMessageProcessor();
         AioQuickServer<HttpEntity> server = new AioQuickServer<HttpEntity>()
-                .setThreadNum(200)
+                .setThreadNum(8)
                 .setProtocolFactory(new ProtocolFactory<HttpEntity>() {
                     @Override
                     public Protocol<HttpEntity> createProtocol() {

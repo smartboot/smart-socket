@@ -103,7 +103,7 @@ public class AioQuickServer<T> implements IoServer {
             }
         });
 
-        this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()));
+        this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()),1000);
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
             @Override
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
