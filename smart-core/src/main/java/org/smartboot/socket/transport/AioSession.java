@@ -107,7 +107,7 @@ public class AioSession<T> {
         T dataEntry;
         int remain = readBuffer.remaining();
         while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
-            chain.doChain(this, dataEntry, readBuffer.remaining() - remain);
+            chain.doChain(this, dataEntry, remain-readBuffer.remaining() );
         }
     }
 
