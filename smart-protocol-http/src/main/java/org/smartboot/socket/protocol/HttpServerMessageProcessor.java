@@ -1,6 +1,6 @@
 package org.smartboot.socket.protocol;
 
-import org.smartboot.socket.service.process.ProtocolDataProcessor;
+import org.smartboot.socket.service.process.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
  *
  * @author Seer
  */
-public final class HttpServerMessageProcessor implements ProtocolDataProcessor<HttpEntity> {
+public final class HttpServerMessageProcessor implements MessageProcessor<HttpEntity> {
 
     @Override
     public void process(AioSession<HttpEntity> session, HttpEntity entry) throws Exception {

@@ -2,7 +2,7 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.protocol.Protocol;
 import org.smartboot.socket.service.filter.SmartFilter;
-import org.smartboot.socket.service.process.ProtocolDataProcessor;
+import org.smartboot.socket.service.process.MessageProcessor;
 
 /**
  * Quickly服务端/客户端配置信息 T:解码后生成的对象类型，S:
@@ -49,7 +49,7 @@ final class IoServerConfig<T> {
     /**
      * 消息处理器
      */
-    private ProtocolDataProcessor<T> processor;
+    private MessageProcessor<T> processor;
 
     /**
      * 协议编解码
@@ -171,11 +171,11 @@ final class IoServerConfig<T> {
         this.protocol = protocol;
     }
 
-    public final ProtocolDataProcessor<T> getProcessor() {
+    public final MessageProcessor<T> getProcessor() {
         return processor;
     }
 
-    public final void setProcessor(ProtocolDataProcessor<T> processor) {
+    public final void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
     }
 }

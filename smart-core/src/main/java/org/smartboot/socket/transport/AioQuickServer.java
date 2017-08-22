@@ -6,7 +6,7 @@ import org.smartboot.socket.protocol.Protocol;
 import org.smartboot.socket.service.filter.SmartFilter;
 import org.smartboot.socket.service.filter.SmartFilterChain;
 import org.smartboot.socket.service.filter.impl.SmartFilterChainImpl;
-import org.smartboot.socket.service.process.ProtocolDataProcessor;
+import org.smartboot.socket.service.process.MessageProcessor;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -78,7 +78,7 @@ public class AioQuickServer<T> {
      * @param processor
      * @return
      */
-    public AioQuickServer<T> setProcessor(ProtocolDataProcessor<T> processor) {
+    public AioQuickServer<T> setProcessor(MessageProcessor<T> processor) {
         this.config.setProcessor(processor);
         return this;
     }

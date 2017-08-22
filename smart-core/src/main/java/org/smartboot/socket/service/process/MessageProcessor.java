@@ -3,12 +3,12 @@ package org.smartboot.socket.service.process;
 import org.smartboot.socket.transport.AioSession;
 
 /**
- * 协议消息处理器
+ * 消息处理器
  *
  * @author Seer
- * @version ProtocolDataProcessor.java, v 0.1 2015年3月13日 下午3:26:55 Seer Exp.
+ * @version MessageProcessor.java, v 0.1 2015年3月13日 下午3:26:55 Seer Exp.
  */
-public interface ProtocolDataProcessor<T> {
+public interface MessageProcessor<T> {
 
     /**
      * 用于处理指定session内的一个消息实例,若直接在该方法内处理消息,则实现的是同步处理方式.
