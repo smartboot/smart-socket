@@ -151,6 +151,25 @@ public class AioSession<T> {
             return;
         }
         if (!ackSemaphore || semaphore.tryAcquire()) {
+            //优先进行 自压缩
+            ByteBuffer firstBuffer = writeCacheQueue.peek();
+            if (firstBuffer != null && firstBuffer.capacity() - firstBuffer.limit() > firstBuffer.remaining()) {
+                firstBuffer = writeCacheQueue.poll();
+                if (firstBuffer.position() > 0) {
+                    firstBuffer.compact();
+                } else {
+                    firstBuffer.position(firstBuffer.limit());
+                    firstBuffer.limit(firstBuffer.capacity());
+                }
+                ByteBuffer nextBuffer;
+                while ((nextBuffer = writeCacheQueue.peek()) != null && firstBuffer.remaining() > nextBuffer.remaining()) {
+                    firstBuffer.put(writeCacheQueue.poll());
+                }
+                firstBuffer.flip();
+                channel.write(firstBuffer, new AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer>(this, firstBuffer), writeCompletionHandler);
+                return;
+            }
+
             Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
             int totalSize = 0;
             while (iterable.hasNext()) {
