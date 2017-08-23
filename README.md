@@ -22,7 +22,7 @@
 3. 启动服务
 
 接下来我们会通过一个简单例子来演示如何通过smart-socket开发服务端与客户端程序。为简化操作，服务端与客户端交互的数据为一个整型数据。
-###协议编解码
+### 协议编解码
 正常情况下服务端与客户端通信共用同一套协议规则，因此我们只需编写一份协议编解码实现即可。如下所示，协议编解码的需要实现接口Protocol。
 
 	public class IntegerProtocol implements Protocol<Integer> {
@@ -46,9 +46,9 @@
 
 上述代码很简单，一个整数的长度为4bit，所以只要长度大于等于4，我们就能解析到一个整数。
 
-###消息处理
+### 消息处理
 业务消息的处理需要实现接口`MessageProcessor`，该接口只有两个方法：`process`,`initSession `。其中 **initSession**仅在建立连接时调用一次，可在该方法中进行会话的初始化操作。**process**则会处理每一个接收到的业务消息。
-####服务端
+#### 服务端
 	public class IntegerServerProcessor implements MessageProcessor<Integer> {
 	    @Override
 	    public void process(AioSession<Integer> session, Integer msg) throws Exception {
@@ -63,7 +63,7 @@
 	    }
 	}
 	
-####客户端
+#### 客户端
 	public class IntegerClientProcessor implements MessageProcessor<Integer> {
 	    private AioSession session;
 	
@@ -82,8 +82,8 @@
 	    }
 	}
 
-###启动服务
-####服务端
+### 启动服务
+#### 服务端
 	public class IntegerServer {
 	    public static void main(String[] args) {
 	        AioQuickServer server = new AioQuickServer()
@@ -98,7 +98,7 @@
 	    }
 	}
 	
-####客户端
+#### 客户端
 	public class IntegerClient {
 	    public static void main(String[] args) throws Exception {
 	        IntegerClientProcessor processor=new IntegerClientProcessor();
