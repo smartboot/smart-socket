@@ -1,4 +1,4 @@
-package org.smartboot.socket.protocol;
+package org.smartboot.socket.protocol.p2p;
 
 /**
  * 消息解码异常

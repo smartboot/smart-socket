@@ -2,7 +2,7 @@ package org.smartboot.socket.protocol.p2p.message;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.smartboot.socket.protocol.DecodeException;
+import org.smartboot.socket.protocol.p2p.DecodeException;
 
 import java.net.ProtocolException;
 import java.nio.ByteBuffer;

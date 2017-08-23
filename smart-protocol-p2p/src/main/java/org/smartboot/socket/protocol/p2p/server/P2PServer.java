@@ -1,7 +1,7 @@
 package org.smartboot.socket.protocol.p2p.server;
 
-import org.smartboot.socket.protocol.P2PProtocol;
-import org.smartboot.socket.protocol.p2p.QuickMonitorTimer;
+import org.smartboot.socket.protocol.p2p.P2PProtocol;
+import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;

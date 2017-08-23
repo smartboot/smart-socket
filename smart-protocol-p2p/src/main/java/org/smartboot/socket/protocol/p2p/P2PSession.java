@@ -1,8 +1,7 @@
-package org.smartboot.socket.protocol;
+package org.smartboot.socket.protocol.p2p;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.protocol.p2p.Session;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.MessageType;
 import org.smartboot.socket.transport.AioSession;

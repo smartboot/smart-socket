@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 /**
  *
  * 消息传输采用的协议
- * 框架本身的所有Socket链路复用同一个Protocol，请无在其实现类的成员变量中存储特定链路的数据
+ * 框架本身的所有Socket链路复用同一个Protocol，请勿在其实现类的成员变量中存储特定链路的数据
  *
  * @author Seer
  * @version Protocol.java, v 0.1 2015年3月13日 下午3:30:57 Seer Exp.

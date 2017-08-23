@@ -1,8 +1,7 @@
-package org.smartboot.socket.protocol.p2p;
+package org.smartboot.socket.extension.timer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.extension.timer.QuickTimerTask;
 import org.smartboot.socket.service.filter.SmartFilter;
 import org.smartboot.socket.transport.AioSession;
 
@@ -12,6 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 服务器监测定时器
+ * <p>统计一分钟内接收到的数据流量，接受消息数，处理消息数，处理失败消息数</p>
  *
  * @author Seer
  * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
@@ -69,23 +69,8 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
     public void processFailHandler(AioSession<T> session, T d) {
         processFailNum.incrementAndGet();
         messageStorage.decrementAndGet();
-        // logger.info("HexData -->" + StringUtils.toHexString((byte[])d));
     }
 
-//	@Override
-//	public void beginWriteFilter(IoSession<T> session, ByteBuffer d) {
-//
-//	}
-//
-//	@Override
-//	public void continueWriteFilter(IoSession<T> session, ByteBuffer d) {
-//
-//	}
-//
-//	@Override
-//	public void finishWriteFilter(IoSession<T> session, ByteBuffer d) {
-//
-//	}
 
     @Override
     public void run() {

@@ -1,4 +1,4 @@
-package org.smartboot.socket.protocol.enums;
+package org.smartboot.socket.protocol.p2p.enums;
 
 import org.smartboot.socket.util.StringUtils;
 

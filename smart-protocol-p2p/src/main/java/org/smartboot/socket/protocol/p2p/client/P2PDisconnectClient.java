@@ -1,6 +1,6 @@
 package org.smartboot.socket.protocol.p2p.client;
 
-import org.smartboot.socket.protocol.P2PProtocol;
+import org.smartboot.socket.protocol.p2p.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;

@@ -1,6 +1,6 @@
 package com.test.message;
 
-import org.smartboot.socket.protocol.DecodeException;
+import org.smartboot.socket.protocol.p2p.DecodeException;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.HeadMessage;
 import org.smartboot.socket.protocol.p2p.message.MessageType;

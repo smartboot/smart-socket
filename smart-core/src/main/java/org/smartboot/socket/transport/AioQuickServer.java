@@ -26,8 +26,11 @@ public class AioQuickServer<T> {
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private IoServerConfig<T> config;
-    private ReadCompletionHandler readCompletionHandler;
-    private WriteCompletionHandler writeCompletionHandler;
+    private ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler();
+    private WriteCompletionHandler writeCompletionHandler = new WriteCompletionHandler();
+    /**
+     * 消息过滤器
+     */
     private SmartFilterChain<T> smartFilterChain;
 
     public AioQuickServer() {
@@ -83,19 +86,9 @@ public class AioQuickServer<T> {
         return this;
     }
 
-    public void shutdown() {
-        try {
-            serverSocketChannel.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        asynchronousChannelGroup.shutdown();
-    }
 
     public void start() throws IOException {
-        readCompletionHandler = new ReadCompletionHandler();
-        writeCompletionHandler = new WriteCompletionHandler();
-        smartFilterChain=new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
+        smartFilterChain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
         final AtomicInteger threadIndex = new AtomicInteger(0);
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
             @Override
@@ -115,7 +108,7 @@ public class AioQuickServer<T> {
                 } catch (IOException e) {
                     LOGGER.catching(e);
                 }
-                AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler,smartFilterChain);
+                AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler, smartFilterChain);
                 config.getProcessor().initSession(session);
                 session.registerReadHandler();
             }
@@ -127,4 +120,12 @@ public class AioQuickServer<T> {
         });
     }
 
+    public void shutdown() {
+        try {
+            serverSocketChannel.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        asynchronousChannelGroup.shutdown();
+    }
 }
