@@ -113,7 +113,7 @@
 	    }
 	}
 ## 推荐项目
-- [smartboot-sosa](http://git.oschina.net/smartboot/smartboot-sosa)
+- [NIO版smart-socket](http://git.oschina.net/smartdms/smart-socket)
 - [smart-boot](http://git.oschina.net/smartboot/smart-boot)
 - [maven-mydalgen-plugin](http://git.oschina.net/smartboot/maven-mydalgen-plugin)
 
