@@ -22,8 +22,8 @@ public interface MessageProcessor<T> {
     /**
      * 初始化业务层Session对象
      *
-     * @param ioSession 传输层ioSession
+     * @param session 传输层会话
      * @return
      */
-    public void initSession(AioSession<T> ioSession);
+    public void initSession(AioSession<T> session);
 }
