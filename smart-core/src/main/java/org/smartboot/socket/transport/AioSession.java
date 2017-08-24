@@ -52,11 +52,6 @@ public class AioSession<T> {
     private Protocol<T> protocol;
 
     /**
-     * 超时时间
-     */
-    private int timeout;
-
-    /**
      * 缓存传输层读取到的数据流
      */
     private ByteBuffer readBuffer;
@@ -116,7 +111,6 @@ public class AioSession<T> {
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         FLOW_LIMIT_LINE = (int) (config.getWriteQueueSize() * 0.9);
         RELEASE_LINE = (int) (config.getWriteQueueSize() * 0.6);
-        this.timeout = config.getTimeout();
     }
 
 
@@ -238,16 +232,6 @@ public class AioSession<T> {
      */
     public final int getSessionID() {
         return sessionId;
-    }
-
-
-    /**
-     * 获取超时时间
-     *
-     * @return
-     */
-    public int getTimeout() {
-        return timeout;
     }
 
     /**

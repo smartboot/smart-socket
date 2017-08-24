@@ -54,11 +54,6 @@ final class IoServerConfig<T> {
     private int threadNum = Runtime.getRuntime().availableProcessors();
 
     /**
-     * 超时时间
-     */
-    private int timeout = Integer.MAX_VALUE;
-
-    /**
      * true:服务器,false:客户端
      */
     private boolean serverOrClient;
@@ -84,12 +79,6 @@ final class IoServerConfig<T> {
         return threadNum;
     }
 
-    public final int getTimeout() {
-        return timeout;
-    }
-
-
-
 
     public final void setHost(String host) {
         this.host = host;
@@ -103,10 +92,6 @@ final class IoServerConfig<T> {
 
     public final void setThreadNum(int threadNum) {
         this.threadNum = threadNum;
-    }
-
-    public final void setTimeout(int timeout) {
-        this.timeout = timeout;
     }
 
 

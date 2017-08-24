@@ -45,7 +45,7 @@ public class P2PSession implements Session<BaseMessage> {
     public P2PSession(AioSession<BaseMessage> ioSession) {
         sessionId = ioSession.getSessionID();
         this.ioSession = ioSession;
-        maxInactiveInterval = ioSession.getTimeout();
+        maxInactiveInterval = 1000;
         synchRespMap = new ConcurrentHashMap<Integer, BaseMessage>();
         creatTime = System.currentTimeMillis();
     }
@@ -181,7 +181,7 @@ public class P2PSession implements Session<BaseMessage> {
     }
 
     public BaseMessage sendWithResponse(BaseMessage requestMsg) throws Exception {
-        return sendWithResponse(requestMsg, ioSession.getTimeout());
+        return sendWithResponse(requestMsg, maxInactiveInterval);
     }
 
     @Override
