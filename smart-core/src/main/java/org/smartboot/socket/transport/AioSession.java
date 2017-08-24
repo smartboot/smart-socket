@@ -48,9 +48,9 @@ public class AioSession<T> {
     private ByteBuffer readBuffer;
 
     /**
-     * 会话属性
+     * 会话属性,延迟创建以减少内存消耗
      */
-    private Map<String, Object> attribute = new HashMap<String, Object>();
+    private Map<String, Object> attribute;
 
     /**
      * 会话状态
@@ -251,15 +251,21 @@ public class AioSession<T> {
 
     @SuppressWarnings("unchecked")
     public final <T1> T1 getAttribute(String key) {
-        return (T1) attribute.get(key);
+        return attribute == null ? null : (T1) attribute.get(key);
     }
 
 
     public final void setAttribute(String key, Object value) {
+        if (attribute == null) {
+            attribute = new HashMap<String, Object>();
+        }
         attribute.put(key, value);
     }
 
     public final void removeAttribute(String key) {
+        if (attribute == null) {
+            return;
+        }
         attribute.remove(key);
     }
 }
