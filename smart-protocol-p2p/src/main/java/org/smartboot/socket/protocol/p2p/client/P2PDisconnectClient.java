@@ -36,8 +36,7 @@ public class P2PDisconnectClient {
                     AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>(asynchronousChannelGroup).connect("127.0.0.1", 8888)
                             .setProtocol(new P2PProtocol(messageFactory))
 //                            .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
-                            .setProcessor(new P2PClientMessageProcessor(messageFactory))
-                            .setTimeout(1000);
+                            .setProcessor(new P2PClientMessageProcessor(messageFactory));
 
                     try {
                         client.start();

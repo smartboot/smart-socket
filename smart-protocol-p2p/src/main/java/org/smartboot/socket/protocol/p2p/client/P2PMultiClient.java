@@ -2,8 +2,8 @@ package org.smartboot.socket.protocol.p2p.client;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.protocol.p2p.P2PProtocol;
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
+import org.smartboot.socket.protocol.p2p.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
@@ -18,14 +18,14 @@ import java.util.concurrent.ThreadFactory;
 
 public class P2PMultiClient {
     public static void main(String[] args) throws Exception {
-        final  AsynchronousChannelGroup  asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+        final AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 return new Thread(r);
             }
         });
         for (int i = 0; i < 10; i++) {
-            new Thread("CLient-Thread-"+i) {
+            new Thread("CLient-Thread-" + i) {
                 private Logger logger = LogManager.getLogger(this.getClass());
 
                 @Override
@@ -43,8 +43,7 @@ public class P2PMultiClient {
                     AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>(asynchronousChannelGroup).connect("127.0.0.1", 8888)
                             .setProtocol(new P2PProtocol(messageFactory))
                             .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
-                            .setProcessor(processor)
-                            .setTimeout(1000);
+                            .setProcessor(processor);
                     try {
                         client.start();
                     } catch (Exception e) {

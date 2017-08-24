@@ -102,16 +102,4 @@ public class AioQuickClient<T> {
         return this;
     }
 
-    /**
-     * 定义同步消息的超时时间
-     *
-     * @param timeout
-     * @return
-     */
-    public AioQuickClient<T> setTimeout(int timeout) {
-        this.config.setTimeout(timeout);
-        return this;
-    }
-
-
 }
