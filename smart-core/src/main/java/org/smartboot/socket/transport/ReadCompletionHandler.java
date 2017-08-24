@@ -4,11 +4,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.CompletionHandler;
 
 class ReadCompletionHandler implements CompletionHandler<Integer, AioSession> {
-    private Logger logger = LogManager.getLogger(ReadCompletionHandler.class);
+    private static final Logger logger = LogManager.getLogger(ReadCompletionHandler.class);
 
 
     @Override
@@ -19,22 +18,11 @@ class ReadCompletionHandler implements CompletionHandler<Integer, AioSession> {
             return;
         }
 
-        ByteBuffer readBuffer = aioSession.getReadBuffer();
-        readBuffer.flip();
-        aioSession.read(readBuffer);
+        aioSession.decodeAndProcess();
 
         //会话已不可用,终止读
         if (aioSession.isInvalid()) {
             return;
-        }
-        //数据读取完毕
-        if (readBuffer.remaining() == 0) {
-            readBuffer.clear();
-        } else if (readBuffer.position() > 0) {// 仅当发生数据读取时调用compact,减少内存拷贝
-            readBuffer.compact();
-        } else {
-            readBuffer.position(readBuffer.limit());
-            readBuffer.limit(readBuffer.capacity());
         }
 
         //是否触发流控
@@ -47,12 +35,7 @@ class ReadCompletionHandler implements CompletionHandler<Integer, AioSession> {
 
     @Override
     public void failed(Throwable exc, AioSession aioSession) {
-        if (exc instanceof AsynchronousCloseException) {
-            logger.debug(exc);
-        } else {
-            exc.printStackTrace();
-        }
+        logger.info(exc);
         aioSession.close();
-
     }
 }

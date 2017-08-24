@@ -35,6 +35,27 @@ public class AioQuickClient<T> {
         });
     }
 
+    public void start() throws IOException, ExecutionException, InterruptedException {
+        this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
+        final AioSession session = new AioSession(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters()));
+        config.getProcessor().initSession(session);
+        session.registerReadHandler();
+    }
+
+    public void shutdown() {
+        if (socketChannel != null) {
+            try {
+                socketChannel.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (asynchronousChannelGroup != null) {
+            asynchronousChannelGroup.shutdown();
+        }
+    }
+
     /**
      * 设置远程连接的地址、端口
      *
@@ -93,24 +114,4 @@ public class AioQuickClient<T> {
     }
 
 
-    public void start() throws IOException, ExecutionException, InterruptedException {
-        this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
-        socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        final AioSession session = new AioSession(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(),new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters()));
-        config.getProcessor().initSession(session);
-        session.registerReadHandler();
-    }
-
-    public void shutdown() {
-        if (socketChannel != null) {
-            try {
-                socketChannel.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        if (asynchronousChannelGroup != null) {
-            asynchronousChannelGroup.shutdown();
-        }
-    }
 }

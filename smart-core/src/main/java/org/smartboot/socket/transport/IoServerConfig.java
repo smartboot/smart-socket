@@ -12,29 +12,20 @@ import org.smartboot.socket.service.process.MessageProcessor;
 final class IoServerConfig<T> {
 
     /**
-     * 自动修复链接
-     */
-    private boolean autoRecover = false;
-
-    /**
      * 消息队列缓存大小
      */
-    private int cacheSize = 1024;
+    private int writeQueueSize = 512;
 
     /**
      * 消息体缓存大小,字节
      */
-    private int dataBufferSize = 1024;
+    private int readBufferSize = 512;
 
     /**
      * 远程服务器IP
      */
     private String host;
 
-    /**
-     * 本地IP
-     */
-    private String localIp;
 
     /**
      * 服务器消息拦截器
@@ -79,17 +70,10 @@ final class IoServerConfig<T> {
         this.serverOrClient = serverOrClient;
     }
 
-    public final int getCacheSize() {
-        return cacheSize;
-    }
-
     public final String getHost() {
         return host;
     }
 
-    public final String getLocalIp() {
-        return localIp;
-    }
 
     public final int getPort() {
         return port;
@@ -105,25 +89,12 @@ final class IoServerConfig<T> {
     }
 
 
-    public final boolean isAutoRecover() {
-        return autoRecover;
-    }
 
-    public final void setAutoRecover(boolean autoRecover) {
-        this.autoRecover = autoRecover;
-    }
-
-    public final void setCacheSize(int cacheSize) {
-        this.cacheSize = cacheSize;
-    }
 
     public final void setHost(String host) {
         this.host = host;
     }
 
-    public final void setLocalIp(String localIp) {
-        this.localIp = localIp;
-    }
 
     public final void setPort(int port) {
         this.port = port;
@@ -147,13 +118,6 @@ final class IoServerConfig<T> {
         return !serverOrClient;
     }
 
-    public final int getDataBufferSize() {
-        return dataBufferSize;
-    }
-
-    public final void setDataBufferSize(int dataBufferSize) {
-        this.dataBufferSize = dataBufferSize;
-    }
 
     public final SmartFilter<T>[] getFilters() {
         return filters;
@@ -177,5 +141,21 @@ final class IoServerConfig<T> {
 
     public final void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
+    }
+
+    public int getWriteQueueSize() {
+        return writeQueueSize;
+    }
+
+    public void setWriteQueueSize(int writeQueueSize) {
+        this.writeQueueSize = writeQueueSize;
+    }
+
+    public int getReadBufferSize() {
+        return readBufferSize;
+    }
+
+    public void setReadBufferSize(int readBufferSize) {
+        this.readBufferSize = readBufferSize;
     }
 }

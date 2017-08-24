@@ -37,6 +37,48 @@ public class AioQuickServer<T> {
         this.config = new IoServerConfig<T>(true);
     }
 
+    public void start() throws IOException {
+        smartFilterChain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
+        final AtomicInteger threadIndex = new AtomicInteger(0);
+        asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "AIO-Server-" + threadIndex.incrementAndGet());
+            }
+        });
+
+        this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()), 1000);
+        serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
+            @Override
+            public void completed(final AsynchronousSocketChannel channel, Object attachment) {
+                serverSocketChannel.accept(attachment, this);
+                try {
+                    channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+                    channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
+                } catch (IOException e) {
+                    LOGGER.catching(e);
+                }
+                AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler, smartFilterChain);
+                config.getProcessor().initSession(session);
+                session.registerReadHandler();
+            }
+
+            @Override
+            public void failed(Throwable exc, Object attachment) {
+                LOGGER.warn(exc);
+            }
+        });
+    }
+
+    public void shutdown() {
+        try {
+            serverSocketChannel.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        asynchronousChannelGroup.shutdown();
+    }
+
     /**
      * 设置服务绑定的端口
      *
@@ -84,48 +126,5 @@ public class AioQuickServer<T> {
     public AioQuickServer<T> setProcessor(MessageProcessor<T> processor) {
         this.config.setProcessor(processor);
         return this;
-    }
-
-
-    public void start() throws IOException {
-        smartFilterChain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
-        final AtomicInteger threadIndex = new AtomicInteger(0);
-        asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "AIO-Server-" + threadIndex.incrementAndGet());
-            }
-        });
-
-        this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()), 1000);
-        serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
-            @Override
-            public void completed(final AsynchronousSocketChannel channel, Object attachment) {
-                serverSocketChannel.accept(attachment, this);
-                try {
-                    channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-                    channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-                } catch (IOException e) {
-                    LOGGER.catching(e);
-                }
-                AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler, smartFilterChain);
-                config.getProcessor().initSession(session);
-                session.registerReadHandler();
-            }
-
-            @Override
-            public void failed(Throwable exc, Object attachment) {
-                LOGGER.warn(exc);
-            }
-        });
-    }
-
-    public void shutdown() {
-        try {
-            serverSocketChannel.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        asynchronousChannelGroup.shutdown();
     }
 }

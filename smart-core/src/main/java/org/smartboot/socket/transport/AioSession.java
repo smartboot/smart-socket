@@ -81,6 +81,10 @@ public class AioSession<T> {
     ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
 
     /**
+     * 输出信号量
+     */
+    Semaphore semaphore = new Semaphore(1);
+    /**
      * 释放流控指标线
      */
     int RELEASE_LINE;
@@ -100,7 +104,7 @@ public class AioSession<T> {
     AtomicBoolean serverFlowLimit;
 
     public AioSession(AsynchronousSocketChannel channel, IoServerConfig config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, SmartFilterChain smartFilterChain) {
-        this.readBuffer = ByteBuffer.allocate(config.getDataBufferSize());
+        this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
         this.channel = channel;
         this.protocol = config.getProtocol();
         if (config.isServer()) {
@@ -109,15 +113,15 @@ public class AioSession<T> {
         this.chain = smartFilterChain;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
-        this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getCacheSize());
-        FLOW_LIMIT_LINE = (int) (config.getCacheSize() * 0.9);
-        RELEASE_LINE = (int) (config.getCacheSize() * 0.6);
+        this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
+        FLOW_LIMIT_LINE = (int) (config.getWriteQueueSize() * 0.9);
+        RELEASE_LINE = (int) (config.getWriteQueueSize() * 0.6);
         this.timeout = config.getTimeout();
     }
 
 
-    void read(ByteBuffer readBuffer) {
-
+    void decodeAndProcess() {
+        readBuffer.flip();
         // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
         T dataEntry;
         int remain = readBuffer.remaining();
@@ -125,21 +129,21 @@ public class AioSession<T> {
             chain.doChain(this, dataEntry, remain - readBuffer.remaining());
             remain = readBuffer.remaining();
         }
-    }
-
-    ByteBuffer getReadBuffer() {
-        return readBuffer;
-    }
-
-    void registerReadHandler() {
-        if (getStatus() == SESSION_STATUS_ENABLED) {
-            channel.read(readBuffer, this, readCompletionHandler);
+        //数据读取完毕
+        if (readBuffer.remaining() == 0) {
+            readBuffer.clear();
+        } else if (readBuffer.position() > 0) {// 仅当发生数据读取时调用compact,减少内存拷贝
+            readBuffer.compact();
         } else {
-            logger.warn("session is " + getStatus() + " , can't do read");
+            readBuffer.position(readBuffer.limit());
+            readBuffer.limit(readBuffer.capacity());
         }
     }
 
-    Semaphore semaphore = new Semaphore(1);
+    void registerReadHandler() {
+        channel.read(readBuffer, this, readCompletionHandler);
+    }
+
 
     public void write(final ByteBuffer buffer) throws IOException {
         if (isInvalid()) {
@@ -149,7 +153,7 @@ public class AioSession<T> {
         try {
             writeCacheQueue.put(buffer);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e);
         }
         trigeWrite(true);
     }
@@ -161,7 +165,7 @@ public class AioSession<T> {
      */
     void trigeWrite(boolean ackSemaphore) {
         if (isInvalid()) {
-            logger.warn("AioSession trigeWrite status is" + getStatus());
+            logger.warn("AioSession trigeWrite status is" + status);
             return;
         }
         if (!ackSemaphore || semaphore.tryAcquire()) {
@@ -212,14 +216,12 @@ public class AioSession<T> {
      */
     public void close(boolean immediate) {
         if (immediate) {
-            synchronized (AioSession.this) {
-                try {
-                    channel.close();
-                } catch (IOException e) {
-                    logger.debug(e);
-                }
-                status = SESSION_STATUS_CLOSED;
+            try {
+                channel.close();
+            } catch (IOException e) {
+                logger.debug(e);
             }
+            status = SESSION_STATUS_CLOSED;
         } else {
             status = SESSION_STATUS_CLOSING;
             if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
@@ -238,9 +240,6 @@ public class AioSession<T> {
         return sessionId;
     }
 
-    public byte getStatus() {
-        return status;
-    }
 
     /**
      * 获取超时时间

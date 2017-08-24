@@ -8,7 +8,7 @@ import java.nio.channels.CompletionHandler;
 import java.util.AbstractMap;
 
 class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer>> {
-    private Logger logger = LogManager.getLogger(WriteCompletionHandler.class);
+    private static final Logger logger = LogManager.getLogger(WriteCompletionHandler.class);
 
     @Override
     public void completed(Integer result, AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer> attachment) {
