@@ -36,7 +36,7 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
         }
         if (aioSession.writeCacheQueue.isEmpty()) {
             aioSession.semaphore.release();
-            if (aioSession.getStatus() != IoSessionStatusEnum.ENABLED) {
+            if (aioSession.isInvalid()) {
                 aioSession.close();
                 return;
             }

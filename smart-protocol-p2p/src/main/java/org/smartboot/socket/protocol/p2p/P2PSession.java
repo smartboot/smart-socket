@@ -109,7 +109,7 @@ public class P2PSession implements Session<BaseMessage> {
     }
 
     private void assertTransactionSession() throws IOException {
-        if (ioSession == null || !ioSession.isValid()) {
+        if (ioSession == null || ioSession.isInvalid()) {
             throw new IOException("Socket Channel is invalid now");
         }
     }

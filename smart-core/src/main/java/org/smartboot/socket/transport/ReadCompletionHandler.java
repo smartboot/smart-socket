@@ -24,7 +24,7 @@ class ReadCompletionHandler implements CompletionHandler<Integer, AioSession> {
         aioSession.read(readBuffer);
 
         //会话已不可用,终止读
-        if (aioSession.getStatus() != IoSessionStatusEnum.ENABLED) {
+        if (aioSession.isInvalid()) {
             return;
         }
         //数据读取完毕

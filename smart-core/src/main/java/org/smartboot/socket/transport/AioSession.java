@@ -24,6 +24,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AioSession<T> {
     private static final Logger logger = LogManager.getLogger(AioSession.class);
     /**
+     * Session状态:已关闭
+     */
+    public static final byte SESSION_STATUS_CLOSED = 1;
+
+    /**
+     * Session状态:关闭中
+     */
+    public static final byte SESSION_STATUS_CLOSING = 2;
+
+    /**
+     * Session状态:正常
+     */
+    public static final byte SESSION_STATUS_ENABLED = 3;
+    /**
      * Session ID生成器
      */
     private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
@@ -55,7 +69,7 @@ public class AioSession<T> {
     /**
      * 会话状态
      */
-    private volatile IoSessionStatusEnum status = IoSessionStatusEnum.ENABLED;
+    private volatile byte status = SESSION_STATUS_ENABLED;
 
     /**
      * 消息过滤器
@@ -118,7 +132,7 @@ public class AioSession<T> {
     }
 
     void registerReadHandler() {
-        if (getStatus() == IoSessionStatusEnum.ENABLED) {
+        if (getStatus() == SESSION_STATUS_ENABLED) {
             channel.read(readBuffer, this, readCompletionHandler);
         } else {
             logger.warn("session is " + getStatus() + " , can't do read");
@@ -128,7 +142,7 @@ public class AioSession<T> {
     Semaphore semaphore = new Semaphore(1);
 
     public void write(final ByteBuffer buffer) throws IOException {
-        if (!isValid()) {
+        if (isInvalid()) {
             return;
         }
         buffer.flip();
@@ -146,7 +160,7 @@ public class AioSession<T> {
      * @param ackSemaphore 是否申请信号量
      */
     void trigeWrite(boolean ackSemaphore) {
-        if (getStatus() != IoSessionStatusEnum.ENABLED) {
+        if (isInvalid()) {
             logger.warn("AioSession trigeWrite status is" + getStatus());
             return;
         }
@@ -204,10 +218,10 @@ public class AioSession<T> {
                 } catch (IOException e) {
                     logger.debug(e);
                 }
-                status = IoSessionStatusEnum.CLOSED;
+                status = SESSION_STATUS_CLOSED;
             }
         } else {
-            status = IoSessionStatusEnum.CLOSING;
+            status = SESSION_STATUS_CLOSING;
             if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
                 close(true);
                 semaphore.release();
@@ -224,7 +238,7 @@ public class AioSession<T> {
         return sessionId;
     }
 
-    public IoSessionStatusEnum getStatus() {
+    public byte getStatus() {
         return status;
     }
 
@@ -240,8 +254,8 @@ public class AioSession<T> {
     /**
      * 当前会话是否已失效
      */
-    public boolean isValid() {
-        return status == IoSessionStatusEnum.ENABLED;
+    public boolean isInvalid() {
+        return status != SESSION_STATUS_ENABLED;
     }
 
 
