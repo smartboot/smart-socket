@@ -15,10 +15,8 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
         AioSession<T> aioSession = attachment.getKey();
         ByteBuffer writeBuffer = attachment.getValue();
         //服务端Session才具备流控功能
-        if (aioSession.serverFlowLimit != null && aioSession.writeCacheQueue.size() < aioSession.RELEASE_LINE && aioSession.serverFlowLimit.get()) {
-            aioSession.serverFlowLimit.set(false);
-            aioSession.registerReadHandler();
-        }
+        aioSession.channelReadProcess(true);
+
         if (writeBuffer.hasRemaining()) {
             //复用输出流
             int avail = writeBuffer.capacity() - writeBuffer.remaining();
@@ -44,10 +42,10 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
                 return;
             }
             if (!aioSession.writeCacheQueue.isEmpty()) {
-                aioSession.trigeWrite(true);
+                aioSession.channelWriteProcess(true);
             }
         } else {
-            aioSession.trigeWrite(false);
+            aioSession.channelWriteProcess(false);
         }
 
     }

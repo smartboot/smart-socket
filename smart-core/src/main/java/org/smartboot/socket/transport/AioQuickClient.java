@@ -40,7 +40,7 @@ public class AioQuickClient<T> {
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         final AioSession<T> session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters()));
         config.getProcessor().initSession(session);
-        session.registerReadHandler();
+        session.channelReadProcess(false);
     }
 
     public void shutdown() {

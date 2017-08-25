@@ -70,6 +70,8 @@ public class AioSession<T> {
      * 消息过滤器
      */
     private SmartFilterChain<T> chain;
+
+    private AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer> writeAttach = new AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer>(this, null);
     /**
      * 响应消息缓存队列
      */
@@ -81,15 +83,16 @@ public class AioSession<T> {
      * 输出信号量
      */
     Semaphore semaphore = new Semaphore(1);
+
     /**
      * 释放流控指标线
      */
-    int RELEASE_LINE;
+    private int RELEASE_LINE;
 
     /**
      * 流控指标线
      */
-    int FLOW_LIMIT_LINE;
+    private int FLOW_LIMIT_LINE;
 
     AsynchronousSocketChannel channel;
 
@@ -98,7 +101,7 @@ public class AioSession<T> {
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
-    AtomicBoolean serverFlowLimit;
+    private AtomicBoolean serverFlowLimit;
 
     public AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, SmartFilterChain<T> smartFilterChain) {
         this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
@@ -134,10 +137,39 @@ public class AioSession<T> {
             readBuffer.position(readBuffer.limit());
             readBuffer.limit(readBuffer.capacity());
         }
+        channelReadProcess(false);
     }
 
-    void registerReadHandler() {
-        channel.read(readBuffer, this, readCompletionHandler);
+    /**
+     * Socket通道读操作
+     * <p>该方法有一个入参releaseFlowLimitCheck用以校验是否释放流控</p>
+     * <p>releaseFlowLimitCheck:false 校验当前输出缓冲区是否达到流控阈值，达到则设置流控标志serverFlowLimit.set(true),否则进行读操作</p>
+     * <p>releaseFlowLimitCheck:true 校验当前输出缓冲区是否下降至释放流控阈值，达到则设置流控标志位serverFlowLimit.set(false)并触发读操作，否则不做任何处理</p>
+     *
+     * @param releaseFlowLimitCheck 是否触发释放流控校验
+     */
+    void channelReadProcess(boolean releaseFlowLimitCheck) {
+        //会话已不可用,终止读
+        if (isInvalid()) {
+            return;
+        }
+        //释放流控,仅在WriteCompletionHandler中触发
+        if (releaseFlowLimitCheck) {
+            if (serverFlowLimit != null && writeCacheQueue.size() < RELEASE_LINE && serverFlowLimit.get()) {
+                serverFlowLimit.set(false);
+                channel.read(readBuffer, this, readCompletionHandler);
+            }
+            return;
+        }
+
+        //触发流控
+        if (serverFlowLimit != null && writeCacheQueue.size() > FLOW_LIMIT_LINE) {
+            serverFlowLimit.set(true);
+        }
+        //正常读取
+        else {
+            channel.read(readBuffer, this, readCompletionHandler);
+        }
     }
 
 
@@ -152,19 +184,18 @@ public class AioSession<T> {
         } catch (InterruptedException e) {
             logger.error(e);
         }
-        trigeWrite(true);
+        channelWriteProcess(true);
     }
 
-    AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer> writeAttach = new AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer>(this, null);
 
     /**
      * 触发AIO的写操作
      *
      * @param ackSemaphore 是否申请信号量
      */
-    void trigeWrite(boolean ackSemaphore) {
+    void channelWriteProcess(boolean ackSemaphore) {
         if (isInvalid()) {
-            logger.warn("AioSession trigeWrite status is" + status);
+            logger.warn("AioSession channelWriteProcess is" + status);
             return;
         }
         if (!ackSemaphore || semaphore.tryAcquire()) {
