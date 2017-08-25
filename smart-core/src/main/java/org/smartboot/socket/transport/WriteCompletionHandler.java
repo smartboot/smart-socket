@@ -25,9 +25,12 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
             ByteBuffer nextByteBuffer = aioSession.writeCacheQueue.peek();
             if (nextByteBuffer != null && nextByteBuffer.remaining() <= avail) {
                 writeBuffer.compact();
+                int pollSize = 0;
                 while ((nextByteBuffer = aioSession.writeCacheQueue.peek()) != null && nextByteBuffer.remaining() <= writeBuffer.remaining()) {
+                    pollSize += nextByteBuffer.remaining();
                     writeBuffer.put(aioSession.writeCacheQueue.poll());
                 }
+                aioSession.writeCacheSize.getAndAdd(-pollSize);
                 writeBuffer.flip();
             }
 
