@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.AbstractMap;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
@@ -76,8 +77,6 @@ public class AioSession<T> {
      * 响应消息缓存队列
      */
     ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
-
-    AtomicInteger writeCacheSize = new AtomicInteger(0);
 
     /**
      * 输出信号量
@@ -149,10 +148,6 @@ public class AioSession<T> {
      * @param releaseFlowLimitCheck 是否触发释放流控校验
      */
     void channelReadProcess(boolean releaseFlowLimitCheck) {
-        //会话已不可用,终止读
-        if (isInvalid()) {
-            return;
-        }
         //释放流控,仅在WriteCompletionHandler中触发
         if (releaseFlowLimitCheck) {
             if (serverFlowLimit != null && writeCacheQueue.size() < RELEASE_LINE && serverFlowLimit.get()) {
@@ -180,7 +175,6 @@ public class AioSession<T> {
         buffer.flip();
         try {
             writeCacheQueue.put(buffer);
-            writeCacheSize.addAndGet(buffer.remaining());
         } catch (InterruptedException e) {
             logger.error(e);
         }
@@ -199,15 +193,38 @@ public class AioSession<T> {
             return;
         }
         if (!ackSemaphore || semaphore.tryAcquire()) {
-            int realSize = 0;
-            ByteBuffer buffer = ByteBuffer.allocate(writeCacheSize.get() > 32768 ? 32768 : writeCacheSize.get());
-            ByteBuffer nextBuffer;
-            while ((nextBuffer = writeCacheQueue.peek()) != null && buffer.remaining() >= nextBuffer.remaining()) {
-                realSize += nextBuffer.remaining();
+            //优先进行 自压缩：实测效果不理想
+//            ByteBuffer firstBuffer = writeCacheQueue.peek();
+//            if (firstBuffer != null && firstBuffer.capacity() - firstBuffer.limit() > firstBuffer.remaining()) {
+//                firstBuffer = writeCacheQueue.poll();
+//                if (firstBuffer.position() > 0) {
+//                    firstBuffer.compact();
+//                } else {
+//                    firstBuffer.position(firstBuffer.limit());
+//                    firstBuffer.limit(firstBuffer.capacity());
+//                }
+//                ByteBuffer nextBuffer;
+//                while ((nextBuffer = writeCacheQueue.peek()) != null && firstBuffer.remaining() > nextBuffer.remaining()) {
+//                    firstBuffer.put(writeCacheQueue.poll());
+//                }
+//                firstBuffer.flip();
+//                channel.write(firstBuffer, new AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer>(this, firstBuffer), writeCompletionHandler);
+//                return;
+//            }
+
+            Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
+            int totalSize = 0;
+            while (iterable.hasNext()) {
+                totalSize += iterable.next().remaining();
+                if (totalSize >= 32 * 1024) {
+                    break;
+                }
+            }
+            ByteBuffer buffer = ByteBuffer.allocate(totalSize);
+            while (buffer.hasRemaining()) {
                 buffer.put(writeCacheQueue.poll());
             }
             buffer.flip();
-            writeCacheSize.getAndAdd(-realSize);
             writeAttach.setValue(buffer);
             channel.write(buffer, writeAttach, writeCompletionHandler);
         }
