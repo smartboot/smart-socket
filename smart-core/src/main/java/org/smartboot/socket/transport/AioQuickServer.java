@@ -26,8 +26,8 @@ public class AioQuickServer<T> {
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private IoServerConfig<T> config;
-    private ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler();
-    private WriteCompletionHandler writeCompletionHandler = new WriteCompletionHandler();
+    private ReadCompletionHandler<T> readCompletionHandler = new ReadCompletionHandler<T>();
+    private WriteCompletionHandler<T> writeCompletionHandler = new WriteCompletionHandler<T>();
     /**
      * 消息过滤器
      */
@@ -58,7 +58,7 @@ public class AioQuickServer<T> {
                 } catch (IOException e) {
                     LOGGER.catching(e);
                 }
-                AioSession session = new AioSession(channel, config, readCompletionHandler, writeCompletionHandler, smartFilterChain);
+                AioSession<T> session = new AioSession<T>(channel, config, readCompletionHandler, writeCompletionHandler, smartFilterChain);
                 config.getProcessor().initSession(session);
                 session.registerReadHandler();
             }

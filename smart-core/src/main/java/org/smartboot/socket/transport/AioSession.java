@@ -93,14 +93,14 @@ public class AioSession<T> {
 
     AsynchronousSocketChannel channel;
 
-    private ReadCompletionHandler readCompletionHandler;
+    private ReadCompletionHandler<T> readCompletionHandler;
     private WriteCompletionHandler<T> writeCompletionHandler;
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
     AtomicBoolean serverFlowLimit;
 
-    public AioSession(AsynchronousSocketChannel channel, IoServerConfig config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, SmartFilterChain smartFilterChain) {
+    public AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, SmartFilterChain<T> smartFilterChain) {
         this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
         this.channel = channel;
         this.protocol = config.getProtocol();

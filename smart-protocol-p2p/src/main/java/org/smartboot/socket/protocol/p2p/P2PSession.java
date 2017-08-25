@@ -50,7 +50,6 @@ public class P2PSession implements Session<BaseMessage> {
         creatTime = System.currentTimeMillis();
     }
 
-    @SuppressWarnings("unchecked")
     public <T> T getAttribute(String name) {
         return (T) attributeMap.get(name);
     }

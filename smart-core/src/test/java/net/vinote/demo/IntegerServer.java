@@ -9,7 +9,7 @@ import java.io.IOException;
  */
 public class IntegerServer {
     public static void main(String[] args) {
-        AioQuickServer server = new AioQuickServer()
+        AioQuickServer<Integer> server = new AioQuickServer<Integer>()
                 .bind(8888)
                 .setProtocol(new IntegerProtocol())
                 .setProcessor(new IntegerServerProcessor());

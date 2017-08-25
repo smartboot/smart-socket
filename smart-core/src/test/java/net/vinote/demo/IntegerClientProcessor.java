@@ -8,7 +8,7 @@ import org.smartboot.socket.transport.AioSession;
  * @version V1.0 , 2017/8/23
  */
 public class IntegerClientProcessor implements MessageProcessor<Integer> {
-    private AioSession session;
+    private AioSession<Integer> session;
 
     @Override
     public void process(AioSession<Integer> session, Integer msg) throws Exception {
@@ -20,7 +20,7 @@ public class IntegerClientProcessor implements MessageProcessor<Integer> {
         this.session = session;
     }
 
-    public AioSession getSession() {
+    public AioSession<Integer> getSession() {
         return session;
     }
 }

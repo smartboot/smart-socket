@@ -44,7 +44,6 @@ public class HttpEntity {
         buffer.flip();
     }
 
-    private boolean endOfBody = false;
     private AtomicInteger readBodyLength = new AtomicInteger(0);
     private int contentLength = -1;
     private int chunked=-1;

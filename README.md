@@ -14,6 +14,14 @@
 |消息大小|33B|
 |消息数|224484842|
 
+##工程结构
+1. smart-core		
+smart-socket的核心代码
+2. smart-protocol-http		
+简单实现Http协议编解码，目前的实现并不规范，仅合适ab测试
+3. smart-protocol-p2p	
+实现了私有协议P2P，性能测试也是基于该协议进行的
+
 ## 开发手册
 基于smart-socket进行通信服务的开发，主要有三个步骤：
 

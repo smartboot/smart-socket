@@ -13,7 +13,7 @@ import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
  * @author Seer
  */
 public class DetectRespMessageHandler extends MessageHandler {
-    private static Logger logger = LogManager.getLogger(DetectRespMessageHandler.class);
+//    private static Logger logger = LogManager.getLogger(DetectRespMessageHandler.class);
     long max = 0;
     long outTime = System.currentTimeMillis();
 
