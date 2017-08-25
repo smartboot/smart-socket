@@ -1,7 +1,7 @@
 package org.smartboot.socket.protocol;
 
 /**
- * Created by zhengjunwei on 2017/6/27.
+ * Created by seer on 2017/6/27.
  */
 public class RequestLine {
     private String protocol;

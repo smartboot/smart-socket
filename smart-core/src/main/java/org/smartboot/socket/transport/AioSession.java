@@ -1,5 +1,6 @@
 package org.smartboot.socket.transport;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.Protocol;
@@ -19,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * AIO传输层会话
- * Created by zhengjunwei on 2017/6/29.
+ * Created by seer on 2017/6/29.
  */
 public class AioSession<T> {
     private static final Logger logger = LogManager.getLogger(AioSession.class);
@@ -212,6 +213,7 @@ public class AioSession<T> {
         if (immediate) {
             try {
                 channel.close();
+                logger.debug("close connection:" + channel);
             } catch (IOException e) {
                 logger.debug(e);
             }
@@ -264,5 +266,10 @@ public class AioSession<T> {
             return;
         }
         attribute.remove(key);
+    }
+
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
     }
 }

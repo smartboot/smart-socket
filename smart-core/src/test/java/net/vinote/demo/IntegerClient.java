@@ -3,7 +3,7 @@ package net.vinote.demo;
 import org.smartboot.socket.transport.AioQuickClient;
 
 /**
- * Created by zhengjunwei on 2017/7/12.
+ * Created by seer on 2017/7/12.
  */
 public class IntegerClient {
     public static void main(String[] args) throws Exception {

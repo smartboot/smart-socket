@@ -19,7 +19,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by zhengjunwei on 2017/6/28.
+ * Created by seer on 2017/6/28.
  */
 public class AioQuickServer<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickServer.class);

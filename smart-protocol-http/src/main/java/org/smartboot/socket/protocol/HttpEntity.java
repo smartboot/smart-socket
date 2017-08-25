@@ -10,7 +10,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by zhengjunwei on 2017/6/20.
+ * Created by seer on 2017/6/20.
  */
 public class HttpEntity {
     public static final String AUTHORIZATION = "Authorization";

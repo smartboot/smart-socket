@@ -13,7 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * Created by zhengjunwei on 2017/6/28.
+ * Created by seer on 2017/6/28.
  */
 public class AioQuickClient<T> {
     private AsynchronousSocketChannel socketChannel = null;
