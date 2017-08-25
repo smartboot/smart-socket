@@ -17,7 +17,7 @@ public interface Protocol<T> {
 	 * 对于从Socket流中获取到的数据采用当前Protocol的实现类协议进行解析
 	 *
 	 * @param data
-	 * @return 本次解码所成功解析的消息实例集合,不允许返回null
+	 * @return 本次解码所成功解析的消息实例集合,返回null则表示解码未完成
 	 */
 	public T decode(ByteBuffer data, AioSession<T> session);
 

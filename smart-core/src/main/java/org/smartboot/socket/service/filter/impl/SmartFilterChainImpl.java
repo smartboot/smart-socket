@@ -14,42 +14,41 @@ import org.smartboot.socket.transport.AioSession;
 public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
     private MessageProcessor<T> receiver;
     private SmartFilter<T>[] handlers = null;
-    private boolean hasHandlers = false;
+    private boolean withoutFilter = true;//是否无过滤器
 
     public SmartFilterChainImpl(MessageProcessor<T> receiver, SmartFilter<T>[] handlers) {
         this.receiver = receiver;
         this.handlers = handlers;
-        this.hasHandlers = (handlers != null && handlers.length > 0);
+        this.withoutFilter = handlers == null || handlers.length == 0;
     }
 
     public void doChain(AioSession<T> session, T dataEntry, int readSize) {
         if (dataEntry == null) {
             return;
         }
-        // 接收到的消息进行预处理
-        if (hasHandlers) {
-            for (SmartFilter<T> h : handlers) {
-                h.readFilter(session, dataEntry,readSize);
+        if (withoutFilter) {
+            try {
+                receiver.process(session, dataEntry);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+            return;
         }
-        boolean succ = true;
+
+        // 接收到的消息进行预处理
+        for (SmartFilter<T> h : handlers) {
+            h.readFilter(session, dataEntry, readSize);
+        }
         try {
-            if (hasHandlers) {
-                for (SmartFilter<T> h : handlers) {
-                    h.processFilter(session, dataEntry);
-                }
+            for (SmartFilter<T> h : handlers) {
+                h.processFilter(session, dataEntry);
             }
             receiver.process(session, dataEntry);
         } catch (Exception e) {
             e.printStackTrace();
-            succ = false;
-        }
-        // 未能成功接受消息
-        if (!succ && hasHandlers) {
             for (SmartFilter<T> h : handlers) {
                 h.processFailHandler(session, dataEntry);
             }
         }
-
     }
 }
