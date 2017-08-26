@@ -19,6 +19,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * AIO服务端
  * Created by seer on 2017/6/28.
  */
 public class AioQuickServer<T> {

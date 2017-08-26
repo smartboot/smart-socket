@@ -13,11 +13,20 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadFactory;
 
 /**
+ * AIO实现的客户端服务
  * Created by seer on 2017/6/28.
  */
 public class AioQuickClient<T> {
     private AsynchronousSocketChannel socketChannel = null;
+    /**
+     * IO事件处理线程组
+     */
     private AsynchronousChannelGroup asynchronousChannelGroup;
+
+    private boolean innerGroup = false;
+    /**
+     * 服务配置
+     */
     private IoServerConfig<T> config;
 
     public AioQuickClient(AsynchronousChannelGroup asynchronousChannelGroup) {
@@ -33,8 +42,16 @@ public class AioQuickClient<T> {
                 return new Thread(r);
             }
         });
+        innerGroup = true;
     }
 
+    /**
+     * 启动客户端Socket服务
+     *
+     * @throws IOException
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     public void start() throws IOException, ExecutionException, InterruptedException {
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
@@ -43,6 +60,9 @@ public class AioQuickClient<T> {
         session.channelReadProcess(false);
     }
 
+    /**
+     * 停止客户端服务
+     */
     public void shutdown() {
         if (socketChannel != null) {
             try {
@@ -51,7 +71,8 @@ public class AioQuickClient<T> {
                 e.printStackTrace();
             }
         }
-        if (asynchronousChannelGroup != null) {
+        //仅Client内部创建的ChannelGroup需要shutdown
+        if (innerGroup && asynchronousChannelGroup != null) {
             asynchronousChannelGroup.shutdown();
         }
     }
@@ -70,7 +91,7 @@ public class AioQuickClient<T> {
     }
 
     /**
-     * 设置协议对象的构建工厂
+     * 设置协议对象
      *
      * @param protocol
      * @return

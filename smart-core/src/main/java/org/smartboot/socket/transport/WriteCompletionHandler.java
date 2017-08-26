@@ -18,17 +18,6 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
         aioSession.channelReadProcess(true);
 
         if (writeBuffer.hasRemaining()) {
-            //复用输出流
-            int avail = writeBuffer.capacity() - writeBuffer.remaining();
-            ByteBuffer nextByteBuffer = aioSession.writeCacheQueue.peek();
-            if (nextByteBuffer != null && nextByteBuffer.remaining() <= avail) {
-                writeBuffer.compact();
-                while ((nextByteBuffer = aioSession.writeCacheQueue.peek()) != null && nextByteBuffer.remaining() <= writeBuffer.remaining()) {
-                    writeBuffer.put(aioSession.writeCacheQueue.poll());
-                }
-                writeBuffer.flip();
-            }
-
             aioSession.channel.write(writeBuffer, attachment, this);
             return;
         }

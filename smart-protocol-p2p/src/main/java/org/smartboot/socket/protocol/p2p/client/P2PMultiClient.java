@@ -56,10 +56,7 @@ public class P2PMultiClient {
                         DetectMessageReq request = new DetectMessageReq();
                         request.setSendTime((byte) 1);
                         try {
-//							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
-//								.sendWithResponse(request);
                             processor.getSession().sendWithoutResponse(request);
-                            // logger.info(loginResp);
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();
@@ -71,20 +68,7 @@ public class P2PMultiClient {
                 }
 
             }.start();
-            Thread.sleep(500);
         }
 
-    }
-
-    public static String getRandomString(int length) {
-        String str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        Random random = new Random();
-        StringBuffer sb = new StringBuffer();
-
-        for (int i = 0; i < length; ++i) {
-            int number = random.nextInt(62);// [0,62)
-            sb.append(str.charAt(number));
-        }
-        return sb.toString();
     }
 }
