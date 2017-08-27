@@ -22,6 +22,10 @@ smart-socket的核心代码
 3. smart-protocol-p2p	
 实现了私有协议P2P，性能测试也是基于该协议进行的
 
+## 近期项目安排（分支：1.0.0-DEV）
+1. 实现相对规范的Http协议编解码
+2. 继续重构优化smart-core代码
+
 ## 开发手册
 基于smart-socket进行通信服务的开发，主要有三个步骤：
 
