@@ -32,7 +32,6 @@ public class HttpProtocol implements Protocol<HttpEntity> {
                     byte[] data = new byte[i + 1];
                     buffer.get(data);
                     if (i == 1) {
-//                        session.pauseReadAttention();
                         session.removeAttribute(HTTP_ENTITY);
                         return entity;
                     }
