@@ -28,8 +28,8 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
                         entity.decodeHead();//消息头解码
                         //POST请求可能存在消息体
                         entity.partFlag = StringUtils.equalsIgnoreCase("POST", entity.getMethod()) ? 1 : 2;
-                        //非Post请求,则解码完成
-                        if(!StringUtils.equalsIgnoreCase("POST", entity.getMethod())) {
+                        //非Post请求,或Post文件上传请求，则解码完成
+                        if(!StringUtils.equalsIgnoreCase("POST", entity.getMethod())||StringUtils.startsWith(entity.getContentType(),"multipart/form-data")) {
                             suc = true;
                         }
                     }
@@ -38,9 +38,8 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
                 case 1: {
                     //普通form表单,全量解析
                     if(StringUtils.startsWith(entity.getContentType(),"application/x-www-form-urlencoded")){
-
-                        if(entity.bodyStream.append(buffer.get())){
-                            entity.decodeBody();
+                        if(entity.normalBodyStream.append(buffer.get())){
+                            entity.decodeNormalBody();
                             entity.partFlag=2;
                             suc=true;
                         }
@@ -56,7 +55,11 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
                                 }
                             }
                         }else if(entity.bodyDecodeType==HttpV2Entity.BODY_DECODE_CHUNKED){
+                            if(entity.chunkedBuffer.blockSize<0){
+                               if(entity.chunkedBuffer.blockSizeStream.append(buffer.get())){
 
+                               }
+                            }
                         }
                         try {
                             entity.binaryBuffer.put(buffer.get());

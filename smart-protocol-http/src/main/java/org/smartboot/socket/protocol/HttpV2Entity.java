@@ -17,11 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class HttpV2Entity {
 
-    public static final int BODY_DECODE_UNKNOW =0;
+    public static final int BODY_DECODE_UNKNOW = 0;
 
-    public static final int BODY_DECODE_LENGTH=1;
+    public static final int BODY_DECODE_LENGTH = 1;
 
-    public static final int BODY_DECODE_CHUNKED =2;
+    public static final int BODY_DECODE_CHUNKED = 2;
 
     public static final String AUTHORIZATION = "Authorization";
     public static final String CACHE_CONTROL = "Cache-Control";
@@ -41,11 +41,13 @@ public class HttpV2Entity {
     public static final String CONNECTION = "Connection";
 
 
-    HeadStream headStream = new HeadStream();
-    BodyStream bodyStream = new BodyStream();
+    DataStream headStream = new DataStream("\r\n\r\n".getBytes());
+    DataStream normalBodyStream = new DataStream(null);
+    ChunkedBuffer chunkedBuffer=new ChunkedBuffer();
     BinaryBuffer binaryBuffer = new BinaryBuffer(1024);
-    int binReadLength=0;
-    int bodyDecodeType= BODY_DECODE_UNKNOW;
+
+    int binReadLength = 0;
+    int bodyDecodeType = BODY_DECODE_UNKNOW;
     /**
      * 0:消息头
      * 1:消息体
@@ -59,7 +61,7 @@ public class HttpV2Entity {
 
 
     public void decodeHead() {
-        String[] headDatas = StringUtils.split(headStream.toString(), HeadStream.CRFL);
+        String[] headDatas = StringUtils.split(headStream.toString(), "\r\n");
         if (ArrayUtils.isEmpty(headDatas)) {
             throw new RuntimeException("解码异常");
         }
@@ -77,32 +79,27 @@ public class HttpV2Entity {
         }
         contentType = headMap.get(CONTENT_TYPE);
         contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), -1);
-        if(contentLength>0){
-            bodyDecodeType=BODY_DECODE_LENGTH;
+        if (contentLength > 0) {
+            bodyDecodeType = BODY_DECODE_LENGTH;
         }
-        if(headMap.containsKey(TRANSFER_ENCODING)){
-            bodyDecodeType=BODY_DECODE_CHUNKED;
+        if (headMap.containsKey(TRANSFER_ENCODING)) {
+            bodyDecodeType = BODY_DECODE_CHUNKED;
         }
         headStream = null;
-        bodyStream.contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), 0);
+        normalBodyStream.contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), 0);
     }
 
 
-    public void decodeBody() {
-        String[] headDatas = StringUtils.split(bodyStream.toString(), "&");
+    public void decodeNormalBody() {
+        String[] headDatas = StringUtils.split(normalBodyStream.toString(), "&");
         if (ArrayUtils.isEmpty(headDatas)) {
             return;
         }
         for (int i = 0; i < headDatas.length; i++) {
             paramMap.put(StringUtils.substringBefore(headDatas[i], "=").trim(), StringUtils.substringAfter(headDatas[i], "=").trim());
         }
-        bodyStream = null;
+        normalBodyStream = null;
     }
-
-    /**
-     * 请求行
-     */
-    private RequestLine requestLine;
 
 
     boolean endOfHeader = false;

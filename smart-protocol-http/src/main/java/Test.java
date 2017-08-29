@@ -1,5 +1,3 @@
-import org.smartboot.socket.protocol.HttpEntity;
-import org.smartboot.socket.protocol.HttpProtocol;
 import org.smartboot.socket.protocol.HttpServerMessageProcessor;
 import org.smartboot.socket.protocol.HttpV2Entity;
 import org.smartboot.socket.protocol.HttpV2Protocol;
