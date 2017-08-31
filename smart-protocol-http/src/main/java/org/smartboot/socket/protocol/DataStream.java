@@ -7,9 +7,8 @@ import java.io.ByteArrayOutputStream;
  * @version V1.0 , 2017/8/26
  */
 public class DataStream extends ByteArrayOutputStream {
-    public static final String CRFL = "\r\n";
     private byte[] endFLag;
-    int contentLength;
+    private int contentLength = -1;
 
     public DataStream(byte[] endFLag) {
         this.endFLag = endFLag;
@@ -36,5 +35,24 @@ public class DataStream extends ByteArrayOutputStream {
             }
         }
         return true;
+    }
+
+    public void setEndFLag(byte[] endFLag) {
+        this.endFLag = endFLag;
+    }
+
+    @Override
+    public synchronized void reset() {
+        super.reset();
+        this.endFLag = null;
+        this.contentLength = -1;
+    }
+
+    public void setContentLength(int contentLength) {
+        this.contentLength = contentLength;
+    }
+
+    public int getContentLength() {
+        return contentLength;
     }
 }

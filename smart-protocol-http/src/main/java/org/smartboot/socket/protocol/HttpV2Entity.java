@@ -6,22 +6,15 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.math.NumberUtils;
 import org.smartboot.socket.transport.AioSession;
 
-import java.nio.ByteBuffer;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by seer on 2017/6/20.
  */
 public class HttpV2Entity {
-
-    public static final int BODY_DECODE_UNKNOW = 0;
-
-    public static final int BODY_DECODE_LENGTH = 1;
-
-    public static final int BODY_DECODE_CHUNKED = 2;
 
     public static final String AUTHORIZATION = "Authorization";
     public static final String CACHE_CONTROL = "Cache-Control";
@@ -40,20 +33,31 @@ public class HttpV2Entity {
     public static final String LOCATION = "Location";
     public static final String CONNECTION = "Connection";
 
+    private int contentLength = -1;
 
-    DataStream headStream = new DataStream("\r\n\r\n".getBytes());
-    DataStream normalBodyStream = new DataStream(null);
-    ChunkedBuffer chunkedBuffer=new ChunkedBuffer();
+    DataStream dataStream = new DataStream("\r\n\r\n".getBytes());
+    int chunkedBlockSize = -1;
     BinaryBuffer binaryBuffer = new BinaryBuffer(1024);
-
     int binReadLength = 0;
-    int bodyDecodeType = BODY_DECODE_UNKNOW;
+    private InputStream inputStream = new InputStream() {
+        @Override
+        public int read() throws IOException {
+            if (partFlag == HttpPart.END && binaryBuffer.count == 0) {
+                return -1;
+            }
+            try {
+                return binaryBuffer.take();
+            } catch (InterruptedException e) {
+                throw new IOException(e);
+            }
+        }
+    };
     /**
      * 0:消息头
      * 1:消息体
      * 2:结束
      */
-    int partFlag = 0;
+    HttpPart partFlag = HttpPart.HEAD;
 
     private String method, url, protocol, contentType, decodeError;
     private Map<String, String> headMap = new HashMap<String, String>();
@@ -61,7 +65,7 @@ public class HttpV2Entity {
 
 
     public void decodeHead() {
-        String[] headDatas = StringUtils.split(headStream.toString(), "\r\n");
+        String[] headDatas = StringUtils.split(dataStream.toString(), "\r\n");
         if (ArrayUtils.isEmpty(headDatas)) {
             throw new RuntimeException("解码异常");
         }
@@ -79,43 +83,29 @@ public class HttpV2Entity {
         }
         contentType = headMap.get(CONTENT_TYPE);
         contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), -1);
-        if (contentLength > 0) {
-            bodyDecodeType = BODY_DECODE_LENGTH;
-        }
-        if (headMap.containsKey(TRANSFER_ENCODING)) {
-            bodyDecodeType = BODY_DECODE_CHUNKED;
-        }
-        headStream = null;
-        normalBodyStream.contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), 0);
+        //重置
+        dataStream.reset();
     }
 
 
     public void decodeNormalBody() {
-        String[] headDatas = StringUtils.split(normalBodyStream.toString(), "&");
+        String[] headDatas = StringUtils.split(dataStream.toString(), "&");
         if (ArrayUtils.isEmpty(headDatas)) {
             return;
         }
         for (int i = 0; i < headDatas.length; i++) {
             paramMap.put(StringUtils.substringBefore(headDatas[i], "=").trim(), StringUtils.substringAfter(headDatas[i], "=").trim());
         }
-        normalBodyStream = null;
+        dataStream.reset();
+        dataStream = null;
     }
-
-
-    boolean endOfHeader = false;
-    ArrayBlockingQueue<ByteBuffer> bodyStreamQueue = new ArrayBlockingQueue<ByteBuffer>(10);
-    ByteBuffer buffer = ByteBuffer.allocate(1024);
-
-    {
-        buffer.flip();
-    }
-
-    private AtomicInteger readBodyLength = new AtomicInteger(0);
-    private int contentLength = -1;
-    private int chunked = -1;
 
 
     public HttpV2Entity(AioSession<HttpV2Entity> session) {
+    }
+
+    public InputStream getInputStream() {
+        return inputStream;
     }
 
     public void setHeader(String name, String value) {
