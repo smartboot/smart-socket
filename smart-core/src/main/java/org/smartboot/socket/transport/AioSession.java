@@ -119,50 +119,38 @@ public class AioSession<T> {
 
     /**
      * 触发AIO的写操作
-     *
      */
-    void channelWriteProcess() {
+    void writeToChannel() {
         if (isInvalid()) {
             close();
-            logger.warn("AioSession channelWriteProcess is" + status);
+            logger.warn("end write because of aioSession's status is" + status);
             return;
         }
-        if (semaphore.tryAcquire()) {
-            //优先进行 自压缩：实测效果不理想
-//            ByteBuffer firstBuffer = writeCacheQueue.peek();
-//            if (firstBuffer != null && firstBuffer.capacity() - firstBuffer.limit() > firstBuffer.remaining()) {
-//                firstBuffer = writeCacheQueue.poll();
-//                if (firstBuffer.position() > 0) {
-//                    firstBuffer.compact();
-//                } else {
-//                    firstBuffer.position(firstBuffer.limit());
-//                    firstBuffer.limit(firstBuffer.capacity());
-//                }
-//                ByteBuffer nextBuffer;
-//                while ((nextBuffer = writeCacheQueue.peek()) != null && firstBuffer.remaining() > nextBuffer.remaining()) {
-//                    firstBuffer.put(writeCacheQueue.poll());
-//                }
-//                firstBuffer.flip();
-//                channel.write(firstBuffer, new AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer>(this, firstBuffer), writeCompletionHandler);
-//                return;
-//            }
-
-            Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
-            int totalSize = 0;
-            while (iterable.hasNext()) {
-                totalSize += iterable.next().remaining();
-                if (totalSize >= 32 * 1024) {
-                    break;
-                }
-            }
-            ByteBuffer buffer = ByteBuffer.allocate(totalSize);
-            while (buffer.hasRemaining()) {
-                buffer.put(writeCacheQueue.poll());
-            }
-            buffer.flip();
-            writeAttach.setValue(buffer);
-            channel.write(buffer, writeAttach, writeCompletionHandler);
+        //无法获得信号量则直接返回
+        if (!semaphore.tryAcquire()) {
+            return;
         }
+        //缓存为空则释放信号量
+        if (writeCacheQueue.isEmpty()) {
+            semaphore.release();
+            return;
+        }
+        //对缓存中的数据进行压缩处理再输出
+        Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
+        int totalSize = 0;
+        while (iterable.hasNext()) {
+            totalSize += iterable.next().remaining();
+            if (totalSize >= 32 * 1024) {
+                break;
+            }
+        }
+        ByteBuffer buffer = ByteBuffer.allocate(totalSize);
+        while (buffer.hasRemaining()) {
+            buffer.put(writeCacheQueue.poll());
+        }
+        buffer.flip();
+        writeAttach.setValue(buffer);
+        channel.write(buffer, writeAttach, writeCompletionHandler);
     }
 
     public final void close() {
@@ -287,7 +275,7 @@ public class AioSession<T> {
         } catch (InterruptedException e) {
             logger.error(e);
         }
-        channelWriteProcess();
+        writeToChannel();
     }
 
     public final void write(T t) throws IOException {
