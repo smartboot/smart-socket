@@ -130,11 +130,6 @@ public class AioSession<T> {
         if (writeCacheQueue.isEmpty() || !semaphore.tryAcquire()) {
             return;
         }
-        //缓存为空则释放信号量
-        if (writeCacheQueue.isEmpty()) {
-            semaphore.release();
-            return;
-        }
         //对缓存中的数据进行压缩处理再输出
         Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
         int totalSize = 0;
