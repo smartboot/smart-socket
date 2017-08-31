@@ -127,7 +127,7 @@ public class AioSession<T> {
             return;
         }
         //无法获得信号量则直接返回
-        if (!semaphore.tryAcquire()) {
+        if (writeCacheQueue.isEmpty() || !semaphore.tryAcquire()) {
             return;
         }
         //缓存为空则释放信号量
