@@ -61,7 +61,7 @@ public class AioQuickServer<T> {
                 }
                 AioSession<T> session = new AioSession<T>(channel, config, readCompletionHandler, writeCompletionHandler, smartFilterChain);
                 config.getProcessor().initSession(session);
-                session.channelReadProcess(false);
+                session.readFromChannel();
             }
 
             @Override

@@ -15,7 +15,7 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
         AioSession<T> aioSession = attachment.getKey();
         ByteBuffer writeBuffer = attachment.getValue();
         //服务端Session才具备流控功能
-        aioSession.channelReadProcess(true);
+        aioSession.tryReleaseFlowLimit();
 
         if (writeBuffer.hasRemaining()) {
             aioSession.channel.write(writeBuffer, attachment, this);

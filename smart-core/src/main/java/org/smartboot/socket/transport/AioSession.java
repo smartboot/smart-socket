@@ -86,12 +86,12 @@ public class AioSession<T> {
     /**
      * 释放流控指标线
      */
-    private int RELEASE_LINE;
+    private final int RELEASE_LINE;
 
     /**
      * 流控指标线
      */
-    private int FLOW_LIMIT_LINE;
+    private final int FLOW_LIMIT_LINE;
 
     AsynchronousSocketChannel channel;
 
@@ -117,15 +117,26 @@ public class AioSession<T> {
         RELEASE_LINE = (int) (config.getWriteQueueSize() * 0.6);
     }
 
+    /**
+     * 如果存在流控并符合释放条件，则触发读操作
+     */
+    void tryReleaseFlowLimit() {
+        if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < RELEASE_LINE) {
+            serverFlowLimit.set(false);
+            channel.read(readBuffer, this, readCompletionHandler);
+        }
+    }
 
-    void decodeAndProcess() {
+    /**
+     * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
+     */
+    void readFromChannel() {
         readBuffer.flip();
         // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
         T dataEntry;
-        int remain = readBuffer.remaining();
-        while ((dataEntry = protocol.decode(readBuffer, this)) != null) {
+        int remain = 0;
+        while ((remain = readBuffer.remaining()) > 0 && (dataEntry = protocol.decode(readBuffer, this)) != null) {
             chain.doChain(this, dataEntry, remain - readBuffer.remaining());
-            remain = readBuffer.remaining();
         }
         //数据读取完毕
         if (readBuffer.remaining() == 0) {
@@ -135,26 +146,6 @@ public class AioSession<T> {
         } else {
             readBuffer.position(readBuffer.limit());
             readBuffer.limit(readBuffer.capacity());
-        }
-        channelReadProcess(false);
-    }
-
-    /**
-     * Socket通道读操作
-     * <p>该方法有一个入参releaseFlowLimitCheck用以校验是否释放流控</p>
-     * <p>releaseFlowLimitCheck:false 校验当前输出缓冲区是否达到流控阈值，达到则设置流控标志serverFlowLimit.set(true),否则进行读操作</p>
-     * <p>releaseFlowLimitCheck:true 校验当前输出缓冲区是否下降至释放流控阈值，达到则设置流控标志位serverFlowLimit.set(false)并触发读操作，否则不做任何处理</p>
-     *
-     * @param releaseFlowLimitCheck 是否触发释放流控校验
-     */
-    void channelReadProcess(boolean releaseFlowLimitCheck) {
-        //释放流控,仅在WriteCompletionHandler中触发
-        if (releaseFlowLimitCheck) {
-            if (serverFlowLimit != null && writeCacheQueue.size() < RELEASE_LINE && serverFlowLimit.get()) {
-                serverFlowLimit.set(false);
-                channel.read(readBuffer, this, readCompletionHandler);
-            }
-            return;
         }
 
         //触发流控

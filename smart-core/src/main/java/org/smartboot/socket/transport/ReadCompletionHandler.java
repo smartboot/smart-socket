@@ -16,7 +16,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             aioSession.close(false);
             return;
         }
-        aioSession.decodeAndProcess();
+        aioSession.readFromChannel();
     }
 
     @Override
