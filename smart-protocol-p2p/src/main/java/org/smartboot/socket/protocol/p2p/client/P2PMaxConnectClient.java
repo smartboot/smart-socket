@@ -19,7 +19,7 @@ public class P2PMaxConnectClient {
         int num = 0;
         try {
             while (true) {
-                final AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>(asynchronousChannelGroup)
+                final AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>()
                         .setProcessor(new MessageProcessor<BaseMessage>() {
                             @Override
                             public void process(AioSession<BaseMessage> session, BaseMessage msg) throws Exception {
@@ -32,7 +32,7 @@ public class P2PMaxConnectClient {
                             }
                         })
                         .connect("127.0.0.1", 8888);
-                client.start();
+                client.start(asynchronousChannelGroup);
                 num++;
                 Thread.sleep(1);
             }

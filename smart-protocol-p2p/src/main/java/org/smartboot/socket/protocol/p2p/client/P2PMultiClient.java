@@ -40,12 +40,12 @@ public class P2PMultiClient {
                         e1.printStackTrace();
                     }
                     P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>(asynchronousChannelGroup).connect("127.0.0.1", 8888)
+                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
                             .setProtocol(new P2PProtocol(messageFactory))
                             .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
                             .setProcessor(processor);
                     try {
-                        client.start();
+                        client.start(asynchronousChannelGroup);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

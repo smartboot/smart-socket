@@ -23,26 +23,21 @@ public class AioQuickClient<T> {
      */
     private AsynchronousChannelGroup asynchronousChannelGroup;
 
-    private boolean innerGroup = false;
     /**
      * 服务配置
      */
     private IoServerConfig<T> config;
 
-    public AioQuickClient(AsynchronousChannelGroup asynchronousChannelGroup) {
+    public AioQuickClient() {
         this.config = new IoServerConfig<T>(false);
-        this.asynchronousChannelGroup = asynchronousChannelGroup;
     }
 
-    public AioQuickClient() throws IOException {
-        this.config = new IoServerConfig<T>(false);
-        this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r);
-            }
-        });
-        innerGroup = true;
+    public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
+        this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
+        final AioSession<T> session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters()));
+        config.getProcessor().initSession(session);
+        session.readFromChannel();
     }
 
     /**
@@ -53,11 +48,13 @@ public class AioQuickClient<T> {
      * @throws InterruptedException
      */
     public void start() throws IOException, ExecutionException, InterruptedException {
-        this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
-        socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        final AioSession<T> session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters()));
-        config.getProcessor().initSession(session);
-        session.readFromChannel();
+        this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r);
+            }
+        });
+        start(asynchronousChannelGroup);
     }
 
     /**
@@ -72,7 +69,7 @@ public class AioQuickClient<T> {
             }
         }
         //仅Client内部创建的ChannelGroup需要shutdown
-        if (innerGroup && asynchronousChannelGroup != null) {
+        if (asynchronousChannelGroup != null) {
             asynchronousChannelGroup.shutdown();
         }
     }

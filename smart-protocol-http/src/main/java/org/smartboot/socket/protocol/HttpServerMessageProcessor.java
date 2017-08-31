@@ -37,7 +37,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
     }
 
     private void process0(AioSession<HttpV2Entity> session, HttpV2Entity entry)throws Exception{
-        System.out.println(entry);
+//        System.out.println(entry);
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         buffer.put(("HTTP/1.1 200 OK\n" +
                 "Server: seer/1.4.4\n" +
