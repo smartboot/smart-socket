@@ -21,18 +21,20 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
             aioSession.channel.write(writeBuffer, attachment, this);
             return;
         }
-        if (aioSession.writeCacheQueue.isEmpty()) {
-            aioSession.semaphore.release();
-            if (aioSession.isInvalid()) {
-                aioSession.close();
-                return;
-            }
-            if (!aioSession.writeCacheQueue.isEmpty()) {
-                aioSession.channelWriteProcess(true);
-            }
-        } else {
-            aioSession.channelWriteProcess(false);
-        }
+        aioSession.semaphore.release();
+        aioSession.channelWriteProcess();
+//        if (aioSession.writeCacheQueue.isEmpty()) {
+//            aioSession.semaphore.release();
+//            if (aioSession.isInvalid()) {
+//                aioSession.close();
+//                return;
+//            }
+//            if (!aioSession.writeCacheQueue.isEmpty()) {
+//                aioSession.channelWriteProcess(true);
+//            }
+//        } else {
+//            aioSession.channelWriteProcess(false);
+//        }
 
     }
 

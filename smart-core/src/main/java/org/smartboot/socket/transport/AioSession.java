@@ -120,14 +120,14 @@ public class AioSession<T> {
     /**
      * 触发AIO的写操作
      *
-     * @param ackSemaphore 是否申请信号量
      */
-    void channelWriteProcess(boolean ackSemaphore) {
+    void channelWriteProcess() {
         if (isInvalid()) {
+            close();
             logger.warn("AioSession channelWriteProcess is" + status);
             return;
         }
-        if (!ackSemaphore || semaphore.tryAcquire()) {
+        if (semaphore.tryAcquire()) {
             //优先进行 自压缩：实测效果不理想
 //            ByteBuffer firstBuffer = writeCacheQueue.peek();
 //            if (firstBuffer != null && firstBuffer.capacity() - firstBuffer.limit() > firstBuffer.remaining()) {
@@ -287,7 +287,7 @@ public class AioSession<T> {
         } catch (InterruptedException e) {
             logger.error(e);
         }
-        channelWriteProcess(true);
+        channelWriteProcess();
     }
 
     public final void write(T t) throws IOException {
