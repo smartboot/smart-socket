@@ -75,7 +75,7 @@ public class AioQuickServer<T> {
         try {
             serverSocketChannel.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.catching(e);
         }
         asynchronousChannelGroup.shutdown();
     }

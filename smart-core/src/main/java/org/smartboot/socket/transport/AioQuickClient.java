@@ -1,5 +1,7 @@
 package org.smartboot.socket.transport;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.Protocol;
 import org.smartboot.socket.service.filter.SmartFilter;
 import org.smartboot.socket.service.filter.impl.SmartFilterChainImpl;
@@ -17,6 +19,7 @@ import java.util.concurrent.ThreadFactory;
  * Created by seer on 2017/6/28.
  */
 public class AioQuickClient<T> {
+    private static final Logger LOGGER = LogManager.getLogger(AioSession.class);
     private AsynchronousSocketChannel socketChannel = null;
     /**
      * IO事件处理线程组
@@ -65,7 +68,7 @@ public class AioQuickClient<T> {
             try {
                 socketChannel.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOGGER.catching(e);
             }
         }
         //仅Client内部创建的ChannelGroup需要shutdown

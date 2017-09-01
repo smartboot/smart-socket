@@ -8,7 +8,6 @@ import java.nio.channels.CompletionHandler;
 class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
     private static final Logger logger = LogManager.getLogger(ReadCompletionHandler.class);
 
-
     @Override
     public void completed(Integer result, AioSession<T> aioSession) {
         if (result == -1) {

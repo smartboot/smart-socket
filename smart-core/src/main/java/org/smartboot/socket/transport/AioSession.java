@@ -30,6 +30,11 @@ public class AioSession<T> {
     private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
 
     /**
+     * 唯一标识
+     */
+    private final int sessionId = NEXT_ID.getAndIncrement();
+
+    /**
      * Session状态:已关闭
      */
     public static final byte SESSION_STATUS_CLOSED = 1;
@@ -42,27 +47,30 @@ public class AioSession<T> {
      * Session状态:正常
      */
     public static final byte SESSION_STATUS_ENABLED = 3;
+
+    /**
+     * 会话当前状态
+     */
+    private volatile byte status = SESSION_STATUS_ENABLED;
+
     /**
      * 会话属性,延迟创建以减少内存消耗
      */
     private Map<String, Object> attribute;
 
     /**
-     * 消息过滤器
+     * 响应消息缓存队列
      */
-    private SmartFilterChain<T> chain;
-
-    AsynchronousSocketChannel channel;
-
+    private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
     /**
-     * 流控指标线
-     */
-    private final int FLOW_LIMIT_LINE;
-
-    /**
-     * 消息通信协议
+     * 消息通信协议,用以消息编解码处理
      */
     private Protocol<T> protocol;
+
+    /**
+     * 消息过滤器,protocol解码成功的消息交由chain接收处理
+     */
+    private SmartFilterChain<T> chain;
 
     /**
      * 缓存传输层读取到的数据流
@@ -70,15 +78,19 @@ public class AioSession<T> {
     private ByteBuffer readBuffer;
 
     private ReadCompletionHandler<T> readCompletionHandler;
+    private WriteCompletionHandler<T> writeCompletionHandler;
+
+    private AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer> writeAttach = new AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer>(this, null);
+
+    /**
+     * 流控指标线
+     */
+    private final int flowLimitLine;
+
     /**
      * 释放流控指标线
      */
-    private final int RELEASE_LINE;
-
-    /**
-     * 输出信号量
-     */
-    Semaphore semaphore = new Semaphore(1);
+    private final int releaseLine;
 
     /**
      * 数据read限流标志,仅服务端需要进行限流
@@ -86,21 +98,16 @@ public class AioSession<T> {
     private AtomicBoolean serverFlowLimit;
 
     /**
-     * 唯一标识
+     * 底层通信channel对象
      */
-    private final int sessionId = NEXT_ID.getAndIncrement();
+    AsynchronousSocketChannel channel;
+
 
     /**
-     * 会话状态
+     * 输出信号量
      */
-    private volatile byte status = SESSION_STATUS_ENABLED;
+    Semaphore semaphore = new Semaphore(1);
 
-    private AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer> writeAttach = new AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer>(this, null);
-    /**
-     * 响应消息缓存队列
-     */
-    private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
-    private WriteCompletionHandler<T> writeCompletionHandler;
 
     public AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, SmartFilterChain<T> smartFilterChain) {
         this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
@@ -113,8 +120,8 @@ public class AioSession<T> {
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
-        FLOW_LIMIT_LINE = (int) (config.getWriteQueueSize() * 0.9);
-        RELEASE_LINE = (int) (config.getWriteQueueSize() * 0.6);
+        flowLimitLine = (int) (config.getWriteQueueSize() * 0.9);
+        releaseLine = (int) (config.getWriteQueueSize() * 0.6);
     }
 
     /**
@@ -164,7 +171,7 @@ public class AioSession<T> {
                 channel.close();
                 logger.debug("close connection:" + channel);
             } catch (IOException e) {
-                logger.debug(e);
+                logger.catching(e);
             }
             status = SESSION_STATUS_CLOSED;
         } else {
@@ -220,7 +227,7 @@ public class AioSession<T> {
         }
 
         //触发流控
-        if (serverFlowLimit != null && writeCacheQueue.size() > FLOW_LIMIT_LINE) {
+        if (serverFlowLimit != null && writeCacheQueue.size() > flowLimitLine) {
             serverFlowLimit.set(true);
         }
         //正常读取
@@ -254,7 +261,7 @@ public class AioSession<T> {
      * 如果存在流控并符合释放条件，则触发读操作
      */
     void tryReleaseFlowLimit() {
-        if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < RELEASE_LINE) {
+        if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < releaseLine) {
             serverFlowLimit.set(false);
             channel.read(readBuffer, this, readCompletionHandler);
         }
