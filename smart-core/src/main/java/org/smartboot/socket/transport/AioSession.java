@@ -99,7 +99,7 @@ public class AioSession<T> {
     /**
      * 响应消息缓存队列
      */
-    ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
+    private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
     private WriteCompletionHandler<T> writeCompletionHandler;
 
     public AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, SmartFilterChain<T> smartFilterChain) {
