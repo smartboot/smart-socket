@@ -134,7 +134,11 @@ public class AioSession<T> {
             return;
         }
         //无法获得信号量则直接返回
-        if (writeCacheQueue.isEmpty() || !semaphore.tryAcquire()) {
+        if (!semaphore.tryAcquire()) {
+            return;
+        }
+        if (writeCacheQueue.isEmpty()) {
+            semaphore.release();
             return;
         }
         //对缓存中的数据进行压缩处理再输出
