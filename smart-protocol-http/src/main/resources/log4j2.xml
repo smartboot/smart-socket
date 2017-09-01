@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status='fatal' packages="net">
+<Configuration status='fatal' packages="org.smartboot.socket">
 
 	<Properties>
 		<!-- 设置为生产环境的日志存放目录 -->

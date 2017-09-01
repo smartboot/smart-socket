@@ -17,7 +17,7 @@ public interface MessageProcessor<T> {
      * @param session
      * @throws Exception
      */
-    public void process(AioSession<T> session, T msg) throws Exception;
+    public void process(AioSession<T> session, T msg);
 
     /**
      * 初始化业务层Session对象

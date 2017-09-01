@@ -13,7 +13,6 @@ import org.smartboot.socket.transport.AioQuickClient;
 
 import java.nio.channels.AsynchronousChannelGroup;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.ThreadFactory;
 
 public class P2PMultiClient {
@@ -40,12 +39,12 @@ public class P2PMultiClient {
                         e1.printStackTrace();
                     }
                     P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>(asynchronousChannelGroup).connect("127.0.0.1", 8888)
+                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
                             .setProtocol(new P2PProtocol(messageFactory))
                             .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
                             .setProcessor(processor);
                     try {
-                        client.start();
+                        client.start(asynchronousChannelGroup);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -56,10 +55,7 @@ public class P2PMultiClient {
                         DetectMessageReq request = new DetectMessageReq();
                         request.setSendTime((byte) 1);
                         try {
-//							DetectMessageResp loginResp = (DetectMessageResp) processor.getSession()
-//								.sendWithResponse(request);
                             processor.getSession().sendWithoutResponse(request);
-                            // logger.info(loginResp);
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();
@@ -71,20 +67,7 @@ public class P2PMultiClient {
                 }
 
             }.start();
-            Thread.sleep(500);
         }
 
-    }
-
-    public static String getRandomString(int length) {
-        String str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        Random random = new Random();
-        StringBuffer sb = new StringBuffer();
-
-        for (int i = 0; i < length; ++i) {
-            int number = random.nextInt(62);// [0,62)
-            sb.append(str.charAt(number));
-        }
-        return sb.toString();
     }
 }

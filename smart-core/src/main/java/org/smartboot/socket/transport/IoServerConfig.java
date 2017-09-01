@@ -48,10 +48,11 @@ final class IoServerConfig<T> {
     private Protocol<T> protocol;
 
 
+    private static final int CPU_NUM=Runtime.getRuntime().availableProcessors();
     /**
      * 服务器处理线程数
      */
-    private int threadNum = Runtime.getRuntime().availableProcessors();
+    private int threadNum = CPU_NUM;
 
     /**
      * true:服务器,false:客户端

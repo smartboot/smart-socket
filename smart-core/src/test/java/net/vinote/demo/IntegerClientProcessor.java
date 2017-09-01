@@ -11,7 +11,7 @@ public class IntegerClientProcessor implements MessageProcessor<Integer> {
     private AioSession<Integer> session;
 
     @Override
-    public void process(AioSession<Integer> session, Integer msg) throws Exception {
+    public void process(AioSession<Integer> session, Integer msg) {
         System.out.println("接受到服务端响应数据：" + msg);
     }
 

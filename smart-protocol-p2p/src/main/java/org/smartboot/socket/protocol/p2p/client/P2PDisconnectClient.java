@@ -33,13 +33,14 @@ public class P2PDisconnectClient {
             @Override
             public void run() {
                 while (true) {
-                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>(asynchronousChannelGroup).connect("127.0.0.1", 8888)
+
+                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
                             .setProtocol(new P2PProtocol(messageFactory))
 //                            .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
                             .setProcessor(new P2PClientMessageProcessor(messageFactory));
 
                     try {
-                        client.start();
+                        client.start(asynchronousChannelGroup);
                         aioQuickClientArrayBlockingQueue.put(client);
                     } catch (Exception e) {
                         e.printStackTrace();

@@ -15,36 +15,14 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AbstractMa
         AioSession<T> aioSession = attachment.getKey();
         ByteBuffer writeBuffer = attachment.getValue();
         //服务端Session才具备流控功能
-        aioSession.channelReadProcess(true);
+        aioSession.tryReleaseFlowLimit();
 
         if (writeBuffer.hasRemaining()) {
-            //复用输出流
-            int avail = writeBuffer.capacity() - writeBuffer.remaining();
-            ByteBuffer nextByteBuffer = aioSession.writeCacheQueue.peek();
-            if (nextByteBuffer != null && nextByteBuffer.remaining() <= avail) {
-                writeBuffer.compact();
-                while ((nextByteBuffer = aioSession.writeCacheQueue.peek()) != null && nextByteBuffer.remaining() <= writeBuffer.remaining()) {
-                    writeBuffer.put(aioSession.writeCacheQueue.poll());
-                }
-                writeBuffer.flip();
-            }
-
             aioSession.channel.write(writeBuffer, attachment, this);
-            return;
-        }
-        if (aioSession.writeCacheQueue.isEmpty()) {
-            aioSession.semaphore.release();
-            if (aioSession.isInvalid()) {
-                aioSession.close();
-                return;
-            }
-            if (!aioSession.writeCacheQueue.isEmpty()) {
-                aioSession.channelWriteProcess(true);
-            }
         } else {
-            aioSession.channelWriteProcess(false);
+            aioSession.semaphore.release();
+            aioSession.writeToChannel();
         }
-
     }
 
     @Override

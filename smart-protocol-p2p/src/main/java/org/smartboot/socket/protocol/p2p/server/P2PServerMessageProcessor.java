@@ -20,7 +20,7 @@ public final class P2PServerMessageProcessor implements MessageProcessor<BaseMes
     }
 
     @Override
-    public void process(AioSession<BaseMessage> ioSession, BaseMessage entry) throws Exception {
+    public void process(AioSession<BaseMessage> ioSession, BaseMessage entry) {
         P2PSession session = ioSession.getAttribute(P2PSession.SESSION_KEY);
         if (session.notifySyncMessage(entry)) {
             return;
