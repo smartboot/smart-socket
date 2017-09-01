@@ -13,7 +13,6 @@ import org.smartboot.socket.transport.AioQuickClient;
 
 import java.nio.channels.AsynchronousChannelGroup;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.ThreadFactory;
 
 public class P2PMultiClient {

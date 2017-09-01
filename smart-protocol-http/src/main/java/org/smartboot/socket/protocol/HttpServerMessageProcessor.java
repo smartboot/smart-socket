@@ -4,6 +4,7 @@ import org.smartboot.socket.service.process.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.StringUtils;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,28 +16,28 @@ import java.util.concurrent.Executors;
  */
 public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2Entity> {
 
-    private ExecutorService executorService= Executors.newSingleThreadExecutor();
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
-    public void process(final AioSession<HttpV2Entity> session, final HttpV2Entity entry) throws Exception {
+    public void process(final AioSession<HttpV2Entity> session, final HttpV2Entity entry) {
         //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
-        if(StringUtils.equalsIgnoreCase(entry.getContentType(),"multipart/form-data")){
+        if (StringUtils.equalsIgnoreCase(entry.getContentType(), "multipart/form-data")) {
             executorService.submit(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        process0(session,entry);
+                        process0(session, entry);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
             });
-        }else{
-            process0(session,entry);
+        } else {
+            process0(session, entry);
         }
     }
 
-    private void process0(AioSession<HttpV2Entity> session, HttpV2Entity entry)throws Exception{
+    private void process0(AioSession<HttpV2Entity> session, HttpV2Entity entry) {
 //        System.out.println(entry);
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         buffer.put(("HTTP/1.1 200 OK\n" +
@@ -47,12 +48,17 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
                 ) +
                 "\n" +
                 "OK").getBytes());
-        session.write(buffer);
+        try {
+            session.write(buffer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 //        System.out.println(entry);
         if (!"Keep-Alive".equalsIgnoreCase(entry.getHeadMap().get("Connection"))) {
             session.close(false);
         }
     }
+
     @Override
     public void initSession(AioSession<HttpV2Entity> session) {
 

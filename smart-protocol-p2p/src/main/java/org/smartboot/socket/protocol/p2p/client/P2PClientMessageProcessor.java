@@ -18,7 +18,7 @@ public class P2PClientMessageProcessor implements MessageProcessor<BaseMessage> 
     }
 
     @Override
-    public void process(AioSession<BaseMessage> ioSession, BaseMessage msg) throws Exception {
+    public void process(AioSession<BaseMessage> ioSession, BaseMessage msg) {
         if (session.notifySyncMessage(msg)) {
             return;
         }

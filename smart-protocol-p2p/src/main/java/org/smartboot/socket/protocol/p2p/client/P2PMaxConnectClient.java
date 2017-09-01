@@ -22,7 +22,7 @@ public class P2PMaxConnectClient {
                 final AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>()
                         .setProcessor(new MessageProcessor<BaseMessage>() {
                             @Override
-                            public void process(AioSession<BaseMessage> session, BaseMessage msg) throws Exception {
+                            public void process(AioSession<BaseMessage> session, BaseMessage msg) {
 
                             }
 
