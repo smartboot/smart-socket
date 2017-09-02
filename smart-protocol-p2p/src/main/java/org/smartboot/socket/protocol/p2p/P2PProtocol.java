@@ -62,7 +62,7 @@ public final class P2PProtocol implements Protocol<BaseMessage> {
         try {
             return baseMessage.encode();
         } catch (ProtocolException e) {
-            e.printStackTrace();
+            LOGGER.catching(e);
         }
         return null;
     }

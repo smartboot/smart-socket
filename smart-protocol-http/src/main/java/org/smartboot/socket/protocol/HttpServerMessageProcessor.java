@@ -1,5 +1,7 @@
 package org.smartboot.socket.protocol;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.service.process.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.StringUtils;
@@ -15,7 +17,7 @@ import java.util.concurrent.Executors;
  * @author Seer
  */
 public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2Entity> {
-
+    private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
@@ -51,7 +53,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
         try {
             session.write(buffer);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.catching(e);
         }
 //        System.out.println(entry);
         if (!"Keep-Alive".equalsIgnoreCase(entry.getHeadMap().get("Connection"))) {

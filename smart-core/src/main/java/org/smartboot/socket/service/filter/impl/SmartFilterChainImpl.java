@@ -1,5 +1,7 @@
 package org.smartboot.socket.service.filter.impl;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.service.filter.SmartFilter;
 import org.smartboot.socket.service.filter.SmartFilterChain;
 import org.smartboot.socket.service.process.MessageProcessor;
@@ -12,6 +14,7 @@ import org.smartboot.socket.transport.AioSession;
  * @version SmartFilterChainImpl.java, v 0.1 2015年8月26日 下午5:08:31 Seer Exp.
  */
 public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
+    private static final Logger LOGGER = LogManager.getLogger(SmartFilterChainImpl.class);
     private MessageProcessor<T> receiver;
     private SmartFilter<T>[] handlers = null;
     private boolean withoutFilter = true;//是否无过滤器
@@ -30,7 +33,7 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
             try {
                 receiver.process(session, dataEntry);
             } catch (Exception e) {
-                e.printStackTrace();
+                LOGGER.catching(e);
             }
             return;
         }
@@ -45,7 +48,7 @@ public class SmartFilterChainImpl<T> implements SmartFilterChain<T> {
             }
             receiver.process(session, dataEntry);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.catching(e);
             for (SmartFilter<T> h : handlers) {
                 h.processFailHandler(session, dataEntry);
             }
