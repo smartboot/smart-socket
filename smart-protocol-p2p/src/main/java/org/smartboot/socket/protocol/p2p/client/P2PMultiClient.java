@@ -55,7 +55,7 @@ public class P2PMultiClient {
                         DetectMessageReq request = new DetectMessageReq();
                         request.setSendTime((byte) 1);
                         try {
-                            processor.getSession().sendWithResponse(request);
+                            processor.getSession().sendWithoutResponse(request);
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();

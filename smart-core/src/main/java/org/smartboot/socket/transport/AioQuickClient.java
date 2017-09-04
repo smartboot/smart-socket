@@ -29,11 +29,7 @@ public class AioQuickClient<T> {
     /**
      * 服务配置
      */
-    private IoServerConfig<T> config;
-
-    public AioQuickClient() {
-        this.config = new IoServerConfig<T>(false);
-    }
+    private IoServerConfig<T> config = new IoServerConfig<T>(false);
 
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);

@@ -26,17 +26,13 @@ public class AioQuickServer<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickServer.class);
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
-    private IoServerConfig<T> config;
+    private IoServerConfig<T> config = new IoServerConfig<T>(true);
     private ReadCompletionHandler<T> readCompletionHandler = new ReadCompletionHandler<T>();
     private WriteCompletionHandler<T> writeCompletionHandler = new WriteCompletionHandler<T>();
     /**
      * 消息过滤器
      */
     private SmartFilterChain<T> smartFilterChain;
-
-    public AioQuickServer() {
-        this.config = new IoServerConfig<T>(true);
-    }
 
     public void start() throws IOException {
         smartFilterChain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
