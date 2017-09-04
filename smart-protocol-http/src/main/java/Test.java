@@ -1,3 +1,4 @@
+import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.protocol.HttpServerMessageProcessor;
 import org.smartboot.socket.protocol.HttpV2Entity;
 import org.smartboot.socket.protocol.HttpV2Protocol;
@@ -15,6 +16,7 @@ public class Test {
         AioQuickServer<HttpV2Entity> server = new AioQuickServer<HttpV2Entity>()
                 .setThreadNum(8)
                 .setProtocol(new HttpV2Protocol())
+                .setFilters(new QuickMonitorTimer<HttpV2Entity>())
                 .setProcessor(processor);
         try {
             server.start();

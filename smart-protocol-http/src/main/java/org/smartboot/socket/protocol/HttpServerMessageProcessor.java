@@ -7,6 +7,7 @@ import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.StringUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,6 +42,18 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
 
     private void process0(AioSession<HttpV2Entity> session, HttpV2Entity entry) {
 //        System.out.println(entry);
+        InputStream in=entry.getInputStream();
+        byte[] data=new byte[1023];
+        int size=0;
+        StringBuffer sb=new StringBuffer();
+        try {
+            while((size=in.read(data))!=-1){
+             sb.append(new String(data,0,size));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println(sb.toString());
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         buffer.put(("HTTP/1.1 200 OK\n" +
                 "Server: seer/1.4.4\n" +

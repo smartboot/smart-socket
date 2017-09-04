@@ -4,6 +4,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.math.NumberUtils;
+import org.smartboot.socket.protocol.strategy.PostDecodeStrategy;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -35,10 +36,10 @@ public class HttpV2Entity {
 
     private int contentLength = -1;
 
-    DataStream dataStream = new DataStream("\r\n\r\n".getBytes());
+  public   DataStream dataStream = new DataStream("\r\n\r\n".getBytes());
     int chunkedBlockSize = -1;
-    BinaryBuffer binaryBuffer = new BinaryBuffer(1024);
-    int binReadLength = 0;
+   public BinaryBuffer binaryBuffer = new BinaryBuffer(1024);
+  public  int binReadLength = 0;
     private InputStream inputStream = new InputStream() {
         @Override
         public int read() throws IOException {
@@ -50,6 +51,11 @@ public class HttpV2Entity {
             } catch (InterruptedException e) {
                 throw new IOException(e);
             }
+        }
+
+        @Override
+        public int available() throws IOException {
+            return binaryBuffer.size();
         }
     };
     /**
@@ -63,6 +69,7 @@ public class HttpV2Entity {
     private Map<String, String> headMap = new HashMap<String, String>();
     private Map<String, String> paramMap = new HashMap<String, String>();
 
+    PostDecodeStrategy postDecodeStrategy;
 
     public void decodeHead() {
         String[] headDatas = StringUtils.split(dataStream.toString(), "\r\n");
@@ -88,17 +95,7 @@ public class HttpV2Entity {
     }
 
 
-    public void decodeNormalBody() {
-        String[] headDatas = StringUtils.split(dataStream.toString(), "&");
-        if (ArrayUtils.isEmpty(headDatas)) {
-            return;
-        }
-        for (int i = 0; i < headDatas.length; i++) {
-            paramMap.put(StringUtils.substringBefore(headDatas[i], "=").trim(), StringUtils.substringAfter(headDatas[i], "=").trim());
-        }
-        dataStream.reset();
-        dataStream = null;
-    }
+
 
 
     public HttpV2Entity(AioSession<HttpV2Entity> session) {
@@ -109,9 +106,6 @@ public class HttpV2Entity {
     }
 
     public void setHeader(String name, String value) {
-        if (CONTENT_LENGTH.equalsIgnoreCase(name)) {
-            contentLength = NumberUtils.toInt(value);
-        }
         headMap.put(name, value);
     }
 
@@ -167,5 +161,13 @@ public class HttpV2Entity {
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
+    }
+
+    public Map<String, String> getParamMap() {
+        return paramMap;
+    }
+
+    public void setParamMap(Map<String, String> paramMap) {
+        this.paramMap = paramMap;
     }
 }

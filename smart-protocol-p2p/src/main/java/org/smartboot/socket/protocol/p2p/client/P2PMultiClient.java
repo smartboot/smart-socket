@@ -51,15 +51,15 @@ public class P2PMultiClient {
 
                     long num = 0;
                     long start = System.currentTimeMillis();
-                    while (num++ < Long.MAX_VALUE) {
+                    while (num++ < Integer.MAX_VALUE) {
                         DetectMessageReq request = new DetectMessageReq();
                         request.setSendTime((byte) 1);
                         try {
-                            processor.getSession().sendWithoutResponse(request);
+                            processor.getSession().sendWithResponse(request);
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();
-                            break;
+//                            break;
                         }
                     }
                     logger.info("安全消息结束" + (System.currentTimeMillis() - start));
