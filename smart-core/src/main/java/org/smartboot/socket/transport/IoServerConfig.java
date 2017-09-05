@@ -114,11 +114,6 @@ final class IoServerConfig<T> {
         return serverOrClient;
     }
 
-    public final boolean isClient() {
-        return !serverOrClient;
-    }
-
-
     public final SmartFilter<T>[] getFilters() {
         return filters;
     }

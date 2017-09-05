@@ -33,7 +33,7 @@ public class AioQuickServer<T> {
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, "AIO-Server-" + threadIndex.incrementAndGet());
+                return new Thread(r, "Smart-Socket-" + threadIndex.incrementAndGet());
             }
         });
 
