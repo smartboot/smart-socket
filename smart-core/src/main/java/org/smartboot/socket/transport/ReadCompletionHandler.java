@@ -11,7 +11,6 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     @Override
     public void completed(Integer result, AioSession<T> aioSession) {
         if (result == -1) {
-            logger.debug("read end:" + aioSession);
             aioSession.close(false);
             return;
         }

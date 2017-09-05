@@ -48,7 +48,7 @@ final class IoServerConfig<T> {
     private Protocol<T> protocol;
 
 
-    private static final int CPU_NUM=Runtime.getRuntime().availableProcessors();
+    private static final int CPU_NUM = Runtime.getRuntime().availableProcessors();
     /**
      * 服务器处理线程数
      */
@@ -58,6 +58,20 @@ final class IoServerConfig<T> {
      * true:服务器,false:客户端
      */
     private boolean serverOrClient;
+
+
+    private float limitRate = 0.9f;
+
+    private float releaseRate = 0.6f;
+    /**
+     * 流控指标线
+     */
+    private int flowLimitLine = (int) (writeQueueSize * limitRate);
+
+    /**
+     * 释放流控指标线
+     */
+    private int releaseLine = (int) (writeQueueSize * releaseRate);
 
     /**
      * @param serverOrClient true:服务器,false:客户端
@@ -135,6 +149,8 @@ final class IoServerConfig<T> {
 
     public void setWriteQueueSize(int writeQueueSize) {
         this.writeQueueSize = writeQueueSize;
+        flowLimitLine = (int) (writeQueueSize * limitRate);
+        releaseLine = (int) (writeQueueSize * releaseRate);
     }
 
     public int getReadBufferSize() {
@@ -143,5 +159,13 @@ final class IoServerConfig<T> {
 
     public void setReadBufferSize(int readBufferSize) {
         this.readBufferSize = readBufferSize;
+    }
+
+    int getFlowLimitLine() {
+        return flowLimitLine;
+    }
+
+    int getReleaseLine() {
+        return releaseLine;
     }
 }

@@ -4,8 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.Protocol;
 import org.smartboot.socket.service.filter.SmartFilter;
-import org.smartboot.socket.service.filter.SmartFilterChain;
-import org.smartboot.socket.service.filter.impl.SmartFilterChainImpl;
 import org.smartboot.socket.service.process.MessageProcessor;
 
 import java.io.IOException;
@@ -29,13 +27,8 @@ public class AioQuickServer<T> {
     private IoServerConfig<T> config = new IoServerConfig<T>(true);
     private ReadCompletionHandler<T> readCompletionHandler = new ReadCompletionHandler<T>();
     private WriteCompletionHandler<T> writeCompletionHandler = new WriteCompletionHandler<T>();
-    /**
-     * 消息过滤器
-     */
-    private SmartFilterChain<T> smartFilterChain;
 
     public void start() throws IOException {
-        smartFilterChain = new SmartFilterChainImpl<T>(config.getProcessor(), config.getFilters());
         final AtomicInteger threadIndex = new AtomicInteger(0);
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
             @Override
@@ -55,7 +48,7 @@ public class AioQuickServer<T> {
                 } catch (IOException e) {
                     LOGGER.catching(e);
                 }
-                AioSession<T> session = new AioSession<T>(channel, config, readCompletionHandler, writeCompletionHandler, smartFilterChain);
+                AioSession<T> session = new AioSession<T>(channel, config, readCompletionHandler, writeCompletionHandler);
                 config.getProcessor().initSession(session);
                 session.readFromChannel();
             }
@@ -127,10 +120,11 @@ public class AioQuickServer<T> {
 
     /**
      * 设置输出队列缓冲区长度
+     *
      * @param size
      * @return
      */
-    public AioQuickServer<T> setWriteQueueSize(int size){
+    public AioQuickServer<T> setWriteQueueSize(int size) {
         this.config.setWriteQueueSize(size);
         return this;
     }

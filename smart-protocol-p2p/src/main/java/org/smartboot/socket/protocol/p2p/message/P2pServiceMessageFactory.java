@@ -3,7 +3,7 @@ package org.smartboot.socket.protocol.p2p.message;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.p2p.MessageHandler;
-import org.smartboot.socket.util.StringUtils;
+import org.smartboot.socket.protocol.p2p.util.StringUtils;
 
 import java.lang.reflect.Method;
 import java.util.Enumeration;

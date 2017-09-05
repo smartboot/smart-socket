@@ -7,7 +7,7 @@ import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.HeadMessage;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.util.StringUtils;
+import org.smartboot.socket.protocol.p2p.util.StringUtils;
 
 import java.net.ProtocolException;
 import java.nio.ByteBuffer;

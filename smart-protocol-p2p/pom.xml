@@ -14,5 +14,9 @@
 			<groupId>net.vinote.smart</groupId>
 			<artifactId>smart-quickly</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+		</dependency>
 	</dependencies>
 </project>

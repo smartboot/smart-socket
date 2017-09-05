@@ -1,10 +1,10 @@
 package org.smartboot.socket.protocol;
 
+import org.apache.commons.lang.StringUtils;
 import org.smartboot.socket.protocol.strategy.FormDataBoundaryStrategy;
 import org.smartboot.socket.protocol.strategy.FormUrlencodedContentLengthStrategy;
 import org.smartboot.socket.protocol.strategy.PostDecodeStrategy;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.util.StringUtils;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;

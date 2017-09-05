@@ -1,15 +1,12 @@
 package org.smartboot.socket.transport;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.protocol.Protocol;
-import org.smartboot.socket.service.filter.SmartFilterChain;
+import org.smartboot.socket.service.filter.SmartFilter;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -17,6 +14,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.util.AbstractMap.SimpleEntry;
 
 /**
  * AIO传输层会话
@@ -34,24 +33,11 @@ public class AioSession<T> {
      */
     private final int sessionId = NEXT_ID.getAndIncrement();
 
-    /**
-     * Session状态:已关闭
-     */
-    public static final byte SESSION_STATUS_CLOSED = 1;
-
-    /**
-     * Session状态:关闭中
-     */
-    public static final byte SESSION_STATUS_CLOSING = 2;
-    /**
-     * Session状态:正常
-     */
-    public static final byte SESSION_STATUS_ENABLED = 3;
 
     /**
      * 会话当前状态
      */
-    private volatile byte status = SESSION_STATUS_ENABLED;
+    private volatile byte status = SessionStatus.SESSION_STATUS_ENABLED;
 
     /**
      * 会话属性,延迟创建以减少内存消耗
@@ -62,15 +48,6 @@ public class AioSession<T> {
      * 响应消息缓存队列
      */
     private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
-    /**
-     * 消息通信协议,用以消息编解码处理
-     */
-    private Protocol<T> protocol;
-
-    /**
-     * 消息过滤器,protocol解码成功的消息交由chain接收处理
-     */
-    private SmartFilterChain<T> chain;
 
     /**
      * 缓存传输层读取到的数据流
@@ -80,17 +57,11 @@ public class AioSession<T> {
     private ReadCompletionHandler<T> readCompletionHandler;
     private WriteCompletionHandler<T> writeCompletionHandler;
 
-    private AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer> writeAttach = new AbstractMap.SimpleEntry<AioSession<T>, ByteBuffer>(this, null);
-
     /**
-     * 流控指标线
+     * 数据输出Handler附件
      */
-    private final int flowLimitLine;
+    private SimpleEntry<AioSession<T>, ByteBuffer> writeAttach = new SimpleEntry<AioSession<T>, ByteBuffer>(this, null);
 
-    /**
-     * 释放流控指标线
-     */
-    private final int releaseLine;
 
     /**
      * 数据read限流标志,仅服务端需要进行限流
@@ -100,28 +71,25 @@ public class AioSession<T> {
     /**
      * 底层通信channel对象
      */
-    AsynchronousSocketChannel channel;
+    private AsynchronousSocketChannel channel;
 
 
     /**
      * 输出信号量
      */
-    Semaphore semaphore = new Semaphore(1);
+    private Semaphore semaphore = new Semaphore(1);
 
 
-    public AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, SmartFilterChain<T> smartFilterChain) {
+    private IoServerConfig<T> ioServerConfig;
+
+    public AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler) {
         this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
         this.channel = channel;
-        this.protocol = config.getProtocol();
-        if (config.isServer()) {
-            serverFlowLimit = new AtomicBoolean(false);
-        }
-        this.chain = smartFilterChain;
+        this.serverFlowLimit = config.isServer() ? new AtomicBoolean(false) : null;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
-        flowLimitLine = (int) (config.getWriteQueueSize() * 0.9);
-        releaseLine = (int) (config.getWriteQueueSize() * 0.6);
+        this.ioServerConfig = config;
     }
 
     /**
@@ -170,6 +138,31 @@ public class AioSession<T> {
         channel.write(writeBuffer, writeAttach, writeCompletionHandler);
     }
 
+    /**
+     * 如果存在流控并符合释放条件，则触发读操作
+     */
+    void tryReleaseFlowLimit() {
+        if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
+            serverFlowLimit.set(false);
+            channel.read(readBuffer, this, readCompletionHandler);
+        }
+    }
+
+    public void write(final ByteBuffer buffer) throws IOException {
+        if (isInvalid()) {
+            return;
+        }
+        buffer.flip();
+        try {
+            writeCacheQueue.put(buffer);
+        } catch (InterruptedException e) {
+            logger.error(e);
+        }
+        if (semaphore.tryAcquire()) {
+            writeToChannel(null);
+        }
+    }
+
     public final void close() {
         close(true);
     }
@@ -188,9 +181,9 @@ public class AioSession<T> {
             } catch (IOException e) {
                 logger.catching(e);
             }
-            status = SESSION_STATUS_CLOSED;
+            status = SessionStatus.SESSION_STATUS_CLOSED;
         } else {
-            status = SESSION_STATUS_CLOSING;
+            status = SessionStatus.SESSION_STATUS_CLOSING;
             if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
                 close(true);
                 semaphore.release();
@@ -217,7 +210,7 @@ public class AioSession<T> {
      * 当前会话是否已失效
      */
     public boolean isInvalid() {
-        return status != SESSION_STATUS_ENABLED;
+        return status != SessionStatus.SESSION_STATUS_ENABLED;
     }
 
     /**
@@ -228,8 +221,8 @@ public class AioSession<T> {
         // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
         T dataEntry;
         int remain = 0;
-        while ((remain = readBuffer.remaining()) > 0 && (dataEntry = protocol.decode(readBuffer, this)) != null) {
-            chain.doChain(this, dataEntry, remain - readBuffer.remaining());
+        while ((remain = readBuffer.remaining()) > 0 && (dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this)) != null) {
+            receive0(this, dataEntry, remain - readBuffer.remaining());
         }
         //数据读取完毕
         if (readBuffer.remaining() == 0) {
@@ -242,7 +235,7 @@ public class AioSession<T> {
         }
 
         //触发流控
-        if (serverFlowLimit != null && writeCacheQueue.size() > flowLimitLine) {
+        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit.set(true);
         }
         //正常读取
@@ -266,38 +259,45 @@ public class AioSession<T> {
         attribute.put(key, value);
     }
 
-    @Override
-    public String toString() {
-        return ToStringBuilder.reflectionToString(this);
-    }
-
-
-    /**
-     * 如果存在流控并符合释放条件，则触发读操作
-     */
-    void tryReleaseFlowLimit() {
-        if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < releaseLine) {
-            serverFlowLimit.set(false);
-            channel.read(readBuffer, this, readCompletionHandler);
-        }
-    }
-
-    public void write(final ByteBuffer buffer) throws IOException {
-        if (isInvalid()) {
-            return;
-        }
-        buffer.flip();
-        try {
-            writeCacheQueue.put(buffer);
-        } catch (InterruptedException e) {
-            logger.error(e);
-        }
-        if (semaphore.tryAcquire()) {
-            writeToChannel(null);
-        }
-    }
 
     public final void write(T t) throws IOException {
-        write(protocol.encode(t, this));
+        write(ioServerConfig.getProtocol().encode(t, this));
+    }
+
+    /**
+     * 接收并处理消息
+     *
+     * @param session
+     * @param dataEntry
+     * @param readSize
+     */
+    private void receive0(AioSession<T> session, T dataEntry, int readSize) {
+        if (dataEntry == null) {
+            return;
+        }
+        if (ioServerConfig.getFilters() == null) {
+            try {
+                ioServerConfig.getProcessor().process(session, dataEntry);
+            } catch (Exception e) {
+                logger.catching(e);
+            }
+            return;
+        }
+
+        // 接收到的消息进行预处理
+        for (SmartFilter<T> h : ioServerConfig.getFilters()) {
+            h.readFilter(session, dataEntry, readSize);
+        }
+        try {
+            for (SmartFilter<T> h : ioServerConfig.getFilters()) {
+                h.processFilter(session, dataEntry);
+            }
+            ioServerConfig.getProcessor().process(session, dataEntry);
+        } catch (Exception e) {
+            logger.catching(e);
+            for (SmartFilter<T> h : ioServerConfig.getFilters()) {
+                h.processFailHandler(session, dataEntry, e);
+            }
+        }
     }
 }

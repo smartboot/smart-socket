@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
  */
 public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<T> {
-    private static Logger logger = LogManager.getLogger(QuickMonitorTimer.class);
+    private static final Logger logger = LogManager.getLogger(QuickMonitorTimer.class);
     /**
      * 当前周期内消息 流量监控
      */
@@ -66,7 +66,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
         messageStorage.incrementAndGet();
     }
 
-    public void processFailHandler(AioSession<T> session, T d) {
+    public void processFailHandler(AioSession<T> session, T d, Exception e) {
         processFailNum.incrementAndGet();
         messageStorage.decrementAndGet();
     }

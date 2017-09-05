@@ -28,6 +28,6 @@ public interface SmartFilter<T> {
     /**
      * 消息接受失败处理
      */
-    public void processFailHandler(AioSession<T> session, T d);
+    public void processFailHandler(AioSession<T> session, T d,Exception e);
 
 }

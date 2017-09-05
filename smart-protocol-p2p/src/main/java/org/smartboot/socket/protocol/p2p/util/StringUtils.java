@@ -1,4 +1,4 @@
-package org.smartboot.socket.util;
+package org.smartboot.socket.protocol.p2p.util;
 
 /**
  * 扩展StringUtils方法

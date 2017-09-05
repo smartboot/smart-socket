@@ -1,6 +1,6 @@
 package org.smartboot.socket.protocol.p2p.enums;
 
-import org.smartboot.socket.util.StringUtils;
+import org.smartboot.socket.protocol.p2p.util.StringUtils;
 
 /**
  * 状态返回码枚举

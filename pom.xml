@@ -16,9 +16,7 @@
 	<packaging>pom</packaging>
 
 	<properties>
-		<commons.collections.version>3.2</commons.collections.version>
 		<commons.lang.version>2.6</commons.lang.version>
-		<protostuff.version>1.1.0</protostuff.version>
 		<log4j.version>2.4.1</log4j.version>
 	</properties>
 	<dependencyManagement>
@@ -34,24 +32,9 @@
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>commons-collections</groupId>
-				<artifactId>commons-collections</artifactId>
-				<version>${commons.collections.version}</version>
-			</dependency>
-			<dependency>
 				<groupId>commons-lang</groupId>
 				<artifactId>commons-lang</artifactId>
 				<version>${commons.lang.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>io.protostuff</groupId>
-				<artifactId>protostuff-core</artifactId>
-				<version>${protostuff.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>io.protostuff</groupId>
-				<artifactId>protostuff-runtime</artifactId>
-				<version>${protostuff.version}</version>
 			</dependency>
 			<!-- 日志系统 -->
 			<dependency>
