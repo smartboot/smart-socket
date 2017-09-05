@@ -134,9 +134,10 @@ public class AioSession<T> {
             logger.warn("end write because of aioSession's status is" + status);
             return;
         }
-        if (writeBuffer == null && writeCacheQueue.isEmpty()) {
+        ByteBuffer nextBuffer = writeCacheQueue.peek();//为null说明队列已空
+        if (writeBuffer == null && nextBuffer == null) {
             semaphore.release();
-            if (!writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
+            if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
                 writeToChannel(null);
             }
             return;
@@ -156,12 +157,12 @@ public class AioSession<T> {
                 writeBuffer.put(writeCacheQueue.poll());
             }
             writeBuffer.flip();
-        } else if (writeCacheQueue.size() > 0 && writeCacheQueue.peek().remaining() <= (writeBuffer.capacity() - writeBuffer.remaining())) {
-            ByteBuffer nextByteBuffer = null;
+        } else if (nextBuffer != null && nextBuffer.remaining() <= (writeBuffer.capacity() - writeBuffer.remaining())) {
             writeBuffer.compact();
-            while ((nextByteBuffer = writeCacheQueue.peek()) != null && nextByteBuffer.remaining() <= writeBuffer.remaining()) {
+            do {
                 writeBuffer.put(writeCacheQueue.poll());
             }
+            while ((nextBuffer = writeCacheQueue.peek()) != null && nextBuffer.remaining() <= writeBuffer.remaining());
             writeBuffer.flip();
         }
 
