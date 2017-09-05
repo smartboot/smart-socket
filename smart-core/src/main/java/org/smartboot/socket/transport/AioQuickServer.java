@@ -124,4 +124,14 @@ public class AioQuickServer<T> {
         this.config.setProcessor(processor);
         return this;
     }
+
+    /**
+     * 设置输出队列缓冲区长度
+     * @param size
+     * @return
+     */
+    public AioQuickServer<T> setWriteQueueSize(int size){
+        this.config.setWriteQueueSize(size);
+        return this;
+    }
 }

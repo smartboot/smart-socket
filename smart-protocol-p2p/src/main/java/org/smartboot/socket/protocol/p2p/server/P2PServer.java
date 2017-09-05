@@ -23,7 +23,10 @@ public class P2PServer {
         P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
         messageFactory.loadFromProperties(properties);
 
-        AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>().bind(8888).setThreadNum(4)
+        AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>()
+                .bind(8888)
+                .setThreadNum(8)
+                .setWriteQueueSize(16384)
                 .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
                 .setProtocol(new P2PProtocol(messageFactory))
                 .setProcessor(new P2PServerMessageProcessor(messageFactory));
