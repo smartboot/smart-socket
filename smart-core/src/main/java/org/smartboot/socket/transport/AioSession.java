@@ -2,7 +2,6 @@ package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.concurrent.DisruptorBlockingQueue;
 import org.smartboot.socket.service.filter.SmartFilter;
 
 import java.io.IOException;
@@ -48,7 +47,7 @@ public class AioSession<T> {
     /**
      * 响应消息缓存队列
      */
-    private DisruptorBlockingQueue<ByteBuffer> writeCacheQueue;
+    private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
 
     /**
      * 缓存传输层读取到的数据流
@@ -89,7 +88,7 @@ public class AioSession<T> {
         this.serverFlowLimit = config.isServer() ? new AtomicBoolean(false) : null;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
-        this.writeCacheQueue = new DisruptorBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
+        this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
     }
 
