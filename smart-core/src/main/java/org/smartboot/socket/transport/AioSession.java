@@ -145,9 +145,6 @@ public class AioSession<T> {
         if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
             serverFlowLimit.set(false);
             channel.read(readBuffer, this, readCompletionHandler);
-        }//触发流控
-        else if (serverFlowLimit != null && !serverFlowLimit.get() && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
-            serverFlowLimit.set(true);
         }
 
     }
@@ -157,12 +154,20 @@ public class AioSession<T> {
             return;
         }
         buffer.flip();
-        try {
-            //正常读取
-            writeCacheQueue.put(buffer);
-        } catch (InterruptedException e) {
-            logger.error(e);
+        //触发流控
+        if (serverFlowLimit != null && !serverFlowLimit.get() && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
+            serverFlowLimit.set(true);
         }
+        while (!writeCacheQueue.offer(buffer)) {
+            Thread.interrupted();
+        }
+//        try {
+//
+//            //正常读取
+//            writeCacheQueue.put(buffer);
+//        } catch (InterruptedException e) {
+//            logger.error(e);
+//        }
         if (semaphore.tryAcquire()) {
             writeToChannel(null);
         }
@@ -271,39 +276,33 @@ public class AioSession<T> {
      * @param dataEntry
      * @param readSize
      */
-    private void receive0(final AioSession<T> session, final T dataEntry, final int readSize) {
-        ThreadPool.getThreadPool().submit(new Runnable() {
-            @Override
-            public void run() {
-                if (dataEntry == null) {
-                    return;
-                }
-                if (ioServerConfig.getFilters() == null) {
-                    try {
-                        ioServerConfig.getProcessor().process(session, dataEntry);
-                    } catch (Exception e) {
-                        logger.catching(e);
-                    }
-                    return;
-                }
-
-                // 接收到的消息进行预处理
-                for (SmartFilter<T> h : ioServerConfig.getFilters()) {
-                    h.readFilter(session, dataEntry, readSize);
-                }
-                try {
-                    for (SmartFilter<T> h : ioServerConfig.getFilters()) {
-                        h.processFilter(session, dataEntry);
-                    }
-                    ioServerConfig.getProcessor().process(session, dataEntry);
-                } catch (Exception e) {
-                    logger.catching(e);
-                    for (SmartFilter<T> h : ioServerConfig.getFilters()) {
-                        h.processFailHandler(session, dataEntry, e);
-                    }
-                }
+    private void receive0(AioSession<T> session, T dataEntry, int readSize) {
+        if (dataEntry == null) {
+            return;
+        }
+        if (ioServerConfig.getFilters() == null) {
+            try {
+                ioServerConfig.getProcessor().process(session, dataEntry);
+            } catch (Exception e) {
+                logger.catching(e);
             }
-        });
+            return;
+        }
 
+        // 接收到的消息进行预处理
+        for (SmartFilter<T> h : ioServerConfig.getFilters()) {
+            h.readFilter(session, dataEntry, readSize);
+        }
+        try {
+            for (SmartFilter<T> h : ioServerConfig.getFilters()) {
+                h.processFilter(session, dataEntry);
+            }
+            ioServerConfig.getProcessor().process(session, dataEntry);
+        } catch (Exception e) {
+            logger.catching(e);
+            for (SmartFilter<T> h : ioServerConfig.getFilters()) {
+                h.processFailHandler(session, dataEntry, e);
+            }
+        }
     }
 }
