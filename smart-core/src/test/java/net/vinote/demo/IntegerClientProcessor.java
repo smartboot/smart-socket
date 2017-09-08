@@ -1,6 +1,6 @@
 package net.vinote.demo;
 
-import org.smartboot.socket.service.process.MessageProcessor;
+import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
 
 /**

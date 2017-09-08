@@ -8,7 +8,7 @@ import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
-import org.smartboot.socket.service.filter.SmartFilter;
+import org.smartboot.socket.service.SmartFilter;
 import org.smartboot.socket.transport.AioQuickClient;
 
 import java.nio.channels.AsynchronousChannelGroup;

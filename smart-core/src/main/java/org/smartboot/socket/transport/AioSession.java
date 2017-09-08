@@ -2,7 +2,7 @@ package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.service.filter.SmartFilter;
+import org.smartboot.socket.service.SmartFilter;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -245,10 +245,9 @@ public class AioSession<T> {
     }
 
     public final void removeAttribute(String key) {
-        if (attribute == null) {
-            return;
+        if (attribute != null) {
+            attribute.remove(key);
         }
-        attribute.remove(key);
     }
 
 
@@ -272,9 +271,6 @@ public class AioSession<T> {
      * @param readSize
      */
     private void receive0(AioSession<T> session, T dataEntry, int readSize) {
-        if (dataEntry == null) {
-            return;
-        }
         if (ioServerConfig.getFilters() == null) {
             try {
                 ioServerConfig.getProcessor().process(session, dataEntry);

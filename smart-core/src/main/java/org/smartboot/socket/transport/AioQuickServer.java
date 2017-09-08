@@ -3,8 +3,8 @@ package org.smartboot.socket.transport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.Protocol;
-import org.smartboot.socket.service.filter.SmartFilter;
-import org.smartboot.socket.service.process.MessageProcessor;
+import org.smartboot.socket.service.SmartFilter;
+import org.smartboot.socket.service.MessageProcessor;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -33,7 +33,7 @@ public class AioQuickServer<T> {
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, "Smart-Socket-" + threadIndex.incrementAndGet());
+                return new Thread(r, "AIO-Thread-" + threadIndex.incrementAndGet());
             }
         });
 

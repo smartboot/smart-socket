@@ -5,7 +5,7 @@ import org.smartboot.socket.protocol.p2p.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
-import org.smartboot.socket.service.filter.SmartFilter;
+import org.smartboot.socket.service.SmartFilter;
 import org.smartboot.socket.transport.AioQuickServer;
 
 import java.io.IOException;

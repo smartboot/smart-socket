@@ -5,7 +5,7 @@ import org.smartboot.socket.protocol.p2p.P2PSession;
 import org.smartboot.socket.protocol.p2p.Session;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
-import org.smartboot.socket.service.process.MessageProcessor;
+import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
 
 public class P2PClientMessageProcessor implements MessageProcessor<BaseMessage> {

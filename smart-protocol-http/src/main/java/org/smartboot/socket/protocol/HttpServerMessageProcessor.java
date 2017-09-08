@@ -3,11 +3,10 @@ package org.smartboot.socket.protocol;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.service.process.MessageProcessor;
+import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

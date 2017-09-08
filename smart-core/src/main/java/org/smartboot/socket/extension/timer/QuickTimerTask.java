@@ -13,7 +13,7 @@ import java.util.TimerTask;
  *
  */
 public abstract class QuickTimerTask extends TimerTask {
-	private static Logger logger = LogManager.getLogger(QuickTimerTask.class);
+	private static final Logger logger = LogManager.getLogger(QuickTimerTask.class);
 	private static Timer timer = new Timer("Quick Timer", true);
 
 	public QuickTimerTask() {

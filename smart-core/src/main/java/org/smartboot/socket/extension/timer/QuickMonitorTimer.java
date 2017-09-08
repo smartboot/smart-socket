@@ -2,7 +2,7 @@ package org.smartboot.socket.extension.timer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.service.filter.SmartFilter;
+import org.smartboot.socket.service.SmartFilter;
 import org.smartboot.socket.transport.AioSession;
 
 import java.util.concurrent.TimeUnit;

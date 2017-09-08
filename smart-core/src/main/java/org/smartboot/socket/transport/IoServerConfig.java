@@ -1,8 +1,8 @@
 package org.smartboot.socket.transport;
 
 import org.smartboot.socket.protocol.Protocol;
-import org.smartboot.socket.service.filter.SmartFilter;
-import org.smartboot.socket.service.process.MessageProcessor;
+import org.smartboot.socket.service.MessageProcessor;
+import org.smartboot.socket.service.SmartFilter;
 
 /**
  * Quickly服务端/客户端配置信息 T:解码后生成的对象类型，S:
@@ -48,11 +48,10 @@ final class IoServerConfig<T> {
     private Protocol<T> protocol;
 
 
-    private static final int CPU_NUM = Runtime.getRuntime().availableProcessors();
     /**
      * 服务器处理线程数
      */
-    private int threadNum = CPU_NUM;
+    private int threadNum = Runtime.getRuntime().availableProcessors();
 
     /**
      * true:服务器,false:客户端

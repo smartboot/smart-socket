@@ -1,7 +1,7 @@
 package org.smartboot.socket.protocol.p2p.client;
 
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
-import org.smartboot.socket.service.process.MessageProcessor;
+import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
 
