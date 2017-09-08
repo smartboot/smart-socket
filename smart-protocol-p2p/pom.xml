@@ -12,7 +12,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.smartboot.socket</groupId>
-			<artifactId>smart-core</artifactId>
+			<artifactId>aio-core</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>commons-lang</groupId>

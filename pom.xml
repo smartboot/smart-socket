@@ -23,8 +23,8 @@
 		<dependencies>
 			<dependency>
 				<groupId>org.smartboot.socket</groupId>
-				<artifactId>smart-core</artifactId>
-				<version>${project.version}</version>
+				<artifactId>aio-core</artifactId>
+				<version>1.0.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.smartboot.socket</groupId>
@@ -100,7 +100,7 @@
 		</pluginRepository>
 	</pluginRepositories>
 	<modules>
-		<module>smart-core</module>
+		<module>aio-core</module>
 		<module>smart-protocol-p2p</module>
 		<module>smart-protocol-http</module>
 	</modules>

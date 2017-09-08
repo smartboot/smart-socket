@@ -17,7 +17,7 @@
 |消息数|224484842|
 
 ## 工程结构
-1. smart-core		
+1. aio-core		
 smart-socket的核心代码
 2. smart-protocol-http		
 简单实现Http协议编解码，目前的实现并不规范，仅合适ab测试
@@ -26,7 +26,7 @@ smart-socket的核心代码
 
 ## 近期项目安排（分支：1.0.0-DEV）
 1. 实现相对规范的Http协议编解码
-2. 继续重构优化smart-core代码
+2. 继续重构优化aio-core代码
 
 ## 开发手册
 基于smart-socket进行通信服务的开发，主要有三个步骤：
