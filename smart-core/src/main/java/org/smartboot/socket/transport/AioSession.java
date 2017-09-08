@@ -146,6 +146,7 @@ public class AioSession<T> {
             serverFlowLimit.set(false);
             channel.read(readBuffer, this, readCompletionHandler);
         }
+
     }
 
     public void write(final ByteBuffer buffer) throws IOException {
@@ -154,6 +155,11 @@ public class AioSession<T> {
         }
         buffer.flip();
         try {
+            //触发流控
+            if (serverFlowLimit != null && !serverFlowLimit.get() && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
+                serverFlowLimit.set(true);
+            }
+            //正常读取
             writeCacheQueue.put(buffer);
         } catch (InterruptedException e) {
             logger.error(e);
@@ -234,12 +240,7 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
 
-        //触发流控
-        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
-            serverFlowLimit.set(true);
-        }
-        //正常读取
-        else {
+        if (serverFlowLimit == null || !serverFlowLimit.get()) {
             channel.read(readBuffer, this, readCompletionHandler);
         }
     }
