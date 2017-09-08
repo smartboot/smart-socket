@@ -154,20 +154,12 @@ public class AioSession<T> {
             return;
         }
         buffer.flip();
-        //触发流控
-        if (serverFlowLimit != null && !serverFlowLimit.get() && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
-            serverFlowLimit.set(true);
+        try {
+            //正常读取
+            writeCacheQueue.put(buffer);
+        } catch (InterruptedException e) {
+            logger.error(e);
         }
-        while (!writeCacheQueue.offer(buffer)) {
-            Thread.interrupted();
-        }
-//        try {
-//
-//            //正常读取
-//            writeCacheQueue.put(buffer);
-//        } catch (InterruptedException e) {
-//            logger.error(e);
-//        }
         if (semaphore.tryAcquire()) {
             writeToChannel(null);
         }
@@ -244,7 +236,10 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
 
-        if (serverFlowLimit == null || !serverFlowLimit.get()) {
+        //触发流控
+        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
+            serverFlowLimit.set(true);
+        } else {
             channel.read(readBuffer, this, readCompletionHandler);
         }
     }
