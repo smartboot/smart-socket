@@ -3,12 +3,11 @@ package org.smartboot.socket.transport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.Protocol;
-import org.smartboot.socket.service.SmartFilter;
 import org.smartboot.socket.service.MessageProcessor;
+import org.smartboot.socket.service.SmartFilter;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -25,8 +24,7 @@ public class AioQuickServer<T> {
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private IoServerConfig<T> config = new IoServerConfig<T>(true);
-    private ReadCompletionHandler<T> readCompletionHandler = new ReadCompletionHandler<T>();
-    private WriteCompletionHandler<T> writeCompletionHandler = new WriteCompletionHandler<T>();
+    private AioCompletionHandler aioCompletionHandler = new AioCompletionHandler();
 
     public void start() throws IOException {
         final AtomicInteger threadIndex = new AtomicInteger(0);
@@ -42,15 +40,14 @@ public class AioQuickServer<T> {
             @Override
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
                 serverSocketChannel.accept(attachment, this);
-                try {
-                    channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-                    channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-                } catch (IOException e) {
-                    LOGGER.catching(e);
-                }
-                AioSession<T> session = new AioSession<T>(channel, config, readCompletionHandler, writeCompletionHandler);
-                config.getProcessor().initSession(session);
-                session.readFromChannel();
+//                try {
+//                    channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+//                    channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
+//                } catch (IOException e) {
+//                    LOGGER.catching(e);
+//                }
+                //连接成功则构造AIOSession对象
+                new AioSession<T>(channel, config, aioCompletionHandler);
             }
 
             @Override

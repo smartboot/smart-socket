@@ -3,8 +3,8 @@ package org.smartboot.socket.transport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.Protocol;
-import org.smartboot.socket.service.SmartFilter;
 import org.smartboot.socket.service.MessageProcessor;
+import org.smartboot.socket.service.SmartFilter;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -26,16 +26,20 @@ public class AioQuickClient<T> {
     private AsynchronousChannelGroup asynchronousChannelGroup;
 
     /**
-     * 服务配置
+     * 客户端服务配置
      */
     private IoServerConfig<T> config = new IoServerConfig<T>(false);
 
+    /**
+     * @param asynchronousChannelGroup
+     * @throws IOException
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        final AioSession<T> session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>());
-        config.getProcessor().initSession(session);
-        session.readFromChannel();
+        new AioSession<T>(socketChannel, config, new AioCompletionHandler());
     }
 
     /**

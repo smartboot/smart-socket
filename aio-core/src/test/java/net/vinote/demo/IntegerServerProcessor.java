@@ -22,7 +22,7 @@ public class IntegerServerProcessor implements MessageProcessor<Integer> {
     }
 
     @Override
-    public void initSession(AioSession<Integer> session) {
+    public void registerAioSession(AioSession<Integer> session) {
 
     }
 }

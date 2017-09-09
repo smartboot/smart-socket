@@ -27,7 +27,7 @@ public class P2PClientMessageProcessor implements MessageProcessor<BaseMessage> 
     }
 
     @Override
-    public void initSession(AioSession<BaseMessage> ioSession) {
+    public void registerAioSession(AioSession<BaseMessage> ioSession) {
         session = new P2PSession(ioSession);
     }
 

@@ -70,7 +70,7 @@ smart-socket的核心代码
 上述代码很简单，一个整数的长度为4byte，所以只要长度大于等于4，我们就能解析到一个整数。
 
 ### 消息处理
-业务消息的处理需要实现接口`MessageProcessor`，该接口只有两个方法：`process`,`initSession `。其中 **initSession**仅在建立连接时调用一次，可在该方法中进行会话的初始化操作。**process**则会处理每一个接收到的业务消息。
+业务消息的处理需要实现接口`MessageProcessor`，该接口只有两个方法：`process`,`registerAioSession `。其中 **registerAioSession**仅在建立连接时调用一次，可在该方法中进行会话的初始化操作。**process**则会处理每一个接收到的业务消息。
 #### 服务端
 	public class IntegerServerProcessor implements MessageProcessor<Integer> {
 	    @Override
@@ -81,7 +81,7 @@ smart-socket的核心代码
 	    }
 	
 	    @Override
-	    public void initSession(AioSession<Integer> session) {
+	    public void registerAioSession(AioSession<Integer> session) {
 	
 	    }
 	}
@@ -96,7 +96,7 @@ smart-socket的核心代码
 	    }
 	
 	    @Override
-	    public void initSession(AioSession<Integer> session) {
+	    public void registerAioSession(AioSession<Integer> session) {
 	        this.session = session;
 	    }
 	

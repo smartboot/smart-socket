@@ -27,7 +27,7 @@ public class P2PMaxConnectClient {
                             }
 
                             @Override
-                            public void initSession(AioSession<BaseMessage> session) {
+                            public void registerAioSession(AioSession<BaseMessage> session) {
 
                             }
                         })

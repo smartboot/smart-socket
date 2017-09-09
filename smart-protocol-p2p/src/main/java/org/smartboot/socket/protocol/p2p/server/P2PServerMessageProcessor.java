@@ -30,7 +30,7 @@ public final class P2PServerMessageProcessor implements MessageProcessor<BaseMes
     }
 
     @Override
-    public void initSession(AioSession<BaseMessage> session) {
+    public void registerAioSession(AioSession<BaseMessage> session) {
         session.setAttribute(P2PSession.SESSION_KEY, new P2PSession(session));
     }
 

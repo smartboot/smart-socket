@@ -74,7 +74,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
     }
 
     @Override
-    public void initSession(AioSession<HttpV2Entity> session) {
+    public void registerAioSession(AioSession<HttpV2Entity> session) {
 
     }
 }

@@ -20,10 +20,10 @@ public interface MessageProcessor<T> {
     public void process(AioSession<T> session, T msg);
 
     /**
-     * 初始化业务层Session对象
+     * 往消息处理中注册AioSession对象
      *
      * @param session 传输层会话
      * @return
      */
-    public void initSession(AioSession<T> session);
+    public void registerAioSession(AioSession<T> session);
 }

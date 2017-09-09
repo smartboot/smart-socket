@@ -15,8 +15,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.util.AbstractMap.SimpleEntry;
-
 /**
  * AIO传输层会话
  * Created by seer on 2017/6/29.
@@ -50,17 +48,17 @@ public class AioSession<T> {
     private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
 
     /**
-     * 缓存传输层读取到的数据流
+     * Channel读写操作回调Handler
      */
-    private ByteBuffer readBuffer;
-
-    private ReadCompletionHandler<T> readCompletionHandler;
-    private WriteCompletionHandler<T> writeCompletionHandler;
-
+    private AioCompletionHandler aioCompletionHandler;
     /**
-     * 数据输出Handler附件
+     * 读回调附件
      */
-    private SimpleEntry<AioSession<T>, ByteBuffer> writeAttach = new SimpleEntry<AioSession<T>, ByteBuffer>(this, null);
+    private Attachment readAttach = new Attachment(true);
+    /**
+     * 写回调附件
+     */
+    private Attachment writeAttach = new Attachment(false);
 
 
     /**
@@ -82,31 +80,33 @@ public class AioSession<T> {
 
     private IoServerConfig<T> ioServerConfig;
 
-    public AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler) {
-        this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
+    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, AioCompletionHandler aioCompletionHandler) {
         this.channel = channel;
+        this.aioCompletionHandler = aioCompletionHandler;
         this.serverFlowLimit = config.isServer() ? new AtomicBoolean(false) : null;
-        this.readCompletionHandler = readCompletionHandler;
-        this.writeCompletionHandler = writeCompletionHandler;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
+        config.getProcessor().registerAioSession(this);//往处理中注册当前对象
+        readFromChannel();//注册消息读事件
+        readAttach.setBuffer(ByteBuffer.allocate(config.getReadBufferSize()));
     }
 
     /**
      * 触发AIO的写操作,
      * <p>需要调用控制同步</p>
      */
-    void writeToChannel(ByteBuffer writeBuffer) {
+    void writeToChannel() {
         if (isInvalid()) {
             close();
             logger.warn("end write because of aioSession's status is" + status);
             return;
         }
+        ByteBuffer writeBuffer = writeAttach.buffer;
         ByteBuffer nextBuffer = writeCacheQueue.peek();//为null说明队列已空
         if (writeBuffer == null && nextBuffer == null) {
             semaphore.release();
             if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
-                writeToChannel(null);
+                writeToChannel();
             }
             return;
         }
@@ -134,8 +134,8 @@ public class AioSession<T> {
             writeBuffer.flip();
         }
 
-        writeAttach.setValue(writeBuffer);
-        channel.write(writeBuffer, writeAttach, writeCompletionHandler);
+        writeAttach.setBuffer(writeBuffer);
+        channel.write(writeBuffer, writeAttach, aioCompletionHandler);
     }
 
     /**
@@ -144,7 +144,7 @@ public class AioSession<T> {
     void tryReleaseFlowLimit() {
         if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
             serverFlowLimit.set(false);
-            channel.read(readBuffer, this, readCompletionHandler);
+            channel.read(readAttach.getBuffer(), readAttach, aioCompletionHandler);
         }
 
     }
@@ -161,7 +161,7 @@ public class AioSession<T> {
             logger.error(e);
         }
         if (semaphore.tryAcquire()) {
-            writeToChannel(null);
+            writeToChannel();
         }
     }
 
@@ -219,6 +219,7 @@ public class AioSession<T> {
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
     void readFromChannel() {
+        ByteBuffer readBuffer = readAttach.getBuffer();
         readBuffer.flip();
         // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
         T dataEntry;
@@ -240,7 +241,7 @@ public class AioSession<T> {
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit.set(true);
         } else {
-            channel.read(readBuffer, this, readCompletionHandler);
+            channel.read(readBuffer, readAttach, aioCompletionHandler);
         }
     }
 
@@ -294,6 +295,35 @@ public class AioSession<T> {
             for (SmartFilter<T> h : ioServerConfig.getFilters()) {
                 h.processFailHandler(session, dataEntry, e);
             }
+        }
+    }
+
+    class Attachment {
+        private ByteBuffer buffer;
+        /**
+         * true:read,false:write
+         */
+        private final boolean read;
+
+        public Attachment(boolean optType) {
+            this.read = optType;
+        }
+
+        public AioSession getAioSession() {
+            return AioSession.this;
+        }
+
+
+        public ByteBuffer getBuffer() {
+            return buffer;
+        }
+
+        public void setBuffer(ByteBuffer buffer) {
+            this.buffer = buffer;
+        }
+
+        public boolean isRead() {
+            return read;
         }
     }
 }
