@@ -6,18 +6,18 @@ package org.smartboot.socket.transport;
  * @author Seer
  * @version V1.0 , 2017/9/5
  */
-public class SessionStatus {
+public enum SessionStatus {
     /**
      * Session状态:已关闭
      */
-    public static final byte SESSION_STATUS_CLOSED = 1,
+    SESSION_STATUS_CLOSED,
 
     /**
      * Session状态:关闭中
      */
-    SESSION_STATUS_CLOSING = 2,
+    SESSION_STATUS_CLOSING,
     /**
      * Session状态:正常
      */
-    SESSION_STATUS_ENABLED = 3;
+    SESSION_STATUS_ENABLED;
 }

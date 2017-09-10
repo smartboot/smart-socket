@@ -35,7 +35,7 @@ public class AioSession<T> {
     /**
      * 会话当前状态
      */
-    private volatile byte status = SessionStatus.SESSION_STATUS_ENABLED;
+    private volatile SessionStatus status = SessionStatus.SESSION_STATUS_ENABLED;
 
     /**
      * 会话属性,延迟创建以减少内存消耗
