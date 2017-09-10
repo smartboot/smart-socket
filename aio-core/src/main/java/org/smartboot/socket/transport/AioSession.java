@@ -87,8 +87,8 @@ public class AioSession<T> {
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
         config.getProcessor().registerAioSession(this);//往处理中注册当前对象
-        readFromChannel();//注册消息读事件
         readAttach.setBuffer(ByteBuffer.allocate(config.getReadBufferSize()));
+        readFromChannel();//注册消息读事件
     }
 
     /**
