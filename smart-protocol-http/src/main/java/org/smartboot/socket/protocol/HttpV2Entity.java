@@ -36,10 +36,10 @@ public class HttpV2Entity {
 
     private int contentLength = -1;
 
-  public   DataStream dataStream = new DataStream("\r\n\r\n".getBytes());
-    int chunkedBlockSize = -1;
-   public BinaryBuffer binaryBuffer = new BinaryBuffer(1024);
-  public  int binReadLength = 0;
+    public DataStream dataStream = new DataStream("\r\n\r\n".getBytes());
+    public int chunkedBlockSize = -1;
+    public BinaryBuffer binaryBuffer = new BinaryBuffer(1024);
+    public int binReadLength = 0;
     private InputStream inputStream = new InputStream() {
         @Override
         public int read() throws IOException {
@@ -47,7 +47,11 @@ public class HttpV2Entity {
                 return -1;
             }
             try {
-                return binaryBuffer.take();
+                byte b = binaryBuffer.take();
+                if (b == -1) {
+                    partFlag = HttpPart.END;
+                }
+                return b;
             } catch (InterruptedException e) {
                 throw new IOException(e);
             }
@@ -93,9 +97,6 @@ public class HttpV2Entity {
         //重置
         dataStream.reset();
     }
-
-
-
 
 
     public HttpV2Entity(AioSession<HttpV2Entity> session) {

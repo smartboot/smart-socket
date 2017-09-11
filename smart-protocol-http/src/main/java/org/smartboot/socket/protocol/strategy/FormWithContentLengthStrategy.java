@@ -10,10 +10,10 @@ import org.smartboot.socket.protocol.HttpV2Entity;
  * @author Seer
  * @version V1.0 , 2017/9/3
  */
-public class FormUrlencodedContentLengthStrategy implements PostDecodeStrategy {
+public class FormWithContentLengthStrategy implements PostDecodeStrategy {
     @Override
     public boolean waitForBodyFinish() {
-        return false;
+        return true;
     }
 
     @Override

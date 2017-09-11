@@ -3,12 +3,12 @@ package org.smartboot.socket.protocol.strategy;
 import org.smartboot.socket.protocol.HttpV2Entity;
 
 /**
- * Post普通表单提交
+ * 以流的形式传输并包含Content-Length的解码方式
  *
  * @author Seer
  * @version V1.0 , 2017/9/3
  */
-public class FormDataBoundaryStrategy implements PostDecodeStrategy {
+public class StreamWithContentLengthStrategy implements PostDecodeStrategy {
     @Override
     public boolean waitForBodyFinish() {
         return false;

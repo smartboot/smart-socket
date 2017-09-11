@@ -1,9 +1,12 @@
 package org.smartboot.socket.protocol;
 
 import org.apache.commons.lang.StringUtils;
-import org.smartboot.socket.protocol.strategy.FormDataBoundaryStrategy;
-import org.smartboot.socket.protocol.strategy.FormUrlencodedContentLengthStrategy;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.protocol.strategy.ChunkedStrategy;
+import org.smartboot.socket.protocol.strategy.FormWithContentLengthStrategy;
 import org.smartboot.socket.protocol.strategy.PostDecodeStrategy;
+import org.smartboot.socket.protocol.strategy.StreamWithContentLengthStrategy;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
@@ -15,14 +18,17 @@ import java.util.Map;
  * Created by seer on 2017/6/20.
  */
 public class HttpV2Protocol implements Protocol<HttpV2Entity> {
+    private static final Logger LOGGER = LogManager.getLogger(HttpV2Protocol.class);
     private static final String HTTP_ENTITY = "_http_entity_";
-    private static final String CONTENT_LENGTH_KEY = "CONTENT_KEY";
-    private static final String FORM_DATA_BOUNDARY_KEY = "form-data_boundary";
+    private static final String STREAM_BODY = "STREAM_BODY";
+    private static final String BLOCK_BODY = "BLOCK_BODY";
+    private static final String CHUNKED_BODY = "CHUNKED_BODY";
     private Map<String, PostDecodeStrategy> strategyMap = new HashMap<>();
 
     {
-        strategyMap.put(CONTENT_LENGTH_KEY, new FormUrlencodedContentLengthStrategy());
-        strategyMap.put(FORM_DATA_BOUNDARY_KEY, new FormDataBoundaryStrategy());
+        strategyMap.put(BLOCK_BODY, new FormWithContentLengthStrategy());
+        strategyMap.put(STREAM_BODY, new StreamWithContentLengthStrategy());
+        strategyMap.put(CHUNKED_BODY,new ChunkedStrategy());
     }
 
     @Override
@@ -61,67 +67,6 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
                             returnEntity = true;
                         }
                     }
-
-//                    //普通form表单,全量解析
-//                    if (entity.getContentType() == null || StringUtils.startsWith(entity.getContentType(), "application/x-www-form-urlencoded")) {
-//                        //识别body长度
-//                        if (entity.dataStream.getContentLength() <= 0) {
-//                            entity.dataStream.setContentLength(entity.getContentLength());
-//                        }
-//                        if (entity.dataStream.append(buffer.get())) {
-//                            entity.decodeNormalBody();
-//                            entity.partFlag = HttpPart.END;
-//                            returnEntity = true;
-//                        }
-//                    }
-//                    //二进制文件以流形式处理
-//                    else if (StringUtils.startsWith(entity.getContentType(), "multipart/form-data")) {
-//                        if (entity.getHeadMap().containsKey(HttpV2Entity.CONTENT_LENGTH)) {
-//                            if (entity.getContentLength() > 0) {
-//                                try {
-//                                    entity.binaryBuffer.put(buffer.get());
-//                                    entity.binReadLength++;
-//                                    if (entity.binReadLength == entity.getContentLength()) {
-//                                        entity.partFlag = HttpPart.END;
-//                                        break;
-//                                    }
-//                                } catch (InterruptedException e) {
-//                                    e.printStackTrace();
-//                                }
-//                            } else {
-//                                throw new RuntimeException("unkonw length");
-//                            }
-//                        } else if (entity.getHeadMap().containsKey(HttpV2Entity.TRANSFER_ENCODING)) {
-//                            //解析chunkedBlockSize
-//                            if (entity.chunkedBlockSize < 0) {
-//                                entity.dataStream.setEndFLag("\r\n".getBytes());
-//                                if (entity.dataStream.append(buffer.get())) {
-//                                    int blockSize = NumberUtils.toInt(entity.dataStream.toString(), -1);
-//                                    if (blockSize < 0) {
-//                                        throw new RuntimeException("decode block size error:" + entity.dataStream.toString());
-//                                    }
-//                                    entity.chunkedBlockSize = blockSize;
-//                                    entity.dataStream.reset();
-//                                    //解码完成
-//                                    if (entity.chunkedBlockSize == 0) {
-//                                        entity.partFlag = HttpPart.END;
-//                                        break;
-//                                    }
-//                                }
-//                            } else {
-//                                try {
-//                                    entity.binaryBuffer.put(buffer.get());
-//                                    entity.binReadLength++;
-//                                    if (entity.binReadLength == entity.chunkedBlockSize) {
-//                                        entity.binReadLength = 0;
-//                                        entity.chunkedBlockSize = -1;
-//                                    }
-//                                } catch (InterruptedException e) {
-//                                    e.printStackTrace();
-//                                }
-//                            }
-//                        }
-//                    }
                     break;
                 }
                 default: {
@@ -141,13 +86,20 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
     }
 
     private void selectDecodeStrategy(HttpV2Entity entity) {
-        if (entity.getContentLength() > 0 && StringUtils.startsWith(entity.getContentType(), "application/x-www-form-urlencoded")) {
-            entity.postDecodeStrategy = strategyMap.get(CONTENT_LENGTH_KEY);
-        } else if (StringUtils.startsWith(entity.getContentType(), "multipart/form-data; boundary") && entity.getContentLength() > 0) {
-            entity.postDecodeStrategy = strategyMap.get(FORM_DATA_BOUNDARY_KEY);
+        if (entity.getContentLength() > 0) {
+            if (entity.getContentLength() > 0 && StringUtils.startsWith(entity.getContentType(), "application/x-www-form-urlencoded")) {
+                entity.postDecodeStrategy = strategyMap.get(BLOCK_BODY);
+            } else {
+                entity.postDecodeStrategy = strategyMap.get(STREAM_BODY);
+            }
+        }
+        //无Content-Length标识
+        else if (entity.getHeadMap().containsKey(HttpV2Entity.TRANSFER_ENCODING)) {
+            entity.postDecodeStrategy = strategyMap.get(CHUNKED_BODY);
         } else {
             throw new UnsupportedOperationException();
         }
+        LOGGER.info(entity.postDecodeStrategy);
     }
 
 }
