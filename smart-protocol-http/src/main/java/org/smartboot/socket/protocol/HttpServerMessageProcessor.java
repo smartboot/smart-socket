@@ -6,7 +6,10 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,7 +26,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
     @Override
     public void process(final AioSession<HttpV2Entity> session, final HttpV2Entity entry) {
         //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
-        if (StringUtils.equalsIgnoreCase(entry.getContentType(), "multipart/form-data")) {
+        if (StringUtils.equalsIgnoreCase(entry.getMethod(), "POST")) {
             executorService.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -40,19 +43,29 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
     }
 
     private void process0(AioSession<HttpV2Entity> session, HttpV2Entity entry) {
-//        System.out.println(entry);
-//        InputStream in=entry.getInputStream();
-//        byte[] data=new byte[1023];
-//        int size=0;
-//        StringBuffer sb=new StringBuffer();
-//        try {
-//            while((size=in.read(data))!=-1){
+        System.out.println(entry);
+        InputStream in=entry.getInputStream();
+        try {
+            FileOutputStream fos=new FileOutputStream("/Users/zhengjunwei/Downloads/1.png");
+
+        byte[] data=new byte[1023];
+        int size=0;
+        try {
+            while((size=in.read(data))!=-1){
+                fos.write(data,0,size);
 //             sb.append(new String(data,0,size));
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        System.out.println(sb.toString());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+            try {
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         buffer.put(("HTTP/1.1 200 OK\n" +
                 "Server: seer/1.4.4\n" +

@@ -3,7 +3,6 @@ package org.smartboot.socket.protocol;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.protocol.strategy.ChunkedStrategy;
 import org.smartboot.socket.protocol.strategy.FormWithContentLengthStrategy;
 import org.smartboot.socket.protocol.strategy.PostDecodeStrategy;
 import org.smartboot.socket.protocol.strategy.StreamWithContentLengthStrategy;
@@ -22,13 +21,11 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
     private static final String HTTP_ENTITY = "_http_entity_";
     private static final String STREAM_BODY = "STREAM_BODY";
     private static final String BLOCK_BODY = "BLOCK_BODY";
-    private static final String CHUNKED_BODY = "CHUNKED_BODY";
     private Map<String, PostDecodeStrategy> strategyMap = new HashMap<>();
 
     {
         strategyMap.put(BLOCK_BODY, new FormWithContentLengthStrategy());
         strategyMap.put(STREAM_BODY, new StreamWithContentLengthStrategy());
-        strategyMap.put(CHUNKED_BODY,new ChunkedStrategy());
     }
 
     @Override
@@ -63,6 +60,11 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
 //                    System.out.println(entity.postDecodeStrategy);
                     if (entity.postDecodeStrategy.isDecodeEnd(buffer.get(), entity)) {
                         entity.partFlag = HttpPart.END;
+                        try {
+                            entity.binaryBuffer.put((byte) -1);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         if (entity.postDecodeStrategy.waitForBodyFinish()) {
                             returnEntity = true;
                         }
@@ -92,10 +94,6 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
             } else {
                 entity.postDecodeStrategy = strategyMap.get(STREAM_BODY);
             }
-        }
-        //无Content-Length标识
-        else if (entity.getHeadMap().containsKey(HttpV2Entity.TRANSFER_ENCODING)) {
-            entity.postDecodeStrategy = strategyMap.get(CHUNKED_BODY);
         } else {
             throw new UnsupportedOperationException();
         }

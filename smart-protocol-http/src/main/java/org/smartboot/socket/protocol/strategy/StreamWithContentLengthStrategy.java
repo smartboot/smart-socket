@@ -25,8 +25,8 @@ public class StreamWithContentLengthStrategy implements PostDecodeStrategy {
         } catch (InterruptedException e) {
             throw new RuntimeException("invalid content length");
         }
-        entity.binReadLength++;
-        return entity.getContentLength() == entity.binReadLength;
+        entity.binWriteLength++;
+        return entity.getContentLength() == entity.binWriteLength;
     }
 
 }
