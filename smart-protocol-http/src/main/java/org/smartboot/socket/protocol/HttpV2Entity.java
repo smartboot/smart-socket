@@ -7,8 +7,6 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.smartboot.socket.protocol.strategy.PostDecodeStrategy;
 import org.smartboot.socket.transport.AioSession;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,28 +36,7 @@ public class HttpV2Entity {
     private int contentLength = -1;
 
     public DataStream dataStream = new DataStream("\r\n\r\n".getBytes());
-    public BinaryBuffer binaryBuffer = new BinaryBuffer(1024);
-    public int binWriteLength = 0;
-    public int binReadLength = 0;
-    private InputStream inputStream = new BufferedInputStream(new InputStream() {
-        public int read() throws IOException {
-            if (binReadLength == contentLength) {
-                return -1;
-            }
-            try {
-                return binaryBuffer.take();
-            } catch (InterruptedException e) {
-                throw new IOException(e);
-            } finally {
-                binReadLength++;
-            }
-        }
-
-        @Override
-        public int available() throws IOException {
-            return binWriteLength < contentLength ? binaryBuffer.size() : 0;
-        }
-    });
+    public SmartHttpInputStream smartHttpInputStream = new SmartHttpInputStream(1);
     /**
      * 0:消息头
      * 1:消息体
@@ -101,7 +78,7 @@ public class HttpV2Entity {
     }
 
     public InputStream getInputStream() {
-        return inputStream;
+        return smartHttpInputStream;
     }
 
     public void setHeader(String name, String value) {

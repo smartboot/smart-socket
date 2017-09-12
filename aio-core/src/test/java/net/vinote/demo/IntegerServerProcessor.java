@@ -2,6 +2,7 @@ package net.vinote.demo;
 
 import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.StateMachineEnum;
 
 import java.io.IOException;
 
@@ -22,7 +23,7 @@ public class IntegerServerProcessor implements MessageProcessor<Integer> {
     }
 
     @Override
-    public void registerAioSession(AioSession<Integer> session) {
+    public void stateEvent(AioSession<Integer> session, StateMachineEnum stateMachineEnum) {
 
     }
 }

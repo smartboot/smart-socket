@@ -3,13 +3,12 @@ package org.smartboot.socket.transport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.service.SmartFilter;
+import org.smartboot.socket.util.StateMachineEnum;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,16 +30,15 @@ public class AioSession<T> {
      */
     private final int sessionId = NEXT_ID.getAndIncrement();
 
-
     /**
      * 会话当前状态
      */
     private volatile SessionStatus status = SessionStatus.SESSION_STATUS_ENABLED;
 
     /**
-     * 会话属性,延迟创建以减少内存消耗
+     * 附件对象
      */
-    private Map<String, Object> attribute;
+    private Object attachment;
 
     /**
      * 响应消息缓存队列
@@ -59,7 +57,6 @@ public class AioSession<T> {
      * 写回调附件
      */
     private Attachment writeAttach = new Attachment(false);
-
 
     /**
      * 数据read限流标志,仅服务端需要进行限流
@@ -86,9 +83,9 @@ public class AioSession<T> {
         this.serverFlowLimit = config.isServer() ? new AtomicBoolean(false) : null;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
-        config.getProcessor().registerAioSession(this);//往处理中注册当前对象
+        config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION);//触发状态机
         readAttach.setBuffer(ByteBuffer.allocate(config.getReadBufferSize()));
-        readFromChannel();//注册消息读事件
+        readFromChannel(0);//注册消息读事件
     }
 
     /**
@@ -194,11 +191,6 @@ public class AioSession<T> {
     }
 
 
-    @SuppressWarnings("unchecked")
-    public final <T1> T1 getAttribute(String key) {
-        return attribute == null ? null : (T1) attribute.get(key);
-    }
-
     /**
      * 获取当前Session的唯一标识
      *
@@ -217,16 +209,27 @@ public class AioSession<T> {
 
     /**
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
+     *
+     * @param readNum 读取的数据长度,-1表示EOF
      */
-    void readFromChannel() {
+    void readFromChannel(int readNum) {
+        if (readNum == -1) {
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN);
+            return;
+        }
+
         ByteBuffer readBuffer = readAttach.getBuffer();
         readBuffer.flip();
-        // 将从管道流中读取到的字节数据添加至当前会话中以便进行消息解析
-        T dataEntry;
-        int remain = 0;
-        while ((remain = readBuffer.remaining()) > 0 && (dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this)) != null) {
+
+        while (readBuffer.hasRemaining()) {
+            int remain = readBuffer.remaining();
+            T dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this);
+            if (dataEntry == null) {//现有读取的数据不满足解码所需
+                break;
+            }
             receive0(this, dataEntry, remain - readBuffer.remaining());
         }
+
         //数据读取完毕
         if (readBuffer.remaining() == 0) {
             readBuffer.clear();
@@ -245,20 +248,13 @@ public class AioSession<T> {
         }
     }
 
-    public final void removeAttribute(String key) {
-        if (attribute != null) {
-            attribute.remove(key);
-        }
+    public Object getAttachment() {
+        return attachment;
     }
 
-
-    public final void setAttribute(String key, Object value) {
-        if (attribute == null) {
-            attribute = new HashMap<String, Object>();
-        }
-        attribute.put(key, value);
+    public void setAttachment(Object attachment) {
+        this.attachment = attachment;
     }
-
 
     public final void write(T t) throws IOException {
         write(ioServerConfig.getProtocol().encode(t, this));
@@ -296,6 +292,10 @@ public class AioSession<T> {
                 h.processFailHandler(session, dataEntry, e);
             }
         }
+    }
+
+    IoServerConfig<T> getIoServerConfig() {
+        return ioServerConfig;
     }
 
     class Attachment {

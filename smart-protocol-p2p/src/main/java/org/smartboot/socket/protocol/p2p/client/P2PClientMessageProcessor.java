@@ -7,6 +7,7 @@ import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.StateMachineEnum;
 
 public class P2PClientMessageProcessor implements MessageProcessor<BaseMessage> {
     private P2pServiceMessageFactory serviceMessageFactory;
@@ -27,8 +28,13 @@ public class P2PClientMessageProcessor implements MessageProcessor<BaseMessage> 
     }
 
     @Override
-    public void registerAioSession(AioSession<BaseMessage> ioSession) {
-        session = new P2PSession(ioSession);
+    public void stateEvent(AioSession<BaseMessage> ioSession, StateMachineEnum stateMachineEnum) {
+        switch (stateMachineEnum) {
+            case NEW_SESSION:
+                session = new P2PSession(ioSession);
+                break;
+        }
+
     }
 
     public Session<BaseMessage> getSession() {

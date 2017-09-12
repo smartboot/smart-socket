@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.StateMachineEnum;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -87,7 +88,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
     }
 
     @Override
-    public void registerAioSession(AioSession<HttpV2Entity> session) {
+    public void stateEvent(AioSession<HttpV2Entity> session, StateMachineEnum stateMachineEnum) {
 
     }
 }

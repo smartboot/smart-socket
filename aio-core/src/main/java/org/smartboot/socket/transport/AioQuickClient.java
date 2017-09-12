@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadFactory;
  * Created by seer on 2017/6/28.
  */
 public class AioQuickClient<T> {
-    private static final Logger LOGGER = LogManager.getLogger(AioSession.class);
+    private static final Logger LOGGER = LogManager.getLogger(AioQuickClient.class);
     private AsynchronousSocketChannel socketChannel = null;
     /**
      * IO事件处理线程组

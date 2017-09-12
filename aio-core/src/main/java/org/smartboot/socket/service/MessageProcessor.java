@@ -1,6 +1,7 @@
 package org.smartboot.socket.service;
 
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.StateMachineEnum;
 
 /**
  * 消息处理器
@@ -20,10 +21,8 @@ public interface MessageProcessor<T> {
     public void process(AioSession<T> session, T msg);
 
     /**
-     * 往消息处理中注册AioSession对象
-     *
-     * @param session 传输层会话
-     * @return
+     * 状态机事件,当枚举事件发生时会触发该方法
+     * @param session
      */
-    public void registerAioSession(AioSession<T> session);
+    void stateEvent(AioSession<T> session, StateMachineEnum stateMachineEnum);
 }

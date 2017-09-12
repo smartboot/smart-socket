@@ -6,6 +6,7 @@ import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.StateMachineEnum;
 
 /**
  * 服务器消息处理器,由服务器启动时构造
@@ -21,7 +22,7 @@ public final class P2PServerMessageProcessor implements MessageProcessor<BaseMes
 
     @Override
     public void process(AioSession<BaseMessage> ioSession, BaseMessage entry) {
-        P2PSession session = ioSession.getAttribute(P2PSession.SESSION_KEY);
+        P2PSession session = (P2PSession) ioSession.getAttachment();
         if (session.notifySyncMessage(entry)) {
             return;
         }
@@ -30,8 +31,15 @@ public final class P2PServerMessageProcessor implements MessageProcessor<BaseMes
     }
 
     @Override
-    public void registerAioSession(AioSession<BaseMessage> session) {
-        session.setAttribute(P2PSession.SESSION_KEY, new P2PSession(session));
+    public void stateEvent(AioSession<BaseMessage> session, StateMachineEnum stateMachineEnum) {
+        switch (stateMachineEnum) {
+            case NEW_SESSION:
+                session.setAttachment(new P2PSession(session));
+            case INPUT_SHUTDOWN:
+                session.close(true);
+                break;
+        }
+
     }
 
 }

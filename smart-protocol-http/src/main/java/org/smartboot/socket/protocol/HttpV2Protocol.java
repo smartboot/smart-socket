@@ -30,10 +30,12 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
 
     @Override
     public HttpV2Entity decode(ByteBuffer buffer, AioSession<HttpV2Entity> session) {
-        HttpV2Entity entity = session.getAttribute(HTTP_ENTITY);
-        if (entity == null) {
+        HttpV2Entity entity = null;
+        if (session.getAttachment() == null) {
             entity = new HttpV2Entity(session);
-            session.setAttribute(HTTP_ENTITY, entity);
+            session.setAttachment(entity);
+        } else {
+            entity = (HttpV2Entity) session.getAttachment();
         }
         boolean returnEntity = false;//是否返回HttpEntity
         boolean continueDecode = true;//是否继续读取数据
@@ -60,11 +62,6 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
 //                    System.out.println(entity.postDecodeStrategy);
                     if (entity.postDecodeStrategy.isDecodeEnd(buffer.get(), entity)) {
                         entity.partFlag = HttpPart.END;
-                        try {
-                            entity.binaryBuffer.put((byte) -1);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
                         if (entity.postDecodeStrategy.waitForBodyFinish()) {
                             returnEntity = true;
                         }
@@ -72,12 +69,12 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
                     break;
                 }
                 default: {
-                    session.removeAttribute(HTTP_ENTITY);
+                    session.setAttachment(null);
                 }
             }
         }
         if (entity.partFlag == HttpPart.END) {
-            session.removeAttribute(HTTP_ENTITY);
+            session.setAttachment(null);
         }
         return returnEntity ? entity : null;
     }

@@ -4,6 +4,7 @@ import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.StateMachineEnum;
 
 import java.nio.channels.AsynchronousChannelGroup;
 import java.util.concurrent.ThreadFactory;
@@ -27,7 +28,7 @@ public class P2PMaxConnectClient {
                             }
 
                             @Override
-                            public void registerAioSession(AioSession<BaseMessage> session) {
+                            public void stateEvent(AioSession<BaseMessage> session, StateMachineEnum stateEnum) {
 
                             }
                         })
