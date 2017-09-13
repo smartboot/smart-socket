@@ -35,6 +35,7 @@ public final class P2PServerMessageProcessor implements MessageProcessor<BaseMes
         switch (stateMachineEnum) {
             case NEW_SESSION:
                 session.setAttachment(new P2PSession(session));
+                break;
             case INPUT_SHUTDOWN:
                 session.close(true);
                 break;
