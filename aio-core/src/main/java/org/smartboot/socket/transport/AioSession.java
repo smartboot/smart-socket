@@ -10,6 +10,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,6 +27,7 @@ public class AioSession<T> {
      */
     private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
 
+    private static ExecutorService executorService = Executors.newFixedThreadPool(8);
     /**
      * 唯一标识
      */
@@ -50,13 +53,9 @@ public class AioSession<T> {
      */
     private AioCompletionHandler aioCompletionHandler;
     /**
-     * 读回调附件
+     * 读写回调附件
      */
-    private Attachment readAttach = new Attachment(true);
-    /**
-     * 写回调附件
-     */
-    private Attachment writeAttach = new Attachment(false);
+    private Attachment readAttach = new Attachment(true), writeAttach = new Attachment(false);
 
     /**
      * 数据read限流标志,仅服务端需要进行限流
@@ -68,12 +67,10 @@ public class AioSession<T> {
      */
     private AsynchronousSocketChannel channel;
 
-
     /**
      * 输出信号量
      */
     private Semaphore semaphore = new Semaphore(1);
-
 
     private IoServerConfig<T> ioServerConfig;
 
@@ -147,19 +144,25 @@ public class AioSession<T> {
     }
 
     public void write(final ByteBuffer buffer) throws IOException {
-        if (isInvalid()) {
-            return;
-        }
-        buffer.flip();
-        try {
-            //正常读取
-            writeCacheQueue.put(buffer);
-        } catch (InterruptedException e) {
-            logger.error(e);
-        }
-        if (semaphore.tryAcquire()) {
-            writeToChannel();
-        }
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                if (isInvalid()) {
+                    return;
+                }
+                buffer.flip();
+                try {
+                    //正常读取
+                    writeCacheQueue.put(buffer);
+                } catch (InterruptedException e) {
+                    logger.error(e);
+                }
+                if (semaphore.tryAcquire()) {
+                    writeToChannel();
+                }
+            }
+        });
+
     }
 
     public final void close() {

@@ -21,7 +21,7 @@ public interface MessageProcessor<T> {
     public void process(AioSession<T> session, T msg);
 
     /**
-     * 状态机事件,当枚举事件发生时会触发该方法
+     * 状态机事件,当枚举事件发生时由框架触发该方法
      *
      * @param session
      * @param stateMachineEnum 状态枚举
