@@ -83,7 +83,7 @@ public class AioSession<T> {
         this.serverFlowLimit = config.isServer() ? new AtomicBoolean(false) : null;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
-        config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION);//触发状态机
+        config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         readAttach.setBuffer(ByteBuffer.allocate(config.getReadBufferSize()));
         readFromChannel(0);//注册消息读事件
     }
@@ -214,7 +214,7 @@ public class AioSession<T> {
      */
     void readFromChannel(int readNum) {
         if (readNum == -1) {
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN);
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
             return;
         }
 
@@ -227,7 +227,7 @@ public class AioSession<T> {
             if (dataEntry == null) {//现有读取的数据不满足解码所需
                 break;
             }
-            receive0(this, dataEntry, remain - readBuffer.remaining());
+            receive0(dataEntry, remain - readBuffer.remaining());
         }
 
         //数据读取完毕
@@ -263,14 +263,13 @@ public class AioSession<T> {
     /**
      * 接收并处理消息
      *
-     * @param session
-     * @param dataEntry
-     * @param readSize
+     * @param dataEntry 解码识别出的消息实体
+     * @param readSize  本轮解析的数据长度
      */
-    private void receive0(AioSession<T> session, T dataEntry, int readSize) {
+    private void receive0(T dataEntry, int readSize) {
         if (ioServerConfig.getFilters() == null) {
             try {
-                ioServerConfig.getProcessor().process(session, dataEntry);
+                ioServerConfig.getProcessor().process(this, dataEntry);
             } catch (Exception e) {
                 logger.catching(e);
             }
@@ -279,17 +278,17 @@ public class AioSession<T> {
 
         // 接收到的消息进行预处理
         for (SmartFilter<T> h : ioServerConfig.getFilters()) {
-            h.readFilter(session, dataEntry, readSize);
+            h.readFilter(this, dataEntry, readSize);
         }
         try {
             for (SmartFilter<T> h : ioServerConfig.getFilters()) {
-                h.processFilter(session, dataEntry);
+                h.processFilter(this, dataEntry);
             }
-            ioServerConfig.getProcessor().process(session, dataEntry);
+            ioServerConfig.getProcessor().process(this, dataEntry);
         } catch (Exception e) {
             logger.catching(e);
             for (SmartFilter<T> h : ioServerConfig.getFilters()) {
-                h.processFailHandler(session, dataEntry, e);
+                h.processFailHandler(this, dataEntry, e);
             }
         }
     }

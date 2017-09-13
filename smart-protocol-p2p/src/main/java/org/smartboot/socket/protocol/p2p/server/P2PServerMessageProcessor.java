@@ -31,7 +31,7 @@ public final class P2PServerMessageProcessor implements MessageProcessor<BaseMes
     }
 
     @Override
-    public void stateEvent(AioSession<BaseMessage> session, StateMachineEnum stateMachineEnum) {
+    public void stateEvent(AioSession<BaseMessage> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         switch (stateMachineEnum) {
             case NEW_SESSION:
                 session.setAttachment(new P2PSession(session));

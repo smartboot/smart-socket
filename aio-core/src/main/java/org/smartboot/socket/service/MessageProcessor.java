@@ -22,7 +22,10 @@ public interface MessageProcessor<T> {
 
     /**
      * 状态机事件,当枚举事件发生时会触发该方法
+     *
      * @param session
+     * @param stateMachineEnum 状态枚举
+     * @param throwable        异常对象，如果存在的话
      */
-    void stateEvent(AioSession<T> session, StateMachineEnum stateMachineEnum);
+    void stateEvent(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable);
 }

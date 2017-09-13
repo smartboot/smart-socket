@@ -28,7 +28,7 @@ public class P2PMaxConnectClient {
                             }
 
                             @Override
-                            public void stateEvent(AioSession<BaseMessage> session, StateMachineEnum stateEnum) {
+                            public void stateEvent(AioSession<BaseMessage> session, StateMachineEnum stateEnum, Throwable throwable) {
 
                             }
                         })

@@ -28,7 +28,7 @@ public class P2PClientMessageProcessor implements MessageProcessor<BaseMessage> 
     }
 
     @Override
-    public void stateEvent(AioSession<BaseMessage> ioSession, StateMachineEnum stateMachineEnum) {
+    public void stateEvent(AioSession<BaseMessage> ioSession, StateMachineEnum stateMachineEnum, Throwable throwable) {
         switch (stateMachineEnum) {
             case NEW_SESSION:
                 session = new P2PSession(ioSession);

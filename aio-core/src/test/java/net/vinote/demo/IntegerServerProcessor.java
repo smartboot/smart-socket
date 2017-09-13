@@ -13,7 +13,7 @@ import java.io.IOException;
 public class IntegerServerProcessor implements MessageProcessor<Integer> {
     @Override
     public void process(AioSession<Integer> session, Integer msg) {
-        Integer respMsg=msg+1;
+        Integer respMsg = msg + 1;
         System.out.println("接受到客户端数据：" + msg + " ,响应数据:" + (respMsg));
         try {
             session.write(respMsg);
@@ -23,7 +23,7 @@ public class IntegerServerProcessor implements MessageProcessor<Integer> {
     }
 
     @Override
-    public void stateEvent(AioSession<Integer> session, StateMachineEnum stateMachineEnum) {
+    public void stateEvent(AioSession<Integer> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
 
     }
 }

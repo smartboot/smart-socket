@@ -17,7 +17,7 @@ public class IntegerClientProcessor implements MessageProcessor<Integer> {
     }
 
     @Override
-    public void stateEvent(AioSession<Integer> session, StateMachineEnum stateMachineEnum) {
+    public void stateEvent(AioSession<Integer> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         this.session = session;
     }
 

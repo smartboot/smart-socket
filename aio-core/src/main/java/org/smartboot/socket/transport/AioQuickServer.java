@@ -40,12 +40,6 @@ public class AioQuickServer<T> {
             @Override
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
                 serverSocketChannel.accept(attachment, this);
-//                try {
-//                    channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-//                    channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-//                } catch (IOException e) {
-//                    LOGGER.catching(e);
-//                }
                 //连接成功则构造AIOSession对象
                 new AioSession<T>(channel, config, aioCompletionHandler);
             }
