@@ -10,8 +10,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +25,6 @@ public class AioSession<T> {
      */
     private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
 
-    private static ExecutorService executorService = Executors.newFixedThreadPool(8);
     /**
      * 唯一标识
      */
@@ -144,25 +141,19 @@ public class AioSession<T> {
     }
 
     public void write(final ByteBuffer buffer) throws IOException {
-        executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                if (isInvalid()) {
-                    return;
-                }
-                buffer.flip();
-                try {
-                    //正常读取
-                    writeCacheQueue.put(buffer);
-                } catch (InterruptedException e) {
-                    logger.error(e);
-                }
-                if (semaphore.tryAcquire()) {
-                    writeToChannel();
-                }
-            }
-        });
-
+        if (isInvalid()) {
+            return;
+        }
+        buffer.flip();
+        try {
+            //正常读取
+            writeCacheQueue.put(buffer);
+        } catch (InterruptedException e) {
+            logger.error(e);
+        }
+        if (semaphore.tryAcquire()) {
+            writeToChannel();
+        }
     }
 
     public final void close() {
