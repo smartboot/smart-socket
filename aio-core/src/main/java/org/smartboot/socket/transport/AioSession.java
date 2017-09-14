@@ -92,6 +92,10 @@ public class AioSession<T> {
             logger.warn("end write because of aioSession's status is" + status);
             return;
         }
+        //原数据已输出完毕,则清空附件
+        if (writeAttach.buffer != null && !writeAttach.buffer.hasRemaining()) {
+            writeAttach.setBuffer(null);
+        }
         ByteBuffer writeBuffer = writeAttach.buffer;
         ByteBuffer nextBuffer = writeCacheQueue.peek();//为null说明队列已空
         if (writeBuffer == null && nextBuffer == null) {

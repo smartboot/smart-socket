@@ -1,5 +1,7 @@
 package org.smartboot.socket.transport;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.transport.AioSession.Attachment;
 import org.smartboot.socket.util.StateMachineEnum;
 
@@ -9,9 +11,13 @@ import java.nio.channels.CompletionHandler;
  * 读写事件回调处理类
  */
 class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
+    private static final Logger LOGGER = LogManager.getLogger(AioCompletionHandler.class);
 
     @Override
     public void completed(Integer result, Attachment attachment) {
+        if (result == 0) {
+            LOGGER.error("result is 0");
+        }
         //读操作回调
         if (attachment.isRead()) {
             attachment.getAioSession().readFromChannel(result);
