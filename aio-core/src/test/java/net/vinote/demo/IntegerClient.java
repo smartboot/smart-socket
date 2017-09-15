@@ -7,9 +7,9 @@ import org.smartboot.socket.transport.AioQuickClient;
  */
 public class IntegerClient {
     public static void main(String[] args) throws Exception {
-        IntegerClientProcessor processor=new IntegerClientProcessor();
-        AioQuickClient<Integer> aioQuickClient=new AioQuickClient<Integer>()
-                .connect("localhost",8888)
+        IntegerClientProcessor processor = new IntegerClientProcessor();
+        AioQuickClient<Integer> aioQuickClient = new AioQuickClient<Integer>()
+                .connect("localhost", 8888)
                 .setProtocol(new IntegerProtocol())
                 .setProcessor(processor);
         aioQuickClient.start();

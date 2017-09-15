@@ -92,24 +92,21 @@ public class AioSession<T> {
             logger.warn("end write because of aioSession's status is" + status);
             return;
         }
-        ByteBuffer writeBuffer = writeAttach.buffer;
+        ByteBuffer writeBuffer = writeAttach.buffer != null && writeAttach.buffer.hasRemaining() ? writeAttach.buffer : null;
         ByteBuffer nextBuffer = writeCacheQueue.peek();//为null说明队列已空
-        if ((writeBuffer == null || !writeBuffer.hasRemaining()) && nextBuffer == null) {
+        if (writeBuffer == null && nextBuffer == null) {
             semaphore.release();
             if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
                 writeToChannel();
             }
             return;
         }
-        if (writeBuffer == null || !writeBuffer.hasRemaining()) {
+        if (writeBuffer == null) {
             //对缓存中的数据进行压缩处理再输出
             Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
             int totalSize = 0;
-            while (iterable.hasNext()) {
+            while (iterable.hasNext() && totalSize < 32 * 1024) {
                 totalSize += iterable.next().remaining();
-                if (totalSize >= 32 * 1024) {
-                    break;
-                }
             }
             writeBuffer = ByteBuffer.allocate(totalSize);
             while (writeBuffer.hasRemaining()) {
@@ -137,7 +134,6 @@ public class AioSession<T> {
             serverFlowLimit.set(false);
             channel.read(readAttach.getBuffer(), readAttach, aioCompletionHandler);
         }
-
     }
 
     public void write(final ByteBuffer buffer) throws IOException {
@@ -215,12 +211,8 @@ public class AioSession<T> {
         ByteBuffer readBuffer = readAttach.getBuffer();
         readBuffer.flip();
 
-        while (readBuffer.hasRemaining()) {
-            int remain = readBuffer.remaining();
-            T dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this);
-            if (dataEntry == null) {//现有读取的数据不满足解码所需
-                break;
-            }
+        T dataEntry;
+        for (int remain = readBuffer.remaining(); (dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this)) != null; remain = readBuffer.remaining()) {
             receive0(dataEntry, remain - readBuffer.remaining());
         }
 

@@ -31,7 +31,7 @@ public interface SmartFilter<T> {
      *
      * @param session
      * @param msgEntity 编解码后的消息实体
-     * @param e 本次处理异常对象
+     * @param e         本次处理异常对象
      */
     public void processFailHandler(AioSession<T> session, T msgEntity, Exception e);
 
