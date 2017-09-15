@@ -14,7 +14,7 @@ final class IoServerConfig<T> {
     /**
      * 消息队列缓存大小
      */
-    private int writeQueueSize = 512;
+    private int writeQueueSize = 1024;
 
     /**
      * 消息体缓存大小,字节
