@@ -92,20 +92,16 @@ public class AioSession<T> {
             logger.warn("end write because of aioSession's status is" + status);
             return;
         }
-        //原数据已输出完毕,则清空附件
-        if (writeAttach.buffer != null && !writeAttach.buffer.hasRemaining()) {
-            writeAttach.setBuffer(null);
-        }
         ByteBuffer writeBuffer = writeAttach.buffer;
         ByteBuffer nextBuffer = writeCacheQueue.peek();//为null说明队列已空
-        if (writeBuffer == null && nextBuffer == null) {
+        if ((writeBuffer == null || !writeBuffer.hasRemaining()) && nextBuffer == null) {
             semaphore.release();
             if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
                 writeToChannel();
             }
             return;
         }
-        if (writeBuffer == null) {
+        if (writeBuffer == null || !writeBuffer.hasRemaining()) {
             //对缓存中的数据进行压缩处理再输出
             Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
             int totalSize = 0;
