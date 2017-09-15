@@ -14,7 +14,7 @@ final class IoServerConfig<T> {
     /**
      * 消息队列缓存大小
      */
-    private int writeQueueSize = 1024;
+    private int writeQueueSize = 1024*4;
 
     /**
      * 消息体缓存大小,字节
@@ -57,20 +57,6 @@ final class IoServerConfig<T> {
      * true:服务器,false:客户端
      */
     private boolean serverOrClient;
-
-
-    private float limitRate = 0.9f;
-
-    private float releaseRate = 0.6f;
-    /**
-     * 流控指标线
-     */
-    private int flowLimitLine = (int) (writeQueueSize * limitRate);
-
-    /**
-     * 释放流控指标线
-     */
-    private int releaseLine = (int) (writeQueueSize * releaseRate);
 
     /**
      * @param serverOrClient true:服务器,false:客户端
@@ -143,8 +129,6 @@ final class IoServerConfig<T> {
 
     public void setWriteQueueSize(int writeQueueSize) {
         this.writeQueueSize = writeQueueSize;
-        flowLimitLine = (int) (writeQueueSize * limitRate);
-        releaseLine = (int) (writeQueueSize * releaseRate);
     }
 
     public int getReadBufferSize() {
@@ -155,11 +139,4 @@ final class IoServerConfig<T> {
         this.readBufferSize = readBufferSize;
     }
 
-    int getFlowLimitLine() {
-        return flowLimitLine;
-    }
-
-    int getReleaseLine() {
-        return releaseLine;
-    }
 }

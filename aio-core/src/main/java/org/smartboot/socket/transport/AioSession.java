@@ -11,7 +11,6 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -55,11 +54,6 @@ public class AioSession<T> {
     private Attachment readAttach = new Attachment(true), writeAttach = new Attachment(false);
 
     /**
-     * 数据read限流标志,仅服务端需要进行限流
-     */
-    private AtomicBoolean serverFlowLimit;
-
-    /**
      * 底层通信channel对象
      */
     private AsynchronousSocketChannel channel;
@@ -74,7 +68,6 @@ public class AioSession<T> {
     AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, AioCompletionHandler aioCompletionHandler) {
         this.channel = channel;
         this.aioCompletionHandler = aioCompletionHandler;
-        this.serverFlowLimit = config.isServer() ? new AtomicBoolean(false) : null;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
@@ -105,7 +98,7 @@ public class AioSession<T> {
             //对缓存中的数据进行压缩处理再输出
             Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
             int totalSize = 0;
-            while (iterable.hasNext()) {
+            while (iterable.hasNext() && totalSize <= 32 * 1024) {
                 totalSize += iterable.next().remaining();
             }
             writeBuffer = ByteBuffer.allocate(totalSize);
@@ -124,16 +117,6 @@ public class AioSession<T> {
 
         writeAttach.setBuffer(writeBuffer);
         channel.write(writeBuffer, writeAttach, aioCompletionHandler);
-    }
-
-    /**
-     * 如果存在流控并符合释放条件，则触发读操作
-     */
-    void tryReleaseFlowLimit() {
-        if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
-            serverFlowLimit.set(false);
-            channel.read(readAttach.getBuffer(), readAttach, aioCompletionHandler);
-        }
     }
 
     public void write(final ByteBuffer buffer) throws IOException {
@@ -226,12 +209,7 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
 
-        //触发流控
-//        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
-//            serverFlowLimit.set(true);
-//        } else {
-            channel.read(readBuffer, readAttach, aioCompletionHandler);
-//        }
+        channel.read(readBuffer, readAttach, aioCompletionHandler);
     }
 
     public Object getAttachment() {
