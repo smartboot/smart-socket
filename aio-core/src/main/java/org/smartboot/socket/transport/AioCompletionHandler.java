@@ -7,24 +7,38 @@ import org.smartboot.socket.util.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * 读写事件回调处理类
  */
 class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
     private static final Logger LOGGER = LogManager.getLogger(AioCompletionHandler.class);
-    private ExecutorService readService = null;
     private boolean asyncRead;
+
+    Thread[] threadArray = new Thread[8];
+    LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(1024);
 
     public AioCompletionHandler(boolean asyncRead) {
         this.asyncRead = asyncRead;
         if (asyncRead) {
-            readService = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2, Integer.MAX_VALUE,
-                    10L, TimeUnit.SECONDS,
-                    new ArrayBlockingQueue<Runnable>(1024));
+            for (int i = 0; i < threadArray.length; i++) {
+                threadArray[i] = new Thread() {
+                    @Override
+                    public void run() {
+                        while (true) {
+                            try {
+                                Runnable runnable = queue.take();
+                                runnable.run();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                };
+                threadArray[i].start();
+            }
         }
     }
 
@@ -37,12 +51,16 @@ class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
         //读操作回调
         if (attachment.isRead()) {
             if (asyncRead) {
-                readService.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        attachment.getAioSession().readFromChannel(result);
-                    }
-                });
+                try {
+                    queue.put(new Runnable() {
+                        @Override
+                        public void run() {
+                            attachment.getAioSession().readFromChannel(result);
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             } else {
                 attachment.getAioSession().readFromChannel(result);
             }
