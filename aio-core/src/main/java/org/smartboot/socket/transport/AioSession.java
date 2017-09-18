@@ -72,7 +72,7 @@ public class AioSession<T> {
         this.ioServerConfig = config;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         readAttach.setBuffer(ByteBuffer.allocate(config.getReadBufferSize()));
-        readFromChannel(0);//注册消息读事件
+        readFromChannel();//注册消息读事件
     }
 
     /**
@@ -183,13 +183,9 @@ public class AioSession<T> {
     /**
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      *
-     * @param readNum 读取的数据长度,-1表示EOF
      */
-    void readFromChannel(int readNum) {
-        if (readNum == -1) {
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
-            return;
-        }
+    void readFromChannel() {
+
 
         ByteBuffer readBuffer = readAttach.getBuffer();
         readBuffer.flip();
@@ -240,10 +236,6 @@ public class AioSession<T> {
             return;
         }
 
-        // 接收到的消息进行预处理
-        for (SmartFilter<T> h : ioServerConfig.getFilters()) {
-            h.readFilter(this, dataEntry, readSize);
-        }
         try {
             for (SmartFilter<T> h : ioServerConfig.getFilters()) {
                 h.processFilter(this, dataEntry);

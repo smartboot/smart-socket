@@ -10,6 +10,15 @@ import org.smartboot.socket.transport.AioSession;
 public interface SmartFilter<T> {
 
     /**
+     * 数据读取过滤,可用于统计流量
+     *
+     * @param session
+     * @param readSize  本次解码读取的数据长度
+     */
+    public void readFilter(AioSession<T> session, int readSize);
+
+
+    /**
      * 消息处理前置预处理
      *
      * @param session
@@ -17,14 +26,6 @@ public interface SmartFilter<T> {
      */
     public void processFilter(AioSession<T> session, T msgEntity);
 
-    /**
-     * 消息接受前置预处理
-     *
-     * @param session
-     * @param msgEntity 编解码后的消息实体
-     * @param readSize  本次解码读取的数据长度
-     */
-    public void readFilter(AioSession<T> session, T msgEntity, int readSize);
 
     /**
      * 消息接受失败处理
