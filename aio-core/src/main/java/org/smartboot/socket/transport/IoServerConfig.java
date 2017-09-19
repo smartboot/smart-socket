@@ -14,7 +14,7 @@ final class IoServerConfig<T> {
     /**
      * 消息队列缓存大小
      */
-    private int writeQueueSize = 1024*4;
+    private int writeQueueSize = 1024 * 4;
 
     /**
      * 消息体缓存大小,字节
@@ -30,7 +30,7 @@ final class IoServerConfig<T> {
     /**
      * 服务器消息拦截器
      */
-    private SmartFilter<T>[] filters;
+    private SmartFilter<T>[] filters = new SmartFilter[0];
 
     /**
      * 服务器端口号
@@ -104,7 +104,9 @@ final class IoServerConfig<T> {
     }
 
     public final void setFilters(SmartFilter<T>[] filters) {
-        this.filters = filters;
+        if (filters != null) {
+            this.filters = filters;
+        }
     }
 
     public Protocol<T> getProtocol() {

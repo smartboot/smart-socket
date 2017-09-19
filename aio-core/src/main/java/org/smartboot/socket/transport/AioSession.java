@@ -182,7 +182,6 @@ public class AioSession<T> {
 
     /**
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
-     *
      */
     void readFromChannel() {
 
@@ -191,8 +190,8 @@ public class AioSession<T> {
         readBuffer.flip();
 
         T dataEntry;
-        for (int remain = readBuffer.remaining(); (dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this)) != null; remain = readBuffer.remaining()) {
-            receive0(dataEntry, remain - readBuffer.remaining());
+        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this)) != null) {
+            receive0(dataEntry);
         }
 
         //数据读取完毕
@@ -224,18 +223,8 @@ public class AioSession<T> {
      * 接收并处理消息
      *
      * @param dataEntry 解码识别出的消息实体
-     * @param readSize  本轮解析的数据长度
      */
-    private void receive0(T dataEntry, int readSize) {
-        if (ioServerConfig.getFilters() == null) {
-            try {
-                ioServerConfig.getProcessor().process(this, dataEntry);
-            } catch (Exception e) {
-                logger.catching(e);
-            }
-            return;
-        }
-
+    private void receive0(T dataEntry) {
         try {
             for (SmartFilter<T> h : ioServerConfig.getFilters()) {
                 h.processFilter(this, dataEntry);

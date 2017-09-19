@@ -39,7 +39,7 @@ public class AioQuickClient<T> {
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        new AioSession<T>(socketChannel, config, new AioCompletionHandler(false));
+        new AioSession<T>(socketChannel, config, new AioCompletionHandler());
     }
 
     /**

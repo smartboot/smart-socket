@@ -24,7 +24,7 @@ public class AioQuickServer<T> {
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private IoServerConfig<T> config = new IoServerConfig<T>(true);
-    private AioCompletionHandler aioCompletionHandler = new AioCompletionHandler(true);
+    private AioCompletionHandler aioCompletionHandler = new AioCompletionHandler();
 
     public void start() throws IOException {
         final AtomicInteger threadIndex = new AtomicInteger(0);
