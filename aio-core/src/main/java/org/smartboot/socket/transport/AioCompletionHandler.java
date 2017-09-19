@@ -1,7 +1,13 @@
 package org.smartboot.socket.transport;
 
+import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.IgnoreExceptionHandler;
 import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.Sequence;
+import com.lmax.disruptor.SequenceBarrier;
+import com.lmax.disruptor.WorkProcessor;
+import com.lmax.disruptor.YieldingWaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.service.SmartFilter;
@@ -12,7 +18,8 @@ import org.smartboot.socket.transport.disruptor.ReadEventProducer;
 import org.smartboot.socket.util.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * 读写事件回调处理类
@@ -26,18 +33,18 @@ class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
         this.asyncRead = asyncRead;
         if (asyncRead) {
             ReadEventFactory factory = new ReadEventFactory();
-            int bufferSize = 256;
-            Disruptor<ReadEvent> disruptor = new Disruptor<ReadEvent>(factory, bufferSize, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    return new Thread(r);
-                }
-            });
-            disruptor.handleEventsWith(new ReadEventHandler());
+            int bufferSize = 2048;
+            Executor threadPool = Executors.newCachedThreadPool();
 
-            disruptor.start();
 
-            RingBuffer<ReadEvent> ringBuffer = disruptor.getRingBuffer();
+            RingBuffer<ReadEvent> ringBuffer = RingBuffer.create(ProducerType.MULTI, factory, bufferSize, new BlockingWaitStrategy());
+            SequenceBarrier barriers = ringBuffer.newBarrier();
+            Sequence consumerSequence = new Sequence(-1);
+            ReadEventHandler eventHandler = new ReadEventHandler();
+            threadPool.execute(new WorkProcessor<>(ringBuffer, barriers, eventHandler, new IgnoreExceptionHandler(), consumerSequence));
+            threadPool.execute(new WorkProcessor<>(ringBuffer, barriers, eventHandler, new IgnoreExceptionHandler(), consumerSequence));
+            threadPool.execute(new WorkProcessor<>(ringBuffer, barriers, eventHandler, new IgnoreExceptionHandler(), consumerSequence));
+            threadPool.execute(new WorkProcessor<>(ringBuffer, barriers, eventHandler, new IgnoreExceptionHandler(), consumerSequence));
             producer = new ReadEventProducer(ringBuffer);
 
         }
