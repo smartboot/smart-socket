@@ -1,5 +1,8 @@
 package org.smartboot.socket.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -11,6 +14,7 @@ import java.nio.channels.FileChannel;
  * @version V1.0 , 2017/9/15
  */
 public class FileBuffer {
+    private static final Logger LOGGER = LogManager.getLogger(FileBuffer.class);
     private int readBlock = 0;
     private long readPosition = 0;
     private int writeBlock = 0;
@@ -39,6 +43,7 @@ public class FileBuffer {
         MappedByteBuffer mappedByteBuffer = readFileChannel.map(FileChannel.MapMode.READ_ONLY, readPosition, buffer.capacity());
         buffer.put(mappedByteBuffer);
         buffer.flip();
+//        mappedByteBuffer.force();
         readPosition += buffer.limit();
         if (readPosition >= fileSize) {
             readFileChannel.close();
@@ -75,6 +80,7 @@ public class FileBuffer {
         readAccessFile = new BufferedRandomAccessFile(readFile, "r");
         readFileChannel = readAccessFile.getChannel();
         readPosition = 0;
+        LOGGER.info("open file " + readFile);
     }
 
     public void clear() {
@@ -113,7 +119,7 @@ public class FileBuffer {
     }
 
     public boolean hasRemaining() {
-        return readPosition != writePosition || readBlock != writeBlock;
+        return readPosition != writePosition && readBlock != writeBlock;
     }
 
     public static void main(String[] args) throws IOException {

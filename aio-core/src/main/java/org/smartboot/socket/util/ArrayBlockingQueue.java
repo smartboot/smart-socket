@@ -141,7 +141,7 @@ public class ArrayBlockingQueue extends AbstractQueue<ByteBuffer>
 
     // Internal helper methods
 
-    private FileBuffer fileBuffer = new FileBuffer("/Users/zhengjunwei/logs/fileBuffer");
+    private FileBuffer fileBuffer = new FileBuffer("/Users/zhengjunwei/logs/fileBuffer" + hashCode());
 
     /**
      * Circularly decrement i.
@@ -1413,14 +1413,34 @@ public class ArrayBlockingQueue extends AbstractQueue<ByteBuffer>
     }
 
     public static void main(String[] args) throws InterruptedException {
-        ArrayBlockingQueue queue = new ArrayBlockingQueue(1024);
+        final ArrayBlockingQueue queue = new ArrayBlockingQueue(1024);
         int i = 0;
-        while (i++ < 65535) {
-            queue.put(ByteBuffer.wrap(("helloWOrld" + i).getBytes()));
-        }
-        i = 0;
-        while (true) {
-            System.out.println(queue.take().toString() + (i++) + "");
-        }
+        new Thread() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        ByteBuffer b=ByteBuffer.wrap(("helloWOrld").getBytes());
+                        queue.put(b);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+        new Thread() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        System.out.println(System.identityHashCode(queue.take()));
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+
     }
 }
