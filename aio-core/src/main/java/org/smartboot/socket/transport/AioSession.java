@@ -68,7 +68,7 @@ public class AioSession<T> {
     AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, AioCompletionHandler aioCompletionHandler) {
         this.channel = channel;
         this.aioCompletionHandler = aioCompletionHandler;
-        this.writeCacheQueue = new ArrayBlockingQueue(config.getWriteQueueSize());
+        this.writeCacheQueue = new ArrayBlockingQueue(config.getWriteQueueSize(),config.getWritePersistence());
         this.ioServerConfig = config;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         readAttach.setBuffer(ByteBuffer.allocate(config.getReadBufferSize()));

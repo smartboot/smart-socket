@@ -16,6 +16,7 @@ final class IoServerConfig<T> {
      */
     private int writeQueueSize = 1024 * 4;
 
+    private String writePersistence;
     /**
      * 消息体缓存大小,字节
      */
@@ -141,4 +142,11 @@ final class IoServerConfig<T> {
         this.readBufferSize = readBufferSize;
     }
 
+    public String getWritePersistence() {
+        return writePersistence;
+    }
+
+    public void setWritePersistence(String writePersistence) {
+        this.writePersistence = writePersistence;
+    }
 }

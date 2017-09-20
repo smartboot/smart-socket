@@ -6,7 +6,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
@@ -16,9 +15,11 @@ import java.nio.channels.FileChannel;
 public class FileBuffer {
     private static final Logger LOGGER = LogManager.getLogger(FileBuffer.class);
     private int readBlock = 0;
-    private long readPosition = 0;
+    private int readPosition = 0;
     private int writeBlock = 0;
-    private long writePosition = 0;
+    private int writePosition = 0;
+    private int readCount;
+    private int writeCount;
     private File readFile;
     private BufferedRandomAccessFile readAccessFile;
     private BufferedRandomAccessFile writeAccessFile;
@@ -38,17 +39,20 @@ public class FileBuffer {
         if (readFileChannel == null || !readFileChannel.isOpen()) {
             openReadFile();
         }
-        long fileSize = readFileChannel.size();
-        ByteBuffer buffer = ByteBuffer.allocate((fileSize - readPosition > 32 * 1024) ? 32 * 1024 : (int) (fileSize - readPosition));
-        MappedByteBuffer mappedByteBuffer = readFileChannel.map(FileChannel.MapMode.READ_ONLY, readPosition, buffer.capacity());
-        buffer.put(mappedByteBuffer);
+
+        int fileSize = (int) readFileChannel.size();
+        ByteBuffer buffer = ByteBuffer.allocate((fileSize - readPosition > 32 * 1024) ? 32 * 1024 : (fileSize - readPosition));
+        while (buffer.hasRemaining()) {
+            readFileChannel.read(buffer);
+        }
+
         buffer.flip();
-//        mappedByteBuffer.force();
-        readPosition += buffer.limit();
-        if (readPosition >= fileSize) {
+        readPosition += buffer.remaining();
+        readCount += buffer.remaining();
+        if (readPosition >= fileSize && readBlock < writeBlock) {
             readFileChannel.close();
             readAccessFile.close();
-            readFile.delete();
+//            readFile.delete();
         }
         return buffer;
     }
@@ -57,15 +61,32 @@ public class FileBuffer {
         if (writeFileChannel == null || !writeFileChannel.isOpen()) {
             openWriteFile();
         }
-        MappedByteBuffer mappedByteBuffer = writeFileChannel.map(FileChannel.MapMode.READ_WRITE, writePosition, buffer.remaining());
-        mappedByteBuffer.put(buffer);
-        while (buffer.hasRemaining()) {
-            writeFileChannel.write(buffer);
+//        MappedByteBuffer mappedByteBuffer = writeFileChannel.map(FileChannel.MapMode.READ_WRITE, writePosition, buffer.remaining());
+//        mappedByteBuffer.put(buffer);
+        int writeSize = buffer.remaining();
+        //不足MAX_LENGTH,全部输出
+        if (writePosition + writeSize <= MAX_LENGTH) {
+            while (buffer.hasRemaining()) {
+                writeFileChannel.write(buffer);
+            }
+        } else {
+            writeSize = MAX_LENGTH - writePosition;
+            ByteBuffer subBuffer = ByteBuffer.allocate(writeSize);
+            while (subBuffer.hasRemaining()) {
+                subBuffer.put(buffer.get());
+            }
+            subBuffer.flip();
+            writeFileChannel.write(subBuffer);
         }
-        writePosition = writeFileChannel.size();
+
+        writePosition += writeSize;
+        writeCount += writeSize;
         if (writePosition >= MAX_LENGTH) {
             writeFileChannel.close();
             writeAccessFile.close();
+        }
+        if (buffer.hasRemaining()) {
+            write(buffer);
         }
     }
 
@@ -119,7 +140,7 @@ public class FileBuffer {
     }
 
     public boolean hasRemaining() {
-        return readPosition != writePosition && readBlock != writeBlock;
+        return readCount != writeCount;
     }
 
     public static void main(String[] args) throws IOException {

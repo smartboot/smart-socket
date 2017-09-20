@@ -141,7 +141,7 @@ public class ArrayBlockingQueue extends AbstractQueue<ByteBuffer>
 
     // Internal helper methods
 
-    private FileBuffer fileBuffer = new FileBuffer("/Users/zhengjunwei/logs/fileBuffer" + hashCode());
+    private FileBuffer fileBuffer;
 
     /**
      * Circularly decrement i.
@@ -201,9 +201,14 @@ public class ArrayBlockingQueue extends AbstractQueue<ByteBuffer>
             itrs.elementDequeued();
         notFull.signal();
         //TODO 磁盘填充至队列
-        if (fileBuffer.hasRemaining()) {
+        if (fileBuffer != null && fileBuffer.hasRemaining()) {
             try {
-                enqueue(fileBuffer.read());
+                ByteBuffer b = fileBuffer.read();
+                if (b.hasRemaining()) {
+                    enqueue(b);
+                } else {
+                    System.out.println("error b" + b);
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -261,8 +266,11 @@ public class ArrayBlockingQueue extends AbstractQueue<ByteBuffer>
      * @param capacity the capacity of this queue
      * @throws IllegalArgumentException if {@code capacity < 1}
      */
-    public ArrayBlockingQueue(int capacity) {
+    public ArrayBlockingQueue(int capacity, String dir) {
         this(capacity, false);
+        if (dir != null) {
+            fileBuffer = new FileBuffer(dir + "/fileBuffer" + hashCode());
+        }
     }
 
     /**
@@ -337,16 +345,19 @@ public class ArrayBlockingQueue extends AbstractQueue<ByteBuffer>
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-//            while (count == items.length)
-//                notFull.await();
+
+
             //TODO 磁盘缓存,缓存已满或存在磁盘数据
-            if (count == items.length || fileBuffer.hasRemaining()) {
+            if (fileBuffer != null && (count == items.length || fileBuffer.hasRemaining())) {
                 try {
                     fileBuffer.write(e);
                 } catch (IOException e1) {
                     throw new RuntimeException(e1);
                 }
                 return;
+            } else {
+                while (count == items.length)
+                    notFull.await();
             }
             enqueue(e);
         } finally {
@@ -1413,14 +1424,14 @@ public class ArrayBlockingQueue extends AbstractQueue<ByteBuffer>
     }
 
     public static void main(String[] args) throws InterruptedException {
-        final ArrayBlockingQueue queue = new ArrayBlockingQueue(1024);
+        final ArrayBlockingQueue queue = new ArrayBlockingQueue(1024, null);
         int i = 0;
         new Thread() {
             @Override
             public void run() {
                 while (true) {
                     try {
-                        ByteBuffer b=ByteBuffer.wrap(("helloWOrld").getBytes());
+                        ByteBuffer b = ByteBuffer.wrap(("helloWOrld").getBytes());
                         queue.put(b);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
