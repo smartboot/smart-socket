@@ -36,4 +36,12 @@ public interface SmartFilter<T> {
      */
     public void processFailHandler(AioSession<T> session, T msgEntity, Exception e);
 
+    /**
+     * 数据输出过滤,可用于统计流量
+     *
+     * @param session
+     * @param readSize  本次输出的数据长度
+     */
+    public void writeFilter(AioSession<T> session, int readSize);
+
 }

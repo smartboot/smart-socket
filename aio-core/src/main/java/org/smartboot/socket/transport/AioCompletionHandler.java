@@ -32,6 +32,10 @@ class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
             }
             attachment.getAioSession().readFromChannel();
         } else {
+            // 接收到的消息进行预处理
+            for (SmartFilter h : attachment.getAioSession().getIoServerConfig().getFilters()) {
+                h.writeFilter(attachment.getAioSession(), result);
+            }
             attachment.getAioSession().writeToChannel();
         }
 

@@ -21,7 +21,12 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
     /**
      * 当前周期内消息 流量监控
      */
-    private AtomicLong flow = new AtomicLong(0);
+    private AtomicLong inFlow = new AtomicLong(0);
+
+    /**
+     * 当前周期内消息 流量监控
+     */
+    private AtomicLong outFlow = new AtomicLong(0);
 
     /**
      * 当前周期内处理失败消息数
@@ -52,20 +57,27 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
     }
 
     public void readFilter(AioSession<T> session, int readSize) {
-        flow.addAndGet(readSize);
+        inFlow.addAndGet(readSize);
     }
 
     public void processFailHandler(AioSession<T> session, T d, Exception e) {
         processFailNum.incrementAndGet();
     }
 
+    @Override
+    public void writeFilter(AioSession<T> session, int readSize) {
+        outFlow.addAndGet(readSize);
+    }
+
 
     @Override
     public void run() {
-        long curFlow = flow.getAndSet(0);
+        long curInFlow = inFlow.getAndSet(0);
+        long curOutFlow = outFlow.getAndSet(0);
         int curDiscardNum = processFailNum.getAndSet(0);
         int curProcessMsgNum = processMsgNum.getAndSet(0);
-        logger.info("\r\n-----这一分钟发生了什么----\r\n总流量:\t\t" + curFlow * 1.0 / (1024 * 1024) + "(MB)"
+        logger.info("\r\n-----这一分钟发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
+                + "\r\n流出:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n处理失败消息数:\t" + curDiscardNum
                 + "\r\n已处理消息量:\t" + curProcessMsgNum
                 + "\r\n已处理消息总量:\t" + totleProcessMsgNum);
