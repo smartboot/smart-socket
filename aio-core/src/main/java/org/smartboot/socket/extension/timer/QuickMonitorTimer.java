@@ -77,7 +77,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
         int curDiscardNum = processFailNum.getAndSet(0);
         int curProcessMsgNum = processMsgNum.getAndSet(0);
         logger.info("\r\n-----这一分钟发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
-                + "\r\n流出:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
+                + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n处理失败消息数:\t" + curDiscardNum
                 + "\r\n已处理消息量:\t" + curProcessMsgNum
                 + "\r\n已处理消息总量:\t" + totleProcessMsgNum);
