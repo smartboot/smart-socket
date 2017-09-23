@@ -75,6 +75,7 @@ public class AioSession<T> {
         this.aioCompletionHandler = aioCompletionHandler;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
+        this.serverFlowLimit = config.isServer() ? new AtomicBoolean(false) : null;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         readAttach.setBuffer(ByteBuffer.allocate(config.getReadBufferSize()));
         readFromChannel();//注册消息读事件
