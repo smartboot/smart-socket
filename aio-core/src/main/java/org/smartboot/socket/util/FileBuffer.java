@@ -16,12 +16,12 @@ import java.nio.channels.FileChannel;
  */
 public class FileBuffer {
     private static final Logger LOGGER = LogManager.getLogger(FileBuffer.class);
-    private int readBlock = 0;
-    private int readPosition = 0;
-    private int writeBlock = 0;
-    private int writePosition = 0;
-    private int readCount;
-    private int writeCount;
+    private volatile int readBlock = 0;
+    private volatile int readPosition = 0;
+    private volatile int writeBlock = 0;
+    private volatile int writePosition = 0;
+    private volatile int readCount;
+    private volatile int writeCount;
     private File readFile;
     private RandomAccessFile readAccessFile;
     private RandomAccessFile writeAccessFile;
@@ -42,8 +42,12 @@ public class FileBuffer {
             openReadFile();
         }
 
-        int fileSize = (int) readFileChannel.size();
+        int fileSize = readBlock < writeBlock ? MAX_LENGTH : writePosition;
         MappedByteBuffer mappedByteBuffer = readFileChannel.map(FileChannel.MapMode.READ_ONLY, readPosition, (fileSize - readPosition > 32 * 1024) ? 32 * 1024 : (fileSize - readPosition));
+        if (!mappedByteBuffer.hasRemaining()) {
+            System.out.println("file:" + fileSize + " , readB:" + readBlock + " ,p:" + readPosition + " ,writeB:" + writeBlock + " ,writeP:" + writePosition + ", readCount:" + readCount + " ,writeCount:" + writeCount);
+            System.exit(0);
+        }
         readPosition += mappedByteBuffer.remaining();
         readCount += mappedByteBuffer.remaining();
         if (readPosition >= fileSize && readBlock < writeBlock) {
@@ -60,16 +64,10 @@ public class FileBuffer {
         }
 //        MappedByteBuffer mappedByteBuffer = writeFileChannel.map(FileChannel.MapMode.READ_WRITE, writePosition, buffer.remaining());
 //        mappedByteBuffer.put(buffer);
-        int writeSize = buffer.remaining();
-        //不足MAX_LENGTH,全部输出
-        if (writePosition + writeSize <= MAX_LENGTH) {
-            writeFileChannel.map(FileChannel.MapMode.READ_WRITE, writePosition, buffer.remaining()).put(buffer);
-        } else {
-            writeSize = MAX_LENGTH - writePosition;
-            ByteBuffer subBuffer = writeFileChannel.map(FileChannel.MapMode.READ_WRITE, writePosition, writeSize);
-            while (subBuffer.hasRemaining()) {
-                subBuffer.put(buffer.get());
-            }
+        int writeSize = writePosition + buffer.remaining() <= MAX_LENGTH ? buffer.remaining() : MAX_LENGTH - writePosition;
+        MappedByteBuffer mappedByteBuffer = writeFileChannel.map(FileChannel.MapMode.READ_WRITE, writePosition, writeSize);
+        while (mappedByteBuffer.hasRemaining()) {
+            mappedByteBuffer.put(buffer.get());
         }
 
         writePosition += writeSize;

@@ -397,6 +397,20 @@ public class ArrayBlockingQueue extends AbstractQueue<ByteBuffer>
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            //TODO 尝试填充
+            while (count != items.length && fileBuffer != null && fileBuffer.hasRemaining()) {
+                try {
+                    ByteBuffer b = fileBuffer.read();
+                    if (b.hasRemaining()) {
+                        System.out.println("hahahah");
+                        enqueue(b);
+                    } else {
+                        System.out.println("error poll" + b);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             return (count == 0) ? null : dequeue();
         } finally {
             lock.unlock();
