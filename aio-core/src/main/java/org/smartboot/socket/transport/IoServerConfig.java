@@ -16,7 +16,6 @@ final class IoServerConfig<T> {
      */
     private int writeQueueSize = 1024 * 4;
 
-    private String writePersistence;
     /**
      * 消息体缓存大小,字节
      */
