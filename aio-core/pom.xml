@@ -3,11 +3,11 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
         xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <name>aio-core</name>
-    <description>实现传输层的基础通信功能</description>
+    <description>A high performance network application framework based on Java AIO</description>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.smartboot.socket</groupId>
     <artifactId>aio-core</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <properties>
         <commons.lang.version>2.6</commons.lang.version>
