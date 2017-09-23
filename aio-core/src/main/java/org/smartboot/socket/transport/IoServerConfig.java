@@ -16,7 +16,6 @@ final class IoServerConfig<T> {
      */
     private int writeQueueSize = 1024 * 4;
 
-    private String writePersistence;
     /**
      * 消息体缓存大小,字节
      */
@@ -54,6 +53,18 @@ final class IoServerConfig<T> {
      */
     private int threadNum = Runtime.getRuntime().availableProcessors();
 
+    private float limitRate = 0.9f;
+
+    private float releaseRate = 0.6f;
+    /**
+     * 流控指标线
+     */
+    private int flowLimitLine = (int) (writeQueueSize * limitRate);
+
+    /**
+     * 释放流控指标线
+     */
+    private int releaseLine = (int) (writeQueueSize * releaseRate);
     /**
      * true:服务器,false:客户端
      */
@@ -132,6 +143,8 @@ final class IoServerConfig<T> {
 
     public void setWriteQueueSize(int writeQueueSize) {
         this.writeQueueSize = writeQueueSize;
+        flowLimitLine = (int) (writeQueueSize * limitRate);
+        releaseLine = (int) (writeQueueSize * releaseRate);
     }
 
     public int getReadBufferSize() {
@@ -142,11 +155,11 @@ final class IoServerConfig<T> {
         this.readBufferSize = readBufferSize;
     }
 
-    public String getWritePersistence() {
-        return writePersistence;
+    int getFlowLimitLine() {
+        return flowLimitLine;
     }
 
-    public void setWritePersistence(String writePersistence) {
-        this.writePersistence = writePersistence;
+    int getReleaseLine() {
+        return releaseLine;
     }
 }

@@ -36,6 +36,7 @@ class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
             for (SmartFilter h : attachment.getAioSession().getIoServerConfig().getFilters()) {
                 h.writeFilter(attachment.getAioSession(), result);
             }
+            attachment.getAioSession().tryReleaseFlowLimit();
             attachment.getAioSession().writeToChannel();
         }
 

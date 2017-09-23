@@ -3,14 +3,15 @@ package org.smartboot.socket.transport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.service.SmartFilter;
-import org.smartboot.socket.util.ArrayBlockingQueue;
 import org.smartboot.socket.util.StateMachineEnum;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -42,7 +43,11 @@ public class AioSession<T> {
     /**
      * 响应消息缓存队列
      */
-    private ArrayBlockingQueue writeCacheQueue;
+    private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
+    /**
+     * 数据read限流标志,仅服务端需要进行限流
+     */
+    private AtomicBoolean serverFlowLimit;
 
     /**
      * Channel读写操作回调Handler
@@ -68,7 +73,7 @@ public class AioSession<T> {
     AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, AioCompletionHandler aioCompletionHandler) {
         this.channel = channel;
         this.aioCompletionHandler = aioCompletionHandler;
-        this.writeCacheQueue = new ArrayBlockingQueue(config.getWriteQueueSize(),config.getWritePersistence());
+        this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         readAttach.setBuffer(ByteBuffer.allocate(config.getReadBufferSize()));
@@ -178,6 +183,17 @@ public class AioSession<T> {
      */
     public boolean isInvalid() {
         return status != SessionStatus.SESSION_STATUS_ENABLED;
+    }
+
+    /**
+     * 如果存在流控并符合释放条件，则触发读操作
+     */
+    void tryReleaseFlowLimit() {
+        if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
+            serverFlowLimit.set(false);
+            channel.read(readAttach.getBuffer(), readAttach, aioCompletionHandler);
+        }
+
     }
 
     /**
