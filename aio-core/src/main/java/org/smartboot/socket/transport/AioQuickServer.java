@@ -120,8 +120,4 @@ public class AioQuickServer<T> {
         return this;
     }
 
-    public AioQuickServer<T> setWritePersistence(String dir) {
-        this.config.setWritePersistence(dir);
-        return this;
-    }
 }

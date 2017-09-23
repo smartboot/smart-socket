@@ -27,7 +27,6 @@ public class P2PServer {
                 .bind(8888)
                 .setThreadNum(8)
                 .setWriteQueueSize(16384)
-                .setWritePersistence("/Users/zhengjunwei/logs")
                 .setFilters(new SmartFilter[]{new QuickMonitorTimer<BaseMessage>()})
                 .setProtocol(new P2PProtocol(messageFactory))
                 .setProcessor(new P2PServerMessageProcessor(messageFactory));

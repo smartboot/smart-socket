@@ -164,11 +164,4 @@ final class IoServerConfig<T> {
         return releaseLine;
     }
 
-    public String getWritePersistence() {
-        return writePersistence;
-    }
-
-    public void setWritePersistence(String writePersistence) {
-        this.writePersistence = writePersistence;
-    }
 }
