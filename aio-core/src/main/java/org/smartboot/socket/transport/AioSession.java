@@ -220,7 +220,12 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
 
-        channel.read(readBuffer, readAttach, aioCompletionHandler);
+        //触发流控
+        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
+            serverFlowLimit.set(true);
+        } else {
+            channel.read(readBuffer, readAttach, aioCompletionHandler);
+        }
     }
 
     public Object getAttachment() {
