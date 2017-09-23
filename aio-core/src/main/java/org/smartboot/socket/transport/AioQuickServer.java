@@ -119,9 +119,4 @@ public class AioQuickServer<T> {
         this.config.setWriteQueueSize(size);
         return this;
     }
-
-    public AioQuickServer<T> setWritePersistence(String dir) {
-        this.config.setWritePersistence(dir);
-        return this;
-    }
 }
