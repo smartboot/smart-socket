@@ -10,7 +10,6 @@
     <version>1.0.1</version>
 
     <properties>
-        <commons.lang.version>2.6</commons.lang.version>
         <log4j.version>2.4.1</log4j.version>
     </properties>
     <dependencies>

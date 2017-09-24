@@ -22,26 +22,26 @@ public interface SmartFilter<T> {
      * 消息处理前置预处理
      *
      * @param session
-     * @param msgEntity 编解码后的消息实体
+     * @param msg 编解码后的消息实体
      */
-    public void processFilter(AioSession<T> session, T msgEntity);
+    public void processFilter(AioSession<T> session, T msg);
 
 
     /**
      * 消息接受失败处理
      *
      * @param session
-     * @param msgEntity 编解码后的消息实体
+     * @param msg 编解码后的消息实体
      * @param e         本次处理异常对象
      */
-    public void processFailHandler(AioSession<T> session, T msgEntity, Exception e);
+    public void processFailHandler(AioSession<T> session, T msg, Exception e);
 
     /**
      * 数据输出过滤,可用于统计流量
      *
      * @param session
-     * @param readSize  本次输出的数据长度
+     * @param writeSize  本次输出的数据长度
      */
-    public void writeFilter(AioSession<T> session, int readSize);
+    public void writeFilter(AioSession<T> session, int writeSize);
 
 }

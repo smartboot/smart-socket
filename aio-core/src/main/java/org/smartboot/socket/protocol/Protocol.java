@@ -16,19 +16,18 @@ public interface Protocol<T> {
      * 对于从Socket流中获取到的数据采用当前Protocol的实现类协议进行解析
      *
      * @param data
+     * @param session
      * @return 本次解码所成功解析的消息实例集合, 返回null则表示解码未完成
      */
     public T decode(ByteBuffer data, AioSession<T> session);
-
 
     /**
      * 将业务消息实体编码成ByteBuffer用于输出至对端。
      * <b>切勿在encode中直接调用session.write,编码后的byteuffer需交由框架本身来输出</b>
      *
-     * @param t
+     * @param msg
      * @param session
      * @return
      */
-    public ByteBuffer encode(T t, AioSession<T> session);
-
+    public ByteBuffer encode(T msg, AioSession<T> session);
 }
