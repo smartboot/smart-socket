@@ -201,8 +201,6 @@ public class AioSession<T> {
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
     void readFromChannel() {
-
-
         ByteBuffer readBuffer = readAttach.getBuffer();
         readBuffer.flip();
 
