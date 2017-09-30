@@ -3,7 +3,7 @@ package org.smartboot.socket.protocol.p2p.util;
 /**
  * 扩展StringUtils方法
  *
- * @author Seer
+ * @author 三刀
  * @version StringUtils.java, v 0.1 2015年8月25日 下午2:48:21 Seer Exp.
  */
 public class StringUtils extends org.apache.commons.lang.StringUtils {

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 /**
  * 探测消息响应
  *
- * @author Seer
+ * @author 三刀
  */
 public class DetectMessageResp extends BaseMessage {
 

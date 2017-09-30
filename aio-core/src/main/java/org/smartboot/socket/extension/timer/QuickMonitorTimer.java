@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 服务器监测定时器
  * <p>统计一分钟内接收到的数据流量，接受消息数，处理消息数，处理失败消息数</p>
  *
- * @author Seer
+ * @author 三刀
  * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
  */
 public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<T> {

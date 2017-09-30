@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 /**
  * 探测消息请求
  *
- * @author Seer
+ * @author 三刀
  */
 public class DetectMessageReq extends BaseMessage {
     private byte sendTime;

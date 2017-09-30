@@ -3,7 +3,7 @@ package org.smartboot.socket.transport;
 /**
  * 会话状态
  *
- * @author Seer
+ * @author 三刀
  * @version V1.0 , 2017/9/5
  */
 public enum SessionStatus {

@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 /**
  * 服务器消息处理器,由服务器启动时构造
  *
- * @author Seer
+ * @author 三刀
  */
 public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2Entity> {
     private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);

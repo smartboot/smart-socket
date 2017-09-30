@@ -9,7 +9,7 @@ import java.util.TimerTask;
 /**
  * 服务器定时任务
  *
- * @author Seer
+ * @author 三刀
  */
 public abstract class QuickTimerTask extends TimerTask {
     private static final Logger logger = LogManager.getLogger(QuickTimerTask.class);

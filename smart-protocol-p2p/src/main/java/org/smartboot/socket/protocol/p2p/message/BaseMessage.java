@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * P2P协议基础消息体对象
  *
- * @author Seer
+ * @author 三刀
  * @version BaseMessage.java, v 0.1 2015年8月22日 上午11:24:03 Seer Exp.
  */
 public abstract class BaseMessage {

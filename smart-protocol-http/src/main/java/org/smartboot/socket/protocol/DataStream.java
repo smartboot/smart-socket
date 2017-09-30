@@ -3,7 +3,7 @@ package org.smartboot.socket.protocol;
 import java.io.ByteArrayOutputStream;
 
 /**
- * @author Seer
+ * @author 三刀
  * @version V1.0 , 2017/8/26
  */
 public class DataStream extends ByteArrayOutputStream {

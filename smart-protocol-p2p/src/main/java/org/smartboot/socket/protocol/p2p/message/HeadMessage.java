@@ -17,7 +17,7 @@ package org.smartboot.socket.protocol.p2p.message;
  * <p>
  * 预留：16字节
  * 
- * @author Seer
+ * @author 三刀
  * @version HeadMessage.java, v 0.1 2015年8月24日 上午10:40:49 Seer Exp.
  */
 public final class HeadMessage {

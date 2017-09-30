@@ -5,7 +5,7 @@ import org.smartboot.socket.protocol.p2p.util.StringUtils;
 /**
  * 状态返回码枚举
  * 
- * @author Seer
+ * @author 三刀
  * @version ReturnCodeEnum.java, v 0.1 2015年8月24日 下午6:24:03 Seer Exp.
  */
 public enum ReturnCodeEnum {

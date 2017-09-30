@@ -4,7 +4,7 @@ import org.smartboot.socket.protocol.HttpV2Entity;
 
 /**
  * POST请求解码策略
- * @author Seer
+ * @author 三刀
  * @version V1.0 , 2017/9/3
  */
 public interface PostDecodeStrategy {

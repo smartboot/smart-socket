@@ -7,7 +7,7 @@ import org.smartboot.socket.util.StateMachineEnum;
 import java.io.IOException;
 
 /**
- * @author Seer
+ * @author 三刀
  * @version V1.0 , 2017/8/23
  */
 public class IntegerServerProcessor implements MessageProcessor<Integer> {

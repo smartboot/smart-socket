@@ -6,7 +6,7 @@ import org.smartboot.socket.util.StateMachineEnum;
 /**
  * 消息处理器
  *
- * @author Seer
+ * @author 三刀
  * @version MessageProcessor.java, v 0.1 2015年3月13日 下午3:26:55 Seer Exp.
  */
 public interface MessageProcessor<T> {

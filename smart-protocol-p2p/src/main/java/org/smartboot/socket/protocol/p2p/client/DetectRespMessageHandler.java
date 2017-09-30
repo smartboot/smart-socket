@@ -10,7 +10,7 @@ import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
 /**
  * 探测消息处理器
  *
- * @author Seer
+ * @author 三刀
  */
 public class DetectRespMessageHandler extends MessageHandler {
 //    private static Logger logger = LogManager.getLogger(DetectRespMessageHandler.class);

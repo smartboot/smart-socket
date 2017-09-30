@@ -3,7 +3,7 @@ package org.smartboot.socket.protocol.p2p.message;
 /**
  * 定义消息类型
  * 
- * @author Seer
+ * @author 三刀
  * @version MessageType.java, v 0.1 2015年8月24日 上午9:37:04 Seer Exp.
  */
 public interface MessageType {

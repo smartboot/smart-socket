@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * @author Seer
+ * @author 三刀
  * @version V1.0 , 2017/9/12
  */
 public class SmartHttpInputStream extends InputStream {

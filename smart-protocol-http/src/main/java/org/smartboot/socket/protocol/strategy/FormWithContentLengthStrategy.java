@@ -7,7 +7,7 @@ import org.smartboot.socket.protocol.HttpV2Entity;
 /**
  * Post普通表单提交
  *
- * @author Seer
+ * @author 三刀
  * @version V1.0 , 2017/9/3
  */
 public class FormWithContentLengthStrategy implements PostDecodeStrategy {

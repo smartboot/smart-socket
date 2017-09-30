@@ -5,7 +5,7 @@ import org.smartboot.socket.transport.AioSession;
 /**
  * 消息过滤器
  *
- * @author Seer
+ * @author 三刀
  */
 public interface SmartFilter<T> {
 

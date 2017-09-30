@@ -5,7 +5,7 @@ import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.StateMachineEnum;
 
 /**
- * @author Seer
+ * @author 三刀
  * @version V1.0 , 2017/8/23
  */
 public class IntegerClientProcessor implements MessageProcessor<Integer> {

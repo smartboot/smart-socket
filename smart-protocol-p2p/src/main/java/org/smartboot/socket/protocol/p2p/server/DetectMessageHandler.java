@@ -13,7 +13,7 @@ import java.io.IOException;
 /**
  * 探测消息处理器
  *
- * @author Seer
+ * @author 三刀
  *
  */
 public class DetectMessageHandler extends MessageHandler {

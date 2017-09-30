@@ -122,7 +122,7 @@ public class AioSession<T> {
 
     public void write(final ByteBuffer buffer) throws IOException {
         if (isInvalid()) {
-            return;
+            throw new IOException("session is " + status);
         }
         buffer.flip();
         try {

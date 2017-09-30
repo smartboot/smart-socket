@@ -11,7 +11,7 @@ import org.smartboot.socket.util.StateMachineEnum;
 /**
  * 服务器消息处理器,由服务器启动时构造
  *
- * @author Seer
+ * @author 三刀
  */
 public final class P2PServerMessageProcessor implements MessageProcessor<BaseMessage> {
     private P2pServiceMessageFactory serviceMessageFactory;

@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author Seer
+ * @author 三刀
  */
 public class P2PSession implements Session<BaseMessage> {
     private static Logger logger = LogManager.getLogger(P2PSession.class);
