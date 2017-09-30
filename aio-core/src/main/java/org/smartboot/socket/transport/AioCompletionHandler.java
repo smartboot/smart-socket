@@ -44,6 +44,7 @@ class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
 
     @Override
     public void failed(Throwable exc, Attachment attachment) {
+        LOGGER.catching(exc);
         attachment.getAioSession().getIoServerConfig().getProcessor().stateEvent(attachment.getAioSession(), attachment.isRead() ? StateMachineEnum.INPUT_EXCEPTION : StateMachineEnum.OUTPUT_EXCEPTION, exc);
     }
 }

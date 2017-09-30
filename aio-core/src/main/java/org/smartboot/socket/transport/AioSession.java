@@ -86,11 +86,6 @@ public class AioSession<T> {
      * <p>需要调用控制同步</p>
      */
     void writeToChannel() {
-        if (isInvalid()) {
-            close();
-            logger.warn("end write because of aioSession's status is" + status);
-            return;
-        }
         ByteBuffer writeBuffer = writeAttach.buffer != null && writeAttach.buffer.hasRemaining() ? writeAttach.buffer : null;
         ByteBuffer nextBuffer = writeCacheQueue.peek();//为null说明队列已空
         if (writeBuffer == null && nextBuffer == null) {
