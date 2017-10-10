@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by seer on 2017/6/20.
+ * Created by 三刀 on 2017/6/20.
  */
 public class HttpV2Entity {
 

@@ -14,7 +14,7 @@ import java.util.Map;
 
 /**
  * Http消息解析器,仅解析Header部分即可
- * Created by seer on 2017/6/20.
+ * Created by 三刀 on 2017/6/20.
  */
 public class HttpV2Protocol implements Protocol<HttpV2Entity> {
     private static final Logger LOGGER = LogManager.getLogger(HttpV2Protocol.class);

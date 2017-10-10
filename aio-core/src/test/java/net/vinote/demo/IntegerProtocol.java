@@ -6,7 +6,7 @@ import org.smartboot.socket.transport.AioSession;
 import java.nio.ByteBuffer;
 
 /**
- * Created by seer on 2018/08/23.
+ * Created by 三刀 on 2018/08/23.
  */
 public class IntegerProtocol implements Protocol<Integer> {
 

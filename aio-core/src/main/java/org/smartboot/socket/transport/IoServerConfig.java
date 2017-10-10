@@ -5,7 +5,7 @@ import org.smartboot.socket.service.MessageProcessor;
 import org.smartboot.socket.service.SmartFilter;
 
 /**
- * Quickly服务端/客户端配置信息 T:解码后生成的对象类型，S:
+ * Quickly服务端/客户端配置信息 T:解码后生成的对象类型
  *
  * @author 三刀
  */
@@ -65,17 +65,6 @@ final class IoServerConfig<T> {
      * 释放流控指标线
      */
     private int releaseLine = (int) (writeQueueSize * releaseRate);
-    /**
-     * true:服务器,false:客户端
-     */
-    private boolean serverOrClient;
-
-    /**
-     * @param serverOrClient true:服务器,false:客户端
-     */
-    public IoServerConfig(boolean serverOrClient) {
-        this.serverOrClient = serverOrClient;
-    }
 
     public final String getHost() {
         return host;
@@ -106,10 +95,6 @@ final class IoServerConfig<T> {
         this.threadNum = threadNum;
     }
 
-
-    public final boolean isServer() {
-        return serverOrClient;
-    }
 
     public final SmartFilter<T>[] getFilters() {
         return filters;

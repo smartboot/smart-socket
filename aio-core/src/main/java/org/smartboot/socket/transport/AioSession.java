@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * AIO传输层会话
- * Created by seer on 2017/6/29.
+ * Created by 三刀 on 2017/6/29.
  */
 public class AioSession<T> {
     private static final Logger logger = LogManager.getLogger(AioSession.class);
@@ -70,12 +70,19 @@ public class AioSession<T> {
 
     private IoServerConfig<T> ioServerConfig;
 
-    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, AioCompletionHandler aioCompletionHandler) {
+    /**
+     *
+     * @param channel
+     * @param config
+     * @param aioCompletionHandler
+     * @param serverSession 是否服务端Session
+     */
+    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, AioCompletionHandler aioCompletionHandler, boolean serverSession) {
         this.channel = channel;
         this.aioCompletionHandler = aioCompletionHandler;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
-        this.serverFlowLimit = config.isServer() ? new AtomicBoolean(false) : null;
+        this.serverFlowLimit = serverSession ? new AtomicBoolean(false) : null;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         readAttach.setBuffer(ByteBuffer.allocate(config.getReadBufferSize()));
         readFromChannel();//注册消息读事件

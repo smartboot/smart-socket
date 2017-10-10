@@ -5,7 +5,7 @@ import org.smartboot.socket.transport.AioQuickServer;
 import java.io.IOException;
 
 /**
- * Created by seer on 2017/7/12.
+ * Created by 三刀 on 2017/7/12.
  */
 public class IntegerServer {
     public static void main(String[] args) {

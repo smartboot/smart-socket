@@ -15,7 +15,7 @@ import java.util.concurrent.ThreadFactory;
 
 /**
  * AIO实现的客户端服务
- * Created by seer on 2017/6/28.
+ * Created by 三刀 on 2017/6/28.
  */
 public class AioQuickClient<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickClient.class);
@@ -28,7 +28,7 @@ public class AioQuickClient<T> {
     /**
      * 客户端服务配置
      */
-    private IoServerConfig<T> config = new IoServerConfig<T>(false);
+    private IoServerConfig<T> config = new IoServerConfig<T>();
 
     /**
      * @param asynchronousChannelGroup
@@ -39,7 +39,7 @@ public class AioQuickClient<T> {
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        new AioSession<T>(socketChannel, config, new AioCompletionHandler());
+        new AioSession<T>(socketChannel, config, new AioCompletionHandler(), false);
     }
 
     /**

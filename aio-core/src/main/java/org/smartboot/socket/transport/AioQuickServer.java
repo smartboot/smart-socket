@@ -17,13 +17,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * AIO服务端
- * Created by seer on 2017/6/28.
+ * Created by 三刀 on 2017/6/28.
  */
 public class AioQuickServer<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickServer.class);
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
-    private IoServerConfig<T> config = new IoServerConfig<T>(true);
+    private IoServerConfig<T> config = new IoServerConfig<T>();
     private AioCompletionHandler aioCompletionHandler = new AioCompletionHandler();
 
     public void start() throws IOException {
@@ -41,7 +41,7 @@ public class AioQuickServer<T> {
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
                 serverSocketChannel.accept(attachment, this);
                 //连接成功则构造AIOSession对象
-                new AioSession<T>(channel, config, aioCompletionHandler);
+                new AioSession<T>(channel, config, aioCompletionHandler,true);
             }
 
             @Override
