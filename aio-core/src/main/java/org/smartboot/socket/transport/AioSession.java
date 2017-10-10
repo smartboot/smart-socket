@@ -71,11 +71,10 @@ public class AioSession<T> {
     private IoServerConfig<T> ioServerConfig;
 
     /**
-     *
      * @param channel
      * @param config
      * @param aioCompletionHandler
-     * @param serverSession 是否服务端Session
+     * @param serverSession        是否服务端Session
      */
     AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, AioCompletionHandler aioCompletionHandler, boolean serverSession) {
         this.channel = channel;
@@ -84,7 +83,7 @@ public class AioSession<T> {
         this.ioServerConfig = config;
         this.serverFlowLimit = serverSession ? new AtomicBoolean(false) : null;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
-        readAttach.setBuffer(ByteBuffer.allocate(config.getReadBufferSize()));
+        readAttach.buffer = ByteBuffer.allocate(config.getReadBufferSize());
         readFromChannel();//注册消息读事件
     }
 
@@ -123,7 +122,7 @@ public class AioSession<T> {
             writeBuffer.flip();
         }
 
-        writeAttach.setBuffer(writeBuffer);
+        writeAttach.buffer = writeBuffer;
         channel.write(writeBuffer, writeAttach, aioCompletionHandler);
     }
 
@@ -194,7 +193,7 @@ public class AioSession<T> {
     void tryReleaseFlowLimit() {
         if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
             serverFlowLimit.set(false);
-            channel.read(readAttach.getBuffer(), readAttach, aioCompletionHandler);
+            channel.read(readAttach.buffer, readAttach, aioCompletionHandler);
         }
     }
 
@@ -202,7 +201,7 @@ public class AioSession<T> {
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
     void readFromChannel() {
-        ByteBuffer readBuffer = readAttach.getBuffer();
+        final ByteBuffer readBuffer = readAttach.buffer;
         readBuffer.flip();
 
         T dataEntry;
@@ -259,10 +258,6 @@ public class AioSession<T> {
         }
     }
 
-    IoServerConfig<T> getIoServerConfig() {
-        return ioServerConfig;
-    }
-
     class Attachment {
         private ByteBuffer buffer;
         /**
@@ -278,13 +273,8 @@ public class AioSession<T> {
             return AioSession.this;
         }
 
-
-        public ByteBuffer getBuffer() {
-            return buffer;
-        }
-
-        public void setBuffer(ByteBuffer buffer) {
-            this.buffer = buffer;
+        public IoServerConfig getServerConfig() {
+            return AioSession.this.ioServerConfig;
         }
 
         public boolean isRead() {

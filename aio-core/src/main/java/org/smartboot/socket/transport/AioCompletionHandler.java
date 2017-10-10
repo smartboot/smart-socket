@@ -23,28 +23,27 @@ class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
         //读操作回调
         if (attachment.isRead()) {
             if (result == -1) {
-                attachment.getAioSession().getIoServerConfig().getProcessor().stateEvent(attachment.getAioSession(), StateMachineEnum.INPUT_SHUTDOWN, null);
+                attachment.getServerConfig().getProcessor().stateEvent(attachment.getAioSession(), StateMachineEnum.INPUT_SHUTDOWN, null);
                 return;
             }
             // 接收到的消息进行预处理
-            for (SmartFilter h : attachment.getAioSession().getIoServerConfig().getFilters()) {
+            for (SmartFilter h : attachment.getServerConfig().getFilters()) {
                 h.readFilter(attachment.getAioSession(), result);
             }
             attachment.getAioSession().readFromChannel();
         } else {
             // 接收到的消息进行预处理
-            for (SmartFilter h : attachment.getAioSession().getIoServerConfig().getFilters()) {
+            for (SmartFilter h : attachment.getServerConfig().getFilters()) {
                 h.writeFilter(attachment.getAioSession(), result);
             }
             attachment.getAioSession().tryReleaseFlowLimit();
             attachment.getAioSession().writeToChannel();
         }
-
     }
 
     @Override
     public void failed(Throwable exc, Attachment attachment) {
         LOGGER.catching(exc);
-        attachment.getAioSession().getIoServerConfig().getProcessor().stateEvent(attachment.getAioSession(), attachment.isRead() ? StateMachineEnum.INPUT_EXCEPTION : StateMachineEnum.OUTPUT_EXCEPTION, exc);
+        attachment.getServerConfig().getProcessor().stateEvent(attachment.getAioSession(), attachment.isRead() ? StateMachineEnum.INPUT_EXCEPTION : StateMachineEnum.OUTPUT_EXCEPTION, exc);
     }
 }
