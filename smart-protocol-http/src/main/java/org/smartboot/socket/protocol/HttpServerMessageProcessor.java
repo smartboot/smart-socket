@@ -64,8 +64,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
 //        } catch (FileNotFoundException e) {
 //            e.printStackTrace();
 //        }
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-        buffer.put(("HTTP/1.1 200 OK\n" +
+        ByteBuffer buffer = ByteBuffer.wrap(("HTTP/1.1 200 OK\n" +
                 "Server: seer/1.4.4\n" +
                 "Content-Length: 2\n" +
                 ("Keep-Alive".equalsIgnoreCase(entry.getHeadMap().get("Connection")) ?
@@ -74,6 +73,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
                 "\n" +
                 "OK").getBytes());
         try {
+//            buffer.flip();
             session.write(buffer);
         } catch (IOException e) {
             LOGGER.catching(e);

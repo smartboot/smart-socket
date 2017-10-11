@@ -23,6 +23,7 @@ public class IntegerProtocol implements Protocol<Integer> {
     public ByteBuffer encode(Integer s, AioSession<Integer> session) {
         ByteBuffer b = ByteBuffer.allocate(INT_LENGTH);
         b.putInt(s);
+        b.flip();
         return b;
     }
 }

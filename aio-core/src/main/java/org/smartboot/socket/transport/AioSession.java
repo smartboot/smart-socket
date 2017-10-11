@@ -130,7 +130,6 @@ public class AioSession<T> {
         if (isInvalid()) {
             throw new IOException("session is " + status);
         }
-        buffer.flip();
         try {
             //正常读取
             writeCacheQueue.put(buffer);

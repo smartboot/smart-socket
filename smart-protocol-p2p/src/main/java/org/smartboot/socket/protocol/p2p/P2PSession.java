@@ -141,8 +141,7 @@ public class P2PSession implements Session<BaseMessage> {
 
     public void sendWithoutResponse(BaseMessage requestMsg) throws Exception {
         assertTransactionSession();
-        ByteBuffer buffer = requestMsg.encode();
-        ioSession.write(buffer);
+        ioSession.write(requestMsg.encode());
     }
 
     public BaseMessage sendWithResponse(BaseMessage requestMsg, long timeout) throws Exception {

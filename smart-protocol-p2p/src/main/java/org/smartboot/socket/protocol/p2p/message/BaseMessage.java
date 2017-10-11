@@ -70,7 +70,7 @@ public abstract class BaseMessage {
 
         encodeHead(bodyBuffer);// 编码消息头
         bodyBuffer.position(bodyBuffer.limit());
-
+        bodyBuffer.flip();
         return bodyBuffer;
     }
 

@@ -66,7 +66,7 @@ public class AioQuickClient<T> {
         if (socketChannel != null) {
             try {
                 socketChannel.close();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 LOGGER.catching(e);
             }
         }
