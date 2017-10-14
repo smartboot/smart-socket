@@ -1,18 +1,16 @@
 package org.smartboot.socket.transport;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.service.SmartFilter;
-import org.smartboot.socket.util.StateMachineEnum;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.service.SmartFilter;
+import org.smartboot.socket.util.StateMachineEnum;
 
 /**
  * AIO传输层会话
@@ -23,12 +21,12 @@ public class AioSession<T> {
     /**
      * Session ID生成器
      */
-    private static final AtomicInteger NEXT_ID = new AtomicInteger(0);
+    private static int NEXT_ID =0;
 
     /**
      * 唯一标识
      */
-    private final int sessionId = NEXT_ID.getAndIncrement();
+    private final int sessionId = ++NEXT_ID;
 
     /**
      * 会话当前状态
@@ -47,7 +45,7 @@ public class AioSession<T> {
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
-    private AtomicBoolean serverFlowLimit;
+    private Boolean serverFlowLimit;
 
     /**
      * Channel读写操作回调Handler
@@ -81,7 +79,7 @@ public class AioSession<T> {
         this.aioCompletionHandler = aioCompletionHandler;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
-        this.serverFlowLimit = serverSession ? new AtomicBoolean(false) : null;
+        this.serverFlowLimit = serverSession ? false : null;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         readAttach.buffer = ByteBuffer.allocate(config.getReadBufferSize());
         readFromChannel();//注册消息读事件
@@ -190,8 +188,8 @@ public class AioSession<T> {
      * 如果存在流控并符合释放条件，则触发读操作
      */
     void tryReleaseFlowLimit() {
-        if (serverFlowLimit != null && serverFlowLimit.get() && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
-            serverFlowLimit.set(false);
+        if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
+            serverFlowLimit=false;
             channel.read(readAttach.buffer, readAttach, aioCompletionHandler);
         }
     }
@@ -220,7 +218,7 @@ public class AioSession<T> {
 
         //触发流控
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
-            serverFlowLimit.set(true);
+            serverFlowLimit=true;
         } else {
             channel.read(readBuffer, readAttach, aioCompletionHandler);
         }
