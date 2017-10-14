@@ -27,20 +27,20 @@ public class AioQuickServer<T> {
 
     public void start() throws IOException {
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
-        	int index=0;
+            int index = 0;
+
             @Override
             public Thread newThread(Runnable r) {
                 return new Thread(r, "AIO-Thread-" + (++index));
             }
         });
-
         this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()), 1000);
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
             @Override
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
                 serverSocketChannel.accept(attachment, this);
                 //连接成功则构造AIOSession对象
-                new AioSession<T>(channel, config, aioCompletionHandler,true);
+                new AioSession<T>(channel, config, aioCompletionHandler, true);
             }
 
             @Override
