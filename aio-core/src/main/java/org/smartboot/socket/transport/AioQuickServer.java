@@ -1,5 +1,11 @@
 package org.smartboot.socket.transport;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.protocol.Protocol;
+import org.smartboot.socket.service.MessageProcessor;
+import org.smartboot.socket.service.SmartFilter;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousChannelGroup;
@@ -7,12 +13,6 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ThreadFactory;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.protocol.Protocol;
-import org.smartboot.socket.service.MessageProcessor;
-import org.smartboot.socket.service.SmartFilter;
 
 /**
  * AIO服务端
@@ -27,7 +27,7 @@ public class AioQuickServer<T> {
 
     public void start() throws IOException {
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
-            int index = 0;
+            byte index = 0;
 
             @Override
             public Thread newThread(Runnable r) {

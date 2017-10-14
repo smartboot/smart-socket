@@ -95,7 +95,7 @@ public class AioSession<T> {
         ByteBuffer nextBuffer = writeCacheQueue.peek();//为null说明队列已空
         if (writeBuffer == null && nextBuffer == null) {
             semaphore.release();
-            if (isInvalid()) {
+            if (isInvalid()) {//此时可能是Closing或Closed状态
                 close();
             } else if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
                 writeToChannel();
