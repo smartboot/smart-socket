@@ -94,7 +94,9 @@ public class AioSession<T> {
         ByteBuffer nextBuffer = writeCacheQueue.peek();//为null说明队列已空
         if (writeBuffer == null && nextBuffer == null) {
             semaphore.release();
-            if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
+            if(isInvalid()){
+            	close();
+            }else if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
                 writeToChannel();
             }
             return;
@@ -150,6 +152,7 @@ public class AioSession<T> {
      * @param immediate true:立即关闭,false:响应消息发送完后关闭
      */
     public void close(boolean immediate) {
+		status = immediate ? SessionStatus.SESSION_STATUS_CLOSED : SessionStatus.SESSION_STATUS_CLOSING;
         if (immediate) {
             try {
                 channel.close();
@@ -157,13 +160,9 @@ public class AioSession<T> {
             } catch (IOException e) {
                 logger.catching(e);
             }
-            status = SessionStatus.SESSION_STATUS_CLOSED;
-        } else {
-            status = SessionStatus.SESSION_STATUS_CLOSING;
-            if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
-                close(true);
-                semaphore.release();
-            }
+        } else if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
+            close(true);
+            semaphore.release();
         }
     }
 
