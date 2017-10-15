@@ -102,8 +102,9 @@ public class AioSession<T> {
             }
             return;
         }
+
+        //对缓存中的数据进行压缩处理再输出
         if (writeBuffer == null) {
-            //对缓存中的数据进行压缩处理再输出
             Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
             int totalSize = 0;
             while (iterable.hasNext() && totalSize <= 32 * 1024) {
