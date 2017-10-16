@@ -16,10 +16,6 @@ class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
 
     @Override
     public void completed(final Integer result, final Attachment attachment) {
-        //出现result为0,说明代码存在问题
-        if (result == 0) {
-            LOGGER.error("result is 0");
-        }
         //读操作回调
         if (attachment.isRead()) {
             if (result == -1) {

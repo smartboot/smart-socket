@@ -56,6 +56,10 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
     }
 
     public void readFilter(AioSession<T> session, int readSize) {
+        //出现result为0,说明代码存在问题
+        if (readSize == 0) {
+            logger.error("readSize is 0");
+        }
         inFlow.addAndGet(readSize);
     }
 
