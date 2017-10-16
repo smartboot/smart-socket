@@ -47,9 +47,7 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
                         if (StringUtils.equalsIgnoreCase("POST", entity.getMethod()) && entity.getContentLength() != 0) {
                             entity.partFlag = HttpPart.BODY;
                             selectDecodeStrategy(entity);//识别body解码处理器
-                            if (!entity.postDecodeStrategy.waitForBodyFinish()) {
-                                returnEntity = true;
-                            }
+                            returnEntity = !entity.postDecodeStrategy.waitForBodyFinish();
                         } else {
                             entity.partFlag = HttpPart.END;
                             returnEntity = true;
@@ -62,9 +60,7 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
 //                    System.out.println(entity.postDecodeStrategy);
                     if (entity.postDecodeStrategy.isDecodeEnd(buffer.get(), entity)) {
                         entity.partFlag = HttpPart.END;
-                        if (entity.postDecodeStrategy.waitForBodyFinish()) {
-                            returnEntity = true;
-                        }
+                        returnEntity = entity.postDecodeStrategy.waitForBodyFinish();
                     }
                     break;
                 }

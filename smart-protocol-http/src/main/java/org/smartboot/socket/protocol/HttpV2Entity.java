@@ -65,7 +65,8 @@ public class HttpV2Entity {
         protocol = requestLineData[2];
 
         for (int i = 1; i < headDatas.length; i++) {
-            setHeader(StringUtils.substringBefore(headDatas[i], ":").trim(), StringUtils.substringAfter(headDatas[i], ":").trim());
+            String[] lineDatas = StringUtils.split(headDatas[i], ":");
+            setHeader(lineDatas[0].trim(), lineDatas[1].trim());
         }
         contentType = headMap.get(CONTENT_TYPE);
         contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), -1);

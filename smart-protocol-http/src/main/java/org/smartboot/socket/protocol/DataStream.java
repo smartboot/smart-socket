@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
  */
 public class DataStream extends ByteArrayOutputStream {
     private byte[] endFLag;
+    private int exceptIndex;
     private int contentLength = -1;
 
     public DataStream(byte[] endFLag) {
@@ -25,16 +26,13 @@ public class DataStream extends ByteArrayOutputStream {
         if (contentLength > 0) {
             return count == contentLength;
         }
-
-        if (count < endFLag.length) {
+        if (data != endFLag[exceptIndex]) {
+            exceptIndex = 0;
             return false;
+        } else {
+            exceptIndex++;
         }
-        for (int i = 1; i <= endFLag.length; i++) {
-            if (buf[count - i] != endFLag[endFLag.length - i]) {
-                return false;
-            }
-        }
-        return true;
+        return exceptIndex == endFLag.length;
     }
 
     public void setEndFLag(byte[] endFLag) {
