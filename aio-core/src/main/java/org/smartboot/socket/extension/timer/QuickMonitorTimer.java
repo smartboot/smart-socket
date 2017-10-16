@@ -6,7 +6,6 @@ import org.smartboot.socket.service.SmartFilter;
 import org.smartboot.socket.transport.AioSession;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -31,15 +30,15 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
     /**
      * 当前周期内处理失败消息数
      */
-    private AtomicInteger processFailNum = new AtomicInteger(0);
+    private AtomicLong processFailNum = new AtomicLong(0);
 
     /**
      * 当前周期内处理消息数
      */
-    private AtomicInteger processMsgNum = new AtomicInteger(0);
+    private AtomicLong processMsgNum = new AtomicLong(0);
 
 
-    private volatile long totleProcessMsgNum = 0;
+    private long totleProcessMsgNum = 0;
 
     @Override
     protected long getDelay() {
@@ -74,8 +73,8 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
     public void run() {
         long curInFlow = inFlow.getAndSet(0);
         long curOutFlow = outFlow.getAndSet(0);
-        int curDiscardNum = processFailNum.getAndSet(0);
-        int curProcessMsgNum = processMsgNum.getAndSet(0);
+        long curDiscardNum = processFailNum.getAndSet(0);
+        long curProcessMsgNum = processMsgNum.getAndSet(0);
         logger.info("\r\n-----这一分钟发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n处理失败消息数:\t" + curDiscardNum

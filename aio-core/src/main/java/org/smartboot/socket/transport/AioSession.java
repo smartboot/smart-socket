@@ -19,9 +19,15 @@ import java.util.concurrent.Semaphore;
  */
 public class AioSession<T> {
     private static final Logger logger = LogManager.getLogger(AioSession.class);
-    /**
-     * Session ID生成器
-     */
+
+    /* Session状态:已关闭 */
+    private static final byte SESSION_STATUS_CLOSED = 1,
+    /*Session状态:关闭中*/
+    SESSION_STATUS_CLOSING = 2,
+    /* Session状态:正常 */
+    SESSION_STATUS_ENABLED = 3;
+
+    /* Session ID生成器 */
     private static int NEXT_ID = 0;
 
     /**
@@ -32,7 +38,7 @@ public class AioSession<T> {
     /**
      * 会话当前状态
      */
-    private volatile SessionStatus status = SessionStatus.SESSION_STATUS_ENABLED;
+    private byte status = SESSION_STATUS_ENABLED;
 
     /**
      * 附件对象
@@ -154,7 +160,7 @@ public class AioSession<T> {
      * @param immediate true:立即关闭,false:响应消息发送完后关闭
      */
     public void close(boolean immediate) {
-        status = immediate ? SessionStatus.SESSION_STATUS_CLOSED : SessionStatus.SESSION_STATUS_CLOSING;
+        status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
             try {
                 channel.close();
@@ -182,7 +188,7 @@ public class AioSession<T> {
      * 当前会话是否已失效
      */
     public boolean isInvalid() {
-        return status != SessionStatus.SESSION_STATUS_ENABLED;
+        return status != SESSION_STATUS_ENABLED;
     }
 
     /**
@@ -257,11 +263,11 @@ public class AioSession<T> {
     }
 
     class Attachment {
-        private ByteBuffer buffer;
         /**
          * true:read,false:write
          */
         private final boolean read;
+        private ByteBuffer buffer;
 
         public Attachment(boolean optType) {
             this.read = optType;
