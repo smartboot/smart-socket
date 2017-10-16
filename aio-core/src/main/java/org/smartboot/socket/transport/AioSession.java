@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -34,6 +35,7 @@ public class AioSession<T> {
      * 唯一标识
      */
     private final int sessionId = ++NEXT_ID;
+    Future<Integer> future;
     /**
      * 会话当前状态
      */
@@ -90,6 +92,9 @@ public class AioSession<T> {
      * <p>需要调用控制同步</p>
      */
     void writeToChannel() {
+        if (future != null) {
+            throw new RuntimeException("ahhaha");
+        }
         ByteBuffer writeBuffer = writeAttach.buffer != null && writeAttach.buffer.hasRemaining() ? writeAttach.buffer : null;
         ByteBuffer nextBuffer = writeCacheQueue.peek();//为null说明队列已空
         if (writeBuffer == null && nextBuffer == null) {
@@ -124,12 +129,22 @@ public class AioSession<T> {
         }
 
         writeAttach.buffer = writeBuffer;
-        channel.write(writeBuffer, writeAttach, aioCompletionHandler);
+        future = channel.write(writeBuffer);
+//        channel.write(writeBuffer, writeAttach, aioCompletionHandler);
     }
 
     public void write(final ByteBuffer buffer) throws IOException {
         if (isInvalid()) {
             throw new IOException("session is " + status);
+        }
+        if (future != null && !writeAttach.buffer.hasRemaining()) {
+            synchronized (this) {
+                if (future != null && !writeAttach.buffer.hasRemaining()) {
+                    future = null;
+                    writeAttach.buffer = null;
+                    semaphore.release();
+                }
+            }
         }
         try {
             //正常读取
