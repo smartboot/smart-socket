@@ -38,7 +38,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
     private AtomicLong processMsgNum = new AtomicLong(0);
 
 
-    private long totleProcessMsgNum = 0;
+    private AtomicLong totleProcessMsgNum = new AtomicLong(0);
 
     @Override
     protected long getDelay() {
@@ -52,7 +52,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
 
     public void processFilter(AioSession<T> session, T d) {
         processMsgNum.incrementAndGet();
-        totleProcessMsgNum++;
+        totleProcessMsgNum.incrementAndGet();
     }
 
     public void readFilter(AioSession<T> session, int readSize) {
@@ -79,7 +79,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
                 + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n处理失败消息数:\t" + curDiscardNum
                 + "\r\n已处理消息量:\t" + curProcessMsgNum
-                + "\r\n已处理消息总量:\t" + totleProcessMsgNum);
+                + "\r\n已处理消息总量:\t" + totleProcessMsgNum.get());
     }
 
 
