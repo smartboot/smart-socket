@@ -27,14 +27,17 @@ public class DetectMessageResp extends BaseMessage {
         this.sendTime = sendTime;
     }
 
+    @Override
     protected void encodeBody(ByteBuffer buffer) {
         writeByte(buffer, sendTime);
     }
 
+    @Override
     protected void decodeBody(ByteBuffer buffer) {
         sendTime = readByte(buffer);
     }
 
+    @Override
     public int getMessageType() {
         return MessageType.DETECT_MESSAGE_RSP;
     }

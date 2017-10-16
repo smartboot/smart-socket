@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -34,17 +35,15 @@ public class AioSession<T> {
      * 唯一标识
      */
     private final int sessionId = ++NEXT_ID;
-
+    Future<Integer> future;
     /**
      * 会话当前状态
      */
     private byte status = SESSION_STATUS_ENABLED;
-
     /**
      * 附件对象
      */
     private Object attachment;
-
     /**
      * 响应消息缓存队列
      */
@@ -53,7 +52,6 @@ public class AioSession<T> {
      * 数据read限流标志,仅服务端需要进行限流
      */
     private Boolean serverFlowLimit;
-
     /**
      * Channel读写操作回调Handler
      */
@@ -62,17 +60,14 @@ public class AioSession<T> {
      * 读写回调附件
      */
     private Attachment readAttach = new Attachment(true), writeAttach = new Attachment(false);
-
     /**
      * 底层通信channel对象
      */
     private AsynchronousSocketChannel channel;
-
     /**
      * 输出信号量
      */
     private Semaphore semaphore = new Semaphore(1);
-
     private IoServerConfig<T> ioServerConfig;
 
     /**
@@ -137,6 +132,19 @@ public class AioSession<T> {
     public void write(final ByteBuffer buffer) throws IOException {
         if (isInvalid()) {
             throw new IOException("session is " + status);
+        }
+        if (future != null && !writeAttach.buffer.hasRemaining() && semaphore.availablePermits() == 0) {
+            synchronized (this) {
+                if (future != null && !writeAttach.buffer.hasRemaining() && semaphore.availablePermits() == 0) {
+                    future = null;
+                    semaphore.release();
+                }
+            }
+        }
+        if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
+            writeAttach.buffer = buffer;
+            future = channel.write(buffer);
+            return;
         }
         try {
             //正常读取

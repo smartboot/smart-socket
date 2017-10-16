@@ -18,6 +18,7 @@ public class SmartHttpInputStream extends InputStream {
         this.contentLength = contentLength;
     }
 
+    @Override
     public int read() throws IOException {
         if (binReadLength == contentLength) {
             return -1;
@@ -31,6 +32,7 @@ public class SmartHttpInputStream extends InputStream {
         }
     }
 
+    @Override
     public int read(byte b[], int off, int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();

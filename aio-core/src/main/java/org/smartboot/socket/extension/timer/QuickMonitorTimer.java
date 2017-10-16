@@ -50,11 +50,13 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
         return TimeUnit.MINUTES.toMillis(1);
     }
 
+    @Override
     public void processFilter(AioSession<T> session, T d) {
         processMsgNum.incrementAndGet();
         totleProcessMsgNum.incrementAndGet();
     }
 
+    @Override
     public void readFilter(AioSession<T> session, int readSize) {
         //出现result为0,说明代码存在问题
         if (readSize == 0) {
@@ -63,6 +65,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements SmartFilter<
         inFlow.addAndGet(readSize);
     }
 
+    @Override
     public void processFailHandler(AioSession<T> session, T d, Exception e) {
         processFailNum.incrementAndGet();
     }
