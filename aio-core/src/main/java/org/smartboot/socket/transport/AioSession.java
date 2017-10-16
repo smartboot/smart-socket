@@ -11,7 +11,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -35,7 +34,6 @@ public class AioSession<T> {
      * 唯一标识
      */
     private final int sessionId = ++NEXT_ID;
-    Future<Integer> future;
     /**
      * 会话当前状态
      */
@@ -132,19 +130,6 @@ public class AioSession<T> {
     public void write(final ByteBuffer buffer) throws IOException {
         if (isInvalid()) {
             throw new IOException("session is " + status);
-        }
-        if (future != null && !writeAttach.buffer.hasRemaining() && semaphore.availablePermits() == 0) {
-            synchronized (this) {
-                if (future != null && !writeAttach.buffer.hasRemaining() && semaphore.availablePermits() == 0) {
-                    future = null;
-                    semaphore.release();
-                }
-            }
-        }
-        if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
-            writeAttach.buffer = buffer;
-            future = channel.write(buffer);
-            return;
         }
         try {
             //正常读取
