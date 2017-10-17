@@ -114,16 +114,18 @@ public class AioSession<T> {
                 writeBuffer.put(writeCacheQueue.poll());
             }
             writeBuffer.flip();
-        } else if (nextBuffer != null && nextBuffer.remaining() <= (writeBuffer.capacity() - writeBuffer.remaining())) {
-            writeBuffer.compact();
-            do {
-                writeBuffer.put(writeCacheQueue.poll());
-            }
-            while ((nextBuffer = writeCacheQueue.peek()) != null && nextBuffer.remaining() <= writeBuffer.remaining());
-            writeBuffer.flip();
+            writeAttach.buffer = writeBuffer;
         }
+//        else if (nextBuffer != null && writeBuffer.remaining() < writeBuffer.position() && nextBuffer.remaining() <= (writeBuffer.capacity() - writeBuffer.remaining())) {
+//            writeBuffer.compact();
+//            do {
+//                writeBuffer.put(writeCacheQueue.poll());
+//            }
+//            while ((nextBuffer = writeCacheQueue.peek()) != null && nextBuffer.remaining() <= writeBuffer.remaining());
+//            writeBuffer.flip();
+//        }
 
-        writeAttach.buffer = writeBuffer;
+
         channel.write(writeBuffer, writeAttach, aioCompletionHandler);
     }
 
