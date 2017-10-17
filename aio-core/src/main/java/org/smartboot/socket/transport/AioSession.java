@@ -109,9 +109,22 @@ public class AioSession<T> {
             while (iterable.hasNext() && totalSize <= 32 * 1024) {
                 totalSize += iterable.next().remaining();
             }
-            writeBuffer = ByteBuffer.allocate(totalSize);
-            while (writeBuffer.hasRemaining()) {
-                writeBuffer.put(writeCacheQueue.poll());
+            if (nextBuffer.capacity() >= totalSize) {
+                writeBuffer = writeCacheQueue.poll();
+                if (writeBuffer.position() > 0) {
+                    writeBuffer.compact();
+                }
+
+                writeBuffer.position(writeBuffer.limit());
+                writeBuffer.limit(totalSize);
+                while (writeBuffer.hasRemaining()) {
+                    writeBuffer.put(writeCacheQueue.poll());
+                }
+            } else {
+                writeBuffer = ByteBuffer.allocate(totalSize);
+                while (writeBuffer.hasRemaining()) {
+                    writeBuffer.put(writeCacheQueue.poll());
+                }
             }
             writeBuffer.flip();
             writeAttach.buffer = writeBuffer;
