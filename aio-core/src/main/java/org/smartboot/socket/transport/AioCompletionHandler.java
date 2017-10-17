@@ -16,7 +16,6 @@ class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
 
     @Override
     public void completed(final Integer result, final Attachment attachment) {
-        //读操作回调
         if (attachment.isRead()) {
             if (result == -1) {
                 attachment.getServerConfig().getProcessor().stateEvent(attachment.getAioSession(), StateMachineEnum.INPUT_SHUTDOWN, null);
