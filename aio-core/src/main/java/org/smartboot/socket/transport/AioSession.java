@@ -90,9 +90,12 @@ public class AioSession<T> {
      * <p>需要调用控制同步</p>
      */
     void writeToChannel() {
-        ByteBuffer writeBuffer = writeAttach.buffer != null && writeAttach.buffer.hasRemaining() ? writeAttach.buffer : null;
-        ByteBuffer nextBuffer = writeCacheQueue.peek();//为null说明队列已空
-        if (writeBuffer == null && nextBuffer == null) {
+        if (writeAttach.buffer != null && writeAttach.buffer.hasRemaining()) {
+            channel.write(writeAttach.buffer, writeAttach, aioCompletionHandler);
+            return;
+        }
+
+        if (writeCacheQueue.isEmpty()) {
             semaphore.release();
             if (isInvalid()) {//此时可能是Closing或Closed状态
                 close();
@@ -101,45 +104,21 @@ public class AioSession<T> {
             }
             return;
         }
-
         //对缓存中的数据进行压缩处理再输出
-        if (writeBuffer == null) {
-            Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
-            int totalSize = 0;
-            while (iterable.hasNext() && totalSize <= 32 * 1024) {
-                totalSize += iterable.next().remaining();
-            }
-            if (nextBuffer.capacity() >= totalSize) {
-                writeBuffer = writeCacheQueue.poll();
-                if (writeBuffer.position() > 0) {
-                    writeBuffer.compact();
-                }
-
-                writeBuffer.position(writeBuffer.limit());
-                writeBuffer.limit(totalSize);
-                while (writeBuffer.hasRemaining()) {
-                    writeBuffer.put(writeCacheQueue.poll());
-                }
-            } else {
-                writeBuffer = ByteBuffer.allocate(totalSize);
-                while (writeBuffer.hasRemaining()) {
-                    writeBuffer.put(writeCacheQueue.poll());
-                }
-            }
-            writeBuffer.flip();
-            writeAttach.buffer = writeBuffer;
+        Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
+        int totalSize = 0;
+        while (iterable.hasNext() && totalSize <= 32 * 1024) {
+            totalSize += iterable.next().remaining();
         }
-//        else if (nextBuffer != null && writeBuffer.remaining() < writeBuffer.position() && nextBuffer.remaining() <= (writeBuffer.capacity() - writeBuffer.remaining())) {
-//            writeBuffer.compact();
-//            do {
-//                writeBuffer.put(writeCacheQueue.poll());
-//            }
-//            while ((nextBuffer = writeCacheQueue.peek()) != null && nextBuffer.remaining() <= writeBuffer.remaining());
-//            writeBuffer.flip();
-//        }
-
-
-        channel.write(writeBuffer, writeAttach, aioCompletionHandler);
+        byte[] data = new byte[totalSize];
+        int index = 0;
+        while (index < data.length) {
+            ByteBuffer srcBuffer = writeCacheQueue.poll();
+            System.arraycopy(srcBuffer.array(), srcBuffer.position(), data, index, srcBuffer.remaining());
+            index += srcBuffer.remaining();
+        }
+        writeAttach.buffer = ByteBuffer.wrap(data);
+        channel.write(writeAttach.buffer, writeAttach, aioCompletionHandler);
     }
 
     public void write(final ByteBuffer buffer) throws IOException {
