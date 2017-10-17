@@ -94,7 +94,7 @@ public class AioSession<T> {
             channel.write(writeAttach.buffer, writeAttach, aioCompletionHandler);
             return;
         }
-
+        writeAttach.buffer = null;//释放对象
         if (writeCacheQueue.isEmpty()) {
             semaphore.release();
             if (isInvalid()) {//此时可能是Closing或Closed状态
