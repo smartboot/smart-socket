@@ -6,7 +6,7 @@
     <dependency>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>aio-core</artifactId>
-        <version>1.0.1</version>
+        <version>1.1.0</version>
     </dependency>
 
 ## 工程结构
