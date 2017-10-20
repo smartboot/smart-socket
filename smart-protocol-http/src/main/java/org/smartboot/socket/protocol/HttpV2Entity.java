@@ -8,6 +8,7 @@ import org.smartboot.socket.protocol.strategy.PostDecodeStrategy;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,10 +33,8 @@ public class HttpV2Entity {
     public static final String RANGE = "Range";
     public static final String LOCATION = "Location";
     public static final String CONNECTION = "Connection";
-
-    private int contentLength = -1;
-
-    public DataStream dataStream = new DataStream("\r\n\r\n".getBytes());
+    public DelimiterFrameDecoder headDelimiterFrameDecoder = new DelimiterFrameDecoder("\r\n\r\n".getBytes(), 128);
+    public FixedLengthFrameDecoder bodyContentDecoder;
     public SmartHttpInputStream smartHttpInputStream = new SmartHttpInputStream(1);
     /**
      * 0:消息头
@@ -43,15 +42,18 @@ public class HttpV2Entity {
      * 2:结束
      */
     HttpPart partFlag = HttpPart.HEAD;
-
+    PostDecodeStrategy postDecodeStrategy;
+    private int contentLength = -1;
     private String method, url, protocol, contentType, decodeError;
     private Map<String, String> headMap = new HashMap<String, String>();
     private Map<String, String> paramMap = new HashMap<String, String>();
 
-    PostDecodeStrategy postDecodeStrategy;
+    public HttpV2Entity(AioSession<HttpV2Entity> session) {
+    }
 
     public void decodeHead() {
-        String[] headDatas = StringUtils.split(dataStream.toString(), "\r\n");
+        ByteBuffer headBuffer = headDelimiterFrameDecoder.getBuffer();
+        String[] headDatas = StringUtils.split(new String(headBuffer.array(), headBuffer.position(), headBuffer.remaining()), "\r\n");
         if (ArrayUtils.isEmpty(headDatas)) {
             throw new RuntimeException("解码异常");
         }
@@ -70,12 +72,6 @@ public class HttpV2Entity {
         }
         contentType = headMap.get(CONTENT_TYPE);
         contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), -1);
-        //重置
-        dataStream.reset();
-    }
-
-
-    public HttpV2Entity(AioSession<HttpV2Entity> session) {
     }
 
     public InputStream getInputStream() {

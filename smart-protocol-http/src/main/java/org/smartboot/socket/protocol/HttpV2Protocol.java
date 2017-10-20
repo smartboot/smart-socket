@@ -42,7 +42,7 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
         while (buffer.hasRemaining() && continueDecode) {
             switch (entity.partFlag) {
                 case HEAD: {
-                    if (entity.dataStream.append(buffer.get())) {
+                    if (entity.headDelimiterFrameDecoder.put(buffer.get())) {
                         entity.decodeHead();//消息头解码
                         if (StringUtils.equalsIgnoreCase("POST", entity.getMethod()) && entity.getContentLength() != 0) {
                             entity.partFlag = HttpPart.BODY;
