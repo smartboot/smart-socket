@@ -37,12 +37,11 @@ public class DelimiterFrameDecoder {
         } else {
             exceptIndex++;
         }
-        boolean result = exceptIndex == endFLag.length;
-        if (result) {
+        if (exceptIndex == endFLag.length) {
             buffer.flip();
             finishRead = true;
         }
-        return result;
+        return finishRead;
     }
 
     public ByteBuffer getBuffer() {

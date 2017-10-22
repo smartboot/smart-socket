@@ -1,7 +1,7 @@
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
-import org.smartboot.socket.extension.decoder.HttpServerMessageProcessor;
-import org.smartboot.socket.extension.decoder.HttpV2Entity;
-import org.smartboot.socket.extension.decoder.HttpV2Protocol;
+import org.smartboot.socket.protocol.http.HttpServerMessageProcessor;
+import org.smartboot.socket.protocol.http.HttpEntity;
+import org.smartboot.socket.protocol.http.HttpProtocol;
 import org.smartboot.socket.transport.AioQuickServer;
 
 import java.io.IOException;
@@ -13,10 +13,10 @@ public class Test {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
 //        config.setFilters(new SmartFilter[] { new QuickMonitorTimer<HttpEntity>() });
         HttpServerMessageProcessor processor = new HttpServerMessageProcessor();
-        AioQuickServer<HttpV2Entity> server = new AioQuickServer<HttpV2Entity>()
+        AioQuickServer<HttpEntity> server = new AioQuickServer<HttpEntity>()
                 .setThreadNum(8)
-                .setProtocol(new HttpV2Protocol())
-                .setFilters(new QuickMonitorTimer<HttpV2Entity>())
+                .setProtocol(new HttpProtocol())
+                .setFilters(new QuickMonitorTimer<HttpEntity>())
                 .setProcessor(processor);
         try {
             server.start();
