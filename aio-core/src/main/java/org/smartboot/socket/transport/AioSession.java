@@ -3,7 +3,7 @@ package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.service.SmartFilter;
+import org.smartboot.socket.Filter;
 import org.smartboot.socket.util.StateMachineEnum;
 
 import java.io.IOException;
@@ -82,7 +82,7 @@ public class AioSession<T> {
         this.serverFlowLimit = serverSession ? false : null;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         readAttach.buffer = ByteBuffer.allocate(config.getReadBufferSize());
-        readFromChannel();//注册消息读事件
+        readFromChannel(0);//注册消息读事件
     }
 
     /**
@@ -191,13 +191,20 @@ public class AioSession<T> {
     /**
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
-    void readFromChannel() {
+    void readFromChannel(int readSize) {
         final ByteBuffer readBuffer = readAttach.buffer;
         readBuffer.flip();
 
         T dataEntry;
-        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this)) != null) {
+        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, readSize == -1)) != null) {
             receive0(dataEntry);
+        }
+
+        if (readSize == -1) {
+            if (readBuffer.hasRemaining()) {
+                logger.error("{} bytes has not decode when EOF", readBuffer.remaining());
+            }
+            return;
         }
 
         //数据读取完毕
@@ -209,6 +216,7 @@ public class AioSession<T> {
             readBuffer.position(readBuffer.limit());
             readBuffer.limit(readBuffer.capacity());
         }
+
 
         //触发流控
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
@@ -237,13 +245,13 @@ public class AioSession<T> {
      */
     private void receive0(T dataEntry) {
         try {
-            for (SmartFilter<T> h : ioServerConfig.getFilters()) {
+            for (Filter<T> h : ioServerConfig.getFilters()) {
                 h.processFilter(this, dataEntry);
             }
             ioServerConfig.getProcessor().process(this, dataEntry);
         } catch (Exception e) {
             logger.catching(e);
-            for (SmartFilter<T> h : ioServerConfig.getFilters()) {
+            for (Filter<T> h : ioServerConfig.getFilters()) {
                 h.processFailHandler(this, dataEntry, e);
             }
         }

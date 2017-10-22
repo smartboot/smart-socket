@@ -1,8 +1,8 @@
 package com.test.message;
 
-import org.smartboot.socket.protocol.p2p.MessageHandler;
-import org.smartboot.socket.protocol.p2p.Session;
-import org.smartboot.socket.protocol.p2p.message.BaseMessage;
+import org.smartboot.socket.extension.decoder.p2p.MessageHandler;
+import org.smartboot.socket.extension.decoder.p2p.Session;
+import org.smartboot.socket.extension.decoder.p2p.message.BaseMessage;
 
 public class HelloWorldHandler extends MessageHandler {
 

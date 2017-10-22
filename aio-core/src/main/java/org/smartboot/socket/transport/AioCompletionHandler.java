@@ -2,7 +2,7 @@ package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.service.SmartFilter;
+import org.smartboot.socket.Filter;
 import org.smartboot.socket.transport.AioSession.Attachment;
 import org.smartboot.socket.util.StateMachineEnum;
 
@@ -17,18 +17,17 @@ class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
     @Override
     public void completed(final Integer result, final Attachment attachment) {
         if (attachment.isRead()) {
-            if (result == -1) {
-                attachment.getServerConfig().getProcessor().stateEvent(attachment.getAioSession(), StateMachineEnum.INPUT_SHUTDOWN, null);
-                return;
-            }
             // 接收到的消息进行预处理
-            for (SmartFilter h : attachment.getServerConfig().getFilters()) {
+            for (Filter h : attachment.getServerConfig().getFilters()) {
                 h.readFilter(attachment.getAioSession(), result);
             }
-            attachment.getAioSession().readFromChannel();
+            attachment.getAioSession().readFromChannel(result);
+            if (result == -1) {
+                attachment.getServerConfig().getProcessor().stateEvent(attachment.getAioSession(), StateMachineEnum.INPUT_SHUTDOWN, null);
+            }
         } else {
             // 接收到的消息进行预处理
-            for (SmartFilter h : attachment.getServerConfig().getFilters()) {
+            for (Filter h : attachment.getServerConfig().getFilters()) {
                 h.writeFilter(attachment.getAioSession(), result);
             }
             attachment.getAioSession().tryReleaseFlowLimit();

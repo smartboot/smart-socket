@@ -1,6 +1,6 @@
 package net.vinote.demo;
 
-import org.smartboot.socket.protocol.Protocol;
+import org.smartboot.socket.Protocol;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
@@ -13,7 +13,7 @@ public class IntegerProtocol implements Protocol<Integer> {
     private static final int INT_LENGTH = 4;
 
     @Override
-    public Integer decode(ByteBuffer data, AioSession<Integer> session) {
+    public Integer decode(ByteBuffer data, AioSession<Integer> session, boolean eof) {
         if (data.remaining() < INT_LENGTH)
             return null;
         return data.getInt();

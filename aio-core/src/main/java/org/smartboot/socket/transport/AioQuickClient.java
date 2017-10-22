@@ -2,9 +2,9 @@ package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.protocol.Protocol;
-import org.smartboot.socket.service.MessageProcessor;
-import org.smartboot.socket.service.SmartFilter;
+import org.smartboot.socket.Protocol;
+import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.Filter;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -106,7 +106,7 @@ public class AioQuickClient<T> {
      * @param filters
      * @return
      */
-    public AioQuickClient<T> setFilters(SmartFilter<T>[] filters) {
+    public AioQuickClient<T> setFilters(Filter<T>[] filters) {
         this.config.setFilters(filters);
         return this;
     }

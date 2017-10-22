@@ -1,7 +1,7 @@
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
-import org.smartboot.socket.protocol.HttpServerMessageProcessor;
-import org.smartboot.socket.protocol.HttpV2Entity;
-import org.smartboot.socket.protocol.HttpV2Protocol;
+import org.smartboot.socket.extension.decoder.HttpServerMessageProcessor;
+import org.smartboot.socket.extension.decoder.HttpV2Entity;
+import org.smartboot.socket.extension.decoder.HttpV2Protocol;
 import org.smartboot.socket.transport.AioQuickServer;
 
 import java.io.IOException;

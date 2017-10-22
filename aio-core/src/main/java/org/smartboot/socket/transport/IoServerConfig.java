@@ -1,8 +1,8 @@
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.protocol.Protocol;
-import org.smartboot.socket.service.MessageProcessor;
-import org.smartboot.socket.service.SmartFilter;
+import org.smartboot.socket.Protocol;
+import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.Filter;
 
 /**
  * Quickly服务端/客户端配置信息 T:解码后生成的对象类型
@@ -30,7 +30,7 @@ final class IoServerConfig<T> {
     /**
      * 服务器消息拦截器
      */
-    private SmartFilter<T>[] filters = new SmartFilter[0];
+    private Filter<T>[] filters = new Filter[0];
 
     /**
      * 服务器端口号
@@ -96,11 +96,11 @@ final class IoServerConfig<T> {
     }
 
 
-    public final SmartFilter<T>[] getFilters() {
+    public final Filter<T>[] getFilters() {
         return filters;
     }
 
-    public final void setFilters(SmartFilter<T>[] filters) {
+    public final void setFilters(Filter<T>[] filters) {
         if (filters != null) {
             this.filters = filters;
         }
