@@ -1,14 +1,17 @@
-package org.smartboot.socket.protocol.http;
+package org.smartboot.socket.protocol.http.process;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.protocol.http.HttpEntity;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.StateMachineEnum;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -19,6 +22,7 @@ import java.util.concurrent.Executors;
  */
 public final class HttpServerMessageProcessor implements MessageProcessor<HttpEntity> {
     private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);
+    List<RequestHandler> handlers = new ArrayList<>();
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
@@ -59,6 +63,10 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
         if (!"Keep-Alive".equalsIgnoreCase(entry.getHeadMap().get("Connection"))) {
             session.close(false);
         }
+    }
+
+    public void handler(RequestHandler handler) {
+        handlers.add(handler);
     }
 
     @Override

@@ -41,18 +41,15 @@ public class HttpProtocol implements Protocol<HttpEntity> {
         boolean returnEntity = false;//是否返回HttpEntity
         switch (entity.partFlag) {
             case HEAD:
-                while (buffer.hasRemaining()) {
-                    if (entity.headDelimiterFrameDecoder.put(buffer.get())) {
-                        entity.decodeHead();//消息头解码
-                        if (StringUtils.equalsIgnoreCase("POST", entity.getMethod()) && entity.getContentLength() != 0) {
-                            entity.partFlag = HttpPart.BODY;
-                            selectDecodeStrategy(entity);//识别body解码处理器
-                            returnEntity = !entity.postDecodeStrategy.waitForBodyFinish();
-                        } else {
-                            entity.partFlag = HttpPart.END;
-                            returnEntity = true;
-                        }
-                        break;
+                if (entity.headDelimiterFrameDecoder.decoder(buffer)) {
+                    entity.decodeHead();//消息头解码
+                    if (StringUtils.equalsIgnoreCase("POST", entity.getMethod()) && entity.getContentLength() != 0) {
+                        entity.partFlag = HttpPart.BODY;
+                        selectDecodeStrategy(entity);//识别body解码处理器
+                        returnEntity = !entity.postDecodeStrategy.waitForBodyFinish();
+                    } else {
+                        entity.partFlag = HttpPart.END;
+                        returnEntity = true;
                     }
                 }
                 if (entity.partFlag != HttpPart.BODY) {
