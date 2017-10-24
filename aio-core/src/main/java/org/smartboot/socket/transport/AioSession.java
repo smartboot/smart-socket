@@ -119,6 +119,7 @@ public class AioSession<T> {
         }
         writeAttach.buffer = ByteBuffer.wrap(data);
         channel.write(writeAttach.buffer, writeAttach, aioCompletionHandler);
+        tryReleaseFlowLimit();
     }
 
     public void write(final ByteBuffer buffer) throws IOException {
