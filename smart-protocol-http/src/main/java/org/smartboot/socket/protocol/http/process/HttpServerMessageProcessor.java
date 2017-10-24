@@ -54,12 +54,10 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
                 "\n" +
                 "OK").getBytes());
         try {
-//            buffer.flip();
             session.write(buffer);
         } catch (IOException e) {
             LOGGER.catching(e);
         }
-//        System.out.println(entry);
         if (!"Keep-Alive".equalsIgnoreCase(entry.getHeadMap().get("Connection"))) {
             session.close(false);
         }

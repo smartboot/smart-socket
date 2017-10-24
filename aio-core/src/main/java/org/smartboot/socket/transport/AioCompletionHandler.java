@@ -22,9 +22,6 @@ class AioCompletionHandler implements CompletionHandler<Integer, Attachment> {
                 h.readFilter(attachment.getAioSession(), result);
             }
             attachment.getAioSession().readFromChannel(result);
-            if (result == -1) {
-                attachment.getServerConfig().getProcessor().stateEvent(attachment.getAioSession(), StateMachineEnum.INPUT_SHUTDOWN, null);
-            }
         } else {
             // 接收到的消息进行预处理
             for (Filter h : attachment.getServerConfig().getFilters()) {
