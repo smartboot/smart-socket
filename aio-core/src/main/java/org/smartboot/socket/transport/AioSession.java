@@ -182,7 +182,7 @@ public class AioSession<T> {
     /**
      * 如果存在流控并符合释放条件，则触发读操作
      */
-    void tryReleaseFlowLimit() {
+    private void tryReleaseFlowLimit() {
         if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
             serverFlowLimit = false;
             channel.read(readAttach.buffer, readAttach, aioCompletionHandler);
