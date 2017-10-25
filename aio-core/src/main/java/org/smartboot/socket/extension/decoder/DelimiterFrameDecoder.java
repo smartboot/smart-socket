@@ -20,19 +20,19 @@ public class DelimiterFrameDecoder {
         bufferList.add(ByteBuffer.allocate(unitBufferSize));
     }
 
-    public boolean decoder(ByteBuffer buffer1) {
+    public boolean decoder(ByteBuffer byteBuffer) {
         if (finishRead) {
             throw new RuntimeException("delimiter has finish read");
         }
         ByteBuffer preBuffer = bufferList.get(bufferList.size() - 1);
 
-        while (buffer1.hasRemaining()) {
+        while (byteBuffer.hasRemaining()) {
             if (!preBuffer.hasRemaining()) {
                 preBuffer.flip();
                 preBuffer = ByteBuffer.allocate(preBuffer.capacity());
                 bufferList.add(preBuffer);
             }
-            byte data = buffer1.get();
+            byte data = byteBuffer.get();
             preBuffer.put(data);
             if (data != endFLag[exceptIndex]) {
                 exceptIndex = 0;

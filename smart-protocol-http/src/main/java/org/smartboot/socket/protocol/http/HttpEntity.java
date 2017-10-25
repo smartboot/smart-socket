@@ -1,7 +1,5 @@
 package org.smartboot.socket.protocol.http;
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.math.NumberUtils;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
@@ -12,6 +10,7 @@ import org.smartboot.socket.transport.AioSession;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * Created by 三刀 on 2017/6/20.
@@ -54,22 +53,23 @@ public class HttpEntity {
 
     public void decodeHead() {
         ByteBuffer headBuffer = headDelimiterFrameDecoder.getBuffer();
-        String[] headDatas = StringUtils.split(new String(headBuffer.array(), headBuffer.position(), headBuffer.remaining()), "\r\n");
-        if (ArrayUtils.isEmpty(headDatas)) {
+        StringTokenizer headerToken = new StringTokenizer(new String(headBuffer.array(), headBuffer.position(), headBuffer.remaining()), "\r\n");
+//        String[] headDatas = StringUtils.split(new String(headBuffer.array(), headBuffer.position(), headBuffer.remaining()), "\r\n");
+        if (!headerToken.hasMoreElements()) {
             throw new RuntimeException("解码异常");
         }
         //请求行解码
-        String[] requestLineData = StringUtils.split(headDatas[0], " ");
-        if (ArrayUtils.getLength(requestLineData) != 3) {
+        StringTokenizer requestLineData = new StringTokenizer(headerToken.nextToken(), " ");
+        if (requestLineData.countTokens() != 3) {
             throw new RuntimeException("请求行解码异常");
         }
-        method = requestLineData[0];
-        url = requestLineData[1];
-        protocol = requestLineData[2];
+        method = requestLineData.nextToken();
+        url = requestLineData.nextToken();
+        protocol = requestLineData.nextToken();
 
-        for (int i = 1; i < headDatas.length; i++) {
-            String[] lineDatas = StringUtils.split(headDatas[i], ":");
-            setHeader(lineDatas[0].trim(), lineDatas[1].trim());
+        while (headerToken.hasMoreElements()) {
+            StringTokenizer lineDatas = new StringTokenizer(headerToken.nextToken(), ":");
+            setHeader(lineDatas.nextToken().trim(), lineDatas.nextToken().trim());
         }
         contentType = headMap.get(CONTENT_TYPE);
         contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), -1);
