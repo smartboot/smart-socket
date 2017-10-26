@@ -1,10 +1,13 @@
 package org.smartboot.socket.protocol.http;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.math.NumberUtils;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
+import org.smartboot.socket.protocol.http.strategy.FormWithContentLengthStrategy;
 import org.smartboot.socket.protocol.http.strategy.PostDecodeStrategy;
+import org.smartboot.socket.protocol.http.strategy.StreamWithContentLengthStrategy;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
@@ -33,46 +36,60 @@ public class HttpEntity {
     public static final String RANGE = "Range";
     public static final String LOCATION = "Location";
     public static final String CONNECTION = "Connection";
-    public DelimiterFrameDecoder headDelimiterFrameDecoder = new DelimiterFrameDecoder("\r\n\r\n".getBytes(), 128);
+    private static final byte[] CRLF = "\r\n\r\n".getBytes();
+    private static final String STREAM_BODY = "STREAM_BODY";
+    private static final String BLOCK_BODY = "BLOCK_BODY";
+    public DelimiterFrameDecoder delimiterFrameDecoder = new DelimiterFrameDecoder(CRLF, 128);
     public FixedLengthFrameDecoder bodyContentDecoder;
-//    public StreamFrameDecoder smartHttpInputStream = new StreamFrameDecoder();
+    //    public StreamFrameDecoder smartHttpInputStream = new StreamFrameDecoder();
+    PostDecodeStrategy postDecodeStrategy;
+    private Map<String, PostDecodeStrategy> strategyMap = new HashMap<>();
     /**
      * 0:消息头
      * 1:消息体
      * 2:结束
      */
-    HttpPart partFlag = HttpPart.HEAD;
-    PostDecodeStrategy postDecodeStrategy;
+    private HttpDecodePart decodePart = HttpDecodePart.HEAD;
     private int contentLength = -1;
     private String method, url, protocol, contentType, decodeError;
     private Map<String, String> headMap = new HashMap<String, String>();
     private Map<String, String> paramMap = new HashMap<String, String>();
 
+    {
+        strategyMap.put(BLOCK_BODY, new FormWithContentLengthStrategy());
+        strategyMap.put(STREAM_BODY, new StreamWithContentLengthStrategy());
+    }
+
     public HttpEntity(AioSession<HttpEntity> session) {
     }
 
+    /**
+     * 解码HTTP请求头部分
+     */
     public void decodeHead() {
-        ByteBuffer headBuffer = headDelimiterFrameDecoder.getBuffer();
-        StringTokenizer headerToken = new StringTokenizer(new String(headBuffer.array(), headBuffer.position(), headBuffer.remaining()), "\r\n");
-//        String[] headDatas = StringUtils.split(new String(headBuffer.array(), headBuffer.position(), headBuffer.remaining()), "\r\n");
-        if (!headerToken.hasMoreElements()) {
-            throw new RuntimeException("解码异常");
-        }
-        //请求行解码
-        StringTokenizer requestLineData = new StringTokenizer(headerToken.nextToken(), " ");
-        if (requestLineData.countTokens() != 3) {
-            throw new RuntimeException("请求行解码异常");
-        }
-        method = requestLineData.nextToken();
-        url = requestLineData.nextToken();
-        protocol = requestLineData.nextToken();
+        ByteBuffer headBuffer = delimiterFrameDecoder.getBuffer();
 
-        while (headerToken.hasMoreElements()) {
-            StringTokenizer lineDatas = new StringTokenizer(headerToken.nextToken(), ":");
-            setHeader(lineDatas.nextToken().trim(), lineDatas.nextToken().trim());
+        StringTokenizer headerToken = new StringTokenizer(new String(headBuffer.array(), headBuffer.position(), headBuffer.remaining()), "\r\n");
+
+        StringTokenizer requestLineToken = new StringTokenizer(headerToken.nextToken(), " ");
+        method = requestLineToken.nextToken();
+        url = requestLineToken.nextToken();
+        protocol = requestLineToken.nextToken();
+
+        while (headerToken.hasMoreTokens()) {
+            StringTokenizer lineToken = new StringTokenizer(headerToken.nextToken(), ":");
+            setHeader(lineToken.nextToken().trim(), lineToken.nextToken().trim());
         }
-        contentType = headMap.get(CONTENT_TYPE);
+
         contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), -1);
+        contentType = headMap.get(CONTENT_TYPE);
+        if (StringUtils.equalsIgnoreCase("POST", method) && contentLength != 0) {
+            setDecodePart(HttpDecodePart.BODY);
+            selectDecodeStrategy();//识别body解码处理器
+        } else {
+            setDecodePart(HttpDecodePart.END);
+        }
+        delimiterFrameDecoder = null;
     }
 
 //    public InputStream getInputStream() {
@@ -143,5 +160,25 @@ public class HttpEntity {
 
     public void setParamMap(Map<String, String> paramMap) {
         this.paramMap = paramMap;
+    }
+
+    public HttpDecodePart getDecodePart() {
+        return decodePart;
+    }
+
+    public void setDecodePart(HttpDecodePart decodePart) {
+        this.decodePart = decodePart;
+    }
+
+    private void selectDecodeStrategy() {
+        if (getContentLength() > 0) {
+            if (getContentLength() > 0 && StringUtils.startsWith(getContentType(), "application/x-www-form-urlencoded")) {
+                postDecodeStrategy = strategyMap.get(BLOCK_BODY);
+            } else {
+                postDecodeStrategy = strategyMap.get(STREAM_BODY);
+            }
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 }

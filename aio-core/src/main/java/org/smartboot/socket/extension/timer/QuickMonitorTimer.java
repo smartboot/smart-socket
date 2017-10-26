@@ -66,7 +66,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
     }
 
     @Override
-    public void processFailHandler(AioSession<T> session, T d, Exception e) {
+    public void processFailHandler(AioSession<T> session, T d, Throwable e) {
         processFailNum.incrementAndGet();
     }
 
