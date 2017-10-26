@@ -27,6 +27,7 @@ public class HttpProtocol implements Protocol<HttpEntity> {
                     entity.decodeHead();//消息头解码
                     if (entity.getDecodePart() == HttpDecodePart.END) {
                         returnEntity = true;
+                        session.setAttachment(null);
                         break;
                     } else if (entity.getDecodePart() == HttpDecodePart.BODY) {
                         returnEntity = !entity.postDecodeStrategy.waitForBodyFinish();
@@ -43,9 +44,6 @@ public class HttpProtocol implements Protocol<HttpEntity> {
                 break;
             default:
                 session.setAttachment(null);
-        }
-        if (entity.getDecodePart() == HttpDecodePart.END) {
-            session.setAttachment(null);
         }
         return returnEntity ? entity : null;
     }
