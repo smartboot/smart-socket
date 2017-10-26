@@ -251,7 +251,7 @@ public class AioSession<T> {
                 h.processFilter(this, dataEntry);
             }
             ioServerConfig.getProcessor().process(this, dataEntry);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.catching(e);
             for (Filter<T> h : ioServerConfig.getFilters()) {
                 h.processFailHandler(this, dataEntry, e);

@@ -34,7 +34,7 @@ public interface Filter<T> {
      * @param msg 编解码后的消息实体
      * @param e         本次处理异常对象
      */
-    public void processFailHandler(AioSession<T> session, T msg, Exception e);
+    public void processFailHandler(AioSession<T> session, T msg, Throwable e);
 
     /**
      * 数据输出过滤,可用于统计流量

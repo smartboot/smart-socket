@@ -54,11 +54,4 @@ public class DelimiterFrameDecoder {
         }
         return ByteBuffer.wrap(data);
     }
-
-    public void rest(byte[] endFLag) {
-        bufferList.clear();
-        finishRead = false;
-        this.endFLag = endFLag;
-    }
-
 }
