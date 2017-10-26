@@ -18,11 +18,19 @@ public class FixedLengthFrameDecoder {
         }
     }
 
-    public boolean put(byte data) {
+    public boolean put(ByteBuffer byteBuffer) {
         if (finishRead) {
             throw new RuntimeException("delimiter has finish read");
         }
-        buffer.put(data);
+        if (buffer.remaining() >= byteBuffer.remaining()) {
+            buffer.put(byteBuffer);
+        } else {
+            int limit = byteBuffer.limit();
+            byteBuffer.limit(limit - buffer.remaining());
+            buffer.put(byteBuffer);
+            byteBuffer.limit(limit);
+        }
+
         if (buffer.hasRemaining()) {
             return false;
         }

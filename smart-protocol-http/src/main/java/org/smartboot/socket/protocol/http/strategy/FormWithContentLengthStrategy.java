@@ -25,18 +25,16 @@ public class FormWithContentLengthStrategy implements PostDecodeStrategy {
         if (entity.bodyContentDecoder == null) {
             entity.bodyContentDecoder = new FixedLengthFrameDecoder(entity.getContentLength());
         }
-        while (buffer.hasRemaining()) {
-            if (entity.bodyContentDecoder.put(buffer.get())) {
-                ByteBuffer contentBuffer = entity.bodyContentDecoder.getBuffer();
-                String[] headDatas = StringUtils.split(new String(contentBuffer.array(), contentBuffer.position(), contentBuffer.remaining()), "&");
-                if (ArrayUtils.isEmpty(headDatas)) {
-                    throw new RuntimeException("data is emtpy");
-                }
-                for (int i = 0; i < headDatas.length; i++) {
-                    entity.getParamMap().put(StringUtils.substringBefore(headDatas[i], "=").trim(), StringUtils.substringAfter(headDatas[i], "=").trim());
-                }
-                return true;
+        if (entity.bodyContentDecoder.put(buffer)) {
+            ByteBuffer contentBuffer = entity.bodyContentDecoder.getBuffer();
+            String[] headDatas = StringUtils.split(new String(contentBuffer.array(), contentBuffer.position(), contentBuffer.remaining()), "&");
+            if (ArrayUtils.isEmpty(headDatas)) {
+                throw new RuntimeException("data is emtpy");
             }
+            for (int i = 0; i < headDatas.length; i++) {
+                entity.getParamMap().put(StringUtils.substringBefore(headDatas[i], "=").trim(), StringUtils.substringAfter(headDatas[i], "=").trim());
+            }
+            return true;
         }
         return false;
     }
