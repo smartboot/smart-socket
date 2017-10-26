@@ -8,7 +8,6 @@ import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.protocol.http.strategy.FormWithContentLengthStrategy;
 import org.smartboot.socket.protocol.http.strategy.PostDecodeStrategy;
 import org.smartboot.socket.protocol.http.strategy.StreamWithContentLengthStrategy;
-import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -58,9 +57,6 @@ public class HttpEntity {
     {
         strategyMap.put(BLOCK_BODY, new FormWithContentLengthStrategy());
         strategyMap.put(STREAM_BODY, new StreamWithContentLengthStrategy());
-    }
-
-    public HttpEntity(AioSession<HttpEntity> session) {
     }
 
     /**

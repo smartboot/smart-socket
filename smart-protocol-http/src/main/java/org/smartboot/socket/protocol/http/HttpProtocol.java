@@ -15,7 +15,7 @@ public class HttpProtocol implements Protocol<HttpEntity> {
     public HttpEntity decode(ByteBuffer buffer, AioSession<HttpEntity> session, boolean eof) {
         HttpEntity entity = null;
         if (session.getAttachment() == null) {
-            entity = new HttpEntity(session);
+            entity = new HttpEntity();
             session.setAttachment(entity);
         } else {
             entity = (HttpEntity) session.getAttachment();
