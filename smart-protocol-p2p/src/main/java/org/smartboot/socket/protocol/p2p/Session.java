@@ -4,7 +4,7 @@ package org.smartboot.socket.protocol.p2p;
  * 定义业务层Session对象。
  * 由于传输层提供的IoSession是脱离于业务的，其接口存在一定的复杂度，直接使用可能会出现不可预知的问题。
  * 建议于业务层的Session接口实现类对其做一层封装
- * @author zhengjunwei
+ * @author 三刀
  *
  * @param <T>
  */

@@ -15,7 +15,7 @@ import java.nio.ByteBuffer;
 /**
  * Point to Point消息协议实现
  *
- * @author Administrator
+ * @author 三刀
  */
 public final class P2PProtocol implements Protocol<BaseMessage> {
     /**

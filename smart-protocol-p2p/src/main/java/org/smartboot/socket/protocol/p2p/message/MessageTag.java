@@ -4,7 +4,7 @@ package org.smartboot.socket.protocol.p2p.message;
  * 定义消息体各字段区分Tag通用标准值 <br/>
  * 若该标准与某些特定消息tag冲突,则优先使用特定tag值
  * 
- * @author Administrator
+ * @author 三刀
  * 
  */
 public interface MessageTag {
