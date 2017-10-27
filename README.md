@@ -18,8 +18,7 @@ smart-socket的核心代码
 实现了私有协议P2P，性能测试也是基于该协议进行的
 
 ## 近期项目安排（分支：1.0.0-DEV）
-1. 实现相对规范的Http协议编解码
-2. 继续重构优化aio-core代码
+1. 实现servlet3.1规范
 
 [开发手册](http://smartsocket.mydoc.io/)
 
