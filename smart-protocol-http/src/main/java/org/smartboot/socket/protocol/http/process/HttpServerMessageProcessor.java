@@ -5,9 +5,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.protocol.http.HttpEntity;
+import org.smartboot.socket.protocol.http.servlet.SmartServletContent;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.StateMachineEnum;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -24,7 +27,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
     private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);
     List<RequestHandler> handlers = new ArrayList<>();
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
-
+    ServletContext servletContext = new SmartServletContent();
     @Override
     public void process(final AioSession<HttpEntity> session, final HttpEntity entry) {
         //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
@@ -60,6 +63,15 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
         }
         if (!"Keep-Alive".equalsIgnoreCase(entry.getHeadMap().get("Connection"))) {
             session.close(false);
+        }
+
+        try {
+            ServletContext context=servletContext.getContext(entry.getUrl());
+            servletContext.getServlet("").service(null, null);
+        } catch (ServletException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

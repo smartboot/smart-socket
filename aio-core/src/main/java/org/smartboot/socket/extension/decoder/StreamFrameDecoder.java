@@ -2,6 +2,7 @@ package org.smartboot.socket.extension.decoder;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -12,17 +13,22 @@ import java.util.concurrent.locks.ReentrantLock;
 public class StreamFrameDecoder {
     private BinaryBuffer buffer = new BinaryBuffer(1024);
 
-    public boolean put(byte b) {
+    public boolean put(ByteBuffer byteBuffer) {
         if (buffer.binWriteLength == buffer.contentLength) {
             return false;
         }
-        try {
-            buffer.put(b);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("invalid content length");
+        while (byteBuffer.hasRemaining()) {
+            try {
+                buffer.put(byteBuffer.get());
+            } catch (InterruptedException e) {
+                throw new RuntimeException("invalid content length");
+            }
+            buffer.binWriteLength++;
+            if (buffer.binWriteLength == buffer.contentLength) {
+                return true;
+            }
         }
-        buffer.binWriteLength++;
-        return buffer.binWriteLength == buffer.contentLength;
+        return false;
     }
 
     public InputStream getInputStream() {
