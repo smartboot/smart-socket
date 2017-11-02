@@ -27,12 +27,12 @@ import java.util.Map;
 
 /**
  * @author 三刀
- * @version V1.0 , 2017/10/27
+ * @version V1.0 , 2017/10/30
  */
-public class SmartHttpServletRequest implements HttpServletRequest {
-
-    public SmartHttpServletRequest(HttpEntity entity) {
-    }
+public class HttpServletRequestImpl implements HttpServletRequest {
+    private String requestUri;
+    private HttpEntity httpEntity;
+    private ServletContext servletContext;
 
     @Override
     public String getAuthType() {
@@ -45,17 +45,17 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public long getDateHeader(String s) {
+    public long getDateHeader(String name) {
         return 0;
     }
 
     @Override
-    public String getHeader(String s) {
+    public String getHeader(String name) {
         return null;
     }
 
     @Override
-    public Enumeration<String> getHeaders(String s) {
+    public Enumeration<String> getHeaders(String name) {
         return null;
     }
 
@@ -65,7 +65,7 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public int getIntHeader(String s) {
+    public int getIntHeader(String name) {
         return 0;
     }
 
@@ -100,7 +100,7 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public boolean isUserInRole(String s) {
+    public boolean isUserInRole(String role) {
         return false;
     }
 
@@ -116,6 +116,10 @@ public class SmartHttpServletRequest implements HttpServletRequest {
 
     @Override
     public String getRequestURI() {
+        if (requestUri != null) {
+            return requestUri;
+        }
+        httpEntity.getUrl();
         return null;
     }
 
@@ -130,7 +134,7 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public HttpSession getSession(boolean b) {
+    public HttpSession getSession(boolean create) {
         return null;
     }
 
@@ -165,12 +169,12 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public boolean authenticate(HttpServletResponse httpServletResponse) throws IOException, ServletException {
+    public boolean authenticate(HttpServletResponse response) throws IOException, ServletException {
         return false;
     }
 
     @Override
-    public void login(String s, String s1) throws ServletException {
+    public void login(String username, String password) throws ServletException {
 
     }
 
@@ -185,17 +189,17 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public Part getPart(String s) throws IOException, ServletException {
+    public Part getPart(String name) throws IOException, ServletException {
         return null;
     }
 
     @Override
-    public <T extends HttpUpgradeHandler> T upgrade(Class<T> aClass) throws IOException, ServletException {
+    public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
         return null;
     }
 
     @Override
-    public Object getAttribute(String s) {
+    public Object getAttribute(String name) {
         return null;
     }
 
@@ -210,7 +214,7 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public void setCharacterEncoding(String s) throws UnsupportedEncodingException {
+    public void setCharacterEncoding(String env) throws UnsupportedEncodingException {
 
     }
 
@@ -235,7 +239,7 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public String getParameter(String s) {
+    public String getParameter(String name) {
         return null;
     }
 
@@ -245,7 +249,7 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public String[] getParameterValues(String s) {
+    public String[] getParameterValues(String name) {
         return new String[0];
     }
 
@@ -290,12 +294,12 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public void setAttribute(String s, Object o) {
+    public void setAttribute(String name, Object o) {
 
     }
 
     @Override
-    public void removeAttribute(String s) {
+    public void removeAttribute(String name) {
 
     }
 
@@ -315,12 +319,12 @@ public class SmartHttpServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public RequestDispatcher getRequestDispatcher(String s) {
+    public RequestDispatcher getRequestDispatcher(String path) {
         return null;
     }
 
     @Override
-    public String getRealPath(String s) {
+    public String getRealPath(String path) {
         return null;
     }
 

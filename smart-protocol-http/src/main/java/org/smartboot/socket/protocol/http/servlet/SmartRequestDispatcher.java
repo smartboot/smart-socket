@@ -12,7 +12,14 @@ import java.io.IOException;
  * @version V1.0 , 2017/10/27
  */
 public class SmartRequestDispatcher implements RequestDispatcher {
+    private final String path;
     private ServletContext servletContext;
+
+    public SmartRequestDispatcher(String path, ServletContext servletContext) {
+        this.path = path;
+        this.servletContext = servletContext;
+    }
+
     @Override
     public void forward(ServletRequest request, ServletResponse response) throws ServletException, IOException {
 //        servletContext.get

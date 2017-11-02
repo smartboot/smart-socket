@@ -10,9 +10,10 @@ import java.util.Locale;
 
 /**
  * @author 三刀
- * @version V1.0 , 2017/10/27
+ * @version V1.0 , 2017/10/30
  */
-public class SmartHttpServletResponse implements HttpServletResponse {
+public class HttpServletResponseImpl implements HttpServletResponse{
+
     @Override
     public void addCookie(Cookie cookie) {
 
