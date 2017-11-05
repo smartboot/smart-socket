@@ -82,7 +82,7 @@ public class AioSession<T> {
         this.serverFlowLimit = serverSession ? false : null;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         readAttach.buffer = ByteBuffer.allocate(config.getReadBufferSize());
-        readFromChannel(0);//注册消息读事件
+        readFromChannel(0);//注册消息读事件s
     }
 
     /**
