@@ -6,7 +6,6 @@
  */
 package org.smartboot.socket.protocol.http.servlet.core;
 
-import com.sun.org.apache.xml.internal.utils.ObjectPool;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.http.jndi.JndiManager;
@@ -59,10 +58,6 @@ public class HostConfiguration {
      * Map of WebAppConfiguration, key is context path of web application
      */
     private final Map<String, WebAppConfiguration> webapps;
-    /**
-     * Object Pool instance.
-     */
-    private final ObjectPool objectPool;
 
     /**
      * JNDI Manager instance.
@@ -78,17 +73,15 @@ public class HostConfiguration {
      * Build a new instance of HostConfiguration.
      *
      * @param hostname
-     * @param objectPool
      * @param jndiManager
      * @param args
      * @param webappsDirName
      */
-    public HostConfiguration(final String hostname, final ObjectPool objectPool, final JndiManager jndiManager, final Map<String, String> args, final String webappsDirName) {
+    public HostConfiguration(final String hostname, final JndiManager jndiManager, final Map<String, String> args, final String webappsDirName) {
         webapps = new HashMap<String, WebAppConfiguration>();
         /** load configuration */
         this.hostname = hostname;
         this.args = args;
-        this.objectPool = objectPool;
         this.jndiManager = jndiManager;
         /**
          * For now we can keep this mode single/multiple

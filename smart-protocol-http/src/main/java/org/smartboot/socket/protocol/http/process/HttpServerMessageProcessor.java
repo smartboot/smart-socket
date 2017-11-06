@@ -1,6 +1,5 @@
 package org.smartboot.socket.protocol.http.process;
 
-import com.sun.org.apache.xml.internal.utils.ObjectPool;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
@@ -42,19 +41,21 @@ import java.util.concurrent.Executors;
  */
 public final class HttpServerMessageProcessor implements MessageProcessor<HttpEntity> {
     private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);
+    private final Map<String, String> args;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private HostGroup hostGroup;
     private JndiManager globalJndiManager = null;
-    private final Map<String, String> args;
+
     public HttpServerMessageProcessor(final Map<String, String> args) {
-        this.args=args;
+        this.args = args;
         try {
             initializeJndi();
-            hostGroup=new HostGroup(new ObjectPool(),globalJndiManager,args);
+            hostGroup = new HostGroup(globalJndiManager, args);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
     /**
      * Instantiate Jndi Manager if needed.
      */
@@ -88,7 +89,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
             }
             // instanciate data
             final Collection<String> keys = new ArrayList<String>(args != null ? args.keySet() : (Collection<String>) new ArrayList<String>());
-            for (final Iterator<String> i = keys.iterator(); i.hasNext();) {
+            for (final Iterator<String> i = keys.iterator(); i.hasNext(); ) {
                 final String key = i.next();
                 if (key.startsWith("jndi.resource.")) {
                     final String resourceName = key.substring(14);
@@ -101,6 +102,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
 
         }
     }
+
     protected final boolean createObject(final String name, final String className, final String value, final Map<String, String> args) {
         // basic check
         if ((className == null) || (name == null)) {
@@ -138,9 +140,10 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
 
         return Boolean.FALSE;
     }
+
     private Map<String, String> extractRelevantArgs(final Map<String, String> input, final String name) {
         final Map<String, String> relevantArgs = new HashMap<String, String>();
-        for (final Iterator<String> i = input.keySet().iterator(); i.hasNext();) {
+        for (final Iterator<String> i = input.keySet().iterator(); i.hasNext(); ) {
             final String key = i.next();
             if (key.startsWith("jndi.param." + name + ".")) {
                 relevantArgs.put(key.substring(12 + name.length()), input.get(key));
@@ -149,6 +152,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
         relevantArgs.put("name", name);
         return relevantArgs;
     }
+
     @Override
     public void process(final AioSession<HttpEntity> session, final HttpEntity entry) {
         //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程

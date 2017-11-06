@@ -6,7 +6,6 @@
  */
 package org.smartboot.socket.protocol.http.servlet.core;
 
-import com.sun.org.apache.xml.internal.utils.ObjectPool;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.http.jndi.JndiManager;
@@ -41,10 +40,6 @@ public class HostGroup {
      */
     private final JndiManager jndiManager;
     /**
-     * ObjectPool instance.
-     */
-    private final ObjectPool objectPool;
-    /**
      * arguments instance.
      */
     private final Map<String, String> args;
@@ -56,15 +51,12 @@ public class HostGroup {
     /**
      * Build a new instance of HostGroup.
      *
-     * @param objectPool
      * @param jndiManager
      * @param args
      * @throws IOException
      */
-    public HostGroup(final ObjectPool objectPool, final JndiManager jndiManager, final Map<String, String> args) throws IOException {
-        super();
+    public HostGroup(final JndiManager jndiManager, final Map<String, String> args) throws IOException {
         hostConfigs = new HashMap<String, HostConfiguration>();
-        this.objectPool = objectPool;
         this.jndiManager = jndiManager;
         this.args = args;
         // Is this the single or multiple configuration ? Check args
@@ -101,7 +93,7 @@ public class HostGroup {
      */
     public void addHostConfiguration(final String webappsDirName, final String hostname) {
         HostGroup.logger.debug("Deploying host found at {}", hostname);
-        final HostConfiguration config = new HostConfiguration(hostname, objectPool, jndiManager, args, webappsDirName);
+        final HostConfiguration config = new HostConfiguration(hostname, jndiManager, args, webappsDirName);
         hostConfigs.put(hostname, config);
     }
 
