@@ -6,7 +6,8 @@
  */
 package org.smartboot.socket.protocol.http.servlet.core;
 
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpSession;
@@ -50,7 +51,7 @@ public class WinstoneSession implements HttpSession, Serializable {
      */
     private static final long serialVersionUID = 6106594480472753553L;
     public static String SESSION_COOKIE_NAME = "JSESSIONID";
-    protected static org.slf4j.Logger logger = LoggerFactory.getLogger(WinstoneSession.class);
+    protected static Logger logger = LogManager.getLogger(WinstoneSession.class);
     private String sessionId;
     private WebAppConfiguration webAppConfig;
     private Map<String, Object> sessionData;

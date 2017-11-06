@@ -6,8 +6,8 @@
  */
 package org.smartboot.socket.protocol.http.servlet.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -17,77 +17,77 @@ import java.io.UnsupportedEncodingException;
 /**
  * A hacked print writer that allows us to trigger an automatic flush on println
  * operations that go over the content length or buffer size.
- * 
+ * <p>
  * This is only necessary because the spec authors seem intent of having the
  * print writer's flushing behaviour be half auto-flush and half not. Damned if
  * I know why - seems unnecessary and confusing to me.
- * 
+ *
  * @author <a href="mailto:rick_knowles@hotmail.com">Rick Knowles</a>
  * @version $Id: WinstoneResponseWriter.java,v 1.3 2006/02/28 07:32:47
- *          rickknowles Exp $
+ * rickknowles Exp $
  */
 public class WinstoneResponseWriter extends PrintWriter {
 
-	protected static Logger logger = LoggerFactory.getLogger(WinstoneResponseWriter.class);
-	private final WinstoneOutputStream outputStream;
-	private final WinstoneResponse response;
-	private int bytesBuffered;
+    protected static Logger logger = LogManager.getLogger(WinstoneResponseWriter.class);
+    private final WinstoneOutputStream outputStream;
+    private final WinstoneResponse response;
+    private int bytesBuffered;
 
-	public WinstoneResponseWriter(final WinstoneOutputStream out, final WinstoneResponse response) throws UnsupportedEncodingException {
-		super(new OutputStreamWriter(out, response.getCharacterEncoding()), Boolean.FALSE);
-		outputStream = out;
-		this.response = response;
-		bytesBuffered = 0;
-	}
+    public WinstoneResponseWriter(final WinstoneOutputStream out, final WinstoneResponse response) throws UnsupportedEncodingException {
+        super(new OutputStreamWriter(out, response.getCharacterEncoding()), Boolean.FALSE);
+        outputStream = out;
+        this.response = response;
+        bytesBuffered = 0;
+    }
 
-	@Override
-	public void write(final int c) {
-		super.write(c);
-		appendByteCount("" + ((char) c));
-	}
+    @Override
+    public void write(final int c) {
+        super.write(c);
+        appendByteCount("" + ((char) c));
+    }
 
-	@Override
-	public void write(final char[] buf, final int off, final int len) {
-		super.write(buf, off, len);
-		if (buf != null) {
-			appendByteCount(new String(buf, off, len));
-		}
-	}
+    @Override
+    public void write(final char[] buf, final int off, final int len) {
+        super.write(buf, off, len);
+        if (buf != null) {
+            appendByteCount(new String(buf, off, len));
+        }
+    }
 
-	@Override
-	public void write(final String s, final int off, final int len) {
-		super.write(s, off, len);
-		if (s != null) {
-			appendByteCount(s.substring(off, len));
-		}
-	}
+    @Override
+    public void write(final String s, final int off, final int len) {
+        super.write(s, off, len);
+        if (s != null) {
+            appendByteCount(s.substring(off, len));
+        }
+    }
 
-	protected void appendByteCount(final String input) {
-		try {
-			bytesBuffered += input.getBytes(response.getCharacterEncoding()).length;
-		} catch (final IOException err) {/* impossible */
+    protected void appendByteCount(final String input) {
+        try {
+            bytesBuffered += input.getBytes(response.getCharacterEncoding()).length;
+        } catch (final IOException err) {/* impossible */
 
-		}
+        }
 
-	}
+    }
 
-	@Override
-	public void println() {
-		super.println();
-		simulateAutoFlush();
-	}
+    @Override
+    public void println() {
+        super.println();
+        simulateAutoFlush();
+    }
 
-	@Override
-	public void flush() {
-		super.flush();
-		bytesBuffered = 0;
-	}
+    @Override
+    public void flush() {
+        super.flush();
+        bytesBuffered = 0;
+    }
 
-	protected void simulateAutoFlush() {
-		final String contentLengthHeader = response.getHeader(WinstoneConstant.CONTENT_LENGTH_HEADER);
-		if ((contentLengthHeader != null) && ((outputStream.getOutputStreamLength() + bytesBuffered) >= Integer.parseInt(contentLengthHeader))) {
-			WinstoneResponseWriter.logger.debug("Checking for auto-flush of print writer: contentLengthHeader={}, responseBytes={}", contentLengthHeader, (outputStream.getOutputStreamLength() + bytesBuffered) + "");
-			flush();
-		}
-	}
+    protected void simulateAutoFlush() {
+        final String contentLengthHeader = response.getHeader(WinstoneConstant.CONTENT_LENGTH_HEADER);
+        if ((contentLengthHeader != null) && ((outputStream.getOutputStreamLength() + bytesBuffered) >= Integer.parseInt(contentLengthHeader))) {
+            WinstoneResponseWriter.logger.debug("Checking for auto-flush of print writer: contentLengthHeader={}, responseBytes={}", contentLengthHeader, (outputStream.getOutputStreamLength() + bytesBuffered) + "");
+            flush();
+        }
+    }
 }

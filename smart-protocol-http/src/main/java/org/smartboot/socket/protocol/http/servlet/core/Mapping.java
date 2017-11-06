@@ -6,7 +6,8 @@
  */
 package org.smartboot.socket.protocol.http.servlet.core;
 
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Encapsulates the parsing of URL patterns, as well as the mapping of a url
@@ -23,7 +24,7 @@ public class Mapping implements java.util.Comparator<Mapping> {
     public static final int DEFAULT_SERVLET = 4;
     public static final String STAR = "*";
     public static final String SLASH = "/";
-    protected static org.slf4j.Logger logger = LoggerFactory.getLogger(Mapping.class);
+    protected static Logger logger = LogManager.getLogger(Mapping.class);
     // name
     private final String mappedTo;
     private String urlPattern;

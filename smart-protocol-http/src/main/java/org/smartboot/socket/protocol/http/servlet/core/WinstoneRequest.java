@@ -6,8 +6,8 @@
  */
 package org.smartboot.socket.protocol.http.servlet.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.http.servlet.core.authentication.AuthenticationPrincipal;
 import org.smartboot.socket.protocol.http.util.SizeRestrictedHashMap;
 import org.smartboot.socket.protocol.http.util.SizeRestrictedHashtable;
@@ -60,7 +60,7 @@ public class WinstoneRequest implements HttpServletRequest {
 
     protected static final DateFormat headerDF = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
     protected static final Random rnd;
-    protected static Logger logger = LoggerFactory.getLogger(WinstoneRequest.class);
+    protected static Logger logger = LogManager.getLogger(WinstoneRequest.class);
 
     static {
         WinstoneRequest.headerDF.setTimeZone(TimeZone.getTimeZone("GMT"));

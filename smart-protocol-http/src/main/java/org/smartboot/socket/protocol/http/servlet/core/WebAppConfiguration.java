@@ -4,7 +4,8 @@
  */
 package org.smartboot.socket.protocol.http.servlet.core;
 
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.protocol.http.accesslog.AccessLogger;
 import org.smartboot.socket.protocol.http.accesslog.AccessLoggerProviderFactory;
 import org.smartboot.socket.protocol.http.accesslog.PatternType;
@@ -61,14 +62,13 @@ import java.util.StringTokenizer;
 /**
  * Models the web.xml file's details ... basically just a bunch of configuration details, plus the actual instances of mounted
  * servlets.
- * 
+ *
  * @author <a href="mailto:rick_knowles@hotmail.com">Rick Knowles</a>
  * @version $Id: WebAppConfiguration.java,v 1.59 2008/10/09 18:44:53 rickknowles Exp $
  */
 public class WebAppConfiguration implements ServletContext, Comparator<Object> {
     // private static final String ELEM_DESCRIPTION = "description";
 
-    protected static org.slf4j.Logger logger = LoggerFactory.getLogger(WebAppConfiguration.class);
     private static final String ELEM_DISPLAY_NAME = "display-name";
     private static final String ELEM_SERVLET = "servlet";
     private static final String ELEM_SERVLET_MAPPING = "servlet-mapping";
@@ -120,73 +120,54 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
     private static final String WEB_INF = "WEB-INF";
     private static final String CLASSES = "classes/";
     private static final String LIB = "lib";
+    protected static Logger logger = LogManager.getLogger(WebAppConfiguration.class);
     private final HostConfiguration ownerHostConfig;
     private final String webRoot;
     private final String prefix;
     private final String contextName;
-    private ClassLoader loader;
-    private String displayName;
-    private WebAppJNDIManager webAppJNDIManager;
     private final Map<String, Object> attributes;
     private final Map<String, String> initParameters;
     private final Map<String, WinstoneSession> sessions;
-    private FileNameMap mimeTypes;
     private final Map<String, ServletConfiguration> servletInstances;
     private final Map<String, FilterConfiguration> filterInstances;
     private final ServletContextAttributeListener contextAttributeListeners[];
-    private ServletContextListener contextListeners[];
     private final ServletRequestListener requestListeners[];
     private final ServletRequestAttributeListener requestAttributeListeners[];
     private final HttpSessionActivationListener sessionActivationListeners[];
     private final HttpSessionAttributeListener sessionAttributeListeners[];
     private final HttpSessionListener sessionListeners[];
-    private Throwable contextStartupError;
     private final Map<String, String> exactServletMatchMounts;
     private final Mapping patternMatches[];
     private final Mapping filterPatternsRequest[];
     private final Mapping filterPatternsForward[];
     private final Mapping filterPatternsInclude[];
     private final Mapping filterPatternsError[];
-    private AuthenticationHandler authenticationHandler;
-    private AuthenticationRealm authenticationRealm;
     private final String welcomeFiles[];
-    private Integer sessionTimeout;
     private final Class<?>[] errorPagesByExceptionKeysSorted;
     private final Map<Class<?>, String> errorPagesByException;
     private final Map<String, String> errorPagesByCode;
     private final Map<String, String> localeEncodingMap;
+    private final Map<String, FilterConfiguration[]> filterMatchCache;
+    private final boolean useSavedSessions;
+    private ClassLoader loader;
+    private String displayName;
+    private WebAppJNDIManager webAppJNDIManager;
+    private FileNameMap mimeTypes;
+    private ServletContextListener contextListeners[];
+    private Throwable contextStartupError;
+    private AuthenticationHandler authenticationHandler;
+    private AuthenticationRealm authenticationRealm;
+    private Integer sessionTimeout;
     private String defaultServletName;
     private String errorServletName;
     // private JNDIManager jndiManager;
     private AccessLogger accessLogger;
-    private final Map<String, FilterConfiguration[]> filterMatchCache;
-    private final boolean useSavedSessions;
-
-    public static String getTextFromNode(final Node node) {
-        if (node == null) {
-            return null;
-        }
-        final Node child = node.getFirstChild();
-        if (child == null) {
-            return "";
-        }
-        final String textNode = child.getNodeValue();
-        if (textNode == null) {
-            return "";
-        } else {
-            return textNode.trim();
-        }
-    }
-
-    public static boolean useSavedSessions(final Map<String, String> args) {
-        return StringUtils.booleanArg(args, "useSavedSessions", Boolean.FALSE);
-    }
 
     /**
      * Constructor. This parses the xml and sets up for basic routing
      */
-    public WebAppConfiguration(final HostConfiguration ownerHostConfig,  final JndiManager jndiManager,
-                               final String webRoot, final String prefix,  final Map<String, String> startupArgs,
+    public WebAppConfiguration(final HostConfiguration ownerHostConfig, final JndiManager jndiManager,
+                               final String webRoot, final String prefix, final Map<String, String> startupArgs,
                                final Node elm, final String contextName) {
         this.ownerHostConfig = ownerHostConfig;
         this.webRoot = webRoot;
@@ -295,7 +276,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
         localeEncodingMap = new HashMap<String, String>();
         final String encodingMapSet = "en_US=8859_1;en=8859_1;ja=SJIS";
         final StringTokenizer st = new StringTokenizer(encodingMapSet, ";");
-        for (; st.hasMoreTokens();) {
+        for (; st.hasMoreTokens(); ) {
             final String token = st.nextToken();
             final int delimPos = token.indexOf("=");
             if (delimPos == -1) {
@@ -411,7 +392,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
                             mappings.add(WebAppConfiguration.getTextFromNode(mapChild));
                         }
                     }
-                    for (final Iterator<String> i = mappings.iterator(); i.hasNext();) {
+                    for (final Iterator<String> i = mappings.iterator(); i.hasNext(); ) {
                         processMapping(name, i.next(), exactServletMatchMounts, localFolderPatterns, localExtensionPatterns);
                     }
                 } // Process the filter mappings
@@ -457,7 +438,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
                                 + filterName);
                     }
 
-                    for (final Iterator<String> i = mappings.iterator(); i.hasNext();) {
+                    for (final Iterator<String> i = mappings.iterator(); i.hasNext(); ) {
                         final String item = i.next();
                         Mapping mapping = null;
                         try {
@@ -647,15 +628,15 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
             try {
                 // Build the realm
                 final Class<?> realmClass = Class.forName(realmClassName);
-                final Constructor<?> realmConstr = realmClass.getConstructor(new Class[] { Set.class, Map.class });
-                authenticationRealm = (AuthenticationRealm) realmConstr.newInstance(new Object[] { rolesAllowed, startupArgs });
+                final Constructor<?> realmConstr = realmClass.getConstructor(new Class[]{Set.class, Map.class});
+                authenticationRealm = (AuthenticationRealm) realmConstr.newInstance(new Object[]{rolesAllowed, startupArgs});
 
                 // Build the authentication handler
                 final Class<?> authClass = Class.forName(authClassName);
-                final Constructor<?> authConstr = authClass.getConstructor(new Class[] { Node.class, List.class, Set.class,
-                        AuthenticationRealm.class });
-                authenticationHandler = (AuthenticationHandler) authConstr.newInstance(new Object[] { loginConfigNode,
-                        constraintNodes, rolesAllowed, authenticationRealm });
+                final Constructor<?> authConstr = authClass.getConstructor(new Class[]{Node.class, List.class, Set.class,
+                        AuthenticationRealm.class});
+                authenticationHandler = (AuthenticationHandler) authConstr.newInstance(new Object[]{loginConfigNode,
+                        constraintNodes, rolesAllowed, authenticationRealm});
             } catch (final ClassNotFoundException err) {
                 WebAppConfiguration.logger.error("Authentication disabled - can't load authentication handler for {} authentication",
                         authMethod);
@@ -768,7 +749,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
                     WinstoneConstant.JSP_SERVLET_CLASS, jspParams, 3);
             servletInstances.put(WinstoneConstant.JSP_SERVLET_NAME, sc);
             startupServlets.add(sc);
-            for (final Iterator<String> mapIt = jspMappings.iterator(); mapIt.hasNext();) {
+            for (final Iterator<String> mapIt = jspMappings.iterator(); mapIt.hasNext(); ) {
                 processMapping(WinstoneConstant.JSP_SERVLET_NAME, mapIt.next(), exactServletMatchMounts, localFolderPatterns,
                         localExtensionPatterns);
             }
@@ -816,7 +797,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
             }
 
             // Initialise all the filters
-            for (final Iterator<FilterConfiguration> i = filterInstances.values().iterator(); i.hasNext();) {
+            for (final Iterator<FilterConfiguration> i = filterInstances.values().iterator(); i.hasNext(); ) {
                 final FilterConfiguration config = i.next();
                 try {
                     config.getFilter();
@@ -834,12 +815,37 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
         }
     }
 
+    public static String getTextFromNode(final Node node) {
+        if (node == null) {
+            return null;
+        }
+        final Node child = node.getFirstChild();
+        if (child == null) {
+            return "";
+        }
+        final String textNode = child.getNodeValue();
+        if (textNode == null) {
+            return "";
+        } else {
+            return textNode.trim();
+        }
+    }
+
+    public static boolean useSavedSessions(final Map<String, String> args) {
+        return StringUtils.booleanArg(args, "useSavedSessions", Boolean.FALSE);
+    }
+
+    public static void addJspServletParams(final Map<String, String> jspParams) {
+        jspParams.put("logVerbosityLevel", WebAppConfiguration.JSP_SERVLET_LOG_LEVEL);
+        jspParams.put("fork", "Boolean.FALSE");
+    }
+
     /**
      * Build the web-app classloader. This tries to load the preferred classloader first, but if it fails, falls back to a simple
      * URLClassLoader.
      */
     private ClassLoader buildWebAppClassLoader(final Map<String, String> startupArgs, final ClassLoader parentClassLoader,
-            final String webRoot, final List<File> classPathFileList) {
+                                               final String webRoot, final List<File> classPathFileList) {
         final List<URL> urlList = new ArrayList<URL>();
 
         try {
@@ -892,8 +898,8 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
         if (!preferredClassLoader.equals("")) {
             try {
                 final Class<?> preferredCL = Class.forName(preferredClassLoader, Boolean.TRUE, parentClassLoader);
-                final Constructor<?> reloadConstr = preferredCL.getConstructor(new Class[] { URL[].class, ClassLoader.class });
-                outputCL = (ClassLoader) reloadConstr.newInstance(new Object[] { jarURLs, parentClassLoader });
+                final Constructor<?> reloadConstr = preferredCL.getConstructor(new Class[]{URL[].class, ClassLoader.class});
+                outputCL = (ClassLoader) reloadConstr.newInstance(new Object[]{jarURLs, parentClassLoader});
             } catch (final Throwable err) {
                 if (!StringUtils.stringArg(startupArgs, "preferredClassLoader", "").equals("")
                         || !preferredClassLoader.equals(WebappClassLoader.class.getName())) {
@@ -999,21 +1005,14 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
         return requestAttributeListeners;
     }
 
-    public static void addJspServletParams(final Map<String, String> jspParams) {
-        jspParams.put("logVerbosityLevel", WebAppConfiguration.JSP_SERVLET_LOG_LEVEL);
-        jspParams.put("fork", "Boolean.FALSE");
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public int compare(final Object one, final Object two) {
         if (!(one instanceof Class) || !(two instanceof Class)) {
             throw new IllegalArgumentException("This comparator is only for sorting classes");
         }
-        @SuppressWarnings("rawtypes")
-        final Class classOne = (Class) one;
-        @SuppressWarnings("rawtypes")
-        final Class classTwo = (Class) two;
+        @SuppressWarnings("rawtypes") final Class classOne = (Class) one;
+        @SuppressWarnings("rawtypes") final Class classTwo = (Class) two;
         if (classOne.isAssignableFrom(classTwo)) {
             return 1;
         } else if (classTwo.isAssignableFrom(classOne)) {
@@ -1042,7 +1041,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
         }
 
         final Collection<FilterConfiguration> filterInstances = new ArrayList<FilterConfiguration>(this.filterInstances.values());
-        for (final Iterator<FilterConfiguration> i = filterInstances.iterator(); i.hasNext();) {
+        for (final Iterator<FilterConfiguration> i = filterInstances.iterator(); i.hasNext(); ) {
             try {
                 i.next().destroy();
             } catch (final Throwable err) {
@@ -1052,7 +1051,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
         this.filterInstances.clear();
 
         final Collection<ServletConfiguration> servletInstances = new ArrayList<ServletConfiguration>(this.servletInstances.values());
-        for (final Iterator<ServletConfiguration> i = servletInstances.iterator(); i.hasNext();) {
+        for (final Iterator<ServletConfiguration> i = servletInstances.iterator(); i.hasNext(); ) {
             try {
                 i.next().destroy();
             } catch (final Throwable err) {
@@ -1063,7 +1062,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
 
         // Drop all sessions
         final Collection<WinstoneSession> sessions = new ArrayList<WinstoneSession>(this.sessions.values());
-        for (final Iterator<WinstoneSession> i = sessions.iterator(); i.hasNext();) {
+        for (final Iterator<WinstoneSession> i = sessions.iterator(); i.hasNext(); ) {
             final WinstoneSession session = i.next();
             try {
                 if (useSavedSessions) {
@@ -1130,7 +1129,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
      * Here we process url patterns into the exactMatch and patternMatch lists
      */
     private void processMapping(final String name, final String pattern, final Map<String, String> exactPatterns,
-            final List<Mapping> folderPatterns, final List<Mapping> extensionPatterns) {
+                                final List<Mapping> folderPatterns, final List<Mapping> extensionPatterns) {
 
         Mapping urlPattern = null;
         try {
@@ -1190,7 +1189,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
 
     /**
      * Constructs a session instance with the given sessionId
-     * 
+     *
      * @param sessionId The sessionID for the new session
      * @return A valid session object
      */
@@ -1214,7 +1213,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
     /**
      * Retrieves the session by id. If the web app is distributable, it asks the other members of the cluster if it doesn't have it
      * itself.
-     * 
+     *
      * @param sessionId The id of the session we want
      * @return A valid session instance
      */
@@ -1440,10 +1439,10 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
      * occurred.
      */
     public SimpleRequestDispatcher getInitialDispatcher(String uriInsideWebapp, final WinstoneRequest request,
-            final WinstoneResponse response) throws IOException {
+                                                        final WinstoneResponse response) throws IOException {
         if (!uriInsideWebapp.equals("") && !uriInsideWebapp.startsWith("/")) {
             return getErrorDispatcherByCode(uriInsideWebapp, HttpServletResponse.SC_BAD_REQUEST, "URI must start with a slash: "
-                    + uriInsideWebapp,
+                            + uriInsideWebapp,
                     new IllegalArgumentException("method=" + request.getMethod() + "\nprotocol=" + request.getProtocol()));
         } else if (contextStartupError != null) {
             final StringWriter sw = new StringWriter();
@@ -1564,7 +1563,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
     }
 
     public SimpleRequestDispatcher getErrorDispatcherByCode(final String requestURI, final int statusCode,
-            final String summaryMessage, final Throwable exception) {
+                                                            final String summaryMessage, final Throwable exception) {
         // Check for status code match
         final String errorURI = getErrorPagesByCode().get("" + statusCode);
         if (errorURI != null) {
@@ -1594,7 +1593,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
      * Build a dispatcher to the error handler if it's available. If it fails, return null.
      */
     private SimpleRequestDispatcher buildErrorDispatcher(String errorURI, final int statusCode, String summaryMessage,
-            final Throwable exception) {
+                                                         final Throwable exception) {
         // Parse the url for query string, etc
         String queryString = "";
         final int questionPos = errorURI.indexOf('?');
@@ -1745,8 +1744,8 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
             for (int n = 0; n < children.length; n++) {
                 // Write the entry as subpath + child element
                 final String entry = // this.prefix +
-                "/" + (workingPath.length() != 0 ? workingPath + "/" : "") + children[n].getName()
-                        + (children[n].isDirectory() ? "/" : "");
+                        "/" + (workingPath.length() != 0 ? workingPath + "/" : "") + children[n].getName()
+                                + (children[n].isDirectory() ? "/" : "");
                 out.add(entry);
             }
             return out;
@@ -1766,7 +1765,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
      * @deprecated
      */
     @Deprecated
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public Enumeration getServletNames() {
         return Collections.enumeration(new ArrayList());
@@ -1776,7 +1775,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
      * @deprecated
      */
     @Deprecated
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public Enumeration getServlets() {
         return Collections.enumeration(new ArrayList());
