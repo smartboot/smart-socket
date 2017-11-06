@@ -28,7 +28,7 @@ public class WinstoneResourceBundle implements Iterable<String> {
 	 * 
 	 */
 	private static class WinstoneResourceBundleHolder {
-		private static WinstoneResourceBundle bundle = new WinstoneResourceBundle("net.winstone.winstone-message");
+		private static WinstoneResourceBundle bundle = new WinstoneResourceBundle("winstone-message");
 	}
 
 	/**

@@ -1,18 +1,23 @@
 package org.smartboot.socket.protocol.http.process;
 
-import org.apache.commons.lang.StringUtils;
+import com.sun.org.apache.xml.internal.utils.ObjectPool;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.protocol.http.HttpEntity;
 import org.smartboot.socket.protocol.http.accesslog.AccessLogger;
+import org.smartboot.socket.protocol.http.jndi.JndiManager;
+import org.smartboot.socket.protocol.http.jndi.resources.DataSourceConfig;
 import org.smartboot.socket.protocol.http.servlet.core.ClientSocketException;
 import org.smartboot.socket.protocol.http.servlet.core.HostConfiguration;
+import org.smartboot.socket.protocol.http.servlet.core.HostGroup;
 import org.smartboot.socket.protocol.http.servlet.core.SimpleRequestDispatcher;
 import org.smartboot.socket.protocol.http.servlet.core.WebAppConfiguration;
 import org.smartboot.socket.protocol.http.servlet.core.WinstoneConstant;
 import org.smartboot.socket.protocol.http.servlet.core.WinstoneRequest;
 import org.smartboot.socket.protocol.http.servlet.core.WinstoneResponse;
+import org.smartboot.socket.protocol.http.util.MapConverter;
+import org.smartboot.socket.protocol.http.util.StringUtils;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.StateMachineEnum;
 
@@ -21,6 +26,12 @@ import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,15 +43,117 @@ import java.util.concurrent.Executors;
 public final class HttpServerMessageProcessor implements MessageProcessor<HttpEntity> {
     private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
-
-    public HttpServerMessageProcessor() {
-
+    private HostGroup hostGroup;
+    private JndiManager globalJndiManager = null;
+    private final Map<String, String> args;
+    public HttpServerMessageProcessor(final Map<String, String> args) {
+        this.args=args;
+        try {
+            initializeJndi();
+            hostGroup=new HostGroup(new ObjectPool(),globalJndiManager,args);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+    /**
+     * Instantiate Jndi Manager if needed.
+     */
+    private void initializeJndi() {
+        // If jndi is enabled, run the container wide jndi populator
+        if (StringUtils.booleanArg(args, "useJNDI", Boolean.FALSE)) {
+            // Set jndi resource handler if not set (workaround for JamVM bug)
+            try {
+                final Class<?> ctxFactoryClass = Class.forName("net.winstone.jndi.url.java.javaURLContextFactory");
+                if (System.getProperty("java.naming.factory.initial") == null) {
+                    System.setProperty("java.naming.factory.initial", ctxFactoryClass.getName());
+                }
+                if (System.getProperty("java.naming.factory.url.pkgs") == null) {
+                    System.setProperty("java.naming.factory.url.pkgs", "net.winstone.jndi");
+                }
+            } catch (final ClassNotFoundException err) {
+                LOGGER.error("JNDI Error ", err);
+            }
+            // instanciate Jndi Manager
+            final String jndiMgrClassName = StringUtils.stringArg(args, "containerJndiClassName", JndiManager.class.getName()).trim();
+            try {
+                // Build the realm
+                final Class<?> jndiMgrClass = Class.forName(jndiMgrClassName);
+                globalJndiManager = (JndiManager) jndiMgrClass.newInstance();
+                globalJndiManager.initialize();
+                LOGGER.info("JNDI Started {}", jndiMgrClass.getName());
+            } catch (final ClassNotFoundException err) {
+                LOGGER.error("JNDI disabled at container level - can't find JNDI Manager class", err);
+            } catch (final Throwable err) {
+                LOGGER.error("JNDI disabled at container level - couldn't load JNDI Manager: " + jndiMgrClassName, err);
+            }
+            // instanciate data
+            final Collection<String> keys = new ArrayList<String>(args != null ? args.keySet() : (Collection<String>) new ArrayList<String>());
+            for (final Iterator<String> i = keys.iterator(); i.hasNext();) {
+                final String key = i.next();
+                if (key.startsWith("jndi.resource.")) {
+                    final String resourceName = key.substring(14);
+                    final String className = args.get(key);
+                    final String value = args.get("jndi.param." + resourceName + ".value");
+                    LOGGER.debug("Creating object: {} from startup arguments", resourceName);
+                    createObject(resourceName.trim(), className.trim(), value, args);
+                }
+            }
 
+        }
+    }
+    protected final boolean createObject(final String name, final String className, final String value, final Map<String, String> args) {
+        // basic check
+        if ((className == null) || (name == null)) {
+            return Boolean.FALSE;
+        }
+
+        // If we are working with a datasource
+        if (className.equals("javax.sql.DataSource")) {
+            try {
+                final DataSourceConfig dataSourceConfig = MapConverter.apply(extractRelevantArgs(args, name), new DataSourceConfig());
+                globalJndiManager.bind(dataSourceConfig);
+                return Boolean.TRUE;
+            } catch (final Throwable err) {
+                LOGGER.error("Error building JDBC Datasource object " + name, err);
+            }
+        } // If we are working with a mail session
+        else if (className.equals("javax.mail.Session")) {
+            try {
+                final Properties p = new Properties();
+                p.putAll(extractRelevantArgs(args, name));
+                globalJndiManager.bindSmtpSession(name, p, Thread.currentThread().getContextClassLoader());
+                return Boolean.TRUE;
+            } catch (final Throwable err) {
+                LOGGER.error("Error building JavaMail session " + name, err);
+            }
+        } // If unknown type, try to instantiate with the string constructor
+        else if (value != null) {
+            try {
+                globalJndiManager.bind(name, className, value, Thread.currentThread().getContextClassLoader());
+                return Boolean.TRUE;
+            } catch (final Throwable err) {
+                LOGGER.error("Error building JNDI object " + name + " (class: " + className + ")", err);
+            }
+        }
+
+        return Boolean.FALSE;
+    }
+    private Map<String, String> extractRelevantArgs(final Map<String, String> input, final String name) {
+        final Map<String, String> relevantArgs = new HashMap<String, String>();
+        for (final Iterator<String> i = input.keySet().iterator(); i.hasNext();) {
+            final String key = i.next();
+            if (key.startsWith("jndi.param." + name + ".")) {
+                relevantArgs.put(key.substring(12 + name.length()), input.get(key));
+            }
+        }
+        relevantArgs.put("name", name);
+        return relevantArgs;
+    }
     @Override
     public void process(final AioSession<HttpEntity> session, final HttpEntity entry) {
         //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
-        if (StringUtils.equalsIgnoreCase(entry.getMethod(), "POST")) {
+
+        if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(entry.getMethod(), "POST")) {
             executorService.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -76,6 +189,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
         try {
             String servletURI = entry.getUrl();
             WinstoneRequest req = new WinstoneRequest(WinstoneConstant.DEFAULT_MAXIMUM_PARAMETER_ALLOWED);
+            req.setHostGroup(hostGroup);
             WinstoneResponse rsp = new WinstoneResponse();
             HostConfiguration hostConfig = req.getHostGroup().getHostByName(req.getServerName());
 
