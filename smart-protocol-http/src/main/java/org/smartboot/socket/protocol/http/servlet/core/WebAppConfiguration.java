@@ -154,6 +154,9 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
     private WebAppJNDIManager webAppJNDIManager;
     private FileNameMap mimeTypes;
     private ServletContextListener contextListeners[];
+    /**
+     * 容器启动异常记录
+     */
     private Throwable contextStartupError;
     private AuthenticationHandler authenticationHandler;
     private AuthenticationRealm authenticationRealm;
