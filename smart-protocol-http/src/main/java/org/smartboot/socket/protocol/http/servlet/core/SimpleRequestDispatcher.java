@@ -82,7 +82,7 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
         synchronized (cache) {
             matchingFilters = cache.get(cacheKey);
             if (matchingFilters == null) {
-                SimpleRequestDispatcher.logger.debug("No cached filter chain available. Calculating for cacheKey={}", cacheKey);
+                logger.debug("No cached filter chain available. Calculating for cacheKey={}", cacheKey);
                 final List<FilterConfiguration> outFilters = new ArrayList<FilterConfiguration>();
                 for (int n = 0; n < filterPatterns.length; n++) {
                     // Get the pattern and eval it, bumping up the eval'd count
@@ -99,7 +99,7 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
                 matchingFilters = outFilters.toArray(new FilterConfiguration[0]);
                 cache.put(cacheKey, matchingFilters);
             } else {
-                SimpleRequestDispatcher.logger.debug("Cached filter chain available for cacheKey={}", cacheKey);
+                logger.debug("Cached filter chain available for cacheKey={}", cacheKey);
             }
         }
         return matchingFilters;
@@ -166,11 +166,9 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
 
         // On the first call, log and initialise the filter chain
         if (doInclude == null) {
-            SimpleRequestDispatcher.logger.debug("INCLUDE: servlet={}, path={}", getName(), requestURI);
+            logger.debug("INCLUDE: servlet={}, path={}", getName(), requestURI);
 
             final WinstoneRequest wr = getUnwrappedRequest(request);
-            // Add the query string to the included query string stack
-            wr.addIncludeQueryParameters(queryString);
 
             // Set request attributes
             if (useRequestAttributes) {
@@ -222,12 +220,7 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
 
     private void finishInclude(final ServletRequest request, final ServletResponse response) throws IOException {
         final WinstoneRequest wr = getUnwrappedRequest(request);
-        wr.removeIncludeQueryString();
 
-        // Set request attributes
-        if (useRequestAttributes) {
-            wr.removeIncludeAttributes();
-        }
         // Remove the include buffer from the response stack
         final WinstoneResponse wresp = getUnwrappedResponse(response);
         wresp.finishIncludeBuffer();
@@ -256,7 +249,7 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
         // Only on the first call to forward, we should set any forwarding
         // attributes
         if (doInclude == null) {
-            SimpleRequestDispatcher.logger.debug("FORWARD: servlet={}, path={}", getName(), requestURI);
+            logger.debug("FORWARD: servlet={}, path={}", getName(), requestURI);
             if (response.isCommitted()) {
                 throw new IllegalStateException("Called RequestDispatcher.forward() on committed response");
             }
@@ -266,7 +259,6 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
 
             // Clear the include stack if one has been accumulated
             rsp.resetBuffer();
-            req.clearIncludeStackForForward();
             rsp.clearIncludeStackForForward();
 
             // Set request attributes (because it's the first step in the filter
@@ -356,7 +348,7 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
         while (matchingFiltersEvaluated < matchingFilters.length) {
 
             final FilterConfiguration filter = matchingFilters[matchingFiltersEvaluated++];
-            SimpleRequestDispatcher.logger.debug("Executing Filter: {}", filter.getFilterName());
+            logger.debug("Executing Filter: {}", filter.getFilterName());
             filter.execute(request, response, this);
             return;
         }

@@ -3,7 +3,6 @@ package org.smartboot.socket.protocol.http.process;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.protocol.http.HttpEntity;
 import org.smartboot.socket.protocol.http.accesslog.AccessLogger;
 import org.smartboot.socket.protocol.http.jndi.JndiManager;
 import org.smartboot.socket.protocol.http.jndi.resources.DataSourceConfig;
@@ -12,7 +11,7 @@ import org.smartboot.socket.protocol.http.servlet.core.HostConfiguration;
 import org.smartboot.socket.protocol.http.servlet.core.HostGroup;
 import org.smartboot.socket.protocol.http.servlet.core.SimpleRequestDispatcher;
 import org.smartboot.socket.protocol.http.servlet.core.WebAppConfiguration;
-import org.smartboot.socket.protocol.http.servlet.core.WinstoneConstant;
+import org.smartboot.socket.protocol.http.servlet.core.WinstoneOutputStream;
 import org.smartboot.socket.protocol.http.servlet.core.WinstoneRequest;
 import org.smartboot.socket.protocol.http.servlet.core.WinstoneResponse;
 import org.smartboot.socket.protocol.http.util.MapConverter;
@@ -20,11 +19,11 @@ import org.smartboot.socket.protocol.http.util.StringUtils;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.StateMachineEnum;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -39,7 +38,7 @@ import java.util.concurrent.Executors;
  *
  * @author 三刀
  */
-public final class HttpServerMessageProcessor implements MessageProcessor<HttpEntity> {
+public final class HttpServerMessageProcessor implements MessageProcessor<WinstoneRequest> {
     private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);
     private final Map<String, String> args;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -154,7 +153,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
     }
 
     @Override
-    public void process(final AioSession<HttpEntity> session, final HttpEntity entry) {
+    public void process(final AioSession<WinstoneRequest> session, final WinstoneRequest entry) {
         //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
 
         if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(entry.getMethod(), "POST")) {
@@ -173,33 +172,34 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
         }
     }
 
-    private void process0(AioSession<HttpEntity> session, HttpEntity entry) {
-        ByteBuffer buffer = ByteBuffer.wrap(("HTTP/1.1 200 OK\n" +
-                "Server: seer/1.4.4\n" +
-                "Content-Length: 2\n" +
-                ("Keep-Alive".equalsIgnoreCase(entry.getHeadMap().get("Connection")) ?
-                        "Connection: keep-alive\n" : ""
-                ) +
-                "\n" +
-                "OK").getBytes());
+    private void process0(AioSession<WinstoneRequest> session, WinstoneRequest req) {
+//        ByteBuffer buffer = ByteBuffer.wrap(("HTTP/1.1 200 OK\n" +
+//                "Server: seer/1.4.4\n" +
+//                "Content-Length: 2\n" +
+//                ("Keep-Alive".equalsIgnoreCase(entry.getHeader("Connection")) ?
+//                        "Connection: keep-alive\n" : ""
+//                ) +
+//                "\n" +
+//                "OK").getBytes());
+//        try {
+//            session.write(buffer);
+//        } catch (IOException e) {
+//            LOGGER.catching(e);
+//        }
+//        if (!"Keep-Alive".equalsIgnoreCase(entry.getHeader("Connection"))) {
+//            session.close(false);
+//        }
         try {
-            session.write(buffer);
-        } catch (IOException e) {
-            LOGGER.catching(e);
-        }
-        if (!"Keep-Alive".equalsIgnoreCase(entry.getHeadMap().get("Connection"))) {
-            session.close(false);
-        }
-        try {
-            String servletURI = entry.getUrl();
-            WinstoneRequest req = new WinstoneRequest(WinstoneConstant.DEFAULT_MAXIMUM_PARAMETER_ALLOWED);
             req.setHostGroup(hostGroup);
             WinstoneResponse rsp = new WinstoneResponse();
+            WinstoneOutputStream outputStream=new WinstoneOutputStream(null);
+            outputStream.setResponse(rsp);
+            rsp.setOutputStream(outputStream);
             HostConfiguration hostConfig = req.getHostGroup().getHostByName(req.getServerName());
 
             // Get the URI from the request, check for prefix, then
             // match it to a requestDispatcher
-            WebAppConfiguration webAppConfig = hostConfig.getWebAppByURI(servletURI);
+            WebAppConfiguration webAppConfig = hostConfig.getWebAppByURI(req.getRequestURI());
             if (webAppConfig == null) {
                 webAppConfig = hostConfig.getWebAppByURI("/");
             }
@@ -216,8 +216,8 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
             }
 
             // Lookup a dispatcher, then process with it
-            processRequest(webAppConfig, req, rsp, webAppConfig.getServletURIFromRequestURI(servletURI));
-            writeToAccessLog(servletURI, req, rsp, webAppConfig);
+            processRequest(webAppConfig, req, rsp, webAppConfig.getServletURIFromRequestURI(req.getRequestURI()));
+            writeToAccessLog(req.getRequestURI(), req, rsp, webAppConfig);
 
             // send request listener notifies
             for (ServletRequestListener reqLsnr : reqLsnrs) {
@@ -236,7 +236,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
 
     private void processRequest(final WebAppConfiguration webAppConfig, final WinstoneRequest req, final WinstoneResponse rsp, final String path) throws IOException, ServletException {
         SimpleRequestDispatcher rd = null;
-        javax.servlet.RequestDispatcher rdError = null;
+        RequestDispatcher rdError = null;
         try {
             rd = webAppConfig.getInitialDispatcher(path, req, rsp);
 
@@ -273,11 +273,9 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
             } catch (final Throwable err) {
                 LOGGER.error("Error in the error servlet ", err);
             }
-            // rsp.sendUntrappedError(err, req, rd != null ? rd.getName() :
-            // null);
         }
         rsp.flushBuffer();
-//        rsp.getWinstoneOutputStream().setClosed(Boolean.TRUE);
+        rsp.getWinstoneOutputStream().setClosed(Boolean.TRUE);
         req.discardRequestBody();
     }
 
@@ -292,8 +290,8 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
     }
 
     @Override
-    public void stateEvent(AioSession<HttpEntity> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-
+    public void stateEvent(AioSession<WinstoneRequest> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
     }
+
 
 }

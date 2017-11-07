@@ -7,6 +7,7 @@ import org.smartboot.socket.Filter;
 import org.smartboot.socket.util.StateMachineEnum;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
@@ -82,7 +83,7 @@ public class AioSession<T> {
         this.serverFlowLimit = serverSession ? false : null;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         readAttach.buffer = ByteBuffer.allocate(config.getReadBufferSize());
-        readFromChannel(0);//注册消息读事件s
+        readFromChannel(0);//注册消息读事件
     }
 
     /**
@@ -238,6 +239,22 @@ public class AioSession<T> {
 
     public final void write(T t) throws IOException {
         write(ioServerConfig.getProtocol().encode(t, this));
+    }
+
+    public InetSocketAddress getLocalAddress() {
+        try {
+            return (InetSocketAddress) channel.getLocalAddress();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public InetSocketAddress getRemoteAddress() {
+        try {
+            return (InetSocketAddress) channel.getRemoteAddress();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

@@ -35,7 +35,6 @@ public class WinstoneOutputStream extends javax.servlet.ServletOutputStream {
     protected long bytesCommitted;
     protected ByteArrayOutputStream buffer;
     protected boolean committed;
-    protected boolean bodyOnly;
     protected WinstoneResponse owner;
     protected boolean disregardMode = Boolean.FALSE;
     protected boolean closed = Boolean.FALSE;
@@ -44,9 +43,8 @@ public class WinstoneOutputStream extends javax.servlet.ServletOutputStream {
     /**
      * Constructor
      */
-    public WinstoneOutputStream(final OutputStream out, final boolean bodyOnlyForInclude) {
-        outStream = new ClientOutputStream(out);
-        bodyOnly = bodyOnlyForInclude;
+    public WinstoneOutputStream(final OutputStream out) {
+        outStream = out;
         bufferSize = WinstoneOutputStream.DEFAULT_BUFFER_SIZE;
         committed = Boolean.FALSE;
         // this.headersWritten = Boolean.FALSE;
@@ -129,7 +127,7 @@ public class WinstoneOutputStream extends javax.servlet.ServletOutputStream {
         buffer.flush();
 
         // If we haven't written the headers yet, write them out
-        if (!committed && !bodyOnly) {
+        if (!committed) {
             owner.validateHeaders();
             committed = Boolean.TRUE;
 
@@ -213,7 +211,7 @@ public class WinstoneOutputStream extends javax.servlet.ServletOutputStream {
     @Override
     public void close() throws IOException {
         if (!isCommitted() && !disregardMode && !closed && (owner.getHeader(WinstoneConstant.CONTENT_LENGTH_HEADER) == null)) {
-            if ((owner != null) && !bodyOnly) {
+            if (owner != null) {
                 owner.setContentLength((int) getOutputStreamLength());
             }
         }

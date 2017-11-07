@@ -2,6 +2,7 @@ import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.protocol.http.HttpEntity;
 import org.smartboot.socket.protocol.http.HttpProtocol;
 import org.smartboot.socket.protocol.http.process.HttpServerMessageProcessor;
+import org.smartboot.socket.protocol.http.servlet.core.WinstoneRequest;
 import org.smartboot.socket.transport.AioQuickServer;
 
 import java.io.IOException;
@@ -15,11 +16,12 @@ public class Test {
 //        config.setFilters(new SmartFilter[] { new QuickMonitorTimer<HttpEntity>() });
         HashMap<String,String> arg=new HashMap<String, String>();
         arg.put("warfile","/Users/zhengjunwei/IdeaProjects/yt_trade/trade-web/target/dev-trade-web.war");
+        arg.put("useInvoker","true");
         HttpServerMessageProcessor processor = new HttpServerMessageProcessor(arg);
-        AioQuickServer<HttpEntity> server = new AioQuickServer<HttpEntity>()
+        AioQuickServer<WinstoneRequest> server = new AioQuickServer<WinstoneRequest>()
                 .setThreadNum(8)
                 .setProtocol(new HttpProtocol())
-                .setFilters(new QuickMonitorTimer<HttpEntity>())
+                .setFilters(new QuickMonitorTimer<WinstoneRequest>())
                 .setProcessor(processor);
         try {
             server.start();

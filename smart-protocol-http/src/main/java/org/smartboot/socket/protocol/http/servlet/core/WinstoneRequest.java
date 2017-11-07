@@ -6,9 +6,18 @@
  */
 package org.smartboot.socket.protocol.http.servlet.core;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
+import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
+import org.smartboot.socket.extension.decoder.StreamFrameDecoder;
+import org.smartboot.socket.protocol.http.HttpDecodePart;
 import org.smartboot.socket.protocol.http.servlet.core.authentication.AuthenticationPrincipal;
+import org.smartboot.socket.protocol.http.strategy.FormWithContentLengthStrategy;
+import org.smartboot.socket.protocol.http.strategy.PostDecodeStrategy;
+import org.smartboot.socket.protocol.http.strategy.StreamWithContentLengthStrategy;
 import org.smartboot.socket.protocol.http.util.SizeRestrictedHashMap;
 import org.smartboot.socket.protocol.http.util.SizeRestrictedHashtable;
 
@@ -25,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
@@ -45,7 +55,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
@@ -58,9 +67,15 @@ import java.util.TimeZone;
  */
 public class WinstoneRequest implements HttpServletRequest {
 
+    public static final String CONTENT_LENGTH = "Content-Length";
+    public static final String CONTENT_TYPE = "Content-Type";
     protected static final DateFormat headerDF = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
     protected static final Random rnd;
+    private static final byte[] CRLF = "\r\n\r\n".getBytes();
+    private static final String STREAM_BODY = "STREAM_BODY";
+    private static final String BLOCK_BODY = "BLOCK_BODY";
     protected static Logger logger = LogManager.getLogger(WinstoneRequest.class);
+    private static Map<String, PostDecodeStrategy> strategyMap = new HashMap<>();
 
     static {
         WinstoneRequest.headerDF.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -72,23 +87,20 @@ public class WinstoneRequest implements HttpServletRequest {
      * max number of parameters allowed.
      */
     private final int maxParamAllowed;
+    public DelimiterFrameDecoder delimiterFrameDecoder = new DelimiterFrameDecoder(CRLF, 128);
+    public FixedLengthFrameDecoder bodyContentDecoder;
+    public StreamFrameDecoder smartHttpInputStream = new StreamFrameDecoder();
+    public PostDecodeStrategy postDecodeStrategy;
     protected Map<String, Object> attributes;
     protected Map<String, String[]> parameters;
-    protected Stack<Map<String, Object>> attributesStack;
-    protected Stack<Map<String, String[]>> parametersStack;
     // protected Map forwardedParameters;
-    protected String headers[];
     protected Cookie cookies[];
-    protected String method;
     protected String scheme;
     protected String serverName;
     protected String requestURI;
     protected String servletPath;
     protected String pathInfo;
     protected String queryString;
-    protected String protocol;
-    protected int contentLength;
-    protected String contentType;
     protected String encoding;
     protected int serverPort;
     protected String remoteIP;
@@ -125,6 +137,20 @@ public class WinstoneRequest implements HttpServletRequest {
     protected ServletRequestAttributeListener requestAttributeListeners[];
     protected ServletRequestListener requestListeners[];
     private MessageDigest md5Digester;
+    /**
+     * 0:消息头
+     * 1:消息体
+     * 2:结束
+     */
+    private HttpDecodePart decodePart = HttpDecodePart.HEAD;
+    private int contentLength = -1;
+    private String method, url, protocol, contentType, decodeError;
+    private Map<String, String> headMap = new HashMap<String, String>();
+
+    {
+        strategyMap.put(BLOCK_BODY, new FormWithContentLengthStrategy());
+        strategyMap.put(STREAM_BODY, new StreamWithContentLengthStrategy());
+    }
 
     /**
      * Build a new instance of WinstoneRequest.
@@ -137,8 +163,6 @@ public class WinstoneRequest implements HttpServletRequest {
         attributes = new HashMap<String, Object>();
         parameters = new SizeRestrictedHashtable<String, String[]>(this.maxParamAllowed);
         locales = new ArrayList<Locale>();
-        attributesStack = new Stack<Map<String, Object>>();
-        parametersStack = new Stack<Map<String, String[]>>();
         // this.forwardedParameters = new Hashtable();
         requestedSessionIds = new HashMap<String, String>();
         currentSessionIds = new HashMap<String, String>();
@@ -280,6 +304,70 @@ public class WinstoneRequest implements HttpServletRequest {
     }
 
     /**
+     * 解码HTTP请求头部分
+     */
+    public void decodeHead() {
+        ByteBuffer headBuffer = delimiterFrameDecoder.getBuffer();
+
+        StringTokenizer headerToken = new StringTokenizer(new String(headBuffer.array(), headBuffer.position(), headBuffer.remaining()), "\r\n");
+
+        StringTokenizer requestLineToken = new StringTokenizer(headerToken.nextToken(), " ");
+        method = requestLineToken.nextToken();
+        url = requestLineToken.nextToken();
+        requestURI=trimHostName(url);
+        protocol = requestLineToken.nextToken();
+
+        while (headerToken.hasMoreTokens()) {
+            StringTokenizer lineToken = new StringTokenizer(headerToken.nextToken(), ":");
+            setHeader(lineToken.nextToken().trim(), lineToken.nextToken().trim());
+        }
+
+        contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), -1);
+        contentType = headMap.get(CONTENT_TYPE);
+        if (StringUtils.equalsIgnoreCase("POST", method) && contentLength != 0) {
+            setDecodePart(HttpDecodePart.BODY);
+            selectDecodeStrategy();//识别body解码处理器
+        } else {
+            setDecodePart(HttpDecodePart.END);
+        }
+        delimiterFrameDecoder = null;
+    }
+    private  String trimHostName(final String input) {
+        if (input == null) {
+            return null;
+        } else if (input.startsWith("/")) {
+            return input;
+        }
+
+        final int hostStart = input.indexOf("://");
+        if (hostStart == -1) {
+            return input;
+        }
+        final String hostName = input.substring(hostStart + 3);
+        final int pathStart = hostName.indexOf('/');
+        if (pathStart == -1) {
+            return "/";
+        } else {
+            return hostName.substring(pathStart);
+        }
+    }
+    public void setHeader(String name, String value) {
+        headMap.put(name, value);
+    }
+
+    private void selectDecodeStrategy() {
+        if (getContentLength() > 0) {
+            if (getContentLength() > 0 && StringUtils.startsWith(getContentType(), "application/x-www-form-urlencoded")) {
+                postDecodeStrategy = strategyMap.get(BLOCK_BODY);
+            } else {
+                postDecodeStrategy = strategyMap.get(STREAM_BODY);
+            }
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
      * Resets the request to be reused
      */
     public void cleanUp() {
@@ -287,11 +375,8 @@ public class WinstoneRequest implements HttpServletRequest {
         requestAttributeListeners = null;
         attributes.clear();
         parameters.clear();
-        attributesStack.clear();
-        parametersStack.clear();
         // this.forwardedParameters.clear();
         usedSessions.clear();
-        headers = null;
         cookies = null;
         method = null;
         scheme = null;
@@ -326,28 +411,6 @@ public class WinstoneRequest implements HttpServletRequest {
         authenticatedUser = null;
     }
 
-    /**
-     * Steps through the header array, searching for the first header matching
-     */
-    private String extractFirstHeader(final String name) {
-        for (int n = 0; n < headers.length; n++) {
-            if (headers[n].toUpperCase().startsWith(name.toUpperCase() + ':')) {
-                return headers[n].substring(name.length() + 1).trim(); // 1 for
-                // colon
-            }
-        }
-        return null;
-    }
-
-    private Collection<String> extractHeaderNameList() {
-        final Collection<String> headerNames = new HashSet<String>();
-        for (int n = 0; n < headers.length; n++) {
-            final String name = headers[n];
-            final int colonPos = name.indexOf(':');
-            headerNames.add(name.substring(0, colonPos));
-        }
-        return headerNames;
-    }
 
     public Map<String, Object> getAttributes() {
         return attributes;
@@ -355,18 +418,6 @@ public class WinstoneRequest implements HttpServletRequest {
 
     public Map<String, String[]> getParameters() {
         return parameters;
-    }
-
-    //
-    // public Map getForwardedParameters() {
-    // return this.forwardedParameters;
-    // }
-    public Stack<Map<String, Object>> getAttributesStack() {
-        return attributesStack;
-    }
-
-    public Stack<Map<String, String[]>> getParametersStack() {
-        return parametersStack;
     }
 
     public Map<String, String> getCurrentSessionIds() {
@@ -521,84 +572,7 @@ public class WinstoneRequest implements HttpServletRequest {
         }
     }
 
-    /**
-     * Go through the list of headers, and build the headers/cookies arrays for
-     * the request object.
-     */
-    public void parseHeaders(final List<String> headerList) {
-        // Iterate through headers
-        final List<String> outHeaderList = new ArrayList<String>();
-        final List<Cookie> cookieList = new ArrayList<Cookie>();
-        for (final Iterator<String> i = headerList.iterator(); i.hasNext(); ) {
-            final String header = i.next();
-            final int colonPos = header.indexOf(':');
-            final String name = header.substring(0, colonPos);
-            final String value = header.substring(colonPos + 1).trim();
 
-            // Add it to out headers if it's not a cookie
-            outHeaderList.add(header);
-            // if (!name.equalsIgnoreCase(IN_COOKIE_HEADER1)
-            // && !name.equalsIgnoreCase(IN_COOKIE_HEADER2))
-
-            if (name.equalsIgnoreCase(WinstoneConstant.AUTHORIZATION_HEADER)) {
-                authorization = value;
-            } else if (name.equalsIgnoreCase(WinstoneConstant.LOCALE_HEADER)) {
-                locales = parseLocales(value);
-            } else if (name.equalsIgnoreCase(WinstoneConstant.CONTENT_LENGTH_HEADER)) {
-                contentLength = Integer.parseInt(value);
-            } else if (name.equalsIgnoreCase(WinstoneConstant.HOST_HEADER)) {
-                if (value.indexOf('[') != -1 && value.indexOf(']') != -1) {
-                    // IPv6 host as per rfc2732
-                    this.serverName = value.substring(value.indexOf('['), value.indexOf(']') + 1);
-                    int nextColonPos = value.indexOf("]:");
-                    if ((nextColonPos == -1) || (nextColonPos == value.length() - 1)) {
-                        if (this.scheme != null) {
-                            if (this.scheme.equals("http")) {
-                                this.serverPort = 80;
-                            } else if (this.scheme.equals("https")) {
-                                this.serverPort = 443;
-                            }
-                        }
-                    } else {
-                        this.serverPort = Integer.parseInt(value.substring(nextColonPos + 2));
-                    }
-                } else {
-                    // IPv4 host
-                    int nextColonPos = value.indexOf(':');
-                    if ((nextColonPos == -1) || (nextColonPos == value.length() - 1)) {
-                        this.serverName = value;
-                        if (this.scheme != null) {
-                            if (this.scheme.equals("http")) {
-                                this.serverPort = 80;
-                            } else if (this.scheme.equals("https")) {
-                                this.serverPort = 443;
-                            }
-                        }
-                    } else {
-                        this.serverName = value.substring(0, nextColonPos);
-                        this.serverPort = Integer.parseInt(value.substring(nextColonPos + 1));
-                    }
-                }
-            } else if (name.equalsIgnoreCase(WinstoneConstant.CONTENT_TYPE_HEADER)) {
-                contentType = value;
-                final int semicolon = value.lastIndexOf(';');
-                if (semicolon != -1) {
-                    final String encodingClause = value.substring(semicolon + 1).trim();
-                    if (encodingClause.startsWith("charset=")) {
-                        encoding = encodingClause.substring(8);
-                    }
-                }
-            } else if (name.equalsIgnoreCase(WinstoneConstant.IN_COOKIE_HEADER1) || name.equalsIgnoreCase(WinstoneConstant.IN_COOKIE_HEADER2)) {
-                parseCookieLine(value, cookieList);
-            }
-        }
-        headers = outHeaderList.toArray(new String[0]);
-        if (cookieList.isEmpty()) {
-            cookies = null;
-        } else {
-            cookies = cookieList.toArray(new Cookie[0]);
-        }
-    }
 
     private void parseCookieLine(final String headerValue, final List<Cookie> cookieList) {
         final StringTokenizer st = new StringTokenizer(headerValue, ";", Boolean.FALSE);
@@ -741,48 +715,24 @@ public class WinstoneRequest implements HttpServletRequest {
         return outputLocaleList;
     }
 
-    public void addIncludeQueryParameters(final String queryString) {
-        final Map<String, String[]> lastParams = new SizeRestrictedHashtable<String, String[]>(maxParamAllowed);
-        if (!parametersStack.isEmpty()) {
-            lastParams.putAll(parametersStack.peek());
-        }
-        final Map<String, String[]> newQueryParams = new SizeRestrictedHashMap<String, String[]>(maxParamAllowed);
-        if (queryString != null) {
-            WinstoneRequest.extractParameters(queryString, encoding, newQueryParams, Boolean.FALSE);
-        }
-        lastParams.putAll(newQueryParams);
-        parametersStack.push(lastParams);
-    }
 
     public void addIncludeAttributes(final String requestURI, final String contextPath, final String servletPath, final String pathInfo, final String queryString) {
         final Map<String, Object> includeAttributes = new HashMap<String, Object>();
         if (requestURI != null) {
-            includeAttributes.put(WinstoneConstant.INCLUDE_REQUEST_URI, requestURI);
+            attributes.put(WinstoneConstant.INCLUDE_REQUEST_URI, requestURI);
         }
         if (contextPath != null) {
-            includeAttributes.put(WinstoneConstant.INCLUDE_CONTEXT_PATH, contextPath);
+            attributes.put(WinstoneConstant.INCLUDE_CONTEXT_PATH, contextPath);
         }
         if (servletPath != null) {
-            includeAttributes.put(WinstoneConstant.INCLUDE_SERVLET_PATH, servletPath);
+            attributes.put(WinstoneConstant.INCLUDE_SERVLET_PATH, servletPath);
         }
         if (pathInfo != null) {
-            includeAttributes.put(WinstoneConstant.INCLUDE_PATH_INFO, pathInfo);
+            attributes.put(WinstoneConstant.INCLUDE_PATH_INFO, pathInfo);
         }
         if (queryString != null) {
-            includeAttributes.put(WinstoneConstant.INCLUDE_QUERY_STRING, queryString);
+            attributes.put(WinstoneConstant.INCLUDE_QUERY_STRING, queryString);
         }
-        attributesStack.push(includeAttributes);
-    }
-
-    public void removeIncludeQueryString() {
-        if (!parametersStack.isEmpty()) {
-            parametersStack.pop();
-        }
-    }
-
-    public void clearIncludeStackForForward() {
-        parametersStack.clear();
-        attributesStack.clear();
     }
 
     public void setForwardQueryString(final String forwardQueryString) {
@@ -803,33 +753,15 @@ public class WinstoneRequest implements HttpServletRequest {
 
     }
 
-    public void removeIncludeAttributes() {
-        if (!attributesStack.isEmpty()) {
-            attributesStack.pop();
-        }
-    }
-
     // Implementation methods for the servlet request stuff
     @Override
     public Object getAttribute(final String name) {
-        if (!attributesStack.isEmpty()) {
-            final Map<String, Object> includedAttributes = attributesStack.peek();
-            final Object value = includedAttributes.get(name);
-            if (value != null) {
-                return value;
-            }
-        }
         return attributes.get(name);
     }
 
     @Override
     public Enumeration<String> getAttributeNames() {
-        final Map<String, Object> result = new HashMap<String, Object>(attributes);
-        if (!attributesStack.isEmpty()) {
-            final Map<String, Object> includedAttributes = attributesStack.peek();
-            result.putAll(includedAttributes);
-        }
-        return Collections.enumeration(result.keySet());
+        return Collections.enumeration(attributes.keySet());
     }
 
     @Override
@@ -999,17 +931,7 @@ public class WinstoneRequest implements HttpServletRequest {
 
     @Override
     public String getParameter(final String name) {
-        parseRequestParameters();
-        String[] param = null;
-        if (!parametersStack.isEmpty()) {
-            param = parametersStack.peek().get(name);
-        }
-        // if ((param == null) && this.forwardedParameters.get(name) != null) {
-        // param = this.forwardedParameters.get(name);
-        // }
-        if (param == null) {
-            param = parameters.get(name);
-        }
+        String[] param = parameters.get(name);
         if (param == null) {
             return null;
         } else {
@@ -1019,33 +941,12 @@ public class WinstoneRequest implements HttpServletRequest {
 
     @Override
     public Enumeration<String> getParameterNames() {
-        parseRequestParameters();
-        final Set<String> parameterKeys = new HashSet<String>(parameters.keySet());
-        // parameterKeys.addAll(this.forwardedParameters.keySet());
-        if (!parametersStack.isEmpty()) {
-            parameterKeys.addAll(parametersStack.peek().keySet());
-        }
-        return Collections.enumeration(parameterKeys);
+        return Collections.enumeration(parameters.keySet());
     }
 
     @Override
     public String[] getParameterValues(final String name) {
-        parseRequestParameters();
-        String[] param = null;
-        if (!parametersStack.isEmpty()) {
-            param = parametersStack.peek().get(name);
-        }
-        // if ((param == null) && this.forwardedParameters.get(name) != null) {
-        // param = this.forwardedParameters.get(name);
-        // }
-        if (param == null) {
-            param = parameters.get(name);
-        }
-        if (param == null) {
-            return null;
-        }
-
-        return param;
+        return parameters.get(name);
     }
 
     @Override
@@ -1172,25 +1073,17 @@ public class WinstoneRequest implements HttpServletRequest {
 
     @Override
     public String getHeader(final String name) {
-        return extractFirstHeader(name);
+        return headMap.get(name);
     }
 
     @Override
     public Enumeration<String> getHeaderNames() {
-        return Collections.enumeration(extractHeaderNameList());
+        return Collections.enumeration(headMap.keySet());
     }
 
     @Override
     public Enumeration<String> getHeaders(final String name) {
-        final List<String> result = new ArrayList<String>();
-        for (int n = 0; n < headers.length; n++) {
-            if (headers[n].toUpperCase().startsWith(name.toUpperCase() + ':')) {
-                result.add(headers[n].substring(name.length() + 1).trim()); // 1
-                // for
-                // colon
-            }
-        }
-        return Collections.enumeration(result);
+        return Collections.enumeration(headMap.keySet());
     }
 
     @Override
@@ -1396,5 +1289,13 @@ public class WinstoneRequest implements HttpServletRequest {
     @Override
     public boolean isRequestedSessionIdFromUrl() {
         return isRequestedSessionIdFromURL();
+    }
+
+    public HttpDecodePart getDecodePart() {
+        return decodePart;
+    }
+
+    public void setDecodePart(HttpDecodePart decodePart) {
+        this.decodePart = decodePart;
     }
 }
