@@ -13,6 +13,7 @@ import org.smartboot.socket.protocol.http.jndi.JndiManager;
 import org.smartboot.socket.protocol.http.loader.FilteringClassLoader;
 import org.smartboot.socket.protocol.http.loader.ReloadingClassLoader;
 import org.smartboot.socket.protocol.http.loader.WebappClassLoader;
+import org.smartboot.socket.protocol.http.servlet.DispatcherSourceType;
 import org.smartboot.socket.protocol.http.servlet.ErrorServlet;
 import org.smartboot.socket.protocol.http.servlet.InvokerServlet;
 import org.smartboot.socket.protocol.http.servlet.StaticResourceServlet;
@@ -352,8 +353,13 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
                     }
                 } // Construct the servlet instances
                 else if (nodeName.equals(WebAppConfiguration.ELEM_FILTER)) {
-                    final FilterConfiguration instance = new FilterConfiguration(this, loader, child);
-                    filterInstances.put(instance.getFilterName(), instance);
+                    try {
+                        final FilterConfiguration instance = new FilterConfiguration(this, loader, child);
+                        filterInstances.put(instance.getFilterName(), instance);
+                    } catch (ServletException e) {
+                        e.printStackTrace();
+                    }
+
                 } // Construct the servlet instances
                 else if (nodeName.equals(WebAppConfiguration.ELEM_LISTENER)) {
                     String listenerClass = null;
@@ -802,11 +808,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
             // Initialise all the filters
             for (final Iterator<FilterConfiguration> i = filterInstances.values().iterator(); i.hasNext(); ) {
                 final FilterConfiguration config = i.next();
-                try {
-                    config.getFilter();
-                } catch (final ServletException err) {
-                    WebAppConfiguration.logger.error("Error during filter initialization: " + config.getFilterName(), err);
-                }
+                config.getFilter();
             }
 
             // Initialise load on startup servlets
@@ -1044,13 +1046,19 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
         }
 
         final Collection<FilterConfiguration> filterInstances = new ArrayList<FilterConfiguration>(this.filterInstances.values());
+
+        final ClassLoader cl1 = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(loader);
         for (final Iterator<FilterConfiguration> i = filterInstances.iterator(); i.hasNext(); ) {
             try {
-                i.next().destroy();
+                FilterConfiguration filterConfiguration = i.next();
+                logger.debug("{}: destroy", filterConfiguration.getFilterName());
+                filterConfiguration.getFilter().destroy();
             } catch (final Throwable err) {
                 WebAppConfiguration.logger.error("Error during servlet context shutdown", err);
             }
         }
+        Thread.currentThread().setContextClassLoader(cl1);
         this.filterInstances.clear();
 
         final Collection<ServletConfiguration> servletInstances = new ArrayList<ServletConfiguration>(this.servletInstances.values());
@@ -1159,7 +1167,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
     /**
      * Execute the pattern match, and try to return a servlet that matches this URL
      */
-    public ServletConfiguration urlMatch(final String path, final StringBuilder servletPath, final StringBuilder pathInfo) {
+    private ServletConfiguration urlMatch(final String path, final StringBuilder servletPath, final StringBuilder pathInfo) {
         WebAppConfiguration.logger.debug("URL Match - path: {}", path);
 
         // Check exact matches first
@@ -1311,11 +1319,13 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
                     Thread.currentThread().setContextClassLoader(cl);
                 }
             } else {
-                for (int n = 0; n < contextAttributeListeners.length; n++) {
-                    final ClassLoader cl = Thread.currentThread().getContextClassLoader();
-                    Thread.currentThread().setContextClassLoader(getLoader());
-                    contextAttributeListeners[n].attributeAdded(new ServletContextAttributeEvent(this, name, object));
-                    Thread.currentThread().setContextClassLoader(cl);
+                if (contextAttributeListeners != null) {
+                    for (int n = 0; n < contextAttributeListeners.length; n++) {
+                        final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                        Thread.currentThread().setContextClassLoader(getLoader());
+                        contextAttributeListeners[n].attributeAdded(new ServletContextAttributeEvent(this, name, object));
+                        Thread.currentThread().setContextClassLoader(cl);
+                    }
                 }
             }
         }
@@ -1388,14 +1398,12 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
     @Override
     public javax.servlet.RequestDispatcher getNamedDispatcher(final String name) {
         final ServletConfiguration servlet = servletInstances.get(name);
-        if (servlet != null) {
-            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher(this, servlet);
-            if (rd != null) {
-                rd.setForNamedDispatcher(filterPatternsForward, filterPatternsInclude);
-                return rd;
-            }
+        if (servlet == null) {
+            return null;
         }
-        return null;
+        final SimpleRequestDispatcher rd = new SimpleRequestDispatcher(this, servlet, DispatcherSourceType.Named_Dispatcher);
+        rd.setForNamedDispatcher(filterPatternsForward, filterPatternsInclude);
+        return rd;
     }
 
     /**
@@ -1424,12 +1432,10 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
         final StringBuilder pathInfo = new StringBuilder();
         final ServletConfiguration servlet = urlMatch(uriInsideWebapp, servletPath, pathInfo);
         if (servlet != null) {
-            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher(this, servlet);
-            if (rd != null) {
-                rd.setForURLDispatcher(servletPath.toString(), pathInfo.toString().equals("") ? null : pathInfo.toString(),
-                        queryString, uriInsideWebapp, filterPatternsForward, filterPatternsInclude);
-                return rd;
-            }
+            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher(this, servlet, DispatcherSourceType.Request_Dispatcher);
+            rd.setForURLDispatcher(servletPath.toString(), pathInfo.toString().equals("") ? null : pathInfo.toString(),
+                    queryString, uriInsideWebapp, filterPatternsForward, filterPatternsInclude);
+            return rd;
         }
         return null;
     }
@@ -1511,7 +1517,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
                 }
             }
 
-            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher(this, servlet);
+            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher(this, servlet, DispatcherSourceType.Init_Dispatcher);
             rd.setForInitialDispatcher(servletPath.toString(), pathInfo.toString().equals("") ? null : pathInfo.toString(),
                     queryString, uriInsideWebapp, filterPatternsRequest, authenticationHandler);
             return rd;
@@ -1580,7 +1586,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
         // formatter
         final ServletConfiguration errorServlet = servletInstances.get(errorServletName);
         if (errorServlet != null) {
-            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher(this, errorServlet);
+            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher(this, errorServlet, DispatcherSourceType.Error_Dispatcher);
             if (rd != null) {
                 rd.setForErrorDispatcher(null, null, null, statusCode, summaryMessage, exception, requestURI, filterPatternsError);
                 return rd;
@@ -1626,7 +1632,7 @@ public class WebAppConfiguration implements ServletContext, Comparator<Object> {
         final StringBuilder pathInfo = new StringBuilder();
         final ServletConfiguration servlet = urlMatch(errorURI, servletPath, pathInfo);
         if (servlet != null) {
-            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher(this, servlet);
+            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher(this, servlet, DispatcherSourceType.Error_Dispatcher);
             if (rd != null) {
                 rd.setForErrorDispatcher(servletPath.toString(), pathInfo.toString().equals("") ? null : pathInfo.toString(),
                         queryString, statusCode, summaryMessage, exception, errorURI, filterPatternsError);

@@ -195,6 +195,8 @@ public final class HttpServerMessageProcessor implements MessageProcessor<Winsto
             WinstoneOutputStream outputStream=new WinstoneOutputStream(null);
             outputStream.setResponse(rsp);
             rsp.setOutputStream(outputStream);
+            rsp.setRequest(req);
+            rsp.setProtocol(req.getProtocol());
             HostConfiguration hostConfig = req.getHostGroup().getHostByName(req.getServerName());
 
             // Get the URI from the request, check for prefix, then

@@ -71,6 +71,17 @@ public class WinstoneResponse implements HttpServletResponse {
     private Integer errorStatusCode;
 
     /**
+     * 只能把信息写到 response 对象的 ServletOutputStream 或 Writer 中，
+     * 并提交最后写保留在 response 缓冲区 中的内容，或通过显式地调用 ServletResponse 接口的 flushBuffer 方法。
+     * 它不能设置响应头信息或调用任何影响响应头信息的方法，
+     * HttpServletRequest.getSession()和 HttpServletRequest.getSession(boolean)方法除外。
+     * 任何试图设置头信息必须被忽略，如果响应已经提交，
+     * 任何调用 HttpServletRequest.getSession()和 HttpServletRequest.getSession(boolean)方法将需要添加一个 Cookie 响应头信息，
+     * 且必须抛出一个 IllegalStateException 异常
+     */
+    private boolean isInclude = false;
+
+    /**
      * Build a new instance of WinstoneResponse.
      */
     public WinstoneResponse() {
@@ -226,21 +237,15 @@ public class WinstoneResponse implements HttpServletResponse {
         this.req = req;
     }
 
-    public void startIncludeBuffer() {
-        outputStream.startIncludeBuffer();
+
+    public void setInclude(boolean include) {
+        isInclude = include;
     }
 
     public void finishIncludeBuffer() throws IOException {
-        if (isIncluding()) {
-            if (outputWriter != null) {
-                outputWriter.flush();
-            }
-            outputStream.finishIncludeBuffer();
+        if (outputWriter != null) {
+            outputWriter.flush();
         }
-    }
-
-    public void clearIncludeStackForForward() throws IOException {
-        outputStream.clearIncludeStackForForward();
     }
 
     /**
@@ -496,7 +501,7 @@ public class WinstoneResponse implements HttpServletResponse {
 
     @Override
     public void setLocale(final Locale loc) {
-        if (isIncluding()) {
+        if (isInclude) {
             return;
         } else if (isCommitted()) {
             WinstoneResponse.logger.warn("Response.setLocale() ignored, because getWriter already called");
@@ -510,10 +515,6 @@ public class WinstoneResponse implements HttpServletResponse {
             }
             locale = loc;
         }
-    }
-
-    private boolean isIncluding() {
-        return outputStream.isIncluding();
     }
 
     @Override
@@ -544,7 +545,7 @@ public class WinstoneResponse implements HttpServletResponse {
 
     @Override
     public void reset() {
-        if (!isIncluding()) {
+        if (!isInclude) {
             resetBuffer();
             statusCode = HttpServletResponse.SC_OK;
             headers.clear();
@@ -555,7 +556,7 @@ public class WinstoneResponse implements HttpServletResponse {
 
     @Override
     public void resetBuffer() {
-        if (!isIncluding()) {
+        if (!isInclude) {
             if (isCommitted()) {
                 throw new IllegalStateException("Response cannot be reset - it is already committed");
             }
@@ -584,7 +585,7 @@ public class WinstoneResponse implements HttpServletResponse {
     // HttpServletResponse interface methods
     @Override
     public void addCookie(final Cookie cookie) {
-        if (!isIncluding()) {
+        if (!isInclude) {
             cookies.add(cookie);
         }
     }
@@ -611,7 +612,7 @@ public class WinstoneResponse implements HttpServletResponse {
 
     @Override
     public void addHeader(final String name, String value) {
-        if (isIncluding()) {
+        if (isInclude) {
             WinstoneResponse.logger.debug("Header ignored inside include - {}: {} ", name, value);
         } else if (isCommitted()) {
             WinstoneResponse.logger.debug("Header ignored after response committed - {}: {} ", name, value);
@@ -641,7 +642,7 @@ public class WinstoneResponse implements HttpServletResponse {
 
     @Override
     public void setHeader(final String name, String value) {
-        if (isIncluding()) {
+        if (isInclude) {
             WinstoneResponse.logger.debug("Header ignored inside include - {}: {} ", name, value);
         } else if (isCommitted()) {
             WinstoneResponse.logger.debug("Header ignored after response committed - {}: {} ", name, value);
@@ -737,7 +738,7 @@ public class WinstoneResponse implements HttpServletResponse {
 
     @Override
     public void setStatus(final int sc) {
-        if (!isIncluding() && errorStatusCode == null) {
+        if (!isInclude && errorStatusCode == null) {
             // if (!isIncluding()) {
             statusCode = sc;
             // if (this.errorStatusCode != null) {
@@ -757,7 +758,7 @@ public class WinstoneResponse implements HttpServletResponse {
 
     @Override
     public void sendRedirect(String location) throws IOException {
-        if (isIncluding()) {
+        if (isInclude) {
             WinstoneResponse.logger.error("Ignoring redirect in include: " + location);
             return;
         } else if (isCommitted()) {
@@ -807,7 +808,7 @@ public class WinstoneResponse implements HttpServletResponse {
 
     @Override
     public void sendError(final int sc, final String msg) throws IOException {
-        if (isIncluding()) {
+        if (isInclude) {
             WinstoneResponse.logger.error("Error in include: {} {}", "" + sc, msg);
             return;
         }

@@ -8,6 +8,7 @@ package org.smartboot.socket.protocol.http.servlet.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.protocol.http.servlet.DispatcherSourceType;
 import org.smartboot.socket.protocol.http.servlet.core.authentication.AuthenticationHandler;
 
 import javax.servlet.ServletException;
@@ -15,8 +16,10 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestWrapper;
 import javax.servlet.ServletResponse;
 import javax.servlet.ServletResponseWrapper;
+import javax.servlet.UnavailableException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,8 +51,17 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
     private FilterConfiguration matchingFilters[];
     private int matchingFiltersEvaluated;
     private Boolean doInclude;
-    private boolean isErrorDispatch;
-    private boolean useRequestAttributes;
+    /**
+     * 初始化或者调用getNamedDispatcher获得的Dispatcher执行forward无需设置以下request属性
+     * <p>
+     * javax.servlet.forward.request_uri
+     * javax.servlet.forward.context_path
+     * javax.servlet.forward.servlet_path
+     * javax.servlet.forward.path_info
+     * javax.servlet.forward.query_string
+     * </p>
+     */
+    private DispatcherSourceType sourceType;
     private WebAppConfiguration includedWebAppConfig;
     private ServletConfiguration includedServletConfig;
 
@@ -57,19 +69,26 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
      * Constructor. This initializes the filter chain and sets up the details
      * needed to handle a servlet excecution, such as security constraints,
      * filters, etc.
+     *
+     * @param webAppConfig
+     * @param servletConfig
+     * @param sourceType    Dispatcher的构建来源
      */
-    public SimpleRequestDispatcher(final WebAppConfiguration webAppConfig, final ServletConfiguration servletConfig) {
+    public SimpleRequestDispatcher(final WebAppConfiguration webAppConfig, final ServletConfiguration servletConfig, DispatcherSourceType sourceType) {
         this.servletConfig = servletConfig;
         this.webAppConfig = webAppConfig;
 
         matchingFiltersEvaluated = 0;
+
+        this.sourceType = sourceType;
+
     }
 
     /**
      * Caches the filter matching, so that if the same URL is requested twice,
      * we don't recalculate the filter matching every time.
      */
-    private static FilterConfiguration[] getMatchingFilters(final Mapping filterPatterns[], final WebAppConfiguration webAppConfig, final String fullPath, final String servletName, final String filterChainType, final boolean isURLBasedMatch) {
+    private FilterConfiguration[] getMatchingFilters(final Mapping filterPatterns[], final WebAppConfiguration webAppConfig, final String fullPath, final String servletName, final String filterChainType, final boolean isURLBasedMatch) {
 
         String cacheKey = null;
         if (isURLBasedMatch) {
@@ -109,8 +128,6 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
         this.forwardFilterPatterns = forwardFilterPatterns;
         this.includeFilterPatterns = includeFilterPatterns;
         matchingFilters = null; // set after the call to forward or include
-        useRequestAttributes = Boolean.FALSE;
-        isErrorDispatch = Boolean.FALSE;
     }
 
     public void setForURLDispatcher(final String servletPath, final String pathInfo, final String queryString, final String requestURIInsideWebapp, final Mapping forwardFilterPatterns[], final Mapping includeFilterPatterns[]) {
@@ -122,8 +139,6 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
         this.forwardFilterPatterns = forwardFilterPatterns;
         this.includeFilterPatterns = includeFilterPatterns;
         matchingFilters = null; // set after the call to forward or include
-        useRequestAttributes = Boolean.TRUE;
-        isErrorDispatch = Boolean.FALSE;
     }
 
     public void setForErrorDispatcher(final String servletPath, final String pathInfo, final String queryString, final int statusCode, final String summaryMessage, final Throwable exception, final String errorHandlerURI,
@@ -136,9 +151,7 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
         errorStatusCode = new Integer(statusCode);
         errorException = exception;
         errorSummaryMessage = summaryMessage;
-        matchingFilters = SimpleRequestDispatcher.getMatchingFilters(errorFilterPatterns, webAppConfig, servletPath + (pathInfo == null ? "" : pathInfo), getName(), "ERROR", (servletPath != null));
-        useRequestAttributes = Boolean.TRUE;
-        isErrorDispatch = Boolean.TRUE;
+        matchingFilters = getMatchingFilters(errorFilterPatterns, webAppConfig, servletPath + (pathInfo == null ? "" : pathInfo), getName(), "ERROR", (servletPath != null));
     }
 
     public void setForInitialDispatcher(final String servletPath, final String pathInfo, final String queryString, final String requestURIInsideWebapp, final Mapping requestFilterPatterns[], final AuthenticationHandler authHandler) {
@@ -147,9 +160,7 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
         this.queryString = queryString;
         requestURI = requestURIInsideWebapp;
         this.authHandler = authHandler;
-        matchingFilters = SimpleRequestDispatcher.getMatchingFilters(requestFilterPatterns, webAppConfig, servletPath + (pathInfo == null ? "" : pathInfo), getName(), "REQUEST", (servletPath != null));
-        useRequestAttributes = Boolean.FALSE;
-        isErrorDispatch = Boolean.FALSE;
+        matchingFilters = getMatchingFilters(requestFilterPatterns, webAppConfig, servletPath + (pathInfo == null ? "" : pathInfo), getName(), "REQUEST", (servletPath != null));
     }
 
     public String getName() {
@@ -171,12 +182,27 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
             final WinstoneRequest wr = getUnwrappedRequest(request);
 
             // Set request attributes
-            if (useRequestAttributes) {
-                wr.addIncludeAttributes(webAppConfig.getContextPath() + requestURI, webAppConfig.getContextPath(), servletPath, pathInfo, queryString);
+            if (sourceType == DispatcherSourceType.Request_Dispatcher || sourceType == DispatcherSourceType.Error_Dispatcher) {
+                final Map<String, Object> includeAttributes = new HashMap<String, Object>();
+                if (requestURI != null) {
+                    wr.setAttribute(WinstoneConstant.INCLUDE_REQUEST_URI, requestURI);
+                }
+                if (webAppConfig.getContextPath() != null) {
+                    wr.setAttribute(WinstoneConstant.INCLUDE_CONTEXT_PATH, webAppConfig.getContextPath());
+                }
+                if (servletPath != null) {
+                    wr.setAttribute(WinstoneConstant.INCLUDE_SERVLET_PATH, servletPath);
+                }
+                if (pathInfo != null) {
+                    wr.setAttribute(WinstoneConstant.INCLUDE_PATH_INFO, pathInfo);
+                }
+                if (queryString != null) {
+                    wr.setAttribute(WinstoneConstant.INCLUDE_QUERY_STRING, queryString);
+                }
             }
             // Add another include buffer to the response stack
             final WinstoneResponse wresp = getUnwrappedResponse(response);
-            wresp.startIncludeBuffer();
+            wresp.setInclude(true);
 
             includedServletConfig = wr.getServletConfig();
             includedWebAppConfig = wr.getWebAppConfig();
@@ -188,7 +214,7 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
         }
 
         if (matchingFilters == null) {
-            matchingFilters = SimpleRequestDispatcher.getMatchingFilters(includeFilterPatterns, webAppConfig, servletPath + (pathInfo == null ? "" : pathInfo), getName(), "INCLUDE", (servletPath != null));
+            matchingFilters = getMatchingFilters(includeFilterPatterns, webAppConfig, servletPath + (pathInfo == null ? "" : pathInfo), getName(), "INCLUDE", (servletPath != null));
         }
         try {
             // Make sure the filter chain is exhausted first
@@ -238,10 +264,21 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
     }
 
     /**
-     * Forwards to another servlet, and when it's finished executing that other
-     * servlet, cut off execution. Note this method enters itself twice: once
-     * with the initial call, and once again when all the filters have
-     * completed.
+     * <p>RequestDispatcher 接口的 forward 方法，只有在没有输出 交到向客户端时，才能通过正在被调用的 servlet 调用。
+     * 如果 response 缓冲区中存在尚未 交的输出数据，这些数据内容必须在目标 servlet 的 service 方法调 用前清除。
+     * 如果 response 已经 交，必须抛出一个 IllegalStateException 异常。</p>
+     * <p>
+     * <p>request 对象暴露给目标 servlet 的路径元素(path elements)必须反映获得 RequestDispatcher 使用的路径。</p>
+     * <p>
+     * <p>唯一例外的是，如果 RequestDispatcher 是通过 getNamedDispatcher 方法获得。这种情况下，request 对象的路径元素必须反映这些原始请求。</p>
+     * <p>
+     * <p>在 RequestDispatcher 接口的 forward 方法无异常返回之前，必须发送和 交响应的内容，且由 Servlet 容器 关闭，除非请求处于异步模式。
+     * 如果 RequestDispatcher.forward()的目标发生错误，异常信息会传回所有调 用它经过的过滤器和 servlet，且最终传回给容器。</p>
+     *
+     * @param request
+     * @param response
+     * @throws ServletException
+     * @throws IOException
      */
     @Override
     public void forward(ServletRequest request, ServletResponse response) throws ServletException, IOException {
@@ -257,20 +294,22 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
             final WinstoneRequest req = getUnwrappedRequest(request);
             final WinstoneResponse rsp = getUnwrappedResponse(response);
 
-            // Clear the include stack if one has been accumulated
+            // RequestDispatcher 接口的 forward 方法，只有在没有输出提交到向客户端时，才能通过正在被调用的 servlet 调用。
+            // 如果 response 缓冲区中存在尚未提交的输出数据，这些数据内容必须在目标 servlet 的 service 方法调用前清除。
+            // 如果 response 已经 交，必须抛出一个 IllegalStateException 异常。
             rsp.resetBuffer();
-            rsp.clearIncludeStackForForward();
+            rsp.setInclude(false);
 
             // Set request attributes (because it's the first step in the filter
             // chain of a forward or error)
-            if (useRequestAttributes) {
+            if (sourceType == DispatcherSourceType.Request_Dispatcher || sourceType == DispatcherSourceType.Error_Dispatcher) {
                 req.setAttribute(WinstoneConstant.FORWARD_REQUEST_URI, req.getRequestURI());
                 req.setAttribute(WinstoneConstant.FORWARD_CONTEXT_PATH, req.getContextPath());
                 req.setAttribute(WinstoneConstant.FORWARD_SERVLET_PATH, req.getServletPath());
                 req.setAttribute(WinstoneConstant.FORWARD_PATH_INFO, req.getPathInfo());
                 req.setAttribute(WinstoneConstant.FORWARD_QUERY_STRING, req.getQueryString());
 
-                if (isErrorDispatch) {
+                if (sourceType == DispatcherSourceType.Error_Dispatcher) {
                     req.setAttribute(WinstoneConstant.ERROR_REQUEST_URI, req.getRequestURI());
                     req.setAttribute(WinstoneConstant.ERROR_STATUS_CODE, errorStatusCode);
                     req.setAttribute(WinstoneConstant.ERROR_MESSAGE, errorSummaryMessage != null ? errorSummaryMessage : "");
@@ -298,15 +337,13 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
             req.setServletConfig(servletConfig);
             req.setRequestAttributeListeners(webAppConfig.getRequestAttributeListeners());
 
-            rsp.setWebAppConfig(webAppConfig);
-
             // Forwards haven't set up the filter pattern set yet
             if (matchingFilters == null) {
-                matchingFilters = SimpleRequestDispatcher.getMatchingFilters(forwardFilterPatterns, webAppConfig, servletPath + (pathInfo == null ? "" : pathInfo), getName(), "FORWARD", (servletPath != null));
+                matchingFilters = getMatchingFilters(forwardFilterPatterns, webAppConfig, servletPath + (pathInfo == null ? "" : pathInfo), getName(), "FORWARD", (servletPath != null));
             } // Otherwise we are an initial or error dispatcher, so check
             // security if initial -
             // if we should not continue, return
-            else if (!isErrorDispatch && !continueAfterSecurityCheck(request, response)) {
+            else if (sourceType != DispatcherSourceType.Error_Dispatcher && !continueAfterSecurityCheck(request, response)) {
                 return;
             }
 
@@ -349,7 +386,15 @@ public class SimpleRequestDispatcher implements javax.servlet.RequestDispatcher,
 
             final FilterConfiguration filter = matchingFilters[matchingFiltersEvaluated++];
             logger.debug("Executing Filter: {}", filter.getFilterName());
-            filter.execute(request, response, this);
+            final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            Thread.currentThread().setContextClassLoader(webAppConfig.getLoader());
+            try {
+                filter.getFilter().doFilter(request, response, this);
+            } catch (final UnavailableException err) {
+                throw new ServletException("Error in filter - marking unavailable", err);
+            } finally {
+                Thread.currentThread().setContextClassLoader(cl);
+            }
             return;
         }
 
