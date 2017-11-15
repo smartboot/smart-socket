@@ -116,7 +116,7 @@ public class InvokerServlet extends HttpServlet {
             InvokerServlet.logger.warn(msg);
             rsp.sendError(HttpServletResponse.SC_NOT_FOUND, msg);
         } else {
-            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher((WebAppConfiguration) getServletContext(), invokedServlet);
+            final SimpleRequestDispatcher rd = new SimpleRequestDispatcher((WebAppConfiguration) getServletContext(), invokedServlet,DispatcherSourceType.Named_Dispatcher);
             rd.setForNamedDispatcher(new Mapping[0], new Mapping[0]);
             rd.forward(req, rsp);
         }

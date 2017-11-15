@@ -716,25 +716,6 @@ public class WinstoneRequest implements HttpServletRequest {
     }
 
 
-    public void addIncludeAttributes(final String requestURI, final String contextPath, final String servletPath, final String pathInfo, final String queryString) {
-        final Map<String, Object> includeAttributes = new HashMap<String, Object>();
-        if (requestURI != null) {
-            attributes.put(WinstoneConstant.INCLUDE_REQUEST_URI, requestURI);
-        }
-        if (contextPath != null) {
-            attributes.put(WinstoneConstant.INCLUDE_CONTEXT_PATH, contextPath);
-        }
-        if (servletPath != null) {
-            attributes.put(WinstoneConstant.INCLUDE_SERVLET_PATH, servletPath);
-        }
-        if (pathInfo != null) {
-            attributes.put(WinstoneConstant.INCLUDE_PATH_INFO, pathInfo);
-        }
-        if (queryString != null) {
-            attributes.put(WinstoneConstant.INCLUDE_QUERY_STRING, queryString);
-        }
-    }
-
     public void setForwardQueryString(final String forwardQueryString) {
         // this.forwardedParameters.clear();
 
@@ -1023,6 +1004,16 @@ public class WinstoneRequest implements HttpServletRequest {
         localPort = port;
     }
 
+    /**
+     * 为了允许使用相对于当前请求路径的相对路径(不是相对于 ServletContext 根路径)获得 RequestDispatcher 对象，
+     * 在 ServletRequest 接口中 供了 getRequestDispatcher 方法。
+     * 此方法的行为与 ServletContext 中同名的方法相似。
+     * Servlet 容器根据 request 对象中的信息把给定的相对路 径转换成当前 servlet 的完整路径。
+     * 例如，在以‟/‟作为上下文根路径和请求路径/garden/tools.html 中，
+     * 通过 ServletRequest.getRequestDispatcher("header.html") 获得的请求分派器和通过调用ServletContext.getRequestDispatcher("/garden/header.html")获得的完全一样。
+     * @param path
+     * @return
+     */
     @Override
     public javax.servlet.RequestDispatcher getRequestDispatcher(final String path) {
         if (path.startsWith("/")) {

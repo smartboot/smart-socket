@@ -199,7 +199,18 @@ public class AioSession<T> {
 
         T dataEntry;
         while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, readSize == -1)) != null) {
-            receive0(dataEntry);
+            //处理消息
+            try {
+                for (Filter<T> h : ioServerConfig.getFilters()) {
+                    h.processFilter(this, dataEntry);
+                }
+                ioServerConfig.getProcessor().process(this, dataEntry);
+            } catch (Throwable e) {
+                logger.catching(e);
+                for (Filter<T> h : ioServerConfig.getFilters()) {
+                    h.processFailHandler(this, dataEntry, e);
+                }
+            }
         }
 
         if (readSize == -1) {
@@ -254,25 +265,6 @@ public class AioSession<T> {
             return (InetSocketAddress) channel.getRemoteAddress();
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 接收并处理消息
-     *
-     * @param dataEntry 解码识别出的消息实体
-     */
-    private void receive0(T dataEntry) {
-        try {
-            for (Filter<T> h : ioServerConfig.getFilters()) {
-                h.processFilter(this, dataEntry);
-            }
-            ioServerConfig.getProcessor().process(this, dataEntry);
-        } catch (Throwable e) {
-            logger.catching(e);
-            for (Filter<T> h : ioServerConfig.getFilters()) {
-                h.processFailHandler(this, dataEntry, e);
-            }
         }
     }
 

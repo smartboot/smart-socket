@@ -38,7 +38,6 @@ public class WinstoneOutputStream extends javax.servlet.ServletOutputStream {
     protected WinstoneResponse owner;
     protected boolean disregardMode = Boolean.FALSE;
     protected boolean closed = Boolean.FALSE;
-    protected Stack<ByteArrayOutputStream> includeByteStreams;
 
     /**
      * Constructor
@@ -216,43 +215,5 @@ public class WinstoneOutputStream extends javax.servlet.ServletOutputStream {
             }
         }
         flush();
-    }
-
-    // Include related buffering
-    public boolean isIncluding() {
-        return ((includeByteStreams != null) && !includeByteStreams.isEmpty());
-    }
-
-    public void startIncludeBuffer() {
-        synchronized (buffer) {
-            if (includeByteStreams == null) {
-                includeByteStreams = new Stack<ByteArrayOutputStream>();
-            }
-        }
-        includeByteStreams.push(new ByteArrayOutputStream());
-    }
-
-    public void finishIncludeBuffer() throws IOException {
-        if (isIncluding()) {
-            final ByteArrayOutputStream body = includeByteStreams.pop();
-            OutputStream topStream = outStream;
-            if (!includeByteStreams.isEmpty()) {
-                topStream = includeByteStreams.peek();
-            }
-            final byte bodyArr[] = body.toByteArray();
-            if (bodyArr.length > 0) {
-                topStream.write(bodyArr);
-            }
-            body.close();
-        }
-    }
-
-    public void clearIncludeStackForForward() throws IOException {
-        if (isIncluding()) {
-            for (final Object includeByteStream : includeByteStreams) {
-                ((ByteArrayOutputStream) includeByteStream).close();
-            }
-            includeByteStreams.clear();
-        }
     }
 }
