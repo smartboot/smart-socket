@@ -12,8 +12,7 @@ import org.smartboot.socket.util.StateMachineEnum;
 public interface MessageProcessor<T> {
 
     /**
-     * 用于处理指定session内的一个消息实例,若直接在该方法内处理消息,则实现的是同步处理方式.
-     * 若需要采用异步，则介意此方法的实现仅用于接收消息，至于消息处理则在其他线程中实现
+     * 处理接收到的消息
      *
      * @param session
      * @throws Exception

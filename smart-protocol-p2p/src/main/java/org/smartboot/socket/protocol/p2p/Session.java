@@ -42,4 +42,6 @@ public interface Session<T> {
 	public boolean notifySyncMessage(T baseMsg);
 
 	void close();
+
+	void close(boolean immediate);
 }

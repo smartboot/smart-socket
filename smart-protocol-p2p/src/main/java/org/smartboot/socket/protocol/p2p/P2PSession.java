@@ -17,15 +17,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author 三刀
  */
 public class P2PSession implements Session<BaseMessage> {
+    public static final String SESSION_KEY = "session";
     private static Logger logger = LogManager.getLogger(P2PSession.class);
-    public static final String SESSION_KEY="session";
-    private String remoteIp;
-    private String localAddress;
-    private AioSession<BaseMessage> ioSession;
     /**
      * 会话创建时间
      */
     private final long creatTime;
+    private String remoteIp;
+    private String localAddress;
+    private AioSession<BaseMessage> ioSession;
     /**
      * 最长闲置时间
      */
@@ -63,6 +63,10 @@ public class P2PSession implements Session<BaseMessage> {
         return maxInactiveInterval;
     }
 
+    public void setMaxInactiveInterval(int interval) {
+        maxInactiveInterval = interval;
+    }
+
     public String getRemoteIp() {
         return remoteIp;
     }
@@ -90,10 +94,6 @@ public class P2PSession implements Session<BaseMessage> {
 
     public void setAttribute(String name, Object value) {
         attributeMap.put(name, value);
-    }
-
-    public void setMaxInactiveInterval(int interval) {
-        maxInactiveInterval = interval;
     }
 
     @Override
@@ -188,7 +188,12 @@ public class P2PSession implements Session<BaseMessage> {
 
     @Override
     public void close() {
-        ioSession.close();
+        close(true);
+    }
+
+    @Override
+    public void close(boolean immediate) {
+        ioSession.close(immediate);
     }
 
     /**

@@ -5,6 +5,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.math.NumberUtils;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
+import org.smartboot.socket.extension.decoder.StreamFrameDecoder;
 import org.smartboot.socket.protocol.http.strategy.FormWithContentLengthStrategy;
 import org.smartboot.socket.protocol.http.strategy.PostDecodeStrategy;
 import org.smartboot.socket.protocol.http.strategy.StreamWithContentLengthStrategy;
@@ -38,11 +39,11 @@ public class HttpEntity {
     private static final byte[] CRLF = "\r\n\r\n".getBytes();
     private static final String STREAM_BODY = "STREAM_BODY";
     private static final String BLOCK_BODY = "BLOCK_BODY";
+    private static Map<String, PostDecodeStrategy> strategyMap = new HashMap<>();
     public DelimiterFrameDecoder delimiterFrameDecoder = new DelimiterFrameDecoder(CRLF, 128);
     public FixedLengthFrameDecoder bodyContentDecoder;
-    //    public StreamFrameDecoder smartHttpInputStream = new StreamFrameDecoder();
-    PostDecodeStrategy postDecodeStrategy;
-    private Map<String, PostDecodeStrategy> strategyMap = new HashMap<>();
+    public StreamFrameDecoder smartHttpInputStream = new StreamFrameDecoder();
+    public PostDecodeStrategy postDecodeStrategy;
     /**
      * 0:消息头
      * 1:消息体

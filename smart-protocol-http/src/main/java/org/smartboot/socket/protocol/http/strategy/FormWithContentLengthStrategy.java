@@ -3,7 +3,7 @@ package org.smartboot.socket.protocol.http.strategy;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
-import org.smartboot.socket.protocol.http.HttpEntity;
+import org.smartboot.socket.protocol.http.servlet.core.WinstoneRequest;
 
 import java.nio.ByteBuffer;
 
@@ -20,7 +20,7 @@ public class FormWithContentLengthStrategy implements PostDecodeStrategy {
     }
 
     @Override
-    public boolean isDecodeEnd(ByteBuffer buffer, HttpEntity entity, boolean eof) {
+    public boolean isDecodeEnd(ByteBuffer buffer, WinstoneRequest entity, boolean eof) {
         //识别body长度
         if (entity.bodyContentDecoder == null) {
             entity.bodyContentDecoder = new FixedLengthFrameDecoder(entity.getContentLength());
@@ -32,7 +32,7 @@ public class FormWithContentLengthStrategy implements PostDecodeStrategy {
                 throw new RuntimeException("data is emtpy");
             }
             for (int i = 0; i < headDatas.length; i++) {
-                entity.getParamMap().put(StringUtils.substringBefore(headDatas[i], "=").trim(), StringUtils.substringAfter(headDatas[i], "=").trim());
+                entity.getParameterMap().put(StringUtils.substringBefore(headDatas[i], "=").trim(), StringUtils.substringAfter(headDatas[i], "=").trim());
             }
             return true;
         }

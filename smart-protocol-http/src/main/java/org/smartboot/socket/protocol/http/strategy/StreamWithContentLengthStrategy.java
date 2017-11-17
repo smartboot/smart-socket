@@ -1,6 +1,6 @@
 package org.smartboot.socket.protocol.http.strategy;
 
-import org.smartboot.socket.protocol.http.HttpEntity;
+import org.smartboot.socket.protocol.http.servlet.core.WinstoneRequest;
 
 import java.nio.ByteBuffer;
 
@@ -17,13 +17,16 @@ public class StreamWithContentLengthStrategy implements PostDecodeStrategy {
     }
 
     @Override
-    public boolean isDecodeEnd(ByteBuffer buffer, HttpEntity entity, boolean eof) {
-//        //识别body长度
-//        if (entity.getContentLength() <= 0) {
-//            throw new RuntimeException("invalid content length");
-//        }
-//        return entity.smartHttpInputStream.put(b);
-        throw new UnsupportedOperationException();
+    public boolean isDecodeEnd(ByteBuffer buffer, WinstoneRequest entity, boolean eof) {
+        //识别body长度
+        if (entity.getContentLength() <= 0) {
+            throw new RuntimeException("invalid content length");
+        }
+        if (eof) {
+            while (buffer.hasRemaining() && !entity.smartHttpInputStream.put(buffer)) ;
+            return true;
+        }
+        return entity.smartHttpInputStream.put(buffer);
     }
 
 }

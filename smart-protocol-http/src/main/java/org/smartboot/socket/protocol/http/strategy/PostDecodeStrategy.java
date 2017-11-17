@@ -1,6 +1,6 @@
 package org.smartboot.socket.protocol.http.strategy;
 
-import org.smartboot.socket.protocol.http.HttpEntity;
+import org.smartboot.socket.protocol.http.servlet.core.WinstoneRequest;
 
 import java.nio.ByteBuffer;
 
@@ -18,5 +18,5 @@ public interface PostDecodeStrategy {
      */
     boolean waitForBodyFinish();
 
-    boolean isDecodeEnd(ByteBuffer buffer, HttpEntity httpEntity, boolean eof);
+    boolean isDecodeEnd(ByteBuffer buffer, WinstoneRequest httpEntity, boolean eof);
 }
