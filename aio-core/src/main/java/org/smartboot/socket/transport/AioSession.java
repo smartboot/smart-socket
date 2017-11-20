@@ -51,14 +51,14 @@ public class AioSession<T> {
      * 数据read限流标志,仅服务端需要进行限流
      */
     private Boolean serverFlowLimit;
-    /**
-     * Channel读写操作回调Handler
-     */
-    private AioCompletionHandler aioCompletionHandler;
-    /**
-     * 读写回调附件
-     */
-    private Attachment readAttach = new Attachment(true), writeAttach = new Attachment(false);
+
+    private ReadCompletionHandler aioReadCompletionHandler;
+
+    private WriteCompletionHandler aioWriteCompletionHandler;
+
+    private ByteBuffer readBuffer;
+
+    private ByteBuffer writeBuffer;
     /**
      * 底层通信channel对象
      */
@@ -72,17 +72,19 @@ public class AioSession<T> {
     /**
      * @param channel
      * @param config
-     * @param aioCompletionHandler
-     * @param serverSession        是否服务端Session
+     * @param aioReadCompletionHandler
+     * @param aioWriteCompletionHandler
+     * @param serverSession             是否服务端Session
      */
-    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, AioCompletionHandler aioCompletionHandler, boolean serverSession) {
+    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler aioReadCompletionHandler, WriteCompletionHandler aioWriteCompletionHandler, boolean serverSession) {
         this.channel = channel;
-        this.aioCompletionHandler = aioCompletionHandler;
+        this.aioReadCompletionHandler = aioReadCompletionHandler;
+        this.aioWriteCompletionHandler = aioWriteCompletionHandler;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
         this.serverFlowLimit = serverSession ? false : null;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
-        readAttach.buffer = ByteBuffer.allocate(config.getReadBufferSize());
+        this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
         readFromChannel(0);//注册消息读事件
     }
 
@@ -91,11 +93,11 @@ public class AioSession<T> {
      * <p>需要调用控制同步</p>
      */
     void writeToChannel() {
-        if (writeAttach.buffer != null && writeAttach.buffer.hasRemaining()) {
-            channel.write(writeAttach.buffer, writeAttach, aioCompletionHandler);
+        if (writeBuffer != null && writeBuffer.hasRemaining()) {
+            channel.write(writeBuffer, this, aioWriteCompletionHandler);
             return;
         }
-        writeAttach.buffer = null;//释放对象
+        writeBuffer = null;//释放对象
         if (writeCacheQueue.isEmpty()) {
             semaphore.release();
             if (isInvalid()) {//此时可能是Closing或Closed状态
@@ -118,8 +120,8 @@ public class AioSession<T> {
             System.arraycopy(srcBuffer.array(), srcBuffer.position(), data, index, srcBuffer.remaining());
             index += srcBuffer.remaining();
         }
-        writeAttach.buffer = ByteBuffer.wrap(data);
-        channel.write(writeAttach.buffer, writeAttach, aioCompletionHandler);
+        writeBuffer = ByteBuffer.wrap(data);
+        channel.write(writeBuffer, this, aioWriteCompletionHandler);
         tryReleaseFlowLimit();
     }
 
@@ -186,7 +188,7 @@ public class AioSession<T> {
     private void tryReleaseFlowLimit() {
         if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
             serverFlowLimit = false;
-            channel.read(readAttach.buffer, readAttach, aioCompletionHandler);
+            channel.read(readBuffer, this, aioReadCompletionHandler);
         }
     }
 
@@ -194,7 +196,6 @@ public class AioSession<T> {
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
     void readFromChannel(int readSize) {
-        final ByteBuffer readBuffer = readAttach.buffer;
         readBuffer.flip();
 
         T dataEntry;
@@ -236,7 +237,7 @@ public class AioSession<T> {
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit = true;
         } else {
-            channel.read(readBuffer, readAttach, aioCompletionHandler);
+            channel.read(readBuffer, this, aioReadCompletionHandler);
         }
     }
 
@@ -268,27 +269,8 @@ public class AioSession<T> {
         }
     }
 
-    class Attachment {
-        /**
-         * true:read,false:write
-         */
-        private final boolean read;
-        private ByteBuffer buffer;
-
-        public Attachment(boolean optType) {
-            this.read = optType;
-        }
-
-        public AioSession getAioSession() {
-            return AioSession.this;
-        }
-
-        public IoServerConfig getServerConfig() {
-            return AioSession.this.ioServerConfig;
-        }
-
-        public boolean isRead() {
-            return read;
-        }
+    IoServerConfig getServerConfig() {
+        return this.ioServerConfig;
     }
+
 }

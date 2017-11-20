@@ -21,6 +21,7 @@ The smart-socket jar file is available from [Maven Central](http://mvnrepository
 
 ### Demo
 #### Protocol
+
 ```java
 public class IntegerProtocol implements Protocol<Integer> {
 
@@ -121,7 +122,6 @@ public class IntegerClient {
         processor.getSession().write(1);
         Thread.sleep(1000);
         aioQuickClient.shutdown();
-
     }
 }
 ```

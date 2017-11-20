@@ -2,9 +2,9 @@ package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.Protocol;
-import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Filter;
+import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.Protocol;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -23,7 +23,8 @@ public class AioQuickServer<T> {
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private IoServerConfig<T> config = new IoServerConfig<T>();
-    private AioCompletionHandler aioCompletionHandler = new AioCompletionHandler();
+    private ReadCompletionHandler<T> aioReadCompletionHandler = new ReadCompletionHandler<T>();
+    private WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<T>();
 
     public void start() throws IOException {
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
@@ -40,7 +41,7 @@ public class AioQuickServer<T> {
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
                 serverSocketChannel.accept(attachment, this);
                 //连接成功则构造AIOSession对象
-                new AioSession<T>(channel, config, aioCompletionHandler, true);
+                new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
             }
 
             @Override
