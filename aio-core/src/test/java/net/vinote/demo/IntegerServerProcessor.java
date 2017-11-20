@@ -14,7 +14,7 @@ public class IntegerServerProcessor implements MessageProcessor<Integer> {
     @Override
     public void process(AioSession<Integer> session, Integer msg) {
         Integer respMsg = msg + 1;
-        System.out.println("接受到客户端数据：" + msg + " ,响应数据:" + (respMsg));
+        System.out.println("receive data from client: " + msg + " ,rsp:" + (respMsg));
         try {
             session.write(respMsg);
         } catch (IOException e) {

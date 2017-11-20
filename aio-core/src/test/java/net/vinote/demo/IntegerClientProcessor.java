@@ -13,12 +13,19 @@ public class IntegerClientProcessor implements MessageProcessor<Integer> {
 
     @Override
     public void process(AioSession<Integer> session, Integer msg) {
-        System.out.println("接受到服务端响应数据：" + msg);
+        System.out.println("receive data from server：" + msg);
     }
 
     @Override
     public void stateEvent(AioSession<Integer> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-        this.session = session;
+        switch (stateMachineEnum) {
+            case NEW_SESSION:
+                this.session = session;
+                break;
+            default:
+                System.out.println("other state:" + stateMachineEnum);
+        }
+
     }
 
     public AioSession<Integer> getSession() {
