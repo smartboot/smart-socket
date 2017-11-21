@@ -56,9 +56,8 @@ public class AioSession<T> {
 
     private WriteCompletionHandler aioWriteCompletionHandler;
 
-    private ByteBuffer readBuffer;
+    private ByteBuffer readBuffer, writeBuffer;
 
-    private ByteBuffer writeBuffer;
     /**
      * 底层通信channel对象
      */
