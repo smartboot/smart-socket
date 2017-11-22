@@ -10,9 +10,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * AIO传输层会话
@@ -47,6 +47,11 @@ public class AioSession<T> {
      * 响应消息缓存队列
      */
     private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
+    /**
+     * 统计消息队列字节总数
+     */
+    private AtomicInteger cacheSize = new AtomicInteger(0);
+
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
@@ -96,7 +101,6 @@ public class AioSession<T> {
             channel.write(writeBuffer, this, aioWriteCompletionHandler);
             return;
         }
-        writeBuffer = null;//释放对象
         if (writeCacheQueue.isEmpty()) {
             semaphore.release();
             if (isInvalid()) {//此时可能是Closing或Closed状态
@@ -107,19 +111,32 @@ public class AioSession<T> {
             return;
         }
         //对缓存中的数据进行压缩处理再输出
-        Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
-        int totalSize = 0;
-        while (iterable.hasNext() && totalSize <= 32 * 1024) {
-            totalSize += iterable.next().remaining();
+        int limitSize = this.cacheSize.get();
+        if (limitSize > 32 * 1024) {
+            limitSize = 32 * 1024;
         }
-        byte[] data = new byte[totalSize];
-        int index = 0;
-        while (index < data.length) {
-            ByteBuffer srcBuffer = writeCacheQueue.poll();
-            System.arraycopy(srcBuffer.array(), srcBuffer.position(), data, index, srcBuffer.remaining());
-            index += srcBuffer.remaining();
+        if (writeBuffer != null && writeBuffer.capacity() >= limitSize) {
+            writeBuffer.clear();
+        } else {
+            writeBuffer = ByteBuffer.allocate(limitSize);
         }
-        writeBuffer = ByteBuffer.wrap(data);
+        int cacheSize = 0;
+        ByteBuffer curBuffer = null;
+        while ((curBuffer = writeCacheQueue.peek()) != null && writeBuffer.remaining() >= curBuffer.remaining()) {
+            cacheSize = curBuffer.remaining();
+            writeBuffer.put(curBuffer);
+            writeCacheQueue.poll();
+        }
+        //队列中的第一个Buffer长度就大于32 * 1024
+        if (curBuffer != null && writeBuffer.position() == 0) {
+            writeBuffer = writeCacheQueue.poll();
+            cacheSize = writeBuffer.remaining();
+        } else {
+            writeBuffer.flip();
+        }
+
+        this.cacheSize.addAndGet(-cacheSize);
+
         channel.write(writeBuffer, this, aioWriteCompletionHandler);
         tryReleaseFlowLimit();
     }
@@ -131,6 +148,7 @@ public class AioSession<T> {
         try {
             //正常读取
             writeCacheQueue.put(buffer);
+            cacheSize.addAndGet(buffer.remaining());
         } catch (InterruptedException e) {
             logger.error(e);
         }
