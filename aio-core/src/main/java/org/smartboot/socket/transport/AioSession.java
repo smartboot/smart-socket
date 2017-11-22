@@ -112,8 +112,8 @@ public class AioSession<T> {
         }
         //对缓存中的数据进行压缩处理再输出
         int limitSize = this.cacheSize.get();
-        if (limitSize > 32 * 1024) {
-            limitSize = 32 * 1024;
+        if (limitSize > 32786) {//32 * 1024
+            limitSize = 32786;
         }
         if (writeBuffer != null && writeBuffer.capacity() >= limitSize) {
             writeBuffer.clear();
@@ -123,7 +123,7 @@ public class AioSession<T> {
         int cacheSize = 0;
         ByteBuffer curBuffer = null;
         while ((curBuffer = writeCacheQueue.peek()) != null && writeBuffer.remaining() >= curBuffer.remaining()) {
-            cacheSize = curBuffer.remaining();
+            cacheSize += curBuffer.remaining();
             writeBuffer.put(curBuffer);
             writeCacheQueue.poll();
         }
