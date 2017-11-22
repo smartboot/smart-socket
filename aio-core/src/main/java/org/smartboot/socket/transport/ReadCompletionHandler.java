@@ -14,7 +14,7 @@ class ReadCompletionHandler<T> extends AbstractCompletionHandler<T> {
         for (Filter h : aioSession.getServerConfig().getFilters()) {
             h.readFilter(aioSession, result);
         }
-        aioSession.readFromChannel(result);
+        aioSession.readFromChannel(result == -1);
     }
 
     @Override

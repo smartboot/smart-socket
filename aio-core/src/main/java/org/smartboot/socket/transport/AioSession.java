@@ -55,7 +55,7 @@ public class AioSession<T> {
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
-    private Boolean serverFlowLimit;
+    private volatile Boolean serverFlowLimit;
 
     private ReadCompletionHandler aioReadCompletionHandler;
 
@@ -89,7 +89,7 @@ public class AioSession<T> {
         this.serverFlowLimit = serverSession ? false : null;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
-        readFromChannel(0);//注册消息读事件
+        readFromChannel(false);//注册消息读事件
     }
 
     /**
@@ -138,7 +138,12 @@ public class AioSession<T> {
         this.cacheSize.addAndGet(-cacheSize);
 
         channel.write(writeBuffer, this, aioWriteCompletionHandler);
-        tryReleaseFlowLimit();
+
+        //如果存在流控并符合释放条件，则触发读操作
+        if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
+            serverFlowLimit = false;
+            channel.read(readBuffer, this, aioReadCompletionHandler);
+        }
     }
 
     public void write(final ByteBuffer buffer) throws IOException {
@@ -200,23 +205,13 @@ public class AioSession<T> {
     }
 
     /**
-     * 如果存在流控并符合释放条件，则触发读操作
-     */
-    private void tryReleaseFlowLimit() {
-        if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
-            serverFlowLimit = false;
-            channel.read(readBuffer, this, aioReadCompletionHandler);
-        }
-    }
-
-    /**
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
-    void readFromChannel(int readSize) {
+    void readFromChannel(boolean eof) {
         readBuffer.flip();
 
         T dataEntry;
-        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, readSize == -1)) != null) {
+        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
             //处理消息
             try {
                 for (Filter<T> h : ioServerConfig.getFilters()) {
@@ -231,7 +226,7 @@ public class AioSession<T> {
             }
         }
 
-        if (readSize == -1) {
+        if (eof) {
             if (readBuffer.hasRemaining()) {
                 logger.error("{} bytes has not decode when EOF", readBuffer.remaining());
             }
