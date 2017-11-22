@@ -27,10 +27,9 @@ public class AioSession<T> {
     SESSION_STATUS_CLOSING = 2,
     /* Session状态:正常 */
     SESSION_STATUS_ENABLED = 3;
-
+    private static final int MAX_WRITE_SIZE = 256 * 1024;
     /* Session ID生成器 */
     private static int NEXT_ID = 0;
-
     /**
      * 唯一标识
      */
@@ -51,11 +50,10 @@ public class AioSession<T> {
      * 统计消息队列字节总数
      */
     private AtomicInteger cacheSize = new AtomicInteger(0);
-
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
-    private volatile Boolean serverFlowLimit;
+    private Boolean serverFlowLimit;
 
     private ReadCompletionHandler aioReadCompletionHandler;
 
@@ -112,8 +110,8 @@ public class AioSession<T> {
         }
         //对缓存中的数据进行压缩处理再输出
         int limitSize = this.cacheSize.get();
-        if (limitSize > 32786) {//32 * 1024
-            limitSize = 32786;
+        if (limitSize > MAX_WRITE_SIZE) {//256 * 1024
+            limitSize = MAX_WRITE_SIZE;
         }
         if (writeBuffer != null && writeBuffer.capacity() >= limitSize) {
             writeBuffer.clear();
@@ -127,7 +125,7 @@ public class AioSession<T> {
             writeBuffer.put(curBuffer);
             writeCacheQueue.poll();
         }
-        //队列中的第一个Buffer长度就大于32 * 1024
+        //队列中的第一个Buffer长度就大于256 * 1024
         if (curBuffer != null && writeBuffer.position() == 0) {
             writeBuffer = writeCacheQueue.poll();
             cacheSize = writeBuffer.remaining();
@@ -244,6 +242,9 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
 
+        if (serverFlowLimit != null && serverFlowLimit) {
+            throw new RuntimeException("不该出现的情况");
+        }
         //触发流控
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit = true;
