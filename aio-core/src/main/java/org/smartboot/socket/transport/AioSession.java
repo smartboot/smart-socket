@@ -244,7 +244,9 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
 
-
+        if (serverFlowLimit != null && serverFlowLimit) {
+            throw new RuntimeException("不该出现的情况");
+        }
         //触发流控
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit = true;
