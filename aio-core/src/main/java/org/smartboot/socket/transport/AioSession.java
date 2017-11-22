@@ -55,7 +55,7 @@ public class AioSession<T> {
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
-    private volatile Boolean serverFlowLimit;
+    private  Boolean serverFlowLimit;
 
     private ReadCompletionHandler aioReadCompletionHandler;
 
@@ -244,9 +244,6 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
 
-        if (serverFlowLimit != null && serverFlowLimit) {
-            throw new RuntimeException("不该出现的情况");
-        }
         //触发流控
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit = true;
