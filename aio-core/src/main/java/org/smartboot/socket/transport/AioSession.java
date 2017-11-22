@@ -55,7 +55,7 @@ public class AioSession<T> {
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
-    private  Boolean serverFlowLimit;
+    private volatile Boolean serverFlowLimit;
 
     private ReadCompletionHandler aioReadCompletionHandler;
 
