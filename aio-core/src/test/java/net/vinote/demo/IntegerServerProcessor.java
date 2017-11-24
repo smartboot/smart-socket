@@ -2,7 +2,7 @@ package net.vinote.demo;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.util.StateMachineEnum;
+import org.smartboot.socket.StateMachineEnum;
 
 import java.io.IOException;
 

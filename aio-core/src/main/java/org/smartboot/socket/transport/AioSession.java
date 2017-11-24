@@ -4,15 +4,15 @@ package org.smartboot.socket.transport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
-import org.smartboot.socket.util.StateMachineEnum;
+import org.smartboot.socket.StateMachineEnum;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * AIO传输层会话
@@ -46,10 +46,6 @@ public class AioSession<T> {
      * 响应消息缓存队列
      */
     private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
-    /**
-     * 统计消息队列字节总数
-     */
-    private AtomicInteger cacheSize = new AtomicInteger(0);
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
@@ -99,6 +95,7 @@ public class AioSession<T> {
             channel.write(writeBuffer, this, aioWriteCompletionHandler);
             return;
         }
+        writeBuffer = null;
         if (writeCacheQueue.isEmpty()) {
             semaphore.release();
             if (isInvalid()) {//此时可能是Closing或Closed状态
@@ -108,33 +105,19 @@ public class AioSession<T> {
             }
             return;
         }
-        //对缓存中的数据进行压缩处理再输出
-        int limitSize = this.cacheSize.get();
-        if (limitSize > MAX_WRITE_SIZE) {//256 * 1024
-            limitSize = MAX_WRITE_SIZE;
+        Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
+        int totalSize = 0;
+        while (iterable.hasNext() && totalSize <= MAX_WRITE_SIZE) {
+            totalSize += iterable.next().remaining();
         }
-        if (writeBuffer != null && writeBuffer.capacity() >= limitSize) {
-            writeBuffer.clear();
-        } else {
-            writeBuffer = ByteBuffer.allocate(limitSize);
+        byte[] data = new byte[totalSize];
+        int index = 0;
+        while (index < data.length) {
+            ByteBuffer srcBuffer = writeCacheQueue.poll();
+            System.arraycopy(srcBuffer.array(), srcBuffer.position(), data, index, srcBuffer.remaining());
+            index += srcBuffer.remaining();
         }
-        int cacheSize = 0;
-        ByteBuffer curBuffer = null;
-        while ((curBuffer = writeCacheQueue.peek()) != null && writeBuffer.remaining() >= curBuffer.remaining()) {
-            cacheSize += curBuffer.remaining();
-            writeBuffer.put(curBuffer);
-            writeCacheQueue.poll();
-        }
-        //队列中的第一个Buffer长度就大于256 * 1024
-        if (curBuffer != null && writeBuffer.position() == 0) {
-            writeBuffer = writeCacheQueue.poll();
-            cacheSize = writeBuffer.remaining();
-        } else {
-            writeBuffer.flip();
-        }
-
-        this.cacheSize.addAndGet(-cacheSize);
-
+        writeBuffer = ByteBuffer.wrap(data);
         channel.write(writeBuffer, this, aioWriteCompletionHandler);
 
         //如果存在流控并符合释放条件，则触发读操作
@@ -151,7 +134,6 @@ public class AioSession<T> {
         try {
             //正常读取
             writeCacheQueue.put(buffer);
-            cacheSize.addAndGet(buffer.remaining());
         } catch (InterruptedException e) {
             logger.error(e);
         }
@@ -171,6 +153,9 @@ public class AioSession<T> {
      * @param immediate true:立即关闭,false:响应消息发送完后关闭
      */
     public void close(boolean immediate) {
+        if (status == SESSION_STATUS_CLOSED) {
+            return;
+        }
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
             try {

@@ -1,4 +1,4 @@
-package org.smartboot.socket.util;
+package org.smartboot.socket;
 
 /**
  * @author 三刀

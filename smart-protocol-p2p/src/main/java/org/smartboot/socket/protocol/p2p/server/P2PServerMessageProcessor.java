@@ -6,7 +6,7 @@ import org.smartboot.socket.protocol.p2p.P2PSession;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.util.StateMachineEnum;
+import org.smartboot.socket.StateMachineEnum;
 
 /**
  * 服务器消息处理器,由服务器启动时构造

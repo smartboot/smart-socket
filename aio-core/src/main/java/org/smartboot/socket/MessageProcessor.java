@@ -1,7 +1,6 @@
 package org.smartboot.socket;
 
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.util.StateMachineEnum;
 
 /**
  * 消息处理器

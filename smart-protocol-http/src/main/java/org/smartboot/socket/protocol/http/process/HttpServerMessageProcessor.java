@@ -17,7 +17,7 @@ import org.smartboot.socket.protocol.http.servlet.core.WinstoneResponse;
 import org.smartboot.socket.protocol.http.util.MapConverter;
 import org.smartboot.socket.protocol.http.util.StringUtils;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.util.StateMachineEnum;
+import org.smartboot.socket.StateMachineEnum;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
