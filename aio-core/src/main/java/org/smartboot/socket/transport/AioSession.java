@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2017, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: AioSession.java
+ * Date: 2017-11-24 10:29:55
+ * Author: sandao
+ */
+
 package org.smartboot.socket.transport;
 
 
@@ -98,9 +106,12 @@ public class AioSession<T> {
         writeBuffer = null;
         if (writeCacheQueue.isEmpty()) {
             semaphore.release();
-            if (isInvalid()) {//此时可能是Closing或Closed状态
+            //此时可能是Closing或Closed状态
+            if (isInvalid()) {
                 close();
-            } else if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
+            }
+            //也许此时有新的消息通过write方法添加到writeCacheQueue中
+            else if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
                 writeToChannel();
             }
             return;
@@ -164,10 +175,15 @@ public class AioSession<T> {
             } catch (IOException e) {
                 logger.catching(e);
             }
+            writeCacheQueue = null;
+            readBuffer = writeBuffer = null;
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.CHANNEL_CLOSED, null);
         } else if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
             close(true);
             semaphore.release();
+            return;
         }
+        ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.CHANNEL_CLOSING, null);
     }
 
 

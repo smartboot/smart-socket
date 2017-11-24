@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2017, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: WriteCompletionHandler.java
+ * Date: 2017-11-24 10:29:55
+ * Author: sandao
+ */
+
 package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;

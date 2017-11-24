@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2017, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: DelimiterFrameDecoder.java
+ * Date: 2017-11-24 10:29:55
+ * Author: sandao
+ */
+
 package org.smartboot.socket.extension.decoder;
 
 import java.nio.ByteBuffer;
