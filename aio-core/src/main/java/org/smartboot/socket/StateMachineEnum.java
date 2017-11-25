@@ -21,8 +21,8 @@ public enum StateMachineEnum {
     INPUT_EXCEPTION,
     /**写操作异常*/
     OUTPUT_EXCEPTION,
-    /**通道正在关闭中*/
-    CHANNEL_CLOSING,
-    /**通道关闭成功*/
-    CHANNEL_CLOSED;
+    /**会话正在关闭中*/
+    SESSION_CLOSING,
+    /**会话关闭成功*/
+    SESSION_CLOSED;
 }

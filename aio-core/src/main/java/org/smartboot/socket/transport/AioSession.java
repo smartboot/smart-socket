@@ -177,12 +177,12 @@ public class AioSession<T> {
             }
             writeCacheQueue = null;
             readBuffer = writeBuffer = null;
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.CHANNEL_CLOSED, null);
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
         } else if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
             close(true);
             semaphore.release();
         } else {
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.CHANNEL_CLOSING, null);
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
         }
     }
 
