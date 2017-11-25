@@ -175,8 +175,6 @@ public class AioSession<T> {
             } catch (IOException e) {
                 logger.catching(e);
             }
-            writeCacheQueue = null;
-            readBuffer = writeBuffer = null;
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
         } else if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
             close(true);
@@ -223,6 +221,7 @@ public class AioSession<T> {
                     h.processFailHandler(this, dataEntry, e);
                 }
             }
+
         }
 
         if (eof) {
@@ -249,10 +248,8 @@ public class AioSession<T> {
         //触发流控
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit = true;
-        } else if (isInvalid()) {
-            channel.read(readBuffer, this, aioReadCompletionHandler);
         } else {
-            close(false);
+            channel.read(readBuffer, this, aioReadCompletionHandler);
         }
     }
 

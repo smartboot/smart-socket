@@ -32,7 +32,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
 
     @Override
     public void failed(Throwable exc, AioSession<T> aioSession) {
-        LOGGER.catching(exc);
+        LOGGER.debug("smart-socket read fail:", exc);
         try {
             aioSession.close();
         } catch (Exception e) {
