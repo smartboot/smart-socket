@@ -11,6 +11,7 @@ package org.smartboot.socket.extension.decoder;
 import java.nio.ByteBuffer;
 
 /**
+ * 指定长度的解码器
  * @author 三刀
  * @version V1.0 , 2017/10/20
  */

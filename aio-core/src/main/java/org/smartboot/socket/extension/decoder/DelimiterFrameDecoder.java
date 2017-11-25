@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ *
+ * 指定结束标识的解码器
  * @author 三刀
  * @version V1.0 , 2017/10/20
  */

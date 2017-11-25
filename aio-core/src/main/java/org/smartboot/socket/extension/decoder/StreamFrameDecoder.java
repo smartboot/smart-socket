@@ -15,6 +15,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * 流式解码器(未严格测试)
  * @author 三刀
  * @version V1.0 , 2017/10/21
  */
