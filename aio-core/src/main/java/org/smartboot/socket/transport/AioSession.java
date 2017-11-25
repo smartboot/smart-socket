@@ -224,9 +224,14 @@ public class AioSession<T> {
 
         }
 
-        if (eof) {
+        if (eof || status == SESSION_STATUS_CLOSING) {
             if (readBuffer.hasRemaining()) {
                 logger.error("{} bytes has not decode when EOF", readBuffer.remaining());
+            }
+            try {
+                channel.shutdownInput();
+            } catch (IOException e) {
+                logger.debug(e);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
             return;
