@@ -34,10 +34,14 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession
     public void failed(Throwable exc, AioSession<T> aioSession) {
         LOGGER.debug("smart-socket write fail:", exc);
         try {
+            aioSession.getServerConfig().getProcessor().stateEvent(aioSession, StateMachineEnum.OUTPUT_EXCEPTION, exc);
+        } catch (Exception e) {
+            LOGGER.catching(e);
+        }
+        try {
             aioSession.close();
         } catch (Exception e) {
             LOGGER.catching(e);
         }
-        aioSession.getServerConfig().getProcessor().stateEvent(aioSession, StateMachineEnum.OUTPUT_EXCEPTION, exc);
     }
 }
