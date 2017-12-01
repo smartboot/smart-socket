@@ -6,7 +6,7 @@
     <dependency>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>aio-core</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0</version>
     </dependency>
 
 ## 工程结构
@@ -17,8 +17,10 @@ smart-socket的核心代码
 3. smart-protocol-p2p	
 实现了私有协议P2P，性能测试也是基于该协议进行的
 
-## 近期项目安排（分支：1.0.0-DEV）
-1. 实现servlet3.1规范
+## V1.2.1计划（分支：1.0.0-DEV）
+1. 支持ssl
+2. 监测并事件通知因客户端不接受数据导致的服务端缓存积压现象
+3. 扩展Filter，监测网络连接、断链事件
 
 [开发手册](http://smartsocket.mydoc.io/)
 
