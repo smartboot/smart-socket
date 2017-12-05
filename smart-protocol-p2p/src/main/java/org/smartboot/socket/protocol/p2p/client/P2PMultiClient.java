@@ -2,13 +2,13 @@ package org.smartboot.socket.protocol.p2p.client;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.protocol.p2p.P2PProtocol;
-import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
-import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
-import org.smartboot.socket.protocol.p2p.message.BaseMessage;
-import org.smartboot.socket.extension.timer.QuickMonitorTimer;
-import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
 import org.smartboot.socket.Filter;
+import org.smartboot.socket.extension.timer.QuickMonitorTimer;
+import org.smartboot.socket.protocol.p2p.P2PProtocol;
+import org.smartboot.socket.protocol.p2p.message.BaseMessage;
+import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
+import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
+import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import org.smartboot.socket.transport.AioQuickClient;
 
 import java.nio.channels.AsynchronousChannelGroup;
@@ -53,7 +53,7 @@ public class P2PMultiClient {
                     long start = System.currentTimeMillis();
                     while (num++ < Integer.MAX_VALUE) {
                         DetectMessageReq request = new DetectMessageReq();
-                        request.setSendTime((byte) 1);
+                        request.setDetect("台州人在杭州:" + num);
                         try {
                             processor.getSession().sendWithoutResponse(request);
                         } catch (Exception e) {

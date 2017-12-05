@@ -8,24 +8,24 @@ import java.nio.ByteBuffer;
  * @author 三刀
  */
 public class DetectMessageReq extends BaseMessage {
-    private byte sendTime;
+    private String detect;
 
-    public byte getSendTime() {
-        return sendTime;
+    public String getDetect() {
+        return detect;
     }
 
-    public void setSendTime(byte sendTime) {
-        this.sendTime = sendTime;
+    public void setDetect(String detect) {
+        this.detect = detect;
     }
 
     @Override
     protected void encodeBody(ByteBuffer buffer) {
-        writeByte(buffer, sendTime);
+        writeString(buffer, detect);
     }
 
     @Override
     protected void decodeBody(ByteBuffer buffer) {
-        sendTime = readByte(buffer);
+        detect = readString(buffer);
     }
 
     @Override

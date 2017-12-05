@@ -30,9 +30,9 @@ public class AioQuickServer<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickServer.class);
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
-    private IoServerConfig<T> config = new IoServerConfig<T>();
-    private ReadCompletionHandler<T> aioReadCompletionHandler = new ReadCompletionHandler<T>();
-    private WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<T>();
+    private IoServerConfig<T> config = new IoServerConfig<>();
+    private ReadCompletionHandler<T> aioReadCompletionHandler = new ReadCompletionHandler<>();
+    private WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
     public void start() throws IOException {
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {

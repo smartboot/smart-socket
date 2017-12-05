@@ -9,6 +9,8 @@ import java.nio.ByteBuffer;
  */
 public class DetectMessageResp extends BaseMessage {
 
+    private long sendTime;
+
     public DetectMessageResp() {
         super();
     }
@@ -17,24 +19,22 @@ public class DetectMessageResp extends BaseMessage {
         super(head);
     }
 
-    private byte sendTime;
-
     public long getSendTime() {
         return sendTime;
     }
 
-    public void setSendTime(byte sendTime) {
+    public void setSendTime(long sendTime) {
         this.sendTime = sendTime;
     }
 
     @Override
     protected void encodeBody(ByteBuffer buffer) {
-        writeByte(buffer, sendTime);
+        writeLong(buffer, sendTime);
     }
 
     @Override
     protected void decodeBody(ByteBuffer buffer) {
-        sendTime = readByte(buffer);
+        sendTime = readLong(buffer);
     }
 
     @Override
