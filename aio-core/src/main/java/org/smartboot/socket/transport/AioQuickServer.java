@@ -57,6 +57,7 @@ public class AioQuickServer<T> {
                 LOGGER.warn(exc);
             }
         });
+        LOGGER.info("smart-socket server started on port {}", config.getPort());
     }
 
     public void shutdown() {

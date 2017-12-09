@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 
 /**
  * 指定长度的解码器
+ *
  * @author 三刀
  * @version V1.0 , 2017/10/20
  */
@@ -35,7 +36,7 @@ public class FixedLengthFrameDecoder {
             buffer.put(byteBuffer);
         } else {
             int limit = byteBuffer.limit();
-            byteBuffer.limit(limit - buffer.remaining());
+            byteBuffer.limit(byteBuffer.position() + buffer.remaining());
             buffer.put(byteBuffer);
             byteBuffer.limit(limit);
         }
