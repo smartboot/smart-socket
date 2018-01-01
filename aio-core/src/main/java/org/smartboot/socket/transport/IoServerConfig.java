@@ -55,7 +55,7 @@ final class IoServerConfig<T> {
      */
     private Protocol<T> protocol;
 
-
+    private boolean ssl;
     /**
      * 服务器处理线程数
      */
@@ -156,4 +156,11 @@ final class IoServerConfig<T> {
         return releaseLine;
     }
 
+    public boolean isSsl() {
+        return ssl;
+    }
+
+    public void setSsl(boolean ssl) {
+        this.ssl = ssl;
+    }
 }

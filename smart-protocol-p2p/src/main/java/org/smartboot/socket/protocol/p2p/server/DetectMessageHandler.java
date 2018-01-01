@@ -21,6 +21,7 @@ public class DetectMessageHandler extends MessageHandler {
 
 	@Override
 	public void handler(Session<BaseMessage> session, BaseMessage message) {
+		logger.info("收到消息");
 		DetectMessageReq msg = (DetectMessageReq) message;
 		DetectMessageResp rspMsg = new DetectMessageResp(msg.getHead());
 		rspMsg.setSendTime(System.currentTimeMillis());

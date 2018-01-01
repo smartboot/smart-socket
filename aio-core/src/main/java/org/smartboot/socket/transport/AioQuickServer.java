@@ -49,7 +49,14 @@ public class AioQuickServer<T> {
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
                 serverSocketChannel.accept(attachment, this);
                 //连接成功则构造AIOSession对象
-                new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
+                if (config.isSsl()) {
+                    SSLAioSession sslAioSession=new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
+                    sslAioSession.readFromChannel(false);
+                } else {
+                    AioSession session=         new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
+                    session.readFromChannel(false);
+
+                }
             }
 
             @Override
@@ -129,4 +136,19 @@ public class AioQuickServer<T> {
         return this;
     }
 
+    public AioQuickServer<T> setSsl(boolean flag) {
+        this.config.setSsl(flag);
+        return this;
+    }
+
+    /**
+     * 设置读缓存区大小
+     *
+     * @param size
+     * @return
+     */
+    public AioQuickServer<T> setReadBufferSize(int size) {
+        this.config.setReadBufferSize(size);
+        return this;
+    }
 }

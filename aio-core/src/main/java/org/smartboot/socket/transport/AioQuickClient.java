@@ -48,7 +48,11 @@ public class AioQuickClient<T> {
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
+        if (config.isSsl()) {
+            new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false).readFromChannel(false);
+        } else {
+            new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false).readFromChannel(false);
+        }
     }
 
     /**
@@ -131,4 +135,19 @@ public class AioQuickClient<T> {
         return this;
     }
 
+    public AioQuickClient<T> setSsl(boolean flag) {
+        this.config.setSsl(flag);
+        return this;
+    }
+
+    /**
+     * 设置读缓存区大小
+     *
+     * @param size
+     * @return
+     */
+    public AioQuickClient<T> setReadBufferSize(int size) {
+        this.config.setReadBufferSize(size);
+        return this;
+    }
 }

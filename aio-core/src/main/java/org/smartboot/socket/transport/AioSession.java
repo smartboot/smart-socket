@@ -43,6 +43,14 @@ public class AioSession<T> {
      */
     private final int sessionId = ++NEXT_ID;
     /**
+     * 数据read限流标志,仅服务端需要进行限流
+     */
+    protected Boolean serverFlowLimit;
+    /**
+     * 底层通信channel对象
+     */
+    protected AsynchronousSocketChannel channel;
+    /**
      * 会话当前状态
      */
     private byte status = SESSION_STATUS_ENABLED;
@@ -54,21 +62,9 @@ public class AioSession<T> {
      * 响应消息缓存队列
      */
     private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
-    /**
-     * 数据read限流标志,仅服务端需要进行限流
-     */
-    private Boolean serverFlowLimit;
-
     private ReadCompletionHandler aioReadCompletionHandler;
-
     private WriteCompletionHandler aioWriteCompletionHandler;
-
-    private ByteBuffer readBuffer, writeBuffer;
-
-    /**
-     * 底层通信channel对象
-     */
-    private AsynchronousSocketChannel channel;
+    protected ByteBuffer readBuffer, writeBuffer;
     /**
      * 输出信号量
      */
@@ -91,8 +87,9 @@ public class AioSession<T> {
         this.serverFlowLimit = serverSession ? false : null;
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
-        readFromChannel(false);//注册消息读事件
+//        readFromChannel(false);//注册消息读事件
     }
+
 
     /**
      * 触发AIO的写操作,
@@ -100,7 +97,8 @@ public class AioSession<T> {
      */
     void writeToChannel() {
         if (writeBuffer != null && writeBuffer.hasRemaining()) {
-            channel.write(writeBuffer, this, aioWriteCompletionHandler);
+            continueWrite();
+//            channel.write(writeBuffer, this, aioWriteCompletionHandler);
             return;
         }
         writeBuffer = null;
@@ -129,13 +127,22 @@ public class AioSession<T> {
             index += srcBuffer.remaining();
         }
         writeBuffer = ByteBuffer.wrap(data);
-        channel.write(writeBuffer, this, aioWriteCompletionHandler);
+        continueWrite();
+//        channel.write(writeBuffer, this, aioWriteCompletionHandler);
 
         //如果存在流控并符合释放条件，则触发读操作
         if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
             serverFlowLimit = false;
-            channel.read(readBuffer, this, aioReadCompletionHandler);
+            continueRead();
         }
+    }
+
+    protected void readFromChannel0(ByteBuffer buffer) {
+        channel.read(buffer, this, aioReadCompletionHandler);
+    }
+
+    protected void writeToChannel0(ByteBuffer buffer) {
+        channel.write(buffer, this, aioWriteCompletionHandler);
     }
 
     public void write(final ByteBuffer buffer) throws IOException {
@@ -254,8 +261,16 @@ public class AioSession<T> {
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit = true;
         } else {
-            channel.read(readBuffer, this, aioReadCompletionHandler);
+            continueRead();
         }
+    }
+
+    protected void continueRead() {
+        readFromChannel0(readBuffer);
+    }
+
+    protected void continueWrite() {
+        writeToChannel0(writeBuffer);
     }
 
     public Object getAttachment() {

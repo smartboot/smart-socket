@@ -17,13 +17,14 @@ import java.util.concurrent.ThreadFactory;
 
 public class P2PMultiClient {
     public static void main(String[] args) throws Exception {
+        System.setProperty("javax.net.debug", "ssl");
         final AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 return new Thread(r);
             }
         });
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             new Thread("CLient-Thread-" + i) {
                 private Logger logger = LogManager.getLogger(this.getClass());
 
@@ -39,12 +40,14 @@ public class P2PMultiClient {
                         e1.printStackTrace();
                     }
                     P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
+                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>().connect("127.0.0.1", 9222)
                             .setProtocol(new P2PProtocol(messageFactory))
                             .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
+                            .setSsl(true)
                             .setProcessor(processor);
                     try {
                         client.start(asynchronousChannelGroup);
+                        Thread.sleep(1000);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -55,7 +58,9 @@ public class P2PMultiClient {
                         DetectMessageReq request = new DetectMessageReq();
                         request.setDetect("台州人在杭州:" + num);
                         try {
-                            processor.getSession().sendWithoutResponse(request);
+
+                            System.out.println(processor.getSession().sendWithResponse(request,0));
+                            Thread.sleep(1000);
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();

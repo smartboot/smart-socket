@@ -13,6 +13,7 @@ import java.util.Properties;
 
 public class P2PServer {
     public static void main(String[] args) throws ClassNotFoundException {
+        System.setProperty("javax.net.debug", "ssl");
         // 定义服务器接受的消息类型以及各类消息对应的处理器
         Properties properties = new Properties();
 //		properties.put(HeartMessageReq.class.getName(), HeartMessageProcessor.class.getName());
@@ -24,11 +25,12 @@ public class P2PServer {
         messageFactory.loadFromProperties(properties);
 
         AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>()
-                .bind(8888)
-                .setThreadNum(8)
+                .bind(9222)
+                .setThreadNum(16)
                 .setWriteQueueSize(16384)
-                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
+//                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
                 .setProtocol(new P2PProtocol(messageFactory))
+                .setSsl(true)
                 .setProcessor(new P2PServerMessageProcessor(messageFactory));
         try {
             server.start();
