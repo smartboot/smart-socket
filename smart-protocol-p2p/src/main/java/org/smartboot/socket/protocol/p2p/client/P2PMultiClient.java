@@ -60,7 +60,7 @@ public class P2PMultiClient {
                         try {
 
                             System.out.println(processor.getSession().sendWithResponse(request,0));
-                            Thread.sleep(1000);
+//                            Thread.sleep(1000);
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();

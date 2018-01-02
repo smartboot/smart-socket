@@ -187,7 +187,7 @@ public class SSLAioSession<T> extends AioSession<T> {
                             case BUFFER_UNDERFLOW:
                                 logger.warn("BUFFER_UNDERFLOW");
                                 // Will occur either when no data was read from the peer or when the netReadBuffer buffer was too small to hold all peer's data.
-                                appReadBuffer = handleBufferUnderflow(engine, appReadBuffer);
+                                appReadBuffer = handleBufferUnderflow(engine.getSession(), appReadBuffer);
                                 break;
                             case CLOSED:
                                 if (engine.isOutboundDone()) {
@@ -228,7 +228,7 @@ public class SSLAioSession<T> extends AioSession<T> {
                                     break;
                                 }
                             case BUFFER_OVERFLOW:
-                                netWriteBuffer = enlargePacketBuffer(engine, netWriteBuffer);
+                                netWriteBuffer = enlargePacketBuffer(engine.getSession(), netWriteBuffer);
                                 break;
                             case BUFFER_UNDERFLOW:
                                 throw new SSLException("Buffer underflow occured after a wrap. I don't think we should ever get here.");
@@ -271,8 +271,8 @@ public class SSLAioSession<T> extends AioSession<T> {
         }
     }
 
-    protected ByteBuffer enlargePacketBuffer(SSLEngine engine, ByteBuffer buffer) {
-        return enlargeBuffer(buffer, engine.getSession().getPacketBufferSize());
+    protected ByteBuffer enlargePacketBuffer(SSLSession session, ByteBuffer buffer) {
+        return enlargeBuffer(buffer, session.getPacketBufferSize());
     }
 
     protected ByteBuffer enlargeApplicationBuffer(SSLEngine engine, ByteBuffer buffer) {
@@ -297,11 +297,11 @@ public class SSLAioSession<T> extends AioSession<T> {
         return buffer;
     }
 
-    protected ByteBuffer handleBufferUnderflow(SSLEngine engine, ByteBuffer buffer) {
-        if (engine.getSession().getPacketBufferSize() < buffer.limit()) {
+    protected ByteBuffer handleBufferUnderflow(SSLSession session, ByteBuffer buffer) {
+        if (session.getPacketBufferSize() < buffer.limit()) {
             return buffer;
         } else {
-            ByteBuffer replaceBuffer = enlargePacketBuffer(engine, buffer);
+            ByteBuffer replaceBuffer = enlargePacketBuffer(session, buffer);
             buffer.flip();
             replaceBuffer.put(buffer);
             return replaceBuffer;
@@ -335,7 +335,7 @@ public class SSLAioSession<T> extends AioSession<T> {
 
             sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-            engine = sslCtx.createSSLEngine("localhost", 9222);
+            engine = sslCtx.createSSLEngine();
             SSLSession session = engine.getSession();
             engine.setUseClientMode(serverFlowLimit == null);
             if (serverFlowLimit != null) {

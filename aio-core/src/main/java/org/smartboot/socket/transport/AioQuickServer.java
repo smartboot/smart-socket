@@ -13,6 +13,8 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.extension.ssl.HandshakeCallback;
+import org.smartboot.socket.extension.ssl.SSLService;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -33,8 +35,12 @@ public class AioQuickServer<T> {
     private IoServerConfig<T> config = new IoServerConfig<>();
     private ReadCompletionHandler<T> aioReadCompletionHandler = new ReadCompletionHandler<>();
     private WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
-
+    private SSLService sslService;
     public void start() throws IOException {
+        //启动SSL服务
+        if(config.isSsl()){
+            sslService=new SSLService(null);
+        }
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
             byte index = 0;
 
@@ -50,8 +56,14 @@ public class AioQuickServer<T> {
                 serverSocketChannel.accept(attachment, this);
                 //连接成功则构造AIOSession对象
                 if (config.isSsl()) {
-                    SSLAioSession sslAioSession=new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
-                    sslAioSession.readFromChannel(false);
+                   final SSLAioSession sslAioSession=new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
+                    sslService.createSSLEngine();
+                    sslService.doHandshake(channel, new HandshakeCallback() {
+                        @Override
+                        public void callback() {
+                            sslAioSession.readFromChannel(false);
+                        }
+                    });
                 } else {
                     AioSession session=         new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
                     session.readFromChannel(false);
