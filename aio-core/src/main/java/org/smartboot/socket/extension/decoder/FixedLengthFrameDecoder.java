@@ -35,7 +35,7 @@ public class FixedLengthFrameDecoder {
             buffer.put(byteBuffer);
         } else {
             int limit = byteBuffer.limit();
-            byteBuffer.limit(limit - buffer.remaining());
+            byteBuffer.limit(byteBuffer.position() + buffer.remaining());
             buffer.put(byteBuffer);
             byteBuffer.limit(limit);
         }
