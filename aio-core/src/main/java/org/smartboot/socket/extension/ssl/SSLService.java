@@ -8,6 +8,10 @@
 
 package org.smartboot.socket.extension.ssl;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.transport.SSLAioSession;
+
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -17,7 +21,6 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousSocketChannel;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.concurrent.Semaphore;
@@ -30,9 +33,13 @@ import java.util.concurrent.Semaphore;
  */
 public class SSLService {
 
+    private static final Logger logger = LogManager.getLogger(SSLAioSession.class);
+
     private SSLContext sslContext;
 
     private SSLConfig config;
+
+    private HandshakeCompletion handshakeCompletion;
 
     public SSLService(SSLConfig config) {
         init(config);
@@ -78,40 +85,41 @@ public class SSLService {
         }
     }
 
-    public SSLEngine createSSLEngine() {
+    public HandshakeModel createSSLEngine() throws SSLException {
+        HandshakeModel handshakeModel = new HandshakeModel();
         SSLEngine sslEngine = sslContext.createSSLEngine();
         sslEngine.setUseClientMode(config.isClientMode());
         if (!config.isClientMode()) {
             sslEngine.setNeedClientAuth(true);
             sslEngine.setWantClientAuth(true);
         }
-        return sslEngine;
+        handshakeModel.setSslEngine(sslEngine);
+
+        sslEngine.beginHandshake();
+        return handshakeModel;
     }
 
-    public void doHandshake(final AsynchronousSocketChannel socketChannel,HandshakeCallback handshakeCallback){
+    public void doHandshake(HandshakeModel handshakeModel, HandshakeCallback handshakeCallback) {
         SSLEngineResult result = null;
         try {
             SSLEngineResult.HandshakeStatus handshakeStatus = null;
-
-            while (!handshakeFinished) {
+            ByteBuffer netReadBuffer = handshakeModel.getNetReadBuffer();
+            SSLEngine engine = handshakeModel.getSslEngine();
+            while (!handshakeModel.isFinished()) {
                 handshakeStatus = engine.getHandshakeStatus();
                 switch (handshakeStatus) {
                     case NEED_UNWRAP:
 
-                        if (!readsemaphore.tryAcquire()) {
-                            logger.error("------");
-                            return;
-                        }
                         netReadBuffer.flip();
                         if (!netReadBuffer.hasRemaining()) {
 //                            logger.warn("need unwrap,but netReadBuffer has no remaining:" + netReadBuffer);
                             netReadBuffer.clear();
-                            readFromChannel0(netReadBuffer);
+                            handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletion);
                             return;
                         }
                         result = engine.unwrap(netReadBuffer, appReadBuffer);//调用SSLEngine进行unwrap操作
                         if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
-                            handshakeFinished = true;
+                            handshakeModel.setFinished(true);
                             System.out.println(engine.getHandshakeStatus() + "" + engine.getHandshakeStatus() + "netReadBuffer:" + netReadBuffer);
                             netReadBuffer.clear();
                             readFromChannel0(netReadBuffer);
@@ -155,7 +163,7 @@ public class SSLService {
                         netWriteBuffer.clear();
                         result = engine.wrap(appWriteBuffer, netWriteBuffer);
                         if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
-                            handshakeFinished = true;
+                            handshakeModel.setFinished(true);
                             System.out.println(engine.getHandshakeStatus() + "" + engine.getHandshakeStatus());
                             netReadBuffer.clear();
                             readFromChannel0(netReadBuffer);
