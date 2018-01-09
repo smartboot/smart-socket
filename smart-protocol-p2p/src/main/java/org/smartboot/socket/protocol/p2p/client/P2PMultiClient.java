@@ -43,11 +43,14 @@ public class P2PMultiClient {
                     AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>().connect("127.0.0.1", 9222)
                             .setProtocol(new P2PProtocol(messageFactory))
                             .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
+                            .setProcessor(processor)
                             .setSsl(true)
-                            .setProcessor(processor);
+                            .setKeyStore("client.jks","storepass")
+                            .setTrust("trustedCerts.jks","storepass")
+                            .setKeyPassword("keypass");
                     try {
                         client.start(asynchronousChannelGroup);
-                        Thread.sleep(1000);
+                        Thread.sleep(4000);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -60,7 +63,7 @@ public class P2PMultiClient {
                         try {
 
                             System.out.println(processor.getSession().sendWithResponse(request,0));
-//                            Thread.sleep(1000);
+                            Thread.sleep(1000);
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();

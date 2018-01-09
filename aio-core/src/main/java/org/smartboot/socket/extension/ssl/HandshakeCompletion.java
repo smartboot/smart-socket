@@ -15,9 +15,17 @@ import java.nio.channels.CompletionHandler;
  * @version V1.0 , 2018/1/2
  */
 public class HandshakeCompletion implements CompletionHandler<Integer, HandshakeModel> {
+    private SSLService sslService;
+
+    public HandshakeCompletion(SSLService sslService) {
+        this.sslService = sslService;
+    }
+
     @Override
     public void completed(Integer result, HandshakeModel attachment) {
-
+        synchronized (attachment) {
+            sslService.doHandshake(attachment);
+        }
     }
 
     @Override

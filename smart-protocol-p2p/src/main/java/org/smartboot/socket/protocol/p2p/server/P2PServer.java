@@ -30,8 +30,12 @@ public class P2PServer {
                 .setWriteQueueSize(16384)
 //                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
                 .setProtocol(new P2PProtocol(messageFactory))
+                .setProcessor(new P2PServerMessageProcessor(messageFactory))
                 .setSsl(true)
-                .setProcessor(new P2PServerMessageProcessor(messageFactory));
+                .setKeyStore("server.jks","storepass")
+                .setTrust("trustedCerts.jks","storepass")
+                .setKeyPassword("keypass")
+                ;
         try {
             server.start();
         } catch (IOException e) {

@@ -14,6 +14,10 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.extension.ssl.HandshakeCallback;
+import org.smartboot.socket.extension.ssl.HandshakeModel;
+import org.smartboot.socket.extension.ssl.SSLConfig;
+import org.smartboot.socket.extension.ssl.SSLService;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -33,11 +37,13 @@ public class AioQuickClient<T> {
      * IO事件处理线程组
      */
     private AsynchronousChannelGroup asynchronousChannelGroup;
-
+    private SSLService sslService;
     /**
      * 客户端服务配置
      */
     private IoServerConfig<T> config = new IoServerConfig<T>();
+
+    private SSLConfig sslConfig = new SSLConfig();
 
     /**
      * @param asynchronousChannelGroup
@@ -46,12 +52,31 @@ public class AioQuickClient<T> {
      * @throws InterruptedException
      */
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
+        //启动SSL服务
+        if (config.isSsl()) {
+            sslService = new SSLService(sslConfig);
+        }
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
+        //连接成功则构造AIOSession对象
         if (config.isSsl()) {
-            new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false).readFromChannel(false);
+            final SSLAioSession sslAioSession = new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
+            final HandshakeModel handshakeModel = sslService.createSSLEngine();
+            handshakeModel.setSocketChannel(socketChannel);
+            handshakeModel.setHandshakeCallback(new HandshakeCallback() {
+                @Override
+                public void callback() {
+                    sslAioSession.netReadBuffer = handshakeModel.getNetWriteBuffer();
+                    sslAioSession.netWriteBuffer = handshakeModel.getNetWriteBuffer();
+                    sslAioSession.netReadBuffer.clear();
+                    sslAioSession.netWriteBuffer.clear();
+                    sslAioSession.readFromChannel(false);
+                }
+            });
+            sslService.doHandshake(handshakeModel);
         } else {
-            new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false).readFromChannel(false);
+            AioSession session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
+            session.readFromChannel(false);
         }
     }
 
@@ -148,6 +173,24 @@ public class AioQuickClient<T> {
      */
     public AioQuickClient<T> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
+        return this;
+    }
+
+    public AioQuickClient<T> setKeyStore(String keyStoreFile, String keystorePassword) {
+        sslConfig.setKeyFile(keyStoreFile);
+        sslConfig.setKeystorePassword(keystorePassword);
+        return this;
+    }
+
+
+    public AioQuickClient<T> setKeyPassword(String keyPassword) {
+        sslConfig.setKeyPassword(keyPassword);
+        return this;
+    }
+
+    public AioQuickClient<T> setTrust(String trustFile, String trustPassword) {
+        sslConfig.setTrustFile(trustFile);
+        sslConfig.setTrustPassword(trustPassword);
         return this;
     }
 }
