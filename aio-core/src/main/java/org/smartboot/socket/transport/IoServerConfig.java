@@ -8,9 +8,9 @@
 
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.Protocol;
-import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Filter;
+import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.Protocol;
 
 /**
  * Quickly服务端/客户端配置信息 T:解码后生成的对象类型
@@ -55,6 +55,9 @@ final class IoServerConfig<T> {
      */
     private Protocol<T> protocol;
 
+    /**
+     * 是否启用ssl通信
+     */
     private boolean ssl;
     /**
      * 服务器处理线程数
@@ -78,26 +81,21 @@ final class IoServerConfig<T> {
         return host;
     }
 
+    public final void setHost(String host) {
+        this.host = host;
+    }
 
     public final int getPort() {
         return port;
     }
 
-
-    public final int getThreadNum() {
-        return threadNum;
-    }
-
-
-    public final void setHost(String host) {
-        this.host = host;
-    }
-
-
     public final void setPort(int port) {
         this.port = port;
     }
 
+    public final int getThreadNum() {
+        return threadNum;
+    }
 
     public final void setThreadNum(int threadNum) {
         this.threadNum = threadNum;

@@ -14,11 +14,8 @@ import org.apache.logging.log4j.Logger;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.concurrent.Semaphore;
 
 /**
  * @author 三刀
@@ -26,34 +23,10 @@ import java.util.concurrent.Semaphore;
  */
 public class SSLAioSession<T> extends AioSession<T> {
     private static final Logger logger = LogManager.getLogger(SSLAioSession.class);
-    /**
-     * Will contain this peer's application data in plaintext, that will be later encrypted
-     * using {@link SSLEngine#wrap(ByteBuffer, ByteBuffer)} and sent to the other peer. This buffer can typically
-     * be of any size, as long as it is large enough to contain this peer's outgoing messages.
-     * If this peer tries to send a message bigger than buffer's capacity a {@link BufferOverflowException}
-     * will be thrown.
-     */
-    protected ByteBuffer appWriteBuffer;
-    protected ByteBuffer netWriteBuffer;
+    private ByteBuffer netWriteBuffer;
 
-    /**
-     * Will contain the other peer's (decrypted) application data. It must be large enough to hold the application data
-     * from any peer. Can be initialized with {@link SSLSession#getApplicationBufferSize()} for an estimation
-     * of the other peer's application data and should be enlarged if this size is not enough.
-     */
-    protected ByteBuffer appReadBuffer;
-
-    /**
-     * Will contain the other peer's encrypted data. The SSL/TLS protocols specify that implementations should produce packets containing at most 16 KB of plaintext,
-     * so a buffer sized to this value should normally cause no capacity problems. However, some implementations violate the specification and generate large records up to 32 KB.
-     * If the {@link SSLEngine#unwrap(ByteBuffer, ByteBuffer)} detects large inbound packets, the buffer sizes returned by SSLSession will be updated dynamically, so the this peer
-     * should check for overflow conditions and enlarge the buffer using the session's (updated) buffer size.
-     */
-    protected ByteBuffer netReadBuffer;
-    private SSLEngine engine = null;
-    private boolean initSSL = false;
-    private Semaphore writesemaphore;
-    private Semaphore readsemaphore;
+    private ByteBuffer netReadBuffer;
+    private SSLEngine sslEngine = null;
 
     /**
      * @param channel
@@ -75,16 +48,30 @@ public class SSLAioSession<T> extends AioSession<T> {
         super.writeToChannel();
     }
 
+    public void initSession() {
+        throw new UnsupportedOperationException("please call method [initSession(SSLEngine sslEngine)]");
+    }
+
+    public void initSession(SSLEngine sslEngine) {
+        this.sslEngine = sslEngine;
+        this.netWriteBuffer = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+        this.netWriteBuffer.flip();
+        this.netReadBuffer = ByteBuffer.allocate(readBuffer.capacity());
+        readFromChannel(false);
+    }
+
     @Override
     void readFromChannel(boolean eof) {
         doUnWrap();
         super.readFromChannel(eof);
     }
 
+    @Override
     protected void continueRead() {
         readFromChannel0(netReadBuffer);
     }
 
+    @Override
     protected void continueWrite() {
         doWrap();
         writeToChannel0(netWriteBuffer);
@@ -93,14 +80,10 @@ public class SSLAioSession<T> extends AioSession<T> {
     private void doWrap() {
         try {
             netWriteBuffer.compact();
-            SSLEngineResult result = engine.wrap(writeBuffer, netWriteBuffer);
+            SSLEngineResult result = sslEngine.wrap(writeBuffer, netWriteBuffer);
             if (result.getStatus() == SSLEngineResult.Status.CLOSED) {
                 System.exit(-1);
             }
-            netWriteBuffer.flip();
-            byte[] array = new byte[netWriteBuffer.remaining()];
-            netWriteBuffer.get(array);
-//            logger.info(StringUtils.toHexString(array));
             netWriteBuffer.flip();
         } catch (SSLException e) {
             throw new RuntimeException(e);
@@ -110,11 +93,8 @@ public class SSLAioSession<T> extends AioSession<T> {
     private void doUnWrap() {
         try {
             netReadBuffer.flip();
-            byte[] array = new byte[netReadBuffer.remaining()];
-            netReadBuffer.get(array);
-//            logger.info(StringUtils.toHexString(array));
-            netReadBuffer.flip();
-            SSLEngineResult result = engine.unwrap(netReadBuffer, readBuffer);
+            SSLEngineResult result = sslEngine.unwrap(netReadBuffer, readBuffer);
+            logger.info(result);
             netReadBuffer.compact();
         } catch (SSLException e) {
             throw new RuntimeException(e);

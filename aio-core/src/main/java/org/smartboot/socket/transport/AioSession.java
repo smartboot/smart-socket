@@ -50,6 +50,7 @@ public class AioSession<T> {
      * 底层通信channel对象
      */
     protected AsynchronousSocketChannel channel;
+    protected ByteBuffer readBuffer, writeBuffer;
     /**
      * 会话当前状态
      */
@@ -64,7 +65,6 @@ public class AioSession<T> {
     private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
     private ReadCompletionHandler aioReadCompletionHandler;
     private WriteCompletionHandler aioWriteCompletionHandler;
-    protected ByteBuffer readBuffer, writeBuffer;
     /**
      * 输出信号量
      */
@@ -88,6 +88,13 @@ public class AioSession<T> {
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
         this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
 //        readFromChannel(false);//注册消息读事件
+    }
+
+    /**
+     * 初始化AioSession
+     */
+    public void initSession() {
+        readFromChannel(false);
     }
 
 
@@ -137,10 +144,20 @@ public class AioSession<T> {
         }
     }
 
+    /**
+     * 触发通道的读操作
+     *
+     * @param buffer
+     */
     protected void readFromChannel0(ByteBuffer buffer) {
         channel.read(buffer, this, aioReadCompletionHandler);
     }
 
+    /**
+     * 触发通道的写操作
+     *
+     * @param buffer
+     */
     protected void writeToChannel0(ByteBuffer buffer) {
         channel.write(buffer, this, aioWriteCompletionHandler);
     }

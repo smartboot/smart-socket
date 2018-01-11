@@ -36,6 +36,7 @@ public class AioQuickServer<T> {
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private IoServerConfig<T> config = new IoServerConfig<>();
     private SSLConfig sslConfig = new SSLConfig();
+
     private ReadCompletionHandler<T> aioReadCompletionHandler = new ReadCompletionHandler<>();
     private WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
     private SSLService sslService;
@@ -61,22 +62,17 @@ public class AioQuickServer<T> {
                 //连接成功则构造AIOSession对象
                 if (config.isSsl()) {
                     final SSLAioSession sslAioSession = new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
-                    final HandshakeModel handshakeModel = sslService.createSSLEngine();
-                    handshakeModel.setSocketChannel(channel);
+                    final HandshakeModel handshakeModel = sslService.createSSLEngine(channel);
                     handshakeModel.setHandshakeCallback(new HandshakeCallback() {
                         @Override
                         public void callback() {
-                            sslAioSession.netReadBuffer=handshakeModel.getNetWriteBuffer();
-                            sslAioSession.netWriteBuffer=handshakeModel.getNetWriteBuffer();
-                            sslAioSession.netReadBuffer.clear();
-                            sslAioSession.netWriteBuffer.clear();
-                            sslAioSession.readFromChannel(false);
+                            sslAioSession.initSession(handshakeModel.getSslEngine());
                         }
                     });
                     sslService.doHandshake(handshakeModel);
                 } else {
                     AioSession session = new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
-                    session.readFromChannel(false);
+                    session.initSession();
                 }
             }
 

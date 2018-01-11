@@ -13,7 +13,7 @@ import java.util.Properties;
 
 public class P2PServer {
     public static void main(String[] args) throws ClassNotFoundException {
-        System.setProperty("javax.net.debug", "ssl");
+//        System.setProperty("javax.net.debug", "ssl");
         // 定义服务器接受的消息类型以及各类消息对应的处理器
         Properties properties = new Properties();
 //		properties.put(HeartMessageReq.class.getName(), HeartMessageProcessor.class.getName());

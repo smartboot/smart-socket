@@ -54,6 +54,7 @@ public class AioQuickClient<T> {
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         //启动SSL服务
         if (config.isSsl()) {
+            sslConfig.setClientMode(true);
             sslService = new SSLService(sslConfig);
         }
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
@@ -61,19 +62,24 @@ public class AioQuickClient<T> {
         //连接成功则构造AIOSession对象
         if (config.isSsl()) {
             final SSLAioSession sslAioSession = new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
-            final HandshakeModel handshakeModel = sslService.createSSLEngine();
-            handshakeModel.setSocketChannel(socketChannel);
+            final HandshakeModel handshakeModel = sslService.createSSLEngine(socketChannel);
             handshakeModel.setHandshakeCallback(new HandshakeCallback() {
                 @Override
                 public void callback() {
-                    sslAioSession.netReadBuffer = handshakeModel.getNetWriteBuffer();
-                    sslAioSession.netWriteBuffer = handshakeModel.getNetWriteBuffer();
-                    sslAioSession.netReadBuffer.clear();
-                    sslAioSession.netWriteBuffer.clear();
-                    sslAioSession.readFromChannel(false);
+                    sslAioSession.initSession(handshakeModel.getSslEngine());
+                    synchronized (handshakeModel) {
+                        handshakeModel.notifyAll();
+                    }
                 }
             });
             sslService.doHandshake(handshakeModel);
+            if (!handshakeModel.isFinished()) {
+                synchronized (handshakeModel) {
+                    if (!handshakeModel.isFinished()) {
+                        handshakeModel.wait();
+                    }
+                }
+            }
         } else {
             AioSession session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
             session.readFromChannel(false);

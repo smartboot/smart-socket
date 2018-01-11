@@ -17,7 +17,7 @@ import java.util.concurrent.ThreadFactory;
 
 public class P2PMultiClient {
     public static void main(String[] args) throws Exception {
-        System.setProperty("javax.net.debug", "ssl");
+//        System.setProperty("javax.net.debug", "ssl");
         final AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -45,12 +45,12 @@ public class P2PMultiClient {
                             .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
                             .setProcessor(processor)
                             .setSsl(true)
-                            .setKeyStore("client.jks","storepass")
-                            .setTrust("trustedCerts.jks","storepass")
+                            .setKeyStore("client.jks", "storepass")
+                            .setTrust("trustedCerts.jks", "storepass")
                             .setKeyPassword("keypass");
                     try {
                         client.start(asynchronousChannelGroup);
-                        Thread.sleep(4000);
+//                        Thread.sleep(4000);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -61,9 +61,8 @@ public class P2PMultiClient {
                         DetectMessageReq request = new DetectMessageReq();
                         request.setDetect("台州人在杭州:" + num);
                         try {
-
-                            System.out.println(processor.getSession().sendWithResponse(request,0));
-                            Thread.sleep(1000);
+                            processor.getSession().sendWithoutResponse(request);
+//                            System.out.println(processor.getSession().sendWithResponse(request));
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();

@@ -13,6 +13,9 @@ package org.smartboot.socket.extension.ssl;
  * @version V1.0 , 2018/1/1
  */
 public class SSLConfig {
+    /**
+     * 配置引擎在握手时使用客户端（或服务器）模式
+     */
     private boolean clientMode;
     private String keyFile;
 
