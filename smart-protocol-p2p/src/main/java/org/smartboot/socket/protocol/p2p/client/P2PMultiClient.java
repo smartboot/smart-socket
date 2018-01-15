@@ -24,7 +24,7 @@ public class P2PMultiClient {
                 return new Thread(r);
             }
         });
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 10; i++) {
             new Thread("CLient-Thread-" + i) {
                 private Logger logger = LogManager.getLogger(this.getClass());
 
@@ -62,7 +62,7 @@ public class P2PMultiClient {
                         request.setDetect("台州人在杭州:" + num);
                         try {
                             processor.getSession().sendWithoutResponse(request);
-//                            System.out.println(processor.getSession().sendWithResponse(request));
+//                            System.out.println(processor.getSession().sendWithResponse(request,0));
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();

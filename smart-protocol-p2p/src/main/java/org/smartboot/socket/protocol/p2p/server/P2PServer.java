@@ -28,7 +28,7 @@ public class P2PServer {
                 .bind(9222)
                 .setThreadNum(16)
                 .setWriteQueueSize(16384)
-//                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
+                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
                 .setProtocol(new P2PProtocol(messageFactory))
                 .setProcessor(new P2PServerMessageProcessor(messageFactory))
                 .setSsl(true)

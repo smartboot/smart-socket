@@ -93,8 +93,44 @@ public class SSLAioSession<T> extends AioSession<T> {
     private void doUnWrap() {
         try {
             netReadBuffer.flip();
+            if (!netReadBuffer.hasRemaining()) {
+                logger.info("no remain");
+                netReadBuffer.compact();
+                return;
+            }
+
+//            logger.info("first:" + netReadBuffer + " " + readBuffer);
+
             SSLEngineResult result = sslEngine.unwrap(netReadBuffer, readBuffer);
-            logger.info(result);
+            while (result.getStatus() != SSLEngineResult.Status.OK) {
+                switch (result.getStatus()) {
+                    case BUFFER_OVERFLOW:
+                        // Could attempt to drain the dst buffer of any already obtained
+                        // data, but we'll just increase it to the size needed.
+                        int appSize = sslEngine.getSession().getApplicationBufferSize();
+                        ByteBuffer b = ByteBuffer.allocate(appSize + readBuffer.position());
+                        readBuffer.flip();
+                        b.put(readBuffer);
+                        readBuffer = b;
+                        // retry the operation.
+                        break;
+                    case BUFFER_UNDERFLOW:
+                        int netSize = sslEngine.getSession().getPacketBufferSize();
+                        // Resize buffer if needed.
+                        if (netSize > readBuffer.capacity()) {
+                            ByteBuffer b1 = ByteBuffer.allocate(netSize);
+                            b1.put(netReadBuffer);
+                            netReadBuffer = b1;
+                        }
+                        // Obtain more inbound network data for src,
+                        // then retry the operation.
+//                        netReadBuffer.compact();
+                        return;
+                    // other cases: CLOSED, OK.
+                }
+                result = sslEngine.unwrap(netReadBuffer, readBuffer);
+            }
+//            logger.info(result + " " + netReadBuffer + " " + readBuffer);
             netReadBuffer.compact();
         } catch (SSLException e) {
             throw new RuntimeException(e);
