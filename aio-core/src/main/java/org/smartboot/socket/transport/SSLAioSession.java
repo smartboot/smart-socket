@@ -107,7 +107,8 @@ public class SSLAioSession<T> extends AioSession<T> {
                     case BUFFER_OVERFLOW:
                         // Could attempt to drain the dst buffer of any already obtained
                         // data, but we'll just increase it to the size needed.
-                        int appSize = sslEngine.getSession().getApplicationBufferSize();
+                        int appSize = readBuffer.capacity() * 2 < sslEngine.getSession().getApplicationBufferSize() ? readBuffer.capacity() * 2 : sslEngine.getSession().getApplicationBufferSize();
+                        logger.info("overFlow:" + appSize);
                         ByteBuffer b = ByteBuffer.allocate(appSize + readBuffer.position());
                         readBuffer.flip();
                         b.put(readBuffer);
@@ -115,12 +116,25 @@ public class SSLAioSession<T> extends AioSession<T> {
                         // retry the operation.
                         break;
                     case BUFFER_UNDERFLOW:
-                        int netSize = sslEngine.getSession().getPacketBufferSize();
+
+//                        int netSize = readBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? readBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
+//                        int netSize = sslEngine.getSession().getPacketBufferSize();
+
                         // Resize buffer if needed.
-                        if (netSize > readBuffer.capacity()) {
+                        if (netReadBuffer.limit() == netReadBuffer.capacity()) {
+                            int netSize = netReadBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? netReadBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
+                            logger.info("BUFFER_UNDERFLOW:" + netSize);
                             ByteBuffer b1 = ByteBuffer.allocate(netSize);
                             b1.put(netReadBuffer);
                             netReadBuffer = b1;
+                        } else {
+                            if(netReadBuffer.position()>0){
+                                netReadBuffer.compact();
+                            }else {
+                                netReadBuffer.position(netReadBuffer.limit());
+                                netReadBuffer.limit(netReadBuffer.capacity());
+                            }
+                            logger.info("BUFFER_UNDERFLOW,continue read");
                         }
                         // Obtain more inbound network data for src,
                         // then retry the operation.
@@ -133,6 +147,7 @@ public class SSLAioSession<T> extends AioSession<T> {
 //            logger.info(result + " " + netReadBuffer + " " + readBuffer);
             netReadBuffer.compact();
         } catch (SSLException e) {
+            logger.catching(e);
             throw new RuntimeException(e);
         }
     }

@@ -82,10 +82,10 @@ public class SSLService {
             }
             handshakeModel.setSslEngine(sslEngine);
             handshakeModel.setAppWriteBuffer(ByteBuffer.allocate(0));
-            handshakeModel.setNetWriteBuffer(ByteBuffer.allocate(session.getPacketBufferSize()));
+            handshakeModel.setNetWriteBuffer(ByteBuffer.allocate(1));
             handshakeModel.getNetWriteBuffer().flip();
             handshakeModel.setAppReadBuffer(ByteBuffer.allocate(1));
-            handshakeModel.setNetReadBuffer(ByteBuffer.allocate(session.getPacketBufferSize()));
+            handshakeModel.setNetReadBuffer(ByteBuffer.allocate(1));
             sslEngine.beginHandshake();
 
 
@@ -140,12 +140,15 @@ public class SSLService {
                                 logger.warn("BUFFER_OVERFLOW");
                                 // Will occur when appReadBuffer's capacity is smaller than the data derived from netReadBuffer's unwrap.
                                 appReadBuffer = enlargeApplicationBuffer(engine, appReadBuffer);
+                                handshakeModel.setAppReadBuffer(appReadBuffer);
                                 break;
                             case BUFFER_UNDERFLOW:
                                 logger.warn("BUFFER_UNDERFLOW");
                                 // Will occur either when no data was read from the peer or when the netReadBuffer buffer was too small to hold all peer's data.
-                                appReadBuffer = handleBufferUnderflow(engine.getSession(), appReadBuffer);
-                                break;
+                                netReadBuffer = handleBufferUnderflow(engine.getSession(), netReadBuffer);
+                                handshakeModel.setNetReadBuffer(netReadBuffer);
+                                handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletion);
+                                return;
                             case CLOSED:
                                 if (engine.isOutboundDone()) {
                                     return;
@@ -159,19 +162,14 @@ public class SSLService {
                         }
                         break;
                     case NEED_WRAP:
-//                        if (!writesemaphore.tryAcquire()) {
-//                            return;
-//                        }
                         if (netWriteBuffer.hasRemaining()) {
-                            logger.error("数据未输出完毕...");
+                            logger.warn("数据未输出完毕...");
+                            handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletion);
                             return;
                         }
                         netWriteBuffer.clear();
                         result = engine.wrap(appWriteBuffer, netWriteBuffer);
                         logger.info("观察：" + result.getHandshakeStatus() + " " + result.getHandshakeStatus());
-                        if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
-                            System.out.println("a");
-                        }
                         switch (result.getStatus()) {
                             case OK:
                                 appWriteBuffer.clear();
@@ -182,7 +180,15 @@ public class SSLService {
                                 }
                                 break;
                             case BUFFER_OVERFLOW:
+                                logger.warn("NEED_WRAP BUFFER_OVERFLOW");
                                 netWriteBuffer = enlargePacketBuffer(engine.getSession(), netWriteBuffer);
+                                if (netWriteBuffer.position() > 0) {
+                                    netWriteBuffer.compact();
+                                } else {
+                                    netWriteBuffer.position(netWriteBuffer.limit());
+                                    netWriteBuffer.limit(netWriteBuffer.capacity());
+                                }
+                                handshakeModel.setNetWriteBuffer(netWriteBuffer);
                                 break;
                             case BUFFER_UNDERFLOW:
                                 throw new SSLException("Buffer underflow occured after a wrap. I don't think we should ever get here.");
