@@ -28,7 +28,7 @@ public interface Protocol<T> {
      * @param eof     是否EOF
      * @return 本次解码所成功解析的消息实例集合, 返回null则表示解码未完成
      */
-    public T decode(ByteBuffer data, AioSession<T> session, boolean eof);
+    public T decode(final ByteBuffer data, AioSession<T> session, boolean eof);
 
     /**
      * 将业务消息实体编码成ByteBuffer用于输出至对端。

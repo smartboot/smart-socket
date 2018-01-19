@@ -82,7 +82,7 @@ public class SSLService {
             }
             handshakeModel.setSslEngine(sslEngine);
             handshakeModel.setAppWriteBuffer(ByteBuffer.allocate(0));
-            handshakeModel.setNetWriteBuffer(ByteBuffer.allocate(1));
+            handshakeModel.setNetWriteBuffer(ByteBuffer.allocate(session.getPacketBufferSize()));
             handshakeModel.getNetWriteBuffer().flip();
             handshakeModel.setAppReadBuffer(ByteBuffer.allocate(1));
             handshakeModel.setNetReadBuffer(ByteBuffer.allocate(1));

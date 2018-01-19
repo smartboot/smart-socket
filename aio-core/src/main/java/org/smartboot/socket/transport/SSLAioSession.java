@@ -81,8 +81,23 @@ public class SSLAioSession<T> extends AioSession<T> {
         try {
             netWriteBuffer.compact();
             SSLEngineResult result = sslEngine.wrap(writeBuffer, netWriteBuffer);
-            if (result.getStatus() == SSLEngineResult.Status.CLOSED) {
-                System.exit(-1);
+            while (result.getStatus() != SSLEngineResult.Status.OK) {
+                switch (result.getStatus()) {
+                    case BUFFER_OVERFLOW:
+                        int appSize = netWriteBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? netWriteBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
+                        logger.info("doWrap BUFFER_OVERFLOW:" + appSize);
+                        ByteBuffer b = ByteBuffer.allocate(appSize);
+                        netWriteBuffer.flip();
+                        b.put(netWriteBuffer);
+                        netWriteBuffer = b;
+                        break;
+                    case BUFFER_UNDERFLOW:
+                        logger.info("doWrap BUFFER_UNDERFLOW");
+                        break;
+                    default:
+                        logger.error("doWrap Result:" + result.getStatus());
+                }
+                result = sslEngine.wrap(writeBuffer, netWriteBuffer);
             }
             netWriteBuffer.flip();
         } catch (SSLException e) {
@@ -128,9 +143,9 @@ public class SSLAioSession<T> extends AioSession<T> {
                             b1.put(netReadBuffer);
                             netReadBuffer = b1;
                         } else {
-                            if(netReadBuffer.position()>0){
+                            if (netReadBuffer.position() > 0) {
                                 netReadBuffer.compact();
-                            }else {
+                            } else {
                                 netReadBuffer.position(netReadBuffer.limit());
                                 netReadBuffer.limit(netReadBuffer.capacity());
                             }
@@ -140,7 +155,9 @@ public class SSLAioSession<T> extends AioSession<T> {
                         // then retry the operation.
 //                        netReadBuffer.compact();
                         return;
-                    // other cases: CLOSED, OK.
+                    default:
+                        logger.error("doUnWrap Result:" + result.getStatus());
+                        // other cases: CLOSED, OK.
                 }
                 result = sslEngine.unwrap(netReadBuffer, readBuffer);
             }
