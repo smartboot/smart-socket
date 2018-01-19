@@ -149,7 +149,7 @@ public class SSLAioSession<T> extends AioSession<T> {
                                 netReadBuffer.position(netReadBuffer.limit());
                                 netReadBuffer.limit(netReadBuffer.capacity());
                             }
-                            logger.info("BUFFER_UNDERFLOW,continue read");
+                            logger.info("BUFFER_UNDERFLOW,continue read:" + netReadBuffer);
                         }
                         // Obtain more inbound network data for src,
                         // then retry the operation.
