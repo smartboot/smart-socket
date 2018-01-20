@@ -149,7 +149,7 @@ public class AioSession<T> {
      *
      * @param buffer
      */
-    protected void readFromChannel0(ByteBuffer buffer) {
+    protected final void readFromChannel0(ByteBuffer buffer) {
         channel.read(buffer, this, aioReadCompletionHandler);
     }
 
@@ -158,7 +158,7 @@ public class AioSession<T> {
      *
      * @param buffer
      */
-    protected void writeToChannel0(ByteBuffer buffer) {
+    protected final void writeToChannel0(ByteBuffer buffer) {
         channel.write(buffer, this, aioWriteCompletionHandler);
     }
 

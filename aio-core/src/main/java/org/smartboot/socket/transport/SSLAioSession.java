@@ -84,12 +84,13 @@ public class SSLAioSession<T> extends AioSession<T> {
             while (result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
-                        int appSize = netWriteBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? netWriteBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
-                        logger.info("doWrap BUFFER_OVERFLOW:" + appSize);
-                        ByteBuffer b = ByteBuffer.allocate(appSize);
-                        netWriteBuffer.flip();
-                        b.put(netWriteBuffer);
-                        netWriteBuffer = b;
+                        logger.info("doWrap BUFFER_OVERFLOW");
+//                        int appSize = netWriteBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? netWriteBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
+//                        logger.info("doWrap BUFFER_OVERFLOW:" + appSize);
+//                        ByteBuffer b = ByteBuffer.allocate(appSize);
+//                        netWriteBuffer.flip();
+//                        b.put(netWriteBuffer);
+//                        netWriteBuffer = b;
                         break;
                     case BUFFER_UNDERFLOW:
                         logger.info("doWrap BUFFER_UNDERFLOW");
@@ -114,8 +115,6 @@ public class SSLAioSession<T> extends AioSession<T> {
                 return;
             }
 
-//            logger.info("first:" + netReadBuffer + " " + readBuffer);
-
             SSLEngineResult result = sslEngine.unwrap(netReadBuffer, readBuffer);
             while (result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
@@ -123,7 +122,7 @@ public class SSLAioSession<T> extends AioSession<T> {
                         // Could attempt to drain the dst buffer of any already obtained
                         // data, but we'll just increase it to the size needed.
                         int appSize = readBuffer.capacity() * 2 < sslEngine.getSession().getApplicationBufferSize() ? readBuffer.capacity() * 2 : sslEngine.getSession().getApplicationBufferSize();
-                        logger.info("overFlow:" + appSize);
+                        logger.info("doUnWrap BUFFER_OVERFLOW:" + appSize);
                         ByteBuffer b = ByteBuffer.allocate(appSize + readBuffer.position());
                         readBuffer.flip();
                         b.put(readBuffer);

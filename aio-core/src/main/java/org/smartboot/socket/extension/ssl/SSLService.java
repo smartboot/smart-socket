@@ -169,7 +169,6 @@ public class SSLService {
                         }
                         netWriteBuffer.clear();
                         result = engine.wrap(appWriteBuffer, netWriteBuffer);
-                        logger.info("观察：" + result.getHandshakeStatus() + " " + result.getHandshakeStatus());
                         switch (result.getStatus()) {
                             case OK:
                                 appWriteBuffer.clear();
@@ -235,9 +234,7 @@ public class SSLService {
 
                 }
             }
-            logger.info("hahaha:" + handshakeStatus + ", write:" + handshakeModel.getNetWriteBuffer());
             handshakeModel.getHandshakeCallback().callback();
-            logger.info("bbb:" + handshakeStatus + ", write:" + handshakeModel.getNetWriteBuffer());
 
         } catch (Exception e) {
             logger.catching(e);
