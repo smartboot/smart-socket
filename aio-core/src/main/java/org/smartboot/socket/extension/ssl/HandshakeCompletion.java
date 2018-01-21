@@ -27,6 +27,9 @@ class HandshakeCompletion implements CompletionHandler<Integer, HandshakeModel> 
 
     @Override
     public void completed(Integer result, HandshakeModel attachment) {
+        if (result == -1) {
+            attachment.setEof(true);
+        }
         synchronized (attachment) {
             sslService.doHandshake(attachment);
         }

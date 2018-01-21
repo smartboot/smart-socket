@@ -26,6 +26,7 @@ public class HandshakeModel {
 
     private ByteBuffer netReadBuffer;
     private HandshakeCallback handshakeCallback;
+    private boolean eof;
     private boolean finished;
 
     public AsynchronousSocketChannel getSocketChannel() {
@@ -90,5 +91,13 @@ public class HandshakeModel {
 
     public void setHandshakeCallback(HandshakeCallback handshakeCallback) {
         this.handshakeCallback = handshakeCallback;
+    }
+
+    public boolean isEof() {
+        return eof;
+    }
+
+    public void setEof(boolean eof) {
+        this.eof = eof;
     }
 }

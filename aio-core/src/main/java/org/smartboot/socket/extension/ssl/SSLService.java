@@ -121,8 +121,10 @@ public class SSLService {
                             result = engine.unwrap(netReadBuffer, appReadBuffer);//调用SSLEngine进行unwrap操作
                             netReadBuffer.compact();
                         } else {
-                            netReadBuffer.clear();
-                            handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletion);
+                            if (!handshakeModel.isEof()) {
+                                netReadBuffer.clear();
+                                handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletion);
+                            }
                             return;
                         }
 
