@@ -9,7 +9,7 @@ smart-socket是一个非常开放的项目，如果您有兴趣参与共同开�
     <dependency>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>aio-core</artifactId>
-        <version>1.2.1</version>
+        <version>1.3.0-SNAPSHOT</version>
     </dependency>
 
 ## 工程结构
