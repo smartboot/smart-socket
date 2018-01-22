@@ -1,5 +1,6 @@
 package org.smartboot.socket.protocol.p2p.server;
 
+import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.protocol.p2p.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
@@ -32,6 +33,7 @@ public class P2PServer {
                 .setProtocol(new P2PProtocol(messageFactory))
                 .setProcessor(new P2PServerMessageProcessor(messageFactory))
                 .setSsl(true)
+//                .setClientAuth(null)
                 .setKeyStore("server.jks","storepass")
                 .setTrust("trustedCerts.jks","storepass")
                 .setKeyPassword("keypass")

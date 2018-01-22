@@ -26,6 +26,8 @@ public class SSLConfig {
 
     private String trustPassword;
 
+    private ClientAuth clientAuth = ClientAuth.NONE;
+
     public String getKeyFile() {
         return keyFile;
     }
@@ -72,5 +74,13 @@ public class SSLConfig {
 
     public void setClientMode(boolean clientMode) {
         this.clientMode = clientMode;
+    }
+
+    public ClientAuth getClientAuth() {
+        return clientAuth;
+    }
+
+    public void setClientAuth(ClientAuth clientAuth) {
+        this.clientAuth = clientAuth;
     }
 }

@@ -20,6 +20,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.security.KeyStore;
@@ -77,8 +78,18 @@ public class SSLService {
             SSLSession session = sslEngine.getSession();
             sslEngine.setUseClientMode(config.isClientMode());
             if (!config.isClientMode()) {
-                sslEngine.setNeedClientAuth(true);
-                sslEngine.setWantClientAuth(true);
+                switch (config.getClientAuth()) {
+                    case OPTIONAL:
+                        sslEngine.setWantClientAuth(true);
+                        break;
+                    case REQUIRE:
+                        sslEngine.setNeedClientAuth(true);
+                        break;
+                    case NONE:
+                        break;
+                    default:
+                        throw new Error("Unknown auth " + config.getClientAuth());
+                }
             }
             handshakeModel.setSslEngine(sslEngine);
             handshakeModel.setAppWriteBuffer(ByteBuffer.allocate(0));
@@ -98,7 +109,9 @@ public class SSLService {
     }
 
     /**
-     * 纯异步实现的SSL握手
+     * 纯异步实现的SSL握手,
+     * 在执行doHandshake期间必须保证当前通道无数据读写正在执行。
+     * 若触发了数据读写，也应立马终止doHandshake方法
      *
      * @param handshakeModel
      */
@@ -111,6 +124,13 @@ public class SSLService {
             ByteBuffer netWriteBuffer = handshakeModel.getNetWriteBuffer();
             ByteBuffer appWriteBuffer = handshakeModel.getAppWriteBuffer();
             SSLEngine engine = handshakeModel.getSslEngine();
+
+            //握手阶段网络断链
+            if (handshakeModel.isEof()) {
+                logger.warn("the ssl handshake is terminated");
+                handshakeModel.setFinished(true);
+                return;
+            }
             while (!handshakeModel.isFinished()) {
                 handshakeStatus = engine.getHandshakeStatus();
                 logger.info("握手状态:" + handshakeStatus);
@@ -118,47 +138,34 @@ public class SSLService {
                     case NEED_UNWRAP://解码
                         netReadBuffer.flip();
                         if (netReadBuffer.hasRemaining()) {
-                            result = engine.unwrap(netReadBuffer, appReadBuffer);//调用SSLEngine进行unwrap操作
+                            result = engine.unwrap(netReadBuffer, appReadBuffer);
                             netReadBuffer.compact();
                         } else {
-                            if (!handshakeModel.isEof()) {
-                                netReadBuffer.clear();
-                                handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletion);
-                            }
+                            netReadBuffer.clear();
+                            handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletion);
                             return;
                         }
 
                         if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
                             handshakeModel.setFinished(true);
-                            logger.info("握手结束:" + engine.getHandshakeStatus() + "" + engine.getHandshakeStatus() + "netReadBuffer:" + netReadBuffer);
                             netReadBuffer.clear();
-//                            readFromChannel0(netReadBuffer);
                         }
                         switch (result.getStatus()) {
                             case OK:
-
                                 break;
                             case BUFFER_OVERFLOW:
-                                logger.warn("BUFFER_OVERFLOW");
+//                                logger.warn("BUFFER_OVERFLOW");
                                 // Will occur when appReadBuffer's capacity is smaller than the data derived from netReadBuffer's unwrap.
                                 appReadBuffer = enlargeApplicationBuffer(engine, appReadBuffer);
                                 handshakeModel.setAppReadBuffer(appReadBuffer);
                                 break;
-                            case BUFFER_UNDERFLOW:
-                                logger.warn("BUFFER_UNDERFLOW");
+                            case BUFFER_UNDERFLOW://两种情况会触发BUFFER_UNDERFLOW,1:读到的数据不够,2:netReadBuffer空间太小
+//                                logger.warn("BUFFER_UNDERFLOW");
                                 // Will occur either when no data was read from the peer or when the netReadBuffer buffer was too small to hold all peer's data.
                                 netReadBuffer = handleBufferUnderflow(engine.getSession(), netReadBuffer);
                                 handshakeModel.setNetReadBuffer(netReadBuffer);
                                 handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletion);
                                 return;
-                            case CLOSED:
-                                if (engine.isOutboundDone()) {
-                                    return;
-                                } else {
-                                    engine.closeOutbound();
-                                    doHandshake(handshakeModel);
-                                    return;
-                                }
                             default:
                                 throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
                         }
@@ -175,11 +182,11 @@ public class SSLService {
                             case OK:
                                 appWriteBuffer.clear();
                                 netWriteBuffer.flip();
-                                if (result.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.FINISHED) {
-                                    handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletion);
-                                    return;
+                                if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
+                                    handshakeModel.setFinished(true);
                                 }
-                                break;
+                                handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletion);
+                                return;
                             case BUFFER_OVERFLOW:
                                 logger.warn("NEED_WRAP BUFFER_OVERFLOW");
                                 netWriteBuffer = enlargePacketBuffer(engine.getSession(), netWriteBuffer);
@@ -225,20 +232,22 @@ public class SSLService {
                     default:
                         throw new IllegalStateException("Invalid SSL status: " + handshakeStatus);
                 }
-                logger.info("握手结果：" + result.getHandshakeStatus());
-                if (result != null && result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
-                    logger.info("握手完毕");
-                    handshakeModel.setFinished(true);
-                    if (netWriteBuffer.hasRemaining()) {
-                        handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletion);
-                        return;
-                    }
-
-                }
             }
+            logger.info("握手完毕");
             handshakeModel.getHandshakeCallback().callback();
 
         } catch (Exception e) {
+            try {
+                handshakeModel.getSslEngine().closeInbound();
+            } catch (SSLException e1) {
+                e1.printStackTrace();
+            }
+            handshakeModel.getSslEngine().closeOutbound();
+            try {
+                handshakeModel.getSocketChannel().close();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
             logger.catching(e);
         }
     }

@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.ssl.HandshakeCallback;
 import org.smartboot.socket.extension.ssl.HandshakeModel;
 import org.smartboot.socket.extension.ssl.SSLConfig;
@@ -184,6 +185,11 @@ public class AioQuickServer<T> {
     public AioQuickServer<T> setTrust(String trustFile, String trustPassword) {
         sslConfig.setTrustFile(trustFile);
         sslConfig.setTrustPassword(trustPassword);
+        return this;
+    }
+
+    public AioQuickServer<T> setClientAuth(ClientAuth clientAuth) {
+        sslConfig.setClientAuth(clientAuth);
         return this;
     }
 }
