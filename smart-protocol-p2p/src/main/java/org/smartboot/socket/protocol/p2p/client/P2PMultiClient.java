@@ -24,7 +24,7 @@ public class P2PMultiClient {
                 return new Thread(r);
             }
         });
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 10; i++) {
             new Thread("CLient-Thread-" + i) {
                 private Logger logger = LogManager.getLogger(this.getClass());
 
