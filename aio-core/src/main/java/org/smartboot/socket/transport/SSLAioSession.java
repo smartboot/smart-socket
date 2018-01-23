@@ -132,7 +132,7 @@ public class SSLAioSession<T> extends AioSession<T> {
                         // Resize buffer if needed.
                         if (netReadBuffer.limit() == netReadBuffer.capacity()) {
                             int netSize = netReadBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? netReadBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
-                            logger.info("BUFFER_UNDERFLOW:" + netSize);
+                            logger.debug("BUFFER_UNDERFLOW:" + netSize);
                             ByteBuffer b1 = ByteBuffer.allocate(netSize);
                             b1.put(netReadBuffer);
                             netReadBuffer = b1;
@@ -143,7 +143,7 @@ public class SSLAioSession<T> extends AioSession<T> {
                                 netReadBuffer.position(netReadBuffer.limit());
                                 netReadBuffer.limit(netReadBuffer.capacity());
                             }
-                            logger.info("BUFFER_UNDERFLOW,continue read:" + netReadBuffer);
+                            logger.debug("BUFFER_UNDERFLOW,continue read:" + netReadBuffer);
                         }
                         // Obtain more inbound network data for src,
                         // then retry the operation.

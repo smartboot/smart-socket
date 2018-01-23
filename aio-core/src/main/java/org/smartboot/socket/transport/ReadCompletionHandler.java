@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.StateMachineEnum;
 
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
 
 /**
@@ -32,7 +33,14 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
 
     @Override
     public void failed(Throwable exc, AioSession<T> aioSession) {
-        LOGGER.debug("smart-socket read fail:", exc);
+        if (exc instanceof ClosedChannelException) {
+            LOGGER.debug("socket is closed");
+        } else {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("smart-socket read fail:", exc);
+            }
+        }
+
         try {
             aioSession.getServerConfig().getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
         } catch (Exception e) {
