@@ -11,7 +11,7 @@
 
     <properties>
         <commons.lang.version>2.6</commons.lang.version>
-        <log4j.version>2.9.1</log4j.version>
+        <log4j.version>2.10.0</log4j.version>
     </properties>
     <dependencyManagement>
         <dependencies>

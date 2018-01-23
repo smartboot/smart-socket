@@ -12,19 +12,24 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.transport.SSLAioSession;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * TLS/SSL服务
@@ -50,21 +55,40 @@ public class SSLService {
     private void init(SSLConfig config) {
         try {
             this.config = config;
-            KeyStore ks = KeyStore.getInstance("JKS");
-            KeyStore ts = KeyStore.getInstance("JKS");
+            KeyManager[] keyManagers = null;
+            if (config.getKeyFile() != null) {
+                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+                KeyStore ks = KeyStore.getInstance("JKS");
+                ks.load(new FileInputStream(config.getKeyFile()), config.getKeystorePassword().toCharArray());
+                kmf.init(ks, config.getKeyPassword().toCharArray());
+                keyManagers = kmf.getKeyManagers();
+            }
 
-            ks.load(new FileInputStream(config.getKeyFile()), config.getKeystorePassword().toCharArray());
-            ts.load(new FileInputStream(config.getTrustFile()), config.getTrustPassword().toCharArray());
+            TrustManager[] trustManagers;
+            if (config.getTrustFile() != null) {
+                KeyStore ts = KeyStore.getInstance("JKS");
+                ts.load(new FileInputStream(config.getTrustFile()), config.getTrustPassword().toCharArray());
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+                tmf.init(ts);
+                trustManagers = tmf.getTrustManagers();
+            } else {
+                trustManagers = new TrustManager[]{new X509TrustManager() {
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                    }
 
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, config.getKeyPassword().toCharArray());
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                    }
 
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-            tmf.init(ts);
-
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                }};
+            }
             sslContext = SSLContext.getInstance("TLSv1.2");
-
-            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+            sslContext.init(keyManagers, trustManagers, new SecureRandom());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -133,7 +157,7 @@ public class SSLService {
             }
             while (!handshakeModel.isFinished()) {
                 handshakeStatus = engine.getHandshakeStatus();
-                logger.info("握手状态:" + handshakeStatus);
+//                logger.info("握手状态:" + handshakeStatus);
                 switch (handshakeStatus) {
                     case NEED_UNWRAP://解码
                         netReadBuffer.flip();

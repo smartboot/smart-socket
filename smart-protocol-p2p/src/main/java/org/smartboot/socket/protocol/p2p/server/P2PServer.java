@@ -33,7 +33,7 @@ public class P2PServer {
                 .setProtocol(new P2PProtocol(messageFactory))
                 .setProcessor(new P2PServerMessageProcessor(messageFactory))
                 .setSsl(true)
-//                .setClientAuth(null)
+                .setClientAuth(ClientAuth.REQUIRE)
                 .setKeyStore("server.jks","storepass")
                 .setTrust("trustedCerts.jks","storepass")
                 .setKeyPassword("keypass")

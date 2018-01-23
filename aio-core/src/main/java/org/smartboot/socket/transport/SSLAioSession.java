@@ -109,11 +109,6 @@ public class SSLAioSession<T> extends AioSession<T> {
     private void doUnWrap() {
         try {
             netReadBuffer.flip();
-            if (!netReadBuffer.hasRemaining()) {
-                logger.info("no remain");
-                netReadBuffer.compact();
-                return;
-            }
 
             SSLEngineResult result = sslEngine.unwrap(netReadBuffer, readBuffer);
             while (result.getStatus() != SSLEngineResult.Status.OK) {
@@ -160,7 +155,6 @@ public class SSLAioSession<T> extends AioSession<T> {
                 }
                 result = sslEngine.unwrap(netReadBuffer, readBuffer);
             }
-//            logger.info(result + " " + netReadBuffer + " " + readBuffer);
             netReadBuffer.compact();
         } catch (SSLException e) {
             logger.catching(e);

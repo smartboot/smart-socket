@@ -11,6 +11,7 @@ package org.smartboot.socket.extension.ssl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.nio.channels.CompletionHandler;
 
 /**
@@ -37,6 +38,12 @@ class HandshakeCompletion implements CompletionHandler<Integer, HandshakeModel> 
 
     @Override
     public void failed(Throwable exc, HandshakeModel attachment) {
+        try {
+            attachment.getSocketChannel().close();
+            attachment.getSslEngine().closeOutbound();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         logger.catching(exc);
     }
 }

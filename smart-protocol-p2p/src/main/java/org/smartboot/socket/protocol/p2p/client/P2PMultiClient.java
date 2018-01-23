@@ -47,7 +47,8 @@ public class P2PMultiClient {
                             .setSsl(true)
                             .setKeyStore("client.jks", "storepass")
                             .setTrust("trustedCerts.jks", "storepass")
-                            .setKeyPassword("keypass");
+                            .setKeyPassword("keypass")
+                            ;
                     try {
                         client.start(asynchronousChannelGroup);
 //                        Thread.sleep(4000);
@@ -61,8 +62,8 @@ public class P2PMultiClient {
                         DetectMessageReq request = new DetectMessageReq();
                         request.setDetect("台州人在杭州:" + num);
                         try {
-                            processor.getSession().sendWithoutResponse(request);
-//                            System.out.println(processor.getSession().sendWithResponse(request,0));
+//                            processor.getSession().sendWithoutResponse(request);
+                            System.out.println(processor.getSession().sendWithResponse(request,0));
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();
