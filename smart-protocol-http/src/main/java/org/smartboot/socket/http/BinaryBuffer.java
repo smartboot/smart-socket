@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 2018, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: BinaryBuffer.java
+ * Date: 2018-01-23 16:28:22
+ * Author: sandao
+ */
+
+/*
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  *
  *
@@ -33,7 +41,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package org.smartboot.socket.protocol;
+package org.smartboot.socket.http;
 
 import java.util.Collection;
 import java.util.Iterator;

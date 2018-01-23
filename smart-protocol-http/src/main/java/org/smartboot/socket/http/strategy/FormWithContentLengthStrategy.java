@@ -1,8 +1,16 @@
-package org.smartboot.socket.protocol.strategy;
+/*
+ * Copyright (c) 2018, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: FormWithContentLengthStrategy.java
+ * Date: 2018-01-23 16:28:22
+ * Author: sandao
+ */
+
+package org.smartboot.socket.http.strategy;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.smartboot.socket.protocol.HttpV2Entity;
+import org.smartboot.socket.http.HttpV2Entity;
 
 /**
  * Post普通表单提交

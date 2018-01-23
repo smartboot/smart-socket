@@ -1,10 +1,18 @@
-package org.smartboot.socket.protocol;
+/*
+ * Copyright (c) 2018, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: HttpV2Entity.java
+ * Date: 2018-01-23 16:28:22
+ * Author: sandao
+ */
+
+package org.smartboot.socket.http;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.math.NumberUtils;
-import org.smartboot.socket.protocol.strategy.PostDecodeStrategy;
+import org.smartboot.socket.http.strategy.PostDecodeStrategy;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.InputStream;
@@ -32,9 +40,6 @@ public class HttpV2Entity {
     public static final String RANGE = "Range";
     public static final String LOCATION = "Location";
     public static final String CONNECTION = "Connection";
-
-    private int contentLength = -1;
-
     public DataStream dataStream = new DataStream("\r\n\r\n".getBytes());
     public SmartHttpInputStream smartHttpInputStream = new SmartHttpInputStream(1);
     /**
@@ -43,12 +48,14 @@ public class HttpV2Entity {
      * 2:结束
      */
     HttpPart partFlag = HttpPart.HEAD;
-
+    PostDecodeStrategy postDecodeStrategy;
+    private int contentLength = -1;
     private String method, url, protocol, contentType, decodeError;
     private Map<String, String> headMap = new HashMap<String, String>();
     private Map<String, String> paramMap = new HashMap<String, String>();
 
-    PostDecodeStrategy postDecodeStrategy;
+    public HttpV2Entity(AioSession<HttpV2Entity> session) {
+    }
 
     public void decodeHead() {
         String[] headDatas = StringUtils.split(dataStream.toString(), "\r\n");
@@ -72,10 +79,6 @@ public class HttpV2Entity {
         contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), -1);
         //重置
         dataStream.reset();
-    }
-
-
-    public HttpV2Entity(AioSession<HttpV2Entity> session) {
     }
 
     public InputStream getInputStream() {

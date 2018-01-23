@@ -2,11 +2,11 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: HttpServerMessageProcessor.java
- * Date: 2018-01-20 13:28:51
+ * Date: 2018-01-23 16:28:22
  * Author: sandao
  */
 
-package org.smartboot.socket.protocol;
+package org.smartboot.socket.http;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;

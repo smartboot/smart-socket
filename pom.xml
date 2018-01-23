@@ -75,5 +75,6 @@
         <module>aio-core</module>
         <module>smart-protocol-p2p</module>
         <module>smart-protocol-http</module>
+        <module>smart-protocol-servlet</module>
     </modules>
 </project>

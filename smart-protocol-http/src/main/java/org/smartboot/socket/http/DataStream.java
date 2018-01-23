@@ -1,4 +1,12 @@
-package org.smartboot.socket.protocol;
+/*
+ * Copyright (c) 2018, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: DataStream.java
+ * Date: 2018-01-23 16:28:22
+ * Author: sandao
+ */
+
+package org.smartboot.socket.http;
 
 import java.io.ByteArrayOutputStream;
 

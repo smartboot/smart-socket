@@ -1,6 +1,14 @@
-package org.smartboot.socket.protocol.strategy;
+/*
+ * Copyright (c) 2018, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: StreamWithContentLengthStrategy.java
+ * Date: 2018-01-23 16:28:22
+ * Author: sandao
+ */
 
-import org.smartboot.socket.protocol.HttpV2Entity;
+package org.smartboot.socket.http.strategy;
+
+import org.smartboot.socket.http.HttpV2Entity;
 
 /**
  * 以流的形式传输并包含Content-Length的解码方式
