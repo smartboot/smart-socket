@@ -2,7 +2,7 @@
  * Copyright (c) 2017, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: AioQuickServer.java
- * Date: 2017-11-25 10:29:55
+ * Date: 2017-11-25
  * Author: sandao
  */
 
@@ -14,8 +14,6 @@ import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.ssl.ClientAuth;
-import org.smartboot.socket.extension.ssl.HandshakeCallback;
-import org.smartboot.socket.extension.ssl.HandshakeModel;
 import org.smartboot.socket.extension.ssl.SSLConfig;
 import org.smartboot.socket.extension.ssl.SSLService;
 
@@ -61,20 +59,13 @@ public class AioQuickServer<T> {
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
                 serverSocketChannel.accept(attachment, this);
                 //连接成功则构造AIOSession对象
+                AioSession session;
                 if (config.isSsl()) {
-                    final SSLAioSession sslAioSession = new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
-                    final HandshakeModel handshakeModel = sslService.createSSLEngine(channel);
-                    handshakeModel.setHandshakeCallback(new HandshakeCallback() {
-                        @Override
-                        public void callback() {
-                            sslAioSession.initSession(handshakeModel.getSslEngine());
-                        }
-                    });
-                    sslService.doHandshake(handshakeModel);
+                    session = new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, sslService);
                 } else {
-                    AioSession session = new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
-                    session.initSession();
+                    session = new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
                 }
+                session.initSession();
             }
 
             @Override

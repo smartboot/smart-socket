@@ -2,7 +2,7 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: HandshakeCompletion.java
- * Date: 2018-01-02 11:24:38
+ * Date: 2018-01-02
  * Author: sandao
  */
 

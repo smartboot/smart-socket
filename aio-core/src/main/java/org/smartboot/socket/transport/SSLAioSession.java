@@ -2,7 +2,7 @@
  * Copyright (c) 2017, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: SSLAioSession.java
- * Date: 2017-12-19 15:01:29
+ * Date: 2017-12-19
  * Author: sandao
  */
 
@@ -10,6 +10,9 @@ package org.smartboot.socket.transport;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.extension.ssl.HandshakeCallback;
+import org.smartboot.socket.extension.ssl.HandshakeModel;
+import org.smartboot.socket.extension.ssl.SSLService;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -29,18 +32,30 @@ public class SSLAioSession<T> extends AioSession<T> {
     private SSLEngine sslEngine = null;
 
     /**
+     * 完成握手置null
+     */
+    private HandshakeModel handshakeModel;
+    /**
+     * 完成握手置null
+     */
+    private SSLService sslService;
+
+    /**
      * @param channel
      * @param config
      * @param aioReadCompletionHandler
      * @param aioWriteCompletionHandler
-     * @param serverSession             是否服务端Session
+     * @param sslService                是否服务端Session
      */
-    SSLAioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler aioReadCompletionHandler, WriteCompletionHandler aioWriteCompletionHandler, boolean serverSession) {
-        super(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, serverSession);
+    SSLAioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler aioReadCompletionHandler, WriteCompletionHandler aioWriteCompletionHandler, SSLService sslService) {
+        super(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, false);
+        this.handshakeModel = sslService.createSSLEngine(channel);
+        this.sslService = sslService;
     }
 
     @Override
     void writeToChannel() {
+        checkInitialized();
         if (netWriteBuffer != null && netWriteBuffer.hasRemaining()) {
             writeToChannel0(netWriteBuffer);
             return;
@@ -48,20 +63,49 @@ public class SSLAioSession<T> extends AioSession<T> {
         super.writeToChannel();
     }
 
-    public void initSession() {
-        throw new UnsupportedOperationException("please call method [initSession(SSLEngine sslEngine)]");
-    }
 
-    public void initSession(SSLEngine sslEngine) {
-        this.sslEngine = sslEngine;
+    public void initSession() {
+        this.sslEngine = handshakeModel.getSslEngine();
         this.netWriteBuffer = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
         this.netWriteBuffer.flip();
         this.netReadBuffer = ByteBuffer.allocate(readBuffer.capacity());
-        readFromChannel(false);
+        this.serverFlowLimit = sslEngine.getUseClientMode() ? null : false;//服务端设置流控标志
+        this.handshakeModel.setHandshakeCallback(new HandshakeCallback() {
+            @Override
+            public void callback() {
+                synchronized (SSLAioSession.this) {
+                    handshakeModel = null;//释放内存
+                    SSLAioSession.this.notifyAll();
+                }
+                sslService = null;//释放内存
+                readFromChannel(false);
+            }
+        });
+        sslService.doHandshake(handshakeModel);
+    }
+
+    /**
+     * 校验是否已完成初始化,如果还处于Handshake阶段则阻塞当前线程
+     */
+    private void checkInitialized() {
+        if (handshakeModel == null) {
+            return;
+        }
+        synchronized (this) {
+            if (handshakeModel == null) {
+                return;
+            }
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                logger.catching(e);
+            }
+        }
     }
 
     @Override
     void readFromChannel(boolean eof) {
+        checkInitialized();
         doUnWrap();
         super.readFromChannel(eof);
     }

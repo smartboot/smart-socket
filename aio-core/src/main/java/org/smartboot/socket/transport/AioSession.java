@@ -2,7 +2,7 @@
  * Copyright (c) 2017, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: AioSession.java
- * Date: 2017-11-25 10:29:55
+ * Date: 2017-11-25
  * Author: sandao
  */
 
@@ -105,7 +105,6 @@ public class AioSession<T> {
     void writeToChannel() {
         if (writeBuffer != null && writeBuffer.hasRemaining()) {
             continueWrite();
-//            channel.write(writeBuffer, this, aioWriteCompletionHandler);
             return;
         }
         writeBuffer = null;
@@ -135,7 +134,6 @@ public class AioSession<T> {
         }
         writeBuffer = ByteBuffer.wrap(data);
         continueWrite();
-//        channel.write(writeBuffer, this, aioWriteCompletionHandler);
 
         //如果存在流控并符合释放条件，则触发读操作
         if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {

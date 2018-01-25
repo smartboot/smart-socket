@@ -2,7 +2,7 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: Test1.java
- * Date: 2018-01-20 13:31:09
+ * Date: 2018-01-20
  * Author: sandao
  */
 

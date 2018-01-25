@@ -2,7 +2,7 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: StringUtils.java
- * Date: 2018-01-01 09:38:31
+ * Date: 2018-01-01
  * Author: sandao
  */
 

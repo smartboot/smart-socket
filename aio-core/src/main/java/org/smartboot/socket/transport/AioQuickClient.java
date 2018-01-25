@@ -2,7 +2,7 @@
  * Copyright (c) 2017, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: AioQuickClient.java
- * Date: 2017-11-25 10:29:55
+ * Date: 2017-11-25
  * Author: sandao
  */
 
@@ -14,8 +14,6 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.extension.ssl.HandshakeCallback;
-import org.smartboot.socket.extension.ssl.HandshakeModel;
 import org.smartboot.socket.extension.ssl.SSLConfig;
 import org.smartboot.socket.extension.ssl.SSLService;
 
@@ -60,30 +58,13 @@ public class AioQuickClient<T> {
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
+        AioSession session;
         if (config.isSsl()) {
-            final SSLAioSession sslAioSession = new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
-            final HandshakeModel handshakeModel = sslService.createSSLEngine(socketChannel);
-            handshakeModel.setHandshakeCallback(new HandshakeCallback() {
-                @Override
-                public void callback() {
-                    sslAioSession.initSession(handshakeModel.getSslEngine());
-                    synchronized (handshakeModel) {
-                        handshakeModel.notifyAll();
-                    }
-                }
-            });
-            sslService.doHandshake(handshakeModel);
-            if (!handshakeModel.isFinished()) {
-                synchronized (handshakeModel) {
-                    if (!handshakeModel.isFinished()) {
-                        handshakeModel.wait();
-                    }
-                }
-            }
+            session = new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), sslService);
         } else {
-            AioSession session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
-            session.readFromChannel(false);
+            session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
         }
+        session.initSession();
     }
 
     /**

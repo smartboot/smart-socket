@@ -2,7 +2,7 @@
  * Copyright (c) 2017, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: StateMachineEnum.java
- * Date: 2017-11-25 10:29:55
+ * Date: 2017-11-25
  * Author: sandao
  */
 

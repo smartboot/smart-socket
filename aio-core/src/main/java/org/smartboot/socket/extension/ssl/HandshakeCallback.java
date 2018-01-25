@@ -2,7 +2,7 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: HandshakeCallback.java
- * Date: 2018-01-02 15:29:39
+ * Date: 2018-01-02
  * Author: sandao
  */
 

@@ -2,7 +2,7 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: SSLService.java
- * Date: 2018-01-01 20:43:55
+ * Date: 2018-01-01
  * Author: sandao
  */
 
@@ -50,7 +50,6 @@ public class SSLService {
     public SSLService(SSLConfig config) {
         init(config);
     }
-
 
     private void init(SSLConfig config) {
         try {

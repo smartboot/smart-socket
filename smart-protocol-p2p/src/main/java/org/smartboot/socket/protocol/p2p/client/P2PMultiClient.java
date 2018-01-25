@@ -62,8 +62,8 @@ public class P2PMultiClient {
                         DetectMessageReq request = new DetectMessageReq();
                         request.setDetect("台州人在杭州:" + num);
                         try {
-                            processor.getSession().sendWithoutResponse(request);
-//                            System.out.println(processor.getSession().sendWithResponse(request,0));
+//                            processor.get/Session().sendWithoutResponse(request);
+                            logger.info(processor.getSession().sendWithResponse(request,0));
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();

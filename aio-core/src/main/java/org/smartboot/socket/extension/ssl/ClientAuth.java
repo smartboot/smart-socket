@@ -2,7 +2,7 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: ClientAuth.java
- * Date: 2018-01-22 20:23:27
+ * Date: 2018-01-22
  * Author: sandao
  */
 

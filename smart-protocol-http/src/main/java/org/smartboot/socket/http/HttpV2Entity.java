@@ -2,7 +2,7 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: HttpV2Entity.java
- * Date: 2018-01-23 16:28:22
+ * Date: 2018-01-23
  * Author: sandao
  */
 

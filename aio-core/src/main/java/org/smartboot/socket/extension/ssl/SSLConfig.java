@@ -2,7 +2,7 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: SSLConfig.java
- * Date: 2018-01-01 21:13:09
+ * Date: 2018-01-01
  * Author: sandao
  */
 
