@@ -27,14 +27,13 @@ import java.util.concurrent.Semaphore;
  * Created by 三刀 on 2017/6/29.
  */
 public class AioSession<T> {
-    private static final Logger logger = LogManager.getLogger(AioSession.class);
-
     /* Session状态:已关闭 */
-    private static final byte SESSION_STATUS_CLOSED = 1,
+    protected static final byte SESSION_STATUS_CLOSED = 1,
     /*Session状态:关闭中*/
     SESSION_STATUS_CLOSING = 2,
     /* Session状态:正常 */
     SESSION_STATUS_ENABLED = 3;
+    private static final Logger logger = LogManager.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
     /* Session ID生成器 */
     private static int NEXT_ID = 0;
@@ -54,7 +53,7 @@ public class AioSession<T> {
     /**
      * 会话当前状态
      */
-    private byte status = SESSION_STATUS_ENABLED;
+    protected byte status = SESSION_STATUS_ENABLED;
     /**
      * 附件对象
      */
@@ -94,7 +93,7 @@ public class AioSession<T> {
      * 初始化AioSession
      */
     public void initSession() {
-        readFromChannel(false);
+        continueRead();
     }
 
 
@@ -198,7 +197,7 @@ public class AioSession<T> {
                 logger.catching(e);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-        } else if (writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
+        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
             close(true);
             semaphore.release();
         } else {
@@ -250,11 +249,7 @@ public class AioSession<T> {
             if (readBuffer.hasRemaining()) {
                 logger.error("{} bytes has not decode when EOF", readBuffer.remaining());
             }
-            try {
-                channel.shutdownInput();
-            } catch (IOException e) {
-                logger.debug(e);
-            }
+            close(false);
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
             return;
         }

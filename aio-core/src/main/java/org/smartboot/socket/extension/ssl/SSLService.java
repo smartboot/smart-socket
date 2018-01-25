@@ -256,7 +256,7 @@ public class SSLService {
                         throw new IllegalStateException("Invalid SSL status: " + handshakeStatus);
                 }
             }
-            logger.info("握手完毕");
+            logger.debug("握手完毕");
             handshakeModel.getHandshakeCallback().callback();
 
         } catch (Exception e) {

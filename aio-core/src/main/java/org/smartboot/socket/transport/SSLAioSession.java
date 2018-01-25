@@ -78,7 +78,7 @@ public class SSLAioSession<T> extends AioSession<T> {
                     SSLAioSession.this.notifyAll();
                 }
                 sslService = null;//释放内存
-                readFromChannel(false);
+                continueRead();
             }
         });
         sslService.doHandshake(handshakeModel);
@@ -206,4 +206,11 @@ public class SSLAioSession<T> extends AioSession<T> {
         }
     }
 
+    @Override
+    public void close(boolean immediate) {
+        super.close(immediate);
+        if (status == SESSION_STATUS_CLOSED) {
+            sslEngine.closeOutbound();
+        }
+    }
 }
