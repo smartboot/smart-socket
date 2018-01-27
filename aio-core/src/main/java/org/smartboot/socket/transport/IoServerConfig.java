@@ -22,7 +22,7 @@ final class IoServerConfig<T> {
     /**
      * 消息队列缓存大小
      */
-    private int writeQueueSize =  4;
+    private int writeQueueSize = 4;
 
     /**
      * 消息体缓存大小,字节
@@ -76,6 +76,11 @@ final class IoServerConfig<T> {
      * 释放流控指标线
      */
     private int releaseLine = (int) (writeQueueSize * releaseRate);
+
+    /**
+     * 是否启用控制台banner
+     */
+    private boolean bannerEnabled = true;
 
     public final String getHost() {
         return host;
@@ -160,5 +165,13 @@ final class IoServerConfig<T> {
 
     public void setSsl(boolean ssl) {
         this.ssl = ssl;
+    }
+
+    public boolean isBannerEnabled() {
+        return bannerEnabled;
+    }
+
+    public void setBannerEnabled(boolean bannerEnabled) {
+        this.bannerEnabled = bannerEnabled;
     }
 }

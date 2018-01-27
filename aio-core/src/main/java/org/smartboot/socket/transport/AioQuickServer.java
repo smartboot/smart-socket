@@ -41,6 +41,9 @@ public class AioQuickServer<T> {
     private SSLService sslService;
 
     public void start() throws IOException {
+        if (config.isBannerEnabled()) {
+            Banner.printBanner(System.out);
+        }
         //启动SSL服务
         if (config.isSsl()) {
             sslService = new SSLService(sslConfig);
@@ -73,6 +76,7 @@ public class AioQuickServer<T> {
                 LOGGER.warn(exc);
             }
         });
+
         LOGGER.info("smart-socket server started on port {}", config.getPort());
     }
 
@@ -181,6 +185,11 @@ public class AioQuickServer<T> {
 
     public AioQuickServer<T> setClientAuth(ClientAuth clientAuth) {
         sslConfig.setClientAuth(clientAuth);
+        return this;
+    }
+
+    public AioQuickServer<T> setBannerEnabled(boolean bannerEnabled) {
+        config.setBannerEnabled(bannerEnabled);
         return this;
     }
 }
