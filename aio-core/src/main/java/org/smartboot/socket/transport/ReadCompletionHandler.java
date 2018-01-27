@@ -34,7 +34,9 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     @Override
     public void failed(Throwable exc, AioSession<T> aioSession) {
         if (exc instanceof ClosedChannelException) {
-            LOGGER.debug("socket is closed");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("socket is closed");
+            }
         } else {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("smart-socket read fail:", exc);

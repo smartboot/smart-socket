@@ -191,7 +191,9 @@ public class AioSession<T> {
         if (immediate) {
             try {
                 channel.close();
-                logger.debug("session is closed:" + this);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("session is closed:" + this);
+                }
             } catch (IOException e) {
                 logger.catching(e);
             }
