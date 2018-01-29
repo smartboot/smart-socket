@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.StateMachineEnum;
 
-import java.nio.channels.ClosedChannelException;
+import java.io.IOException;
 import java.nio.channels.CompletionHandler;
 
 /**
@@ -33,9 +33,9 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
 
     @Override
     public void failed(Throwable exc, AioSession<T> aioSession) {
-        if (exc instanceof ClosedChannelException) {
+        if (exc instanceof IOException) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("socket is closed");
+                LOGGER.debug("session:{} will be closed,msg:{}", aioSession.getSessionID(), exc.getMessage());
             }
         } else {
             if (LOGGER.isDebugEnabled()) {

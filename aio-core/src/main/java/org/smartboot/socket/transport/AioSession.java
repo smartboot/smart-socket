@@ -185,6 +185,7 @@ public class AioSession<T> {
      */
     public void close(boolean immediate) {
         if (status == SESSION_STATUS_CLOSED) {
+            logger.warn("ignore, session:{} is closed:", getSessionID());//说明close方法被重复调用
             return;
         }
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
@@ -192,7 +193,7 @@ public class AioSession<T> {
             try {
                 channel.close();
                 if (logger.isDebugEnabled()) {
-                    logger.debug("session is closed:" + this);
+                    logger.debug("session:{} is closed:", getSessionID());
                 }
             } catch (IOException e) {
                 logger.catching(e);

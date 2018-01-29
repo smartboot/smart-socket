@@ -44,7 +44,7 @@ public class P2PMultiClient {
                             .setProtocol(new P2PProtocol(messageFactory))
                             .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
                             .setProcessor(processor)
-                            .setSsl(true)
+//                            .setSsl(true)
                             .setKeyStore("client.jks", "storepass")
                             .setTrust("trustedCerts.jks", "storepass")
                             .setKeyPassword("keypass")

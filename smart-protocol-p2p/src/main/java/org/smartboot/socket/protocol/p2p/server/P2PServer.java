@@ -32,7 +32,7 @@ public class P2PServer {
                 .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
                 .setProtocol(new P2PProtocol(messageFactory))
                 .setProcessor(new P2PServerMessageProcessor(messageFactory))
-                .setSsl(true)
+//                .setSsl(true)
                 .setClientAuth(ClientAuth.REQUIRE)
                 .setKeyStore("server.jks","storepass")
                 .setTrust("trustedCerts.jks","storepass")
