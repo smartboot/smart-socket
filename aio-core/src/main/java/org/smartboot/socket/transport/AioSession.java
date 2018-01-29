@@ -158,7 +158,7 @@ public class AioSession<T> {
         channel.write(buffer, this, aioWriteCompletionHandler);
     }
 
-    public void write(final ByteBuffer buffer) throws IOException {
+    public final void write(final ByteBuffer buffer) throws IOException {
         if (isInvalid()) {
             throw new IOException("session is " + status);
         }
@@ -219,7 +219,7 @@ public class AioSession<T> {
     /**
      * 当前会话是否已失效
      */
-    public boolean isInvalid() {
+    public final boolean isInvalid() {
         return status != SESSION_STATUS_ENABLED;
     }
 
@@ -284,11 +284,11 @@ public class AioSession<T> {
         writeToChannel0(writeBuffer);
     }
 
-    public Object getAttachment() {
+    public final Object getAttachment() {
         return attachment;
     }
 
-    public void setAttachment(Object attachment) {
+    public final void setAttachment(Object attachment) {
         this.attachment = attachment;
     }
 
@@ -296,7 +296,7 @@ public class AioSession<T> {
         write(ioServerConfig.getProtocol().encode(t, this));
     }
 
-    public InetSocketAddress getLocalAddress() {
+    public final InetSocketAddress getLocalAddress() {
         try {
             return (InetSocketAddress) channel.getLocalAddress();
         } catch (IOException e) {
@@ -304,7 +304,7 @@ public class AioSession<T> {
         }
     }
 
-    public InetSocketAddress getRemoteAddress() {
+    public final InetSocketAddress getRemoteAddress() {
         try {
             return (InetSocketAddress) channel.getRemoteAddress();
         } catch (IOException e) {
