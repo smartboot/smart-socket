@@ -26,21 +26,21 @@ public class FormWithContentLengthStrategy implements PostDecodeStrategy {
 
     @Override
     public boolean isDecodeEnd(byte b, HttpV2Entity entity) {
-        //识别body长度
-        if (entity.dataStream.getContentLength() <= 0) {
-            entity.dataStream.setContentLength(entity.getContentLength());
-        }
-        if (entity.dataStream.append(b)) {
-            String[] headDatas = StringUtils.split(entity.dataStream.toString(), "&");
-            if (ArrayUtils.isEmpty(headDatas)) {
-                throw new RuntimeException("data is emtpy");
-            }
-            for (int i = 0; i < headDatas.length; i++) {
-                entity.getParamMap().put(StringUtils.substringBefore(headDatas[i], "=").trim(), StringUtils.substringAfter(headDatas[i], "=").trim());
-            }
-            entity.dataStream.reset();
-            return true;
-        }
+//        //识别body长度
+//        if (entity.headDecoder1.getContentLength() <= 0) {
+//            entity.headDecoder1.setContentLength(entity.getContentLength());
+//        }
+//        if (entity.headDecoder1.append(b)) {
+//            String[] headDatas = StringUtils.split(entity.headDecoder1.toString(), "&");
+//            if (ArrayUtils.isEmpty(headDatas)) {
+//                throw new RuntimeException("data is emtpy");
+//            }
+//            for (int i = 0; i < headDatas.length; i++) {
+//                entity.getParamMap().put(StringUtils.substringBefore(headDatas[i], "=").trim(), StringUtils.substringAfter(headDatas[i], "=").trim());
+//            }
+//            entity.headDecoder1.reset();
+//            return true;
+//        }
         return false;
     }
 

@@ -12,10 +12,13 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.math.NumberUtils;
+import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
+import org.smartboot.socket.extension.decoder.SmartDecoder;
 import org.smartboot.socket.http.strategy.PostDecodeStrategy;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +43,8 @@ public class HttpV2Entity {
     public static final String RANGE = "Range";
     public static final String LOCATION = "Location";
     public static final String CONNECTION = "Connection";
-    public DataStream dataStream = new DataStream("\r\n\r\n".getBytes());
+    private static final byte[] headEndBytes = {'\r', '\n', '\r', '\n'};
+    public SmartDecoder decoder = new DelimiterFrameDecoder(headEndBytes, 256);
     public SmartHttpInputStream smartHttpInputStream = new SmartHttpInputStream(1);
     /**
      * 0:消息头
@@ -58,7 +62,8 @@ public class HttpV2Entity {
     }
 
     public void decodeHead() {
-        String[] headDatas = StringUtils.split(dataStream.toString(), "\r\n");
+        ByteBuffer headBuffer = decoder.getBuffer();
+        String[] headDatas = StringUtils.split(new String(headBuffer.array(), 0, headBuffer.remaining()), "\r\n");
         if (ArrayUtils.isEmpty(headDatas)) {
             throw new RuntimeException("解码异常");
         }
@@ -77,8 +82,6 @@ public class HttpV2Entity {
         }
         contentType = headMap.get(CONTENT_TYPE);
         contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), -1);
-        //重置
-        dataStream.reset();
     }
 
     public InputStream getInputStream() {

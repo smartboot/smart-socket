@@ -38,7 +38,7 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
     }
 
     @Override
-    public HttpV2Entity decode(ByteBuffer buffer, AioSession<HttpV2Entity> session,boolean eof) {
+    public HttpV2Entity decode(ByteBuffer buffer, AioSession<HttpV2Entity> session, boolean eof) {
         HttpV2Entity entity = null;
         if (session.getAttachment() == null) {
             entity = new HttpV2Entity(session);
@@ -51,7 +51,7 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
         while (buffer.hasRemaining() && continueDecode) {
             switch (entity.partFlag) {
                 case HEAD: {
-                    if (entity.dataStream.append(buffer.get())) {
+                    if (entity.decoder.decode(buffer)) {
                         entity.decodeHead();//消息头解码
                         if (StringUtils.equalsIgnoreCase("POST", entity.getMethod()) && entity.getContentLength() != 0) {
                             entity.partFlag = HttpPart.BODY;

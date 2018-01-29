@@ -1,16 +1,14 @@
 /*
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: Test1.java
- * Date: 2018-01-20
+ * file name: HttpBootstrap.java
+ * Date: 2018-01-28
  * Author: sandao
  */
 
+package org.smartboot.socket.http;
+
 import org.smartboot.socket.extension.ssl.ClientAuth;
-import org.smartboot.socket.extension.timer.QuickMonitorTimer;
-import org.smartboot.socket.http.HttpServerMessageProcessor;
-import org.smartboot.socket.http.HttpV2Entity;
-import org.smartboot.socket.http.HttpV2Protocol;
 import org.smartboot.socket.transport.AioQuickServer;
 
 import java.io.IOException;
@@ -24,9 +22,10 @@ public class HttpBootstrap {
         AioQuickServer<HttpV2Entity> server = new AioQuickServer<HttpV2Entity>()
                 .setThreadNum(8)
                 .setProtocol(new HttpV2Protocol())
-                .setFilters(new QuickMonitorTimer<HttpV2Entity>())
+                .setWriteQueueSize(1)
+//                .setFilters(new QuickMonitorTimer<HttpV2Entity>())
                 .setProcessor(processor)
-                .setSsl(true)
+//                .setSsl(true)
                 .setClientAuth(ClientAuth.OPTIONAL)
                 .setKeyStore("server.jks", "storepass")
                 .setTrust("trustedCerts.jks", "storepass")

@@ -46,7 +46,7 @@ public class HttpProtocol implements Protocol<WinstoneRequest> {
         boolean returnEntity = false;//是否返回HttpEntity
         switch (request.getDecodePart()) {
             case HEAD:
-                if (request.delimiterFrameDecoder.decoder(buffer)) {
+                if (request.delimiterFrameDecoder.decode(buffer)) {
                     request.decodeHead();//消息头解码
                     if (request.getDecodePart() == HttpDecodePart.END) {
                         returnEntity = true;

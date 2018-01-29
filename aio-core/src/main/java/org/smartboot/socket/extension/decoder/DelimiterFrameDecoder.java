@@ -18,7 +18,7 @@ import java.util.List;
  * @author 三刀
  * @version V1.0 , 2017/10/20
  */
-public class DelimiterFrameDecoder {
+public class DelimiterFrameDecoder implements SmartDecoder{
     private byte[] endFLag;
     private int exceptIndex;
     private List<ByteBuffer> bufferList;
@@ -30,7 +30,7 @@ public class DelimiterFrameDecoder {
         bufferList.add(ByteBuffer.allocate(unitBufferSize));
     }
 
-    public boolean decoder(ByteBuffer byteBuffer) {
+    public boolean decode(ByteBuffer byteBuffer) {
         if (finishRead) {
             throw new RuntimeException("delimiter has finish read");
         }

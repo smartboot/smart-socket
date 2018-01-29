@@ -25,7 +25,7 @@ public class FormWithContentLengthStrategy implements PostDecodeStrategy {
         if (entity.bodyContentDecoder == null) {
             entity.bodyContentDecoder = new FixedLengthFrameDecoder(entity.getContentLength());
         }
-        if (entity.bodyContentDecoder.put(buffer)) {
+        if (entity.bodyContentDecoder.decode(buffer)) {
             ByteBuffer contentBuffer = entity.bodyContentDecoder.getBuffer();
             String[] headDatas = StringUtils.split(new String(contentBuffer.array(), contentBuffer.position(), contentBuffer.remaining()), "&");
             if (ArrayUtils.isEmpty(headDatas)) {

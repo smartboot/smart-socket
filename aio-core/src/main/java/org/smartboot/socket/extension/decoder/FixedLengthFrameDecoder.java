@@ -16,7 +16,7 @@ import java.nio.ByteBuffer;
  * @author 三刀
  * @version V1.0 , 2017/10/20
  */
-public class FixedLengthFrameDecoder {
+public class FixedLengthFrameDecoder implements SmartDecoder{
     private ByteBuffer buffer;
     private boolean finishRead;
 
@@ -28,7 +28,7 @@ public class FixedLengthFrameDecoder {
         }
     }
 
-    public boolean put(ByteBuffer byteBuffer) {
+    public boolean decode(ByteBuffer byteBuffer) {
         if (finishRead) {
             throw new RuntimeException("delimiter has finish read");
         }
