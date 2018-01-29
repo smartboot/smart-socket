@@ -212,8 +212,8 @@ public class AioSession<T> {
      *
      * @return
      */
-    public final int getSessionID() {
-        return sessionId;
+    public final String getSessionID() {
+        return "aiosession:" + sessionId + "-" + hashCode();
     }
 
     /**
