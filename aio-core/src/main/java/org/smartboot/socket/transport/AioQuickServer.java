@@ -18,6 +18,7 @@ import org.smartboot.socket.extension.ssl.SSLConfig;
 import org.smartboot.socket.extension.ssl.SSLService;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
@@ -40,9 +41,19 @@ public class AioQuickServer<T> {
     private WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
     private SSLService sslService;
 
+    /**
+     * 打印banner
+     *
+     * @param out
+     */
+    private static void printBanner(PrintStream out) {
+        out.println(IoServerConfig.BANNER);
+        out.println(" :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
+    }
+
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
-            Banner.printBanner(System.out);
+            printBanner(System.out);
         }
         //启动SSL服务
         if (config.isSsl()) {
@@ -164,7 +175,6 @@ public class AioQuickServer<T> {
         this.config.setReadBufferSize(size);
         return this;
     }
-
 
     public AioQuickServer<T> setKeyStore(String keyStoreFile, String keystorePassword) {
         sslConfig.setKeyFile(keyStoreFile);
