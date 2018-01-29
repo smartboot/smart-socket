@@ -33,7 +33,7 @@ public class P2PSession implements Session<BaseMessage> {
     /**
      * 当前会话唯一标识
      */
-    private int sessionId = 0;
+    private String sessionId;
     /**
      * 失效标识
      */
