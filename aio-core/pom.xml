@@ -49,6 +49,8 @@
             <properties>
                 <picUrl>https://git.oschina.net/uploads/75/351975_smartdms.jpg</picUrl>
             </properties>
+            <organization>smartboot</organization>
+            <organizationUrl>https://gitee.com/smartboot</organizationUrl>
         </developer>
     </developers>
 
