@@ -180,4 +180,15 @@ public class AioQuickClient<T> {
         sslConfig.setTrustPassword(trustPassword);
         return this;
     }
+
+    /**
+     * 设置输出队列缓冲区长度
+     *
+     * @param size
+     * @return
+     */
+    public AioQuickClient<T> setWriteQueueSize(int size) {
+        this.config.setWriteQueueSize(size);
+        return this;
+    }
 }
