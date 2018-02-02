@@ -8,17 +8,13 @@
 
 package org.smartboot.socket.http;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.math.NumberUtils;
-import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
-import org.smartboot.socket.extension.decoder.SmartDecoder;
 import org.smartboot.socket.http.strategy.PostDecodeStrategy;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,16 +39,8 @@ public class HttpV2Entity {
     public static final String RANGE = "Range";
     public static final String LOCATION = "Location";
     public static final String CONNECTION = "Connection";
-    private static final byte[] headEndBytes = {'\r', '\n', '\r', '\n'};
-    public SmartDecoder decoder = new DelimiterFrameDecoder(headEndBytes, 256);
-    public SmartHttpInputStream smartHttpInputStream = new SmartHttpInputStream(1);
-    /**
-     * 0:消息头
-     * 1:消息体
-     * 2:结束
-     */
-    HttpPart partFlag = HttpPart.HEAD;
     PostDecodeStrategy postDecodeStrategy;
+    private InputStream inputStream = null;
     private int contentLength = -1;
     private String method, url, protocol, contentType, decodeError;
     private Map<String, String> headMap = new HashMap<String, String>();
@@ -61,39 +49,24 @@ public class HttpV2Entity {
     public HttpV2Entity(AioSession<HttpV2Entity> session) {
     }
 
-    public void decodeHead() {
-        ByteBuffer headBuffer = decoder.getBuffer();
-        String[] headDatas = StringUtils.split(new String(headBuffer.array(), 0, headBuffer.remaining()), "\r\n");
-        if (ArrayUtils.isEmpty(headDatas)) {
-            throw new RuntimeException("解码异常");
-        }
-        //请求行解码
-        String[] requestLineData = StringUtils.split(headDatas[0], " ");
-        if (ArrayUtils.getLength(requestLineData) != 3) {
-            throw new RuntimeException("请求行解码异常");
-        }
-        method = requestLineData[0];
-        url = requestLineData[1];
-        protocol = requestLineData[2];
-
-        for (int i = 1; i < headDatas.length; i++) {
-            String[] lineDatas = StringUtils.split(headDatas[i], ":");
-            setHeader(lineDatas[0].trim(), lineDatas[1].trim());
-        }
-        contentType = headMap.get(CONTENT_TYPE);
-        contentLength = NumberUtils.toInt(headMap.get(CONTENT_LENGTH), -1);
-    }
 
     public InputStream getInputStream() {
-        return smartHttpInputStream;
+        return inputStream;
+    }
+
+    void setInputStream(InputStream inputStream) {
+        this.inputStream = inputStream;
     }
 
     public void setHeader(String name, String value) {
         headMap.put(name, value);
+        if (StringUtils.equals(name, CONTENT_LENGTH)) {
+            contentLength = NumberUtils.toInt(value, -1);
+        }
     }
 
-    public Map<String, String> getHeadMap() {
-        return headMap;
+    public String getHeader(String key) {
+        return headMap.get(key);
     }
 
 
@@ -153,4 +126,5 @@ public class HttpV2Entity {
     public void setParamMap(Map<String, String> paramMap) {
         this.paramMap = paramMap;
     }
+
 }

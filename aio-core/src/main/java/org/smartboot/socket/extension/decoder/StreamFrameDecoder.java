@@ -16,13 +16,20 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 流式解码器(未严格测试)
+ *
  * @author 三刀
  * @version V1.0 , 2017/10/21
  */
 public class StreamFrameDecoder {
     private BinaryBuffer buffer = new BinaryBuffer(1024);
 
-    public boolean put(ByteBuffer byteBuffer) {
+    private int length;
+
+    public StreamFrameDecoder(int length) {
+        this.length = length;
+    }
+
+    public boolean decode(ByteBuffer byteBuffer) {
         if (buffer.binWriteLength == buffer.contentLength) {
             return false;
         }
@@ -77,10 +84,10 @@ public class StreamFrameDecoder {
          */
         int takeIndex;
 
-    /*
-     * Concurrency control uses the classic two-condition algorithm
-     * found in any textbook.
-     */
+        /*
+         * Concurrency control uses the classic two-condition algorithm
+         * found in any textbook.
+         */
         /**
          * items index for next put, offer, or add
          */

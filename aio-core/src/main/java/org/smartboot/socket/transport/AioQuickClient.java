@@ -43,6 +43,19 @@ public class AioQuickClient<T> {
 
     private SSLConfig sslConfig = new SSLConfig();
 
+    public AioQuickClient() {
+    }
+
+    /**
+     * @param host             远程服务器地址
+     * @param port             远程服务器端口号
+     * @param protocol         协议编解码
+     * @param messageProcessor 消息处理器
+     */
+    public AioQuickClient(String host, int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
+        connect(host, port).setProtocol(protocol).setProcessor(messageProcessor);
+    }
+
     /**
      * @param asynchronousChannelGroup
      * @throws IOException

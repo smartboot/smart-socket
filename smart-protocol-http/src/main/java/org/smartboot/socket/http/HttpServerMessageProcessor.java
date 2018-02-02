@@ -80,7 +80,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
         ByteBuffer buffer = ByteBuffer.wrap(("HTTP/1.1 200 OK\n" +
                 "Server: seer/1.4.4\n" +
                 "Content-Length: 24\n" +
-                ("Keep-Alive".equalsIgnoreCase(entry.getHeadMap().get("Connection")) ?
+                ("Keep-Alive".equalsIgnoreCase(entry.getHeader("Connection")) ?
                         "Connection: keep-alive\n" : ""
                 ) +
                 "\n" +
@@ -92,7 +92,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
             LOGGER.catching(e);
         }
 //        System.out.println(entry);
-        if (!"Keep-Alive".equalsIgnoreCase(entry.getHeadMap().get("Connection"))) {
+        if (!"Keep-Alive".equalsIgnoreCase(entry.getHeader("Connection"))) {
             session.close(false);
         }
     }

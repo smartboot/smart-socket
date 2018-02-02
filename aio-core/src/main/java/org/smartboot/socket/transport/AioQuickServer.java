@@ -41,6 +41,18 @@ public class AioQuickServer<T> {
     private WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
     private SSLService sslService;
 
+    public AioQuickServer() {
+    }
+
+    /**
+     * @param port             绑定服务端口号
+     * @param protocol         协议编解码
+     * @param messageProcessor 消息处理器
+     */
+    public AioQuickServer(int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
+        bind(port).setProtocol(protocol).setProcessor(messageProcessor);
+    }
+
     /**
      * 打印banner
      *
@@ -68,7 +80,7 @@ public class AioQuickServer<T> {
             }
         });
         this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()), 1000);
-        serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
+                serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
             @Override
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
                 serverSocketChannel.accept(attachment, this);
