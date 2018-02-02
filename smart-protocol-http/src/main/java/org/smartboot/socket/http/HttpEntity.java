@@ -11,7 +11,6 @@ package org.smartboot.socket.http;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.math.NumberUtils;
-import org.smartboot.socket.http.strategy.PostDecodeStrategy;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.InputStream;
@@ -21,7 +20,7 @@ import java.util.Map;
 /**
  * Created by 三刀 on 2017/6/20.
  */
-public class HttpV2Entity {
+public class HttpEntity {
 
     public static final String AUTHORIZATION = "Authorization";
     public static final String CACHE_CONTROL = "Cache-Control";
@@ -39,14 +38,13 @@ public class HttpV2Entity {
     public static final String RANGE = "Range";
     public static final String LOCATION = "Location";
     public static final String CONNECTION = "Connection";
-    PostDecodeStrategy postDecodeStrategy;
     private InputStream inputStream = null;
     private int contentLength = -1;
-    private String method, url, protocol, contentType, decodeError;
+    private String method, url, protocol, contentType;
     private Map<String, String> headMap = new HashMap<String, String>();
     private Map<String, String> paramMap = new HashMap<String, String>();
 
-    public HttpV2Entity(AioSession<HttpV2Entity> session) {
+    public HttpEntity(AioSession<HttpEntity> session) {
     }
 
 
@@ -62,6 +60,8 @@ public class HttpV2Entity {
         headMap.put(name, value);
         if (StringUtils.equals(name, CONTENT_LENGTH)) {
             contentLength = NumberUtils.toInt(value, -1);
+        } else if (StringUtils.startsWith(name, CONTENT_TYPE)) {
+            contentType = value;
         }
     }
 
@@ -94,14 +94,6 @@ public class HttpV2Entity {
         this.protocol = protocol;
     }
 
-    public String getDecodeError() {
-        return decodeError;
-    }
-
-    public void setDecodeError(String decodeError) {
-        this.decodeError = decodeError;
-    }
-
     public String getContentType() {
         return contentType;
     }
@@ -110,21 +102,14 @@ public class HttpV2Entity {
         return contentLength;
     }
 
-    public void setContentLength(int contentLength) {
-        this.contentLength = contentLength;
-    }
-
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
     }
 
-    public Map<String, String> getParamMap() {
-        return paramMap;
-    }
 
-    public void setParamMap(Map<String, String> paramMap) {
-        this.paramMap = paramMap;
+    public void setParam(String key, String val) {
+        this.paramMap.put(key, val);
     }
 
 }

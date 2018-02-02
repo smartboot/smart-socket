@@ -6,7 +6,7 @@
  * Author: sandao
  */
 
-package org.smartboot.socket.http.strategy;
+package org.smartboot.socket.http;
 
 /**
  * @author 三刀

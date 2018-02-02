@@ -25,12 +25,12 @@ import java.util.concurrent.Executors;
  *
  * @author 三刀
  */
-public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2Entity> {
+public final class HttpServerMessageProcessor implements MessageProcessor<HttpEntity> {
     private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
-    public void process(final AioSession<HttpV2Entity> session, final HttpV2Entity entry) {
+    public void process(final AioSession<HttpEntity> session, final HttpEntity entry) {
         //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
         if (StringUtils.equalsIgnoreCase(entry.getMethod(), "POST")) {
             executorService.submit(new Runnable() {
@@ -49,11 +49,11 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpV2
     }
 
     @Override
-    public void stateEvent(AioSession<HttpV2Entity> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent(AioSession<HttpEntity> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
 
     }
 
-    private void process0(AioSession<HttpV2Entity> session, HttpV2Entity entry) {
+    private void process0(AioSession<HttpEntity> session, HttpEntity entry) {
 //        System.out.println(entry);
 //        InputStream in=entry.getInputStream();
 //        try {

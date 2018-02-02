@@ -15,47 +15,32 @@ import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.extension.decoder.StreamFrameDecoder;
-import org.smartboot.socket.http.strategy.BodyTypeEnum;
-import org.smartboot.socket.http.strategy.FormWithContentLengthStrategy;
-import org.smartboot.socket.http.strategy.PostDecodeStrategy;
-import org.smartboot.socket.http.strategy.StreamWithContentLengthStrategy;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Http消息解析器,仅解析Header部分即可
  * Created by 三刀 on 2017/6/20.
  */
-public class HttpV2Protocol implements Protocol<HttpV2Entity> {
-    private static final Logger LOGGER = LogManager.getLogger(HttpV2Protocol.class);
+public class HttpProtocol implements Protocol<HttpEntity> {
+    private static final Logger LOGGER = LogManager.getLogger(HttpProtocol.class);
     private static final byte[] LINE_END_BYTES = {'\r', '\n'};
-    private static final String HTTP_ENTITY = "_http_entity_";
-    private static final String STREAM_BODY = "STREAM_BODY";
-    private static final String BLOCK_BODY = "BLOCK_BODY";
-    private Map<String, PostDecodeStrategy> strategyMap = new HashMap<>();
-
-    {
-        strategyMap.put(BLOCK_BODY, new FormWithContentLengthStrategy());
-        strategyMap.put(STREAM_BODY, new StreamWithContentLengthStrategy());
-    }
 
     @Override
-    public HttpV2Entity decode(ByteBuffer buffer, AioSession<HttpV2Entity> session, boolean eof) {
+    public HttpEntity decode(ByteBuffer buffer, AioSession<HttpEntity> session, boolean eof) {
 
         HttpDecodeUnit decodeUnit = null;
         if (session.getAttachment() == null) {
             decodeUnit = new HttpDecodeUnit();
-            decodeUnit.entity = new HttpV2Entity(session);
+            decodeUnit.entity = new HttpEntity(session);
             decodeUnit.partEnum = HttpPartEnum.REQUEST_LINE;
             decodeUnit.delimiterFrameDecoder = new DelimiterFrameDecoder(LINE_END_BYTES, 256);
             session.setAttachment(decodeUnit);
         } else {
             decodeUnit = (HttpDecodeUnit) session.getAttachment();
         }
-        HttpV2Entity entity = decodeUnit.entity;
+        HttpEntity entity = decodeUnit.entity;
 
         boolean returnEntity = false;//是否返回HttpEntity
         boolean continueDecode = true;//是否继续读取数据
@@ -105,7 +90,7 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
     }
 
     @Override
-    public ByteBuffer encode(HttpV2Entity httpEntity, AioSession<HttpV2Entity> session) {
+    public ByteBuffer encode(HttpEntity httpEntity, AioSession<HttpEntity> session) {
         return null;
     }
 
@@ -160,7 +145,7 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
         }
         unit.partEnum = HttpPartEnum.BODY;
         //识别Body解码器
-        String contentType = unit.entity.getHeader(HttpV2Entity.CONTENT_TYPE);
+        String contentType = unit.entity.getHeader(HttpEntity.CONTENT_TYPE);
         int contentLength = unit.entity.getContentLength();
         if (StringUtils.startsWith(contentType, "multipart/form-data")) {
             unit.bodyTypeEnum = BodyTypeEnum.STREAM;
@@ -176,12 +161,13 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
         switch (unit.bodyTypeEnum) {
             case FORM:
                 if (unit.fixedLengthFrameDecoder.decode(buffer)) {
-
+                    decodeBodyForm(unit);
+                    unit.partEnum = HttpPartEnum.END;
                 }
                 break;
             case STREAM:
                 if (unit.streamFrameDecoder.decode(buffer)) {
-
+                    unit.partEnum = HttpPartEnum.END;
                 }
                 break;
             default:
@@ -189,23 +175,18 @@ public class HttpV2Protocol implements Protocol<HttpV2Entity> {
         }
     }
 
-    private void selectDecodeStrategy(HttpV2Entity entity) {
-        if (entity.getContentLength() > 0) {
-            if (entity.getContentLength() > 0 && StringUtils.startsWith(entity.getContentType(), "application/x-www-form-urlencoded")) {
-                entity.postDecodeStrategy = strategyMap.get(BLOCK_BODY);
-            } else {
-                entity.postDecodeStrategy = strategyMap.get(STREAM_BODY);
-            }
-        } else {
-            throw new UnsupportedOperationException();
+    private void decodeBodyForm(HttpDecodeUnit unit) {
+        ByteBuffer buffer = unit.fixedLengthFrameDecoder.getBuffer();
+        String[] paramArray = StringUtils.split(new String(buffer.array(), buffer.position(), buffer.remaining()), "&");
+        for (int i = 0; i < paramArray.length; i++) {
+            unit.entity.setParam(StringUtils.substringBefore(paramArray[i], "=").trim(), StringUtils.substringAfter(paramArray[i], "=").trim());
         }
-        LOGGER.info(entity.postDecodeStrategy);
     }
 
     class HttpDecodeUnit {
 
 
-        HttpV2Entity entity;
+        HttpEntity entity;
         /**
          * 当前解码阶段
          */
