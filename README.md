@@ -31,8 +31,8 @@ smart-socket的核心代码
 |消息数|224484842|
 
 ## 标题党
-- [每秒处理 500W 条消息，人、机为之颤抖](https://www.oschina.net/news/90988/smart-socket-1-2-0-beta)
-- [再见，Netty！你好，smart-socket!](https://www.oschina.net/news/90988/smart-socket-1-2-0-beta)
+- [《每秒处理 500W 条消息，人、机为之颤抖》](https://www.oschina.net/news/90988/smart-socket-1-2-0-beta)
+- [《再见，Netty！你好，smart-socket!》](https://www.oschina.net/news/90988/smart-socket-1-2-0-beta)
 
 ## 社区互助
 如果您在使用的过程中碰到问题，可以通过下面几个途径寻求帮助，同时我们也鼓励资深用户给新人提供帮助。
