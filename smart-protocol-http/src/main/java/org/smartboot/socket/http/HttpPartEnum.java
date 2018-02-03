@@ -12,7 +12,7 @@ package org.smartboot.socket.http;
  * @author 三刀
  * @version V1.0 , 2017/8/30
  */
-public enum HttpPartEnum {
+enum HttpPartEnum {
     /**
      * 请求行
      */

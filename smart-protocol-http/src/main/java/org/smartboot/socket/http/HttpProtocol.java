@@ -163,6 +163,7 @@ public class HttpProtocol implements Protocol<HttpRequest> {
         } else {
             unit.bodyTypeEnum = BodyTypeEnum.FORM;
             unit.formBodyDecoder = new FixedLengthFrameDecoder(contentLength);
+            unit.entity.setInputStream(new EmptyInputStream());
         }
     }
 

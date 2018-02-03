@@ -12,7 +12,7 @@ package org.smartboot.socket.http;
  * @author 三刀
  * @version V1.0 , 2018/2/2
  */
-public enum BodyTypeEnum {
+enum BodyTypeEnum {
 
     /**
      * form表单
