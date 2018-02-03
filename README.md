@@ -30,6 +30,10 @@ smart-socket的核心代码
 |消息大小|33B|
 |消息数|224484842|
 
+## 标题党
+- [每秒处理 500W 条消息，人、机为之颤抖](https://www.oschina.net/news/90988/smart-socket-1-2-0-beta)
+- [再见，Netty！你好，smart-socket!](https://www.oschina.net/news/90988/smart-socket-1-2-0-beta)
+
 ## 社区互助
 如果您在使用的过程中碰到问题，可以通过下面几个途径寻求帮助，同时我们也鼓励资深用户给新人提供帮助。
 
@@ -38,9 +42,9 @@ smart-socket的核心代码
 3. [开源问答](https://www.oschina.net/question/tag/smart-socket)
 
 ## 参与贡献
-我们非常欢迎你的贡献，你可以通过以下方式和我们一起共建 :smiley:：
+我们非常欢迎您的贡献，您可以通过以下方式和我们一起共建 :smiley:：
 
-- 在你的公司或个人项目中使用 smart-socket。
+- 在您的公司或个人项目中使用 smart-socket。
 - 通过 [Issue](https://gitee.com/smartboot/smart-socket/issues) 报告 bug 或进行咨询。
 - 提交 [Pull Request](https://gitee.com/smartboot/smart-socket/pulls) 改进 smart-socket 的代码。
 - 在开源中国发表smart-socket相关的技术性文章。
