@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * Created by 三刀 on 2017/6/20.
  */
-public class HttpEntity {
+public class HttpRequest {
 
     public static final String AUTHORIZATION = "Authorization";
     public static final String CACHE_CONTROL = "Cache-Control";
@@ -44,7 +44,7 @@ public class HttpEntity {
     private Map<String, String> headMap = new HashMap<String, String>();
     private Map<String, String> paramMap = new HashMap<String, String>();
 
-    public HttpEntity(AioSession<HttpEntity> session) {
+    public HttpRequest(AioSession<HttpRequest> session) {
     }
 
 

@@ -25,14 +25,14 @@ import java.util.concurrent.Executors;
  *
  * @author 三刀
  */
-public final class HttpServerMessageProcessor implements MessageProcessor<HttpEntity> {
+public final class HttpServerMessageProcessor implements MessageProcessor<HttpRequest> {
     private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
-    public void process(final AioSession<HttpEntity> session, final HttpEntity entry) {
+    public void process(final AioSession<HttpRequest> session, final HttpRequest entry) {
         //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
-        if (StringUtils.equalsIgnoreCase(entry.getMethod(), "POST")) {
+        if (StringUtils.equalsIgnoreCase(entry.getMethod(), "POST") && StringUtils.equals(entry.getContentType(), "multipart/form-data")) {
             executorService.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -49,11 +49,11 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpEn
     }
 
     @Override
-    public void stateEvent(AioSession<HttpEntity> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent(AioSession<HttpRequest> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
 
     }
 
-    private void process0(AioSession<HttpEntity> session, HttpEntity entry) {
+    private void process0(AioSession<HttpRequest> session, HttpRequest entry) {
 //        System.out.println(entry);
 //        InputStream in=entry.getInputStream();
 //        try {

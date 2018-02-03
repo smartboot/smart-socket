@@ -19,7 +19,7 @@ public class HttpBootstrap {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
 //        config.setFilters(new SmartFilter[] { new QuickMonitorTimer<HttpEntity>() });
         HttpServerMessageProcessor processor = new HttpServerMessageProcessor();
-        AioQuickServer<HttpEntity> server = new AioQuickServer<HttpEntity>(8888, new HttpProtocol(), processor)
+        AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(8888, new HttpProtocol(), processor)
                 .setThreadNum(8)
                 .setWriteQueueSize(1)
 //                .setFilters(new QuickMonitorTimer<HttpV2Entity>())
