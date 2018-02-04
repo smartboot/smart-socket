@@ -11,7 +11,7 @@ smart-socket发布了两种类型的包供大家选用：
 		    <version>1.3.1</version>
 		</dependency>
 
-2. aio-pro，面向资深用户提供的进阶版，不仅包含了aio-core的所有功能，还提供了TLS/SSL通讯功能，并提供一些用户辅助编解码的工具类。
+2. aio-pro，面向资深用户提供的进阶版，不仅包含了aio-core的所有功能，还提供了TLS/SSL通讯功能，并提供一些用于辅助编解码的工具类。
 
 	    <dependency>
 	        <groupId>org.smartboot.socket</groupId>
