@@ -1,12 +1,26 @@
 ## smart-socket
 smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、稳定性、接口设计各方面都达到极致。如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
 ### Maven
-    <dependency>
-        <groupId>org.smartboot.socket</groupId>
-        <artifactId>aio-core</artifactId>
-        <version>1.3.1</version>
-    </dependency>
+smart-socket发布了两种类型的包供大家选用：
 
+1. aio-core，针对Socket的初级用户提供的开发包，仅提供基本的AIO通讯服务。
+		
+		<dependency>
+		    <groupId>org.smartboot.socket</groupId>
+		    <artifactId>aio-core</artifactId>
+		    <version>1.3.1</version>
+		</dependency>
+
+2. aio-pro，面向资深用户提供的进阶版，不仅包含了aio-core的所有功能，还提供了TLS/SSL通讯功能，并提供一些用户辅助编解码的工具类。
+
+	    <dependency>
+	        <groupId>org.smartboot.socket</groupId>
+	        <artifactId>aio-pro</artifactId>
+	        <version>{还未发布}</version>
+	    </dependency>
+   
+ 
+ 
 [开发手册](http://smartsocket.mydoc.io/)（很抱歉个人开源项目，文档更新会有点滞后）
 
 ## 工程结构
