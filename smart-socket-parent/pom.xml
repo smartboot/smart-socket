@@ -1,32 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2018, org.smartboot. All rights reserved.
+  ~ project name: smart-socket
+  ~ file name: pom.xml
+  ~ Date: 2018-02-04
+  ~ Author: sandao
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <name>smart-socket</name>
+
+    <name>smart-socket-parent</name>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.smartboot.socket</groupId>
-    <artifactId>smart-socket</artifactId>
-    <version>1.0.0</version>
+    <artifactId>smart-socket-parent</artifactId>
+    <version>1.3.1</version>
 
     <packaging>pom</packaging>
-    <parent>
-        <groupId>org.smartboot.socket</groupId>
-        <artifactId>smart-socket-parent</artifactId>
-        <version>1.3.1</version>
-    </parent>
+
     <properties>
-        <commons.lang.version>2.6</commons.lang.version>
+        <log4j.version>2.10.0</log4j.version>
+        <aio.version>1.3.1</aio.version>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.smartboot.socket</groupId>
-                <artifactId>smart-protocol-p2p</artifactId>
-                <version>${project.version}</version>
+                <artifactId>aio-core</artifactId>
+                <version>${aio.version}</version>
             </dependency>
             <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>${commons.lang.version}</version>
+                <groupId>org.smartboot.socket</groupId>
+                <artifactId>aio-pro</artifactId>
+                <version>${aio.version}</version>
+            </dependency>
+            <!-- 日志系统 -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -58,9 +75,4 @@
             <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
         </pluginRepository>
     </pluginRepositories>
-    <modules>
-        <module>smart-protocol-p2p</module>
-        <module>smart-protocol-http</module>
-        <module>smart-protocol-servlet</module>
-    </modules>
 </project>
