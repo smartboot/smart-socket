@@ -52,7 +52,7 @@ class HttpOutputStream extends OutputStream {
         ByteBuffer headBuffer = ByteBuffer.allocate(512);
         headBuffer.put(getBytes(httpResponse.getProtocol()))
                 .put(Consts.SP)
-                .putInt(httpResponse.getHttpStatus().value())
+                .put(getBytes(String.valueOf(httpResponse.getHttpStatus().value())))
                 .put(Consts.SP)
                 .put(getBytes(httpResponse.getHttpStatus().getReasonPhrase()))
                 .put(Consts.CR).put(Consts.LF);
@@ -90,8 +90,13 @@ class HttpOutputStream extends OutputStream {
             committed = true;
         }
         cacheBuffer.flip();
-        aioSession.write(cacheBuffer);
-        cacheBuffer = ByteBuffer.allocate(512);
+        if (cacheBuffer.hasRemaining()) {
+            aioSession.write(cacheBuffer);
+            cacheBuffer = ByteBuffer.allocate(512);
+        } else {
+            cacheBuffer.clear();
+        }
+
     }
 
     @Override

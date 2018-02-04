@@ -56,15 +56,14 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpRe
         HttpResponse httpResponse = new HttpResponse(entry.getProtocol());
         HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
         httpResponse.setOutputStream(outputStream);
-
-        httpResponse.setHttpStatus(HttpStatus.NOT_FOUND);
+        httpResponse.setHttpStatus(HttpStatus.OK);
         httpResponse.setHeader("Content-Length", "24");
         try {
             outputStream.write("smart-socket http server".getBytes());
             outputStream.flush();
             outputStream.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.catching(e);
         }
     }
 
