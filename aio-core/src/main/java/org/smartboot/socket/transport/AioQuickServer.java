@@ -62,6 +62,10 @@ public class AioQuickServer<T> {
         if (config.isBannerEnabled()) {
             printBanner(System.out);
         }
+        start0();
+    }
+
+    protected final void start0() throws IOException {
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
             byte index = 0;
 

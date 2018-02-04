@@ -52,11 +52,10 @@ public class AioSSLQuickServer<T> extends AioQuickServer<T> {
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
             printBanner(System.out);
-            config.setBannerEnabled(false);
         }
         //启动SSL服务
         sslService = new SSLService(sslConfig);
-        super.start();
+        start0();
     }
 
     @Override
