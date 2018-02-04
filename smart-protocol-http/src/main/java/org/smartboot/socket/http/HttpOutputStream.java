@@ -19,11 +19,14 @@ import java.util.Map;
  * @author 三刀
  * @version V1.0 , 2018/2/3
  */
-public class HttpOutputStream extends OutputStream {
+class HttpOutputStream extends OutputStream {
 
     private AioSession aioSession;
 
     private HttpResponse httpResponse;
+
+    private ByteBuffer cacheBuffer = ByteBuffer.allocate(512);
+    private boolean committed = false, closed = false;
 
     public HttpOutputStream(AioSession aioSession, HttpResponse httpResponse) {
         this.aioSession = aioSession;
@@ -32,7 +35,17 @@ public class HttpOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-
+        if (cacheBuffer.hasRemaining()) {
+            cacheBuffer.put((byte) b);
+        } else {
+            if (!committed) {
+                writeHead();
+                committed = true;
+            }
+            cacheBuffer.flip();
+            aioSession.write(cacheBuffer);
+            cacheBuffer = ByteBuffer.allocate(512);
+        }
     }
 
     private void writeHead() throws IOException {
@@ -68,6 +81,27 @@ public class HttpOutputStream extends OutputStream {
             aioSession.write(headBuffer);
             aioSession.write(ByteBuffer.wrap(new byte[]{Consts.CR, Consts.LF}));
         }
+    }
+
+    @Override
+    public void flush() throws IOException {
+        if (!committed) {
+            writeHead();
+            committed = true;
+        }
+        cacheBuffer.flip();
+        aioSession.write(cacheBuffer);
+        cacheBuffer = ByteBuffer.allocate(512);
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (closed) {
+            return;
+        }
+        flush();
+        aioSession.close(false);
+        closed = true;
     }
 
     private byte[] getBytes(String str) {

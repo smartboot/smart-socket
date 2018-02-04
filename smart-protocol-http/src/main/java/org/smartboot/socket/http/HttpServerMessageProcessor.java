@@ -16,7 +16,6 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -54,51 +53,18 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpRe
     }
 
     private void process0(AioSession<HttpRequest> session, HttpRequest entry) {
-//        System.out.println(entry);
-//        InputStream in=entry.getInputStream();
-//        try {
-//            FileOutputStream fos=new FileOutputStream("/Users/zhengjunwei/Downloads/1.png");
-//
-//        byte[] data=new byte[1023];
-//        int size=0;
-//        try {
-//            while((size=in.read(data))!=-1){
-//                fos.write(data,0,size);
-////             sb.append(new String(data,0,size));
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//            try {
-//                fos.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        }
         HttpResponse httpResponse = new HttpResponse(entry.getProtocol());
         HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
         httpResponse.setOutputStream(outputStream);
 
-
-        ByteBuffer buffer = ByteBuffer.wrap(("HTTP/1.1 200 OK\n" +
-                "Server: seer/1.4.4\n" +
-                "Content-Length: 24\n" +
-                ("Keep-Alive".equalsIgnoreCase(entry.getHeader("Connection")) ?
-                        "Connection: keep-alive\n" : ""
-                ) +
-                "\n" +
-                "smart-socket http server").getBytes());
+        httpResponse.setHttpStatus(HttpStatus.NOT_FOUND);
+        httpResponse.setHeader("Content-Length", "24");
         try {
-//            buffer.flip();
-            session.write(buffer);
+            outputStream.write("smart-socket http server".getBytes());
+            outputStream.flush();
+            outputStream.close();
         } catch (IOException e) {
-            LOGGER.catching(e);
-        }
-//        System.out.println(entry);
-        if (!"Keep-Alive".equalsIgnoreCase(entry.getHeader("Connection"))) {
-            session.close(false);
+            e.printStackTrace();
         }
     }
 

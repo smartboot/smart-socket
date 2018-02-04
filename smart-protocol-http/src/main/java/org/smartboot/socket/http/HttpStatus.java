@@ -20,7 +20,7 @@ package org.smartboot.socket.http;
  * @see <a href="http://www.iana.org/assignments/http-status-codes">HTTP Status Code Registry</a>
  * @see <a href="http://en.wikipedia.org/wiki/List_of_HTTP_status_codes">List of HTTP status codes - Wikipedia</a>
  */
-public enum HttpStatus {
+enum HttpStatus {
 
     // 1xx Informational
 

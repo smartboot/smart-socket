@@ -10,7 +10,7 @@ package org.smartboot.socket.http;
 
 import java.nio.charset.Charset;
 
-public interface Consts {
+interface Consts {
 
     /**
      * Horizontal space

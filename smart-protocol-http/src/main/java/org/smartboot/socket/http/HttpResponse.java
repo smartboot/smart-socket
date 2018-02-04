@@ -54,6 +54,10 @@ public class HttpResponse {
         return headMap;
     }
 
+    public void setHeader(String name, String value) {
+        headMap.put(name, value);
+    }
+
     String getProtocol() {
         return protocol;
     }

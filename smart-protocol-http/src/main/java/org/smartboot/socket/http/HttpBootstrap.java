@@ -8,27 +8,18 @@
 
 package org.smartboot.socket.http;
 
-import org.smartboot.socket.extension.ssl.ClientAuth;
+import org.smartboot.socket.Filter;
+import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.transport.AioQuickServer;
-import org.smartboot.socket.transport.AioSSLQuickServer;
 
 import java.io.IOException;
 
 public class HttpBootstrap {
 
-    public static void main(String[] args) throws ClassNotFoundException {
+    public static void main(String[] args) {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
-//        config.setFilters(new SmartFilter[] { new QuickMonitorTimer<HttpEntity>() });
-        HttpServerMessageProcessor processor = new HttpServerMessageProcessor();
-        AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(8888, new HttpProtocol(), processor)
-//                .setFilters(new QuickMonitorTimer<HttpV2Entity>())
-//                .setSsl(true)
-//                .setClientAuth(ClientAuth.OPTIONAL)
-//                .setKeyStore("server.jks", "storepass")
-//                .setTrust("trustedCerts.jks", "storepass")
-//                .setKeyPassword("keypass")
-                .setThreadNum(8)
-                .setWriteQueueSize(1);
+        AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(8888, new HttpProtocol(), new HttpServerMessageProcessor());
+        server.setFilters(new Filter[]{new QuickMonitorTimer<HttpRequest>()});
         try {
             server.start();
         } catch (IOException e) {
