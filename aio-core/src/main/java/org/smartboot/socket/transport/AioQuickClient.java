@@ -14,8 +14,6 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.extension.ssl.SSLConfig;
-import org.smartboot.socket.extension.ssl.SSLService;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -30,18 +28,15 @@ import java.util.concurrent.ThreadFactory;
  */
 public class AioQuickClient<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickClient.class);
-    private AsynchronousSocketChannel socketChannel = null;
+    protected AsynchronousSocketChannel socketChannel = null;
     /**
      * IO事件处理线程组
      */
-    private AsynchronousChannelGroup asynchronousChannelGroup;
-    private SSLService sslService;
+    protected AsynchronousChannelGroup asynchronousChannelGroup;
     /**
      * 客户端服务配置
      */
-    private IoServerConfig<T> config = new IoServerConfig<T>();
-
-    private SSLConfig sslConfig = new SSLConfig();
+    protected IoServerConfig<T> config = new IoServerConfig<T>();
 
     public AioQuickClient() {
     }
@@ -63,20 +58,10 @@ public class AioQuickClient<T> {
      * @throws InterruptedException
      */
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
-        //启动SSL服务
-        if (config.isSsl()) {
-            sslConfig.setClientMode(true);
-            sslService = new SSLService(sslConfig);
-        }
         this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
-        AioSession session;
-        if (config.isSsl()) {
-            session = new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), sslService);
-        } else {
-            session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
-        }
+        AioSession session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
         session.initSession();
     }
 
@@ -87,7 +72,7 @@ public class AioQuickClient<T> {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    public void start() throws IOException, ExecutionException, InterruptedException {
+    public final void start() throws IOException, ExecutionException, InterruptedException {
         this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -100,7 +85,7 @@ public class AioQuickClient<T> {
     /**
      * 停止客户端服务
      */
-    public void shutdown() {
+    public final void shutdown() {
         if (socketChannel != null) {
             try {
                 socketChannel.close();
@@ -121,7 +106,7 @@ public class AioQuickClient<T> {
      * @param port
      * @return
      */
-    public AioQuickClient<T> connect(String host, int port) {
+    public final AioQuickClient<T> connect(String host, int port) {
         this.config.setHost(host);
         this.config.setPort(port);
         return this;
@@ -133,7 +118,7 @@ public class AioQuickClient<T> {
      * @param protocol
      * @return
      */
-    public AioQuickClient<T> setProtocol(Protocol<T> protocol) {
+    public final AioQuickClient<T> setProtocol(Protocol<T> protocol) {
         this.config.setProtocol(protocol);
         return this;
     }
@@ -144,7 +129,7 @@ public class AioQuickClient<T> {
      * @param filters
      * @return
      */
-    public AioQuickClient<T> setFilters(Filter<T>[] filters) {
+    public final AioQuickClient<T> setFilters(Filter<T>[] filters) {
         this.config.setFilters(filters);
         return this;
     }
@@ -155,13 +140,8 @@ public class AioQuickClient<T> {
      * @param processor
      * @return
      */
-    public AioQuickClient<T> setProcessor(MessageProcessor<T> processor) {
+    public final AioQuickClient<T> setProcessor(MessageProcessor<T> processor) {
         this.config.setProcessor(processor);
-        return this;
-    }
-
-    public AioQuickClient<T> setSsl(boolean flag) {
-        this.config.setSsl(flag);
         return this;
     }
 
@@ -171,26 +151,8 @@ public class AioQuickClient<T> {
      * @param size
      * @return
      */
-    public AioQuickClient<T> setReadBufferSize(int size) {
+    public final AioQuickClient<T> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
-        return this;
-    }
-
-    public AioQuickClient<T> setKeyStore(String keyStoreFile, String keystorePassword) {
-        sslConfig.setKeyFile(keyStoreFile);
-        sslConfig.setKeystorePassword(keystorePassword);
-        return this;
-    }
-
-
-    public AioQuickClient<T> setKeyPassword(String keyPassword) {
-        sslConfig.setKeyPassword(keyPassword);
-        return this;
-    }
-
-    public AioQuickClient<T> setTrust(String trustFile, String trustPassword) {
-        sslConfig.setTrustFile(trustFile);
-        sslConfig.setTrustPassword(trustPassword);
         return this;
     }
 
@@ -200,7 +162,7 @@ public class AioQuickClient<T> {
      * @param size
      * @return
      */
-    public AioQuickClient<T> setWriteQueueSize(int size) {
+    public final AioQuickClient<T> setWriteQueueSize(int size) {
         this.config.setWriteQueueSize(size);
         return this;
     }

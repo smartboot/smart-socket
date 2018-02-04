@@ -13,9 +13,6 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.extension.ssl.ClientAuth;
-import org.smartboot.socket.extension.ssl.SSLConfig;
-import org.smartboot.socket.extension.ssl.SSLService;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -32,14 +29,12 @@ import java.util.concurrent.ThreadFactory;
  */
 public class AioQuickServer<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickServer.class);
-    private AsynchronousServerSocketChannel serverSocketChannel = null;
-    private AsynchronousChannelGroup asynchronousChannelGroup;
-    private IoServerConfig<T> config = new IoServerConfig<>();
-    private SSLConfig sslConfig = new SSLConfig();
+    protected AsynchronousServerSocketChannel serverSocketChannel = null;
+    protected AsynchronousChannelGroup asynchronousChannelGroup;
+    protected IoServerConfig<T> config = new IoServerConfig<>();
 
-    private ReadCompletionHandler<T> aioReadCompletionHandler = new ReadCompletionHandler<>();
-    private WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
-    private SSLService sslService;
+    protected ReadCompletionHandler<T> aioReadCompletionHandler = new ReadCompletionHandler<>();
+    protected WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
     public AioQuickServer() {
     }
@@ -67,10 +62,6 @@ public class AioQuickServer<T> {
         if (config.isBannerEnabled()) {
             printBanner(System.out);
         }
-        //启动SSL服务
-        if (config.isSsl()) {
-            sslService = new SSLService(sslConfig);
-        }
         asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
             byte index = 0;
 
@@ -80,18 +71,11 @@ public class AioQuickServer<T> {
             }
         });
         this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()), 1000);
-                serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
+        serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
             @Override
             public void completed(final AsynchronousSocketChannel channel, Object attachment) {
                 serverSocketChannel.accept(attachment, this);
-                //连接成功则构造AIOSession对象
-                AioSession session;
-                if (config.isSsl()) {
-                    session = new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, sslService);
-                } else {
-                    session = new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
-                }
-                session.initSession();
+                createSession(channel);
             }
 
             @Override
@@ -103,7 +87,13 @@ public class AioQuickServer<T> {
         LOGGER.info("smart-socket server started on port {}", config.getPort());
     }
 
-    public void shutdown() {
+    protected void createSession(AsynchronousSocketChannel channel) {
+        //连接成功则构造AIOSession对象
+        AioSession session = new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
+        session.initSession();
+    }
+
+    public final void shutdown() {
         try {
             serverSocketChannel.close();
         } catch (IOException e) {
@@ -118,7 +108,7 @@ public class AioQuickServer<T> {
      * @param port
      * @return
      */
-    public AioQuickServer<T> bind(int port) {
+    public final AioQuickServer<T> bind(int port) {
         this.config.setPort(port);
         return this;
     }
@@ -129,12 +119,12 @@ public class AioQuickServer<T> {
      * @param num
      * @return
      */
-    public AioQuickServer<T> setThreadNum(int num) {
+    public final AioQuickServer<T> setThreadNum(int num) {
         this.config.setThreadNum(num);
         return this;
     }
 
-    public AioQuickServer<T> setProtocol(Protocol<T> protocol) {
+    public final AioQuickServer<T> setProtocol(Protocol<T> protocol) {
         this.config.setProtocol(protocol);
         return this;
     }
@@ -145,7 +135,7 @@ public class AioQuickServer<T> {
      * @param filters
      * @return
      */
-    public AioQuickServer<T> setFilters(Filter<T>... filters) {
+    public final AioQuickServer<T> setFilters(Filter<T>... filters) {
         this.config.setFilters(filters);
         return this;
     }
@@ -156,7 +146,7 @@ public class AioQuickServer<T> {
      * @param processor
      * @return
      */
-    public AioQuickServer<T> setProcessor(MessageProcessor<T> processor) {
+    public final AioQuickServer<T> setProcessor(MessageProcessor<T> processor) {
         this.config.setProcessor(processor);
         return this;
     }
@@ -167,13 +157,8 @@ public class AioQuickServer<T> {
      * @param size
      * @return
      */
-    public AioQuickServer<T> setWriteQueueSize(int size) {
+    public final AioQuickServer<T> setWriteQueueSize(int size) {
         this.config.setWriteQueueSize(size);
-        return this;
-    }
-
-    public AioQuickServer<T> setSsl(boolean flag) {
-        this.config.setSsl(flag);
         return this;
     }
 
@@ -183,34 +168,12 @@ public class AioQuickServer<T> {
      * @param size
      * @return
      */
-    public AioQuickServer<T> setReadBufferSize(int size) {
+    public final AioQuickServer<T> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
         return this;
     }
 
-    public AioQuickServer<T> setKeyStore(String keyStoreFile, String keystorePassword) {
-        sslConfig.setKeyFile(keyStoreFile);
-        sslConfig.setKeystorePassword(keystorePassword);
-        return this;
-    }
-
-    public AioQuickServer<T> setKeyPassword(String keyPassword) {
-        sslConfig.setKeyPassword(keyPassword);
-        return this;
-    }
-
-    public AioQuickServer<T> setTrust(String trustFile, String trustPassword) {
-        sslConfig.setTrustFile(trustFile);
-        sslConfig.setTrustPassword(trustPassword);
-        return this;
-    }
-
-    public AioQuickServer<T> setClientAuth(ClientAuth clientAuth) {
-        sslConfig.setClientAuth(clientAuth);
-        return this;
-    }
-
-    public AioQuickServer<T> setBannerEnabled(boolean bannerEnabled) {
+    public final AioQuickServer<T> setBannerEnabled(boolean bannerEnabled) {
         config.setBannerEnabled(bannerEnabled);
         return this;
     }

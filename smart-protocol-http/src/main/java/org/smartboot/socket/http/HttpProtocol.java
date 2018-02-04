@@ -48,13 +48,13 @@ public class HttpProtocol implements Protocol<HttpRequest> {
                     if (decodeUnit.headPartDecoder.decode(buffer)) {
                         decodeHeadLine(decodeUnit);
                     }
+                    //本行仅有\r\n表示消息体部分已结束
                     if (decodeUnit.partEnum != HttpPartEnum.HEAD_END_LINE) {
                         break;
                     }
                     //识别如何处理Body部分
                 case HEAD_END_LINE: {
                     decodeHeadEnd(decodeUnit);
-
                     if (decodeUnit.partEnum == HttpPartEnum.END) {
                         returnEntity = true;
                         continueDecode = false;

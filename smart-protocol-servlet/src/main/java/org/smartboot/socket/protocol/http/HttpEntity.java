@@ -42,7 +42,6 @@ public class HttpEntity {
     private static Map<String, PostDecodeStrategy> strategyMap = new HashMap<>();
     public DelimiterFrameDecoder delimiterFrameDecoder = new DelimiterFrameDecoder(CRLF, 128);
     public FixedLengthFrameDecoder bodyContentDecoder;
-    public StreamFrameDecoder smartHttpInputStream = new StreamFrameDecoder();
     public PostDecodeStrategy postDecodeStrategy;
     /**
      * 0:消息头

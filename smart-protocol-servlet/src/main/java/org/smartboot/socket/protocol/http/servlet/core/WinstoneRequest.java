@@ -89,7 +89,7 @@ public class WinstoneRequest implements HttpServletRequest {
     private final int maxParamAllowed;
     public DelimiterFrameDecoder delimiterFrameDecoder = new DelimiterFrameDecoder(CRLF, 128);
     public FixedLengthFrameDecoder bodyContentDecoder;
-    public StreamFrameDecoder smartHttpInputStream = new StreamFrameDecoder();
+    public StreamFrameDecoder smartHttpInputStream = new StreamFrameDecoder(1024);
     public PostDecodeStrategy postDecodeStrategy;
     protected Map<String, Object> attributes;
     protected Map<String, String[]> parameters;

@@ -1,13 +1,13 @@
 package org.smartboot.socket.protocol.p2p.server;
 
+import org.smartboot.socket.Filter;
 import org.smartboot.socket.extension.ssl.ClientAuth;
+import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.protocol.p2p.P2PProtocol;
+import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
-import org.smartboot.socket.protocol.p2p.message.BaseMessage;
-import org.smartboot.socket.extension.timer.QuickMonitorTimer;
-import org.smartboot.socket.Filter;
-import org.smartboot.socket.transport.AioQuickServer;
+import org.smartboot.socket.transport.AioSSLQuickServer;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -25,19 +25,14 @@ public class P2PServer {
         P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
         messageFactory.loadFromProperties(properties);
 
-        AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>()
-                .bind(9222)
+        AioSSLQuickServer<BaseMessage> server = new AioSSLQuickServer<BaseMessage>(9222, new P2PProtocol(messageFactory), new P2PServerMessageProcessor(messageFactory));
+        server.setClientAuth(ClientAuth.REQUIRE)
+                .setKeyStore("server.jks", "storepass")
+                .setTrust("trustedCerts.jks", "storepass")
+                .setKeyPassword("keypass")
                 .setThreadNum(16)
                 .setWriteQueueSize(16384)
-                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
-                .setProtocol(new P2PProtocol(messageFactory))
-                .setProcessor(new P2PServerMessageProcessor(messageFactory))
-//                .setSsl(true)
-                .setClientAuth(ClientAuth.REQUIRE)
-                .setKeyStore("server.jks","storepass")
-                .setTrust("trustedCerts.jks","storepass")
-                .setKeyPassword("keypass")
-                ;
+                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()});
         try {
             server.start();
         } catch (IOException e) {

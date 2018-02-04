@@ -64,10 +64,6 @@ final class IoServerConfig<T> {
     private Protocol<T> protocol;
 
     /**
-     * 是否启用ssl通信
-     */
-    private boolean ssl;
-    /**
      * 服务器处理线程数
      */
     private int threadNum = Runtime.getRuntime().availableProcessors();
@@ -165,14 +161,6 @@ final class IoServerConfig<T> {
 
     int getReleaseLine() {
         return releaseLine;
-    }
-
-    public boolean isSsl() {
-        return ssl;
-    }
-
-    public void setSsl(boolean ssl) {
-        this.ssl = ssl;
     }
 
     public boolean isBannerEnabled() {

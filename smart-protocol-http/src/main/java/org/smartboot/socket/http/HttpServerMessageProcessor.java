@@ -77,6 +77,11 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpRe
 //        } catch (FileNotFoundException e) {
 //            e.printStackTrace();
 //        }
+        HttpResponse httpResponse = new HttpResponse(entry.getProtocol());
+        HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
+        httpResponse.setOutputStream(outputStream);
+
+
         ByteBuffer buffer = ByteBuffer.wrap(("HTTP/1.1 200 OK\n" +
                 "Server: seer/1.4.4\n" +
                 "Content-Length: 24\n" +
