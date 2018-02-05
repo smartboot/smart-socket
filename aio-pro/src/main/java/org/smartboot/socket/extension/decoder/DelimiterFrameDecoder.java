@@ -108,5 +108,6 @@ public class DelimiterFrameDecoder implements SmartDecoder {
         finishRead = false;
         exceptIndex = 0;
         position = 0;
+        bufferList.get(position).clear();
     }
 }

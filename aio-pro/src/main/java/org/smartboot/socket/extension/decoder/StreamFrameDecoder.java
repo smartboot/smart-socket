@@ -23,10 +23,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class StreamFrameDecoder {
     private BinaryBuffer buffer = new BinaryBuffer(1024);
 
-    private int length;
-
     public StreamFrameDecoder(int length) {
-        this.length = length;
+        buffer.contentLength = length;
     }
 
     public boolean decode(ByteBuffer byteBuffer) {

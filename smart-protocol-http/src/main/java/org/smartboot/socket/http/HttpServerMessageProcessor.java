@@ -16,6 +16,7 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -43,7 +44,11 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpRe
                 }
             });
         } else {
-            process0(session, entry);
+            try {
+                process0(session, entry);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -52,9 +57,15 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpRe
 
     }
 
-    private void process0(AioSession<HttpRequest> session, HttpRequest entry) {
+    private void process0(AioSession<HttpRequest> session, HttpRequest entry) throws IOException {
         HttpResponse httpResponse = new HttpResponse(entry.getProtocol());
         HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
+        InputStream in = entry.getInputStream();
+        byte[] bytes = new byte[1024];
+        int readSize = 0;
+        while ((readSize = in.read(bytes)) != -1) {
+            System.out.println(new String(bytes, 0, readSize));
+        }
         httpResponse.setOutputStream(outputStream);
         httpResponse.setHttpStatus(HttpStatus.OK);
         httpResponse.setHeader("Content-Length", "24");

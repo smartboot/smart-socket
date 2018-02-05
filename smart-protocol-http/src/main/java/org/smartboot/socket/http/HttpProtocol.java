@@ -137,9 +137,9 @@ public class HttpProtocol implements Protocol<HttpRequest> {
             unit.headPartDecoder.reset();
             return;
         }
-        String[] headLineDatas = StringUtils.split(new String(headLineBuffer.array(), 0, headLineBuffer.remaining()), ":");
+        String headLine = new String(headLineBuffer.array(), 0, headLineBuffer.remaining());
 
-        unit.entity.setHeader(headLineDatas[0], headLineDatas[1]);
+        unit.entity.setHeader(StringUtils.substringBefore(headLine, ":"), StringUtils.substringAfterLast(headLine, ":").trim());
 
         //识别一下一个解码阶段
         unit.headPartDecoder.reset();
