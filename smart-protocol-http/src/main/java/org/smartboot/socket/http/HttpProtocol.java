@@ -92,7 +92,7 @@ public class HttpProtocol implements Protocol<HttpRequest> {
             decodeUnit = new HttpDecodeUnit();
             decodeUnit.entity = new HttpRequest(session);
             decodeUnit.partEnum = HttpPartEnum.REQUEST_LINE;
-            decodeUnit.headPartDecoder = new DelimiterFrameDecoder(LINE_END_BYTES, 256);
+            decodeUnit.headPartDecoder = new DelimiterFrameDecoder(LINE_END_BYTES, 10);
             session.setAttachment(decodeUnit);
         } else {
             decodeUnit = (HttpDecodeUnit) session.getAttachment();
@@ -139,7 +139,7 @@ public class HttpProtocol implements Protocol<HttpRequest> {
         }
         String headLine = new String(headLineBuffer.array(), 0, headLineBuffer.remaining());
 
-        unit.entity.setHeader(StringUtils.substringBefore(headLine, ":"), StringUtils.substringAfterLast(headLine, ":").trim());
+        unit.entity.setHeader(StringUtils.substringBefore(headLine, ":"), StringUtils.substringAfter(headLine, ":").trim());
 
         //识别一下一个解码阶段
         unit.headPartDecoder.reset();

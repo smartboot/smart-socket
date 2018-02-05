@@ -63,6 +63,7 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpRe
         InputStream in = entry.getInputStream();
         byte[] bytes = new byte[1024];
         int readSize = 0;
+        System.out.println(entry);
         while ((readSize = in.read(bytes)) != -1) {
             System.out.println(new String(bytes, 0, readSize));
         }
