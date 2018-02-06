@@ -17,6 +17,8 @@ import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.extension.decoder.StreamFrameDecoder;
 import org.smartboot.socket.http.enums.BodyTypeEnum;
 import org.smartboot.socket.http.enums.HttpPartEnum;
+import org.smartboot.socket.http.utils.EmptyInputStream;
+import org.smartboot.socket.http.utils.HttpHeaderNames;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;

@@ -12,6 +12,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.lang.math.NumberUtils;
+import org.smartboot.socket.http.utils.HttpHeaderNames;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.InputStream;

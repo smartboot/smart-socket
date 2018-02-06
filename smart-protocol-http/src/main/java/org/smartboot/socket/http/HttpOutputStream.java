@@ -9,6 +9,7 @@
 package org.smartboot.socket.http;
 
 import org.smartboot.socket.http.enums.HttpStatus;
+import org.smartboot.socket.http.utils.Consts;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ import java.util.Map;
  * @author 三刀
  * @version V1.0 , 2018/2/3
  */
-class HttpOutputStream extends OutputStream {
+public class HttpOutputStream extends OutputStream {
 
     private AioSession aioSession;
 

@@ -2,15 +2,15 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: Consts.java
- * Date: 2018-02-03
+ * Date: 2018-02-06
  * Author: sandao
  */
 
-package org.smartboot.socket.http;
+package org.smartboot.socket.http.utils;
 
 import java.nio.charset.Charset;
 
-interface Consts {
+public interface Consts {
 
     /**
      * Horizontal space

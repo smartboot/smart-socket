@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: HttpHeaders.java
+ * file name: HttpHeaderNames.java
  * Date: 2018-02-06
  * Author: sandao
  */
 
-package org.smartboot.socket.http;
+package org.smartboot.socket.http.utils;
 
 /**
  * 定义了所有 HTTP/1.1 种标准头域的语法和语义

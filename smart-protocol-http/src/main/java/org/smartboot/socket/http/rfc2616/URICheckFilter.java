@@ -11,7 +11,7 @@ package org.smartboot.socket.http.rfc2616;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.http.HttpHeaderNames;
+import org.smartboot.socket.http.utils.HttpHeaderNames;
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
