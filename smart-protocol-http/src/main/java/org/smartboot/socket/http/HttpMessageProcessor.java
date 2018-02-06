@@ -14,11 +14,13 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.http.enums.HttpStatus;
+import org.smartboot.socket.http.rfc2616.CheckFilter;
 import org.smartboot.socket.http.rfc2616.CheckFilterGroup;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -86,7 +88,24 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
         HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
         httpResponse.setOutputStream(outputStream);
 
-        CheckFilterGroup.group().getCheckFilter().doFilter(request, httpResponse);
+        CheckFilterGroup.group().getCheckFilter().next(new CheckFilter() {
+            @Override
+            public void doFilter(HttpRequest request, HttpResponse response) {
+
+                response.setHttpStatus(HttpStatus.OK);
+                response.setHeader("Content-Length", "24");
+                try {
+                    OutputStream outputStream = response.getOutputStream();
+                    outputStream.write("smart-socket http server".getBytes());
+                    outputStream.flush();
+                    outputStream.close();
+                } catch (IOException e) {
+                    LOGGER.catching(e);
+                }
+            }
+        }).doFilter(request, httpResponse);
+        httpResponse.getOutputStream().flush();
+        session.close(false);
     }
 
 }

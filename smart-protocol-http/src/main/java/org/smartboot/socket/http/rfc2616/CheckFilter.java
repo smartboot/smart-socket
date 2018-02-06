@@ -33,12 +33,12 @@ public abstract class CheckFilter {
      * @param nextFilter
      * @return
      */
-    final CheckFilter next(CheckFilter nextFilter) {
+    public final CheckFilter next(CheckFilter nextFilter) {
         CheckFilter lasterFilter = this;
         while (lasterFilter.nextFilter != null) {
             lasterFilter = lasterFilter.nextFilter;
         }
         lasterFilter.nextFilter = nextFilter;
-        return nextFilter;
+        return this;
     }
 }

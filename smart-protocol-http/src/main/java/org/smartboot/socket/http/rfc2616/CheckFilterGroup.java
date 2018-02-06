@@ -26,7 +26,7 @@ public class CheckFilterGroup {
         if (group != null) {
             return group;
         }
-        synchronized (group) {
+        synchronized (CheckFilterGroup.class) {
             if (group != null) {
                 return group;
             }
