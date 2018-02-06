@@ -19,7 +19,6 @@ import org.smartboot.socket.http.rfc2616.CheckFilterGroup;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,7 +48,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
             });
         } else {
             try {
-                process1(session, entry);
+                process0(session, entry);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -62,28 +61,6 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
     }
 
     private void process0(AioSession<HttpRequest> session, HttpRequest request) throws IOException {
-        HttpResponse httpResponse = new HttpResponse(request.getProtocol());
-        HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
-        InputStream in = request.getInputStream();
-        byte[] bytes = new byte[1024];
-        int readSize = 0;
-        System.out.println(request);
-        while ((readSize = in.read(bytes)) != -1) {
-            System.out.println(new String(bytes, 0, readSize));
-        }
-        httpResponse.setOutputStream(outputStream);
-        httpResponse.setHttpStatus(HttpStatus.OK);
-        httpResponse.setHeader("Content-Length", "24");
-        try {
-            outputStream.write("smart-socket http server".getBytes());
-            outputStream.flush();
-            outputStream.close();
-        } catch (IOException e) {
-            LOGGER.catching(e);
-        }
-    }
-
-    private void process1(AioSession<HttpRequest> session, HttpRequest request) throws IOException {
         HttpResponse httpResponse = new HttpResponse(request.getProtocol());
         HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
         httpResponse.setOutputStream(outputStream);
