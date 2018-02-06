@@ -36,6 +36,19 @@ public class URICheckFilter extends CheckFilter {
             response.setHttpStatus(HttpStatus.URI_TOO_LONG);
             return;
         }
+
+        //校验并识别scheme\host\port\requesturi\requestQuery信息
+        decodeOriginalUri(request);
+
+        //规则3校验暂时只校验是否存在Host
+        if (StringUtils.isBlank(request.getHost())) {
+            response.setHttpStatus(HttpStatus.BAD_REQUEST);
+            return;
+        }
+        doNext(request, response);
+    }
+
+    private void decodeOriginalUri(HttpRequest request) {
         /**
          *http_URL = "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
          *1. 如果 Request-URI 是绝对地址(absoluteURI)，那么主机(host)是 Request-URI 的 一部分。任何出现在请求里 Host 头域的值应当被忽略。
@@ -79,11 +92,5 @@ public class URICheckFilter extends CheckFilter {
             }
             request.setRequestURI(originalUri);
         }
-        //规则3校验暂时只校验是否存在Host
-        if (StringUtils.isBlank(request.getHost())) {
-            response.setHttpStatus(HttpStatus.BAD_REQUEST);
-            return;
-        }
-        doNext(request, response);
     }
 }
