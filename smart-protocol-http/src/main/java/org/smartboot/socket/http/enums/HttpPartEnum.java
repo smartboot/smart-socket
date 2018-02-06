@@ -1,18 +1,18 @@
 /*
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: HttpPart.java
- * Date: 2018-01-23
+ * file name: HttpPartEnum.java
+ * Date: 2018-02-06
  * Author: sandao
  */
 
-package org.smartboot.socket.http;
+package org.smartboot.socket.http.enums;
 
 /**
  * @author 三刀
  * @version V1.0 , 2017/8/30
  */
-enum HttpPartEnum {
+public enum HttpPartEnum {
     /**
      * 请求行
      */

@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -25,8 +26,8 @@ import java.util.concurrent.Executors;
  *
  * @author 三刀
  */
-public final class HttpServerMessageProcessor implements MessageProcessor<HttpRequest> {
-    private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);
+public final class HttpMessageProcessor implements MessageProcessor<HttpRequest> {
+    private static final Logger LOGGER = LogManager.getLogger(HttpMessageProcessor.class);
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
@@ -57,13 +58,13 @@ public final class HttpServerMessageProcessor implements MessageProcessor<HttpRe
 
     }
 
-    private void process0(AioSession<HttpRequest> session, HttpRequest entry) throws IOException {
-        HttpResponse httpResponse = new HttpResponse(entry.getProtocol());
+    private void process0(AioSession<HttpRequest> session, HttpRequest request) throws IOException {
+        HttpResponse httpResponse = new HttpResponse(request.getProtocol());
         HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
-        InputStream in = entry.getInputStream();
+        InputStream in = request.getInputStream();
         byte[] bytes = new byte[1024];
         int readSize = 0;
-        System.out.println(entry);
+        System.out.println(request);
         while ((readSize = in.read(bytes)) != -1) {
             System.out.println(new String(bytes, 0, readSize));
         }

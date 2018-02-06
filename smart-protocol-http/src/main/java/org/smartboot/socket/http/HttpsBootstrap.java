@@ -17,7 +17,7 @@ public class HttpsBootstrap {
 
     public static void main(String[] args) throws ClassNotFoundException {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
-        AioSSLQuickServer<HttpRequest> server = new AioSSLQuickServer<HttpRequest>(8889, new HttpProtocol(), new HttpServerMessageProcessor());
+        AioSSLQuickServer<HttpRequest> server = new AioSSLQuickServer<HttpRequest>(8889, new HttpProtocol(), new HttpMessageProcessor());
         server
                 .setClientAuth(ClientAuth.OPTIONAL)
                 .setKeyStore("server.jks", "storepass")

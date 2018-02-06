@@ -8,6 +8,8 @@
 
 package org.smartboot.socket.http;
 
+import org.smartboot.socket.http.enums.HttpStatus;
+
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;

@@ -2,11 +2,11 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: HttpStatus.java
- * Date: 2018-02-03
+ * Date: 2018-02-06
  * Author: sandao
  */
 
-package org.smartboot.socket.http;
+package org.smartboot.socket.http.enums;
 
 /**
  * 本类取自Spring代码org.springframework.http.HttpStatus
@@ -20,7 +20,7 @@ package org.smartboot.socket.http;
  * @see <a href="http://www.iana.org/assignments/http-status-codes">HTTP Status Code Registry</a>
  * @see <a href="http://en.wikipedia.org/wiki/List_of_HTTP_status_codes">List of HTTP status codes - Wikipedia</a>
  */
-enum HttpStatus {
+public enum HttpStatus {
 
     // 1xx Informational
 
@@ -482,7 +482,7 @@ enum HttpStatus {
 
     /**
      * Whether this status code is in the HTTP series
-     * {@link org.smartboot.socket.http.HttpStatus.Series#INFORMATIONAL}.
+     * {@link HttpStatus.Series#INFORMATIONAL}.
      * This is a shortcut for checking the value of {@link #series()}.
      */
     public boolean is1xxInformational() {
@@ -491,7 +491,7 @@ enum HttpStatus {
 
     /**
      * Whether this status code is in the HTTP series
-     * {@link org.smartboot.socket.http.HttpStatus.Series#SUCCESSFUL}.
+     * {@link HttpStatus.Series#SUCCESSFUL}.
      * This is a shortcut for checking the value of {@link #series()}.
      */
     public boolean is2xxSuccessful() {
@@ -500,7 +500,7 @@ enum HttpStatus {
 
     /**
      * Whether this status code is in the HTTP series
-     * {@link org.smartboot.socket.http.HttpStatus.Series#REDIRECTION}.
+     * {@link HttpStatus.Series#REDIRECTION}.
      * This is a shortcut for checking the value of {@link #series()}.
      */
     public boolean is3xxRedirection() {
@@ -509,7 +509,7 @@ enum HttpStatus {
 
     /**
      * Whether this status code is in the HTTP series
-     * {@link org.smartboot.socket.http.HttpStatus.Series#CLIENT_ERROR}.
+     * {@link HttpStatus.Series#CLIENT_ERROR}.
      * This is a shortcut for checking the value of {@link #series()}.
      */
     public boolean is4xxClientError() {
@@ -518,7 +518,7 @@ enum HttpStatus {
 
     /**
      * Whether this status code is in the HTTP series
-     * {@link org.smartboot.socket.http.HttpStatus.Series#SERVER_ERROR}.
+     * {@link HttpStatus.Series#SERVER_ERROR}.
      * This is a shortcut for checking the value of {@link #series()}.
      */
     public boolean is5xxServerError() {

@@ -8,6 +8,7 @@
 
 package org.smartboot.socket.http;
 
+import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -57,6 +58,8 @@ class HttpOutputStream extends OutputStream {
                 .put(getBytes(httpResponse.getHttpStatus().getReasonPhrase()))
                 .put(Consts.CR).put(Consts.LF);
 
+        if (httpResponse.getHttpStatus() == HttpStatus.OK) {
+        }
         for (Map.Entry<String, String> entry : httpResponse.getHeadMap().entrySet()) {
             byte[] headKey = getBytes(entry.getKey());
             byte[] headVal = getBytes(entry.getValue());
@@ -111,5 +114,9 @@ class HttpOutputStream extends OutputStream {
 
     private byte[] getBytes(String str) {
         return str.getBytes(Consts.DEFAULT_CHARSET);
+    }
+
+    private void writeBodyData(ByteBuffer buffer) {
+
     }
 }
