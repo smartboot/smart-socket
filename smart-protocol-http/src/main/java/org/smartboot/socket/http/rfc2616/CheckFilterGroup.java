@@ -19,6 +19,7 @@ public class CheckFilterGroup {
 
     private CheckFilterGroup() {
         checkFilter = new MethodCheckFilter();
+        checkFilter.next(new URICheckFilter());
     }
 
     public static final CheckFilterGroup group() {
@@ -32,5 +33,9 @@ public class CheckFilterGroup {
             group = new CheckFilterGroup();
         }
         return group;
+    }
+
+    public CheckFilter getCheckFilter() {
+        return checkFilter;
     }
 }

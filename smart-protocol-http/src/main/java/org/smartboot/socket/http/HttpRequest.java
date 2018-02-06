@@ -26,7 +26,8 @@ public class HttpRequest {
 
     private InputStream inputStream = null;
     private int contentLength = -1;
-    private String method, url, protocol, contentType;
+    private String method, uri, protocol, contentType;
+    private String scheme;//HTTP\HTTPS...
     private Map<String, String> headMap = new HashMap<String, String>();
     private Map<String, String> paramMap = new HashMap<String, String>();
 
@@ -64,12 +65,20 @@ public class HttpRequest {
         this.method = method;
     }
 
-    public String getUrl() {
-        return url;
+    public String getUri() {
+        return uri;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
+
+    public String getScheme() {
+        return scheme;
+    }
+
+    public void setScheme(String scheme) {
+        this.scheme = scheme;
     }
 
     public String getProtocol() {

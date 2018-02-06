@@ -117,7 +117,7 @@ public class HttpProtocol implements Protocol<HttpRequest> {
         String[] requestLineDatas = StringUtils.split(new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining()), " ");
 
         unit.entity.setMethod(requestLineDatas[0]);
-        unit.entity.setUrl(requestLineDatas[1]);
+        unit.entity.setUri(requestLineDatas[1]);
         unit.entity.setProtocol(requestLineDatas[2].trim());
 
         //识别一下一个解码阶段

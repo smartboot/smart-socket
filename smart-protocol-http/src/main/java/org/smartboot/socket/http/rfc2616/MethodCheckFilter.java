@@ -33,8 +33,14 @@ public class MethodCheckFilter extends CheckFilter {
         MethodEnum methodEnum = MethodEnum.getByMethod(request.getMethod());//大小写敏感
         if (methodEnum == null) {
             response.setHttpStatus(HttpStatus.NOT_IMPLEMENTED);
-        } else {
+            return;
+        }
+
+        //暂时只支持GET/POST
+        if (methodEnum == MethodEnum.GET || methodEnum == MethodEnum.POST) {
             doNext(request, response);
+        } else {
+            response.setHttpStatus(HttpStatus.METHOD_NOT_ALLOWED);
         }
     }
 }

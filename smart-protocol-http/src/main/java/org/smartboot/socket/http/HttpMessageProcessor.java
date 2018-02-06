@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.http.enums.HttpStatus;
+import org.smartboot.socket.http.rfc2616.CheckFilterGroup;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -46,7 +47,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
             });
         } else {
             try {
-                process0(session, entry);
+                process1(session, entry);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -80,5 +81,12 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
         }
     }
 
+    private void process1(AioSession<HttpRequest> session, HttpRequest request) throws IOException {
+        HttpResponse httpResponse = new HttpResponse(request.getProtocol());
+        HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
+        httpResponse.setOutputStream(outputStream);
+
+        CheckFilterGroup.group().getCheckFilter().doFilter(request, httpResponse);
+    }
 
 }
