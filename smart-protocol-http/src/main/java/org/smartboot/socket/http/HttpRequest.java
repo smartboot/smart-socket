@@ -27,8 +27,17 @@ public class HttpRequest {
 
     private InputStream inputStream = null;
     private int contentLength = -1;
-    private String method, uri, protocol, contentType;
-    private String scheme;//HTTP\HTTPS...
+    private String method, originalUri, protocol, contentType;
+
+    private String scheme;
+    private String host;
+    private int port = -1;
+    private String requestURI;
+    /**
+     * http://localhost?aa=aa  ?后面部分
+     */
+    private String queryString;
+    //HTTP\HTTPS...
     private Map<String, String> headMap = new HashMap<String, String>();
     private Map<String, String> paramMap = new HashMap<String, String>();
 
@@ -66,12 +75,12 @@ public class HttpRequest {
         this.method = method;
     }
 
-    public String getUri() {
-        return uri;
+    public String getOriginalUri() {
+        return originalUri;
     }
 
-    public void setUri(String uri) {
-        this.uri = uri;
+    public void setOriginalUri(String originalUri) {
+        this.originalUri = originalUri;
     }
 
     public String getScheme() {
@@ -108,4 +117,35 @@ public class HttpRequest {
         this.paramMap.put(key, val);
     }
 
+    public String getQueryString() {
+        return queryString;
+    }
+
+    public void setQueryString(String queryString) {
+        this.queryString = queryString;
+    }
+
+    public String getRequestURI() {
+        return requestURI;
+    }
+
+    public void setRequestURI(String requestURI) {
+        this.requestURI = requestURI;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
 }

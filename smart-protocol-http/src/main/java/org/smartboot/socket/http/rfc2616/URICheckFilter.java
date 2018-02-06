@@ -9,12 +9,13 @@
 package org.smartboot.socket.http.rfc2616;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.http.utils.HttpHeaderNames;
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
+import org.smartboot.socket.http.utils.HttpHeaderNames;
 
 /**
  * RFC2616 3.2.1
@@ -31,29 +32,55 @@ public class URICheckFilter extends CheckFilter {
     @Override
     public void doFilter(HttpRequest request, HttpResponse response) {
 
-        if (StringUtils.length(request.getUri()) > MAX_LENGTH) {
+        if (StringUtils.length(request.getOriginalUri()) > MAX_LENGTH) {
             response.setHttpStatus(HttpStatus.URI_TOO_LONG);
             return;
         }
         /**
-         *
+         *http_URL = "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
          *1. 如果 Request-URI 是绝对地址(absoluteURI)，那么主机(host)是 Request-URI 的 一部分。任何出现在请求里 Host 头域的值应当被忽略。
          *2. 假如 Request-URI 不是绝对地址(absoluteURI)，并且请求包括一个 Host 头域，则主 机(host)由该 Host 头域的值决定.
          *3. 假如由规则1或规则2定义的主机(host)对服务器来说是一个无效的主机(host)， 则应当以一个 400(坏请求)错误消息返回。
          */
-        String uri = request.getUri();//TODO
-        String host = null;
+        String originalUri = request.getOriginalUri();
+        boolean absoulute = !StringUtils.startsWith(originalUri, "/");//是否绝对路径
+        String queryString = StringUtils.substringAfter(originalUri, "?");
+        request.setQueryString(queryString);
+        //去除query部分
+        if (StringUtils.isNotBlank(queryString)) {
+            originalUri = StringUtils.substringBefore(originalUri, "?");
+        }
         String headHost = request.getHeader(HttpHeaderNames.HOST);
-        boolean absoulute = false;//是否绝对路径
+
         if (absoulute) {
             if (!StringUtils.isBlank(headHost)) {
-                LOGGER.debug("absoulute uri:{} ,ignore HEAD HOST:{}", uri, headHost);
+                LOGGER.debug("absoulute originalUri:{} ,ignore HEAD HOST:{}", originalUri, headHost);
             }
+            request.setScheme(StringUtils.substringBefore(originalUri, ":"));
+            originalUri = StringUtils.substringAfter(originalUri, "://");//去除scheme部分,host [ ":" port ] [ abs_path]s
+            if (originalUri.indexOf('/') == -1) {
+                originalUri = originalUri + "/";
+            }
+            if (originalUri.indexOf(":") > 0) {//包含端口号
+                request.setHost(StringUtils.substringBefore(originalUri, ":"));
+                request.setPort(NumberUtils.toInt(StringUtils.substringBetween(originalUri, ":", "/"), -1));
+            } else {
+                request.setHost(StringUtils.substringBefore(originalUri, "/"));
+                request.setPort(80);
+            }
+            request.setRequestURI("/" + StringUtils.substringAfter(originalUri, "/"));
         } else {
-            host = headHost;
+            if (headHost.indexOf(":") > 0) {
+                request.setHost(StringUtils.substringBefore(headHost, ":"));
+                request.setPort(NumberUtils.toInt(StringUtils.substringAfter(headHost, ":"), -1));
+            } else {
+                request.setHost(headHost);
+                request.setPort(80);
+            }
+            request.setRequestURI(originalUri);
         }
         //规则3校验暂时只校验是否存在Host
-        if (StringUtils.isBlank(host)) {
+        if (StringUtils.isBlank(request.getHost())) {
             response.setHttpStatus(HttpStatus.BAD_REQUEST);
             return;
         }

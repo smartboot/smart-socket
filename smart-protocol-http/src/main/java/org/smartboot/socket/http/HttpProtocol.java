@@ -118,9 +118,10 @@ public class HttpProtocol implements Protocol<HttpRequest> {
         ByteBuffer requestLineBuffer = unit.headPartDecoder.getBuffer();
         String[] requestLineDatas = StringUtils.split(new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining()), " ");
 
-        unit.entity.setMethod(requestLineDatas[0]);
-        unit.entity.setUri(requestLineDatas[1]);
-        unit.entity.setProtocol(requestLineDatas[2].trim());
+        HttpRequest request = unit.entity;
+        request.setMethod(requestLineDatas[0]);
+        request.setOriginalUri(requestLineDatas[1]);
+        request.setProtocol(requestLineDatas[2].trim());
 
         //识别一下一个解码阶段
         unit.headPartDecoder.reset();
