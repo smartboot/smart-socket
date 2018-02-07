@@ -29,6 +29,7 @@ public class HttpBootstrap {
             }
         });
         http(processor);
+        https(processor);
     }
 
     static void http(HttpMessageProcessor processor) {
