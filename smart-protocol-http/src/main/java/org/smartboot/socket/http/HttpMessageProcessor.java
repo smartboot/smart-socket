@@ -14,15 +14,10 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.http.enums.HttpStatus;
-import org.smartboot.socket.http.rfc2616.HttpFilter;
 import org.smartboot.socket.http.rfc2616.HttpFilterGroup;
-import org.smartboot.socket.http.route.Route;
-import org.smartboot.socket.http.route.StaticResourceRoute;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,11 +30,9 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
     private static final Logger LOGGER = LogManager.getLogger(HttpMessageProcessor.class);
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    private List<Route> routeList = new ArrayList<>();
-
-    {
-        routeList.add(new StaticResourceRoute());
+    public HttpMessageProcessor() {
     }
+
 
     @Override
     public void process(final AioSession<HttpRequest> session, final HttpRequest entry) {
@@ -74,24 +67,12 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
         HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
         httpResponse.setOutputStream(outputStream);
 
-        HttpFilterGroup.group().getCheckFilter().next(new HttpFilter() {
-            @Override
-            public void doFilter(final HttpRequest request, HttpResponse response) throws IOException {
-                Route route = null;
-                for (Route r : routeList) {
-                    if (request.getOriginalUri().matches(r.urlPattern())) {
-                        route = r;
-                        break;
-                    }
-                }
-                if (route == null) {
-                    response.setHttpStatus(HttpStatus.NOT_FOUND);
-                    return;
-                }
-                route.process(request, response);
-
-            }
-        }).doFilter(request, httpResponse);
+        try {
+            HttpFilterGroup.group().getCheckFilter().doFilter(request, httpResponse);
+        } catch (Exception e) {
+            httpResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            httpResponse.getOutputStream().write(e.fillInStackTrace().toString().getBytes());
+        }
         httpResponse.getOutputStream().close();
         session.close(false);
     }

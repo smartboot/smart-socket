@@ -20,6 +20,8 @@ import java.net.UnknownHostException;
 public class HttpBootstrap {
 
     public static void main(String[] args) throws UnknownHostException {
+        HttpMessageProcessor processor=new HttpMessageProcessor();
+
         http();
     }
 

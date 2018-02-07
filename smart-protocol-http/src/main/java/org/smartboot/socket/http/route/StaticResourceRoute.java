@@ -20,6 +20,9 @@ import java.io.OutputStream;
  * @version V1.0 , 2018/2/7
  */
 public class StaticResourceRoute implements Route {
+
+    private String baseDir;
+
     @Override
     public String urlPattern() {
         return ".*";
@@ -28,7 +31,7 @@ public class StaticResourceRoute implements Route {
     @Override
     public void process(HttpRequest request, HttpResponse response) throws IOException {
         OutputStream os = response.getOutputStream();
-        FileInputStream inputStream = new FileInputStream("/Users/zhengjunwei/IdeaProjects/smart-socket/pom.xml");
+        FileInputStream inputStream = new FileInputStream(baseDir + request.getOriginalUri());
         byte[] b = new byte[1024];
         int readSize = 0;
         while ((readSize = inputStream.read(b)) > -1) {

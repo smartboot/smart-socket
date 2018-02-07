@@ -20,6 +20,8 @@ public class HttpFilterGroup {
     private HttpFilterGroup() {
         httpFilter = new MethodCheckFilter();
         httpFilter.next(new HostCheckFilter()).next(new URICheckFilter());
+
+        httpFilter.next(new HttpProcessFilter());
     }
 
     public static final HttpFilterGroup group() {
