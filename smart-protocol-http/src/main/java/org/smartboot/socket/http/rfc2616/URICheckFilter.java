@@ -36,57 +36,44 @@ public class URICheckFilter extends HttpFilter {
             response.setHttpStatus(HttpStatus.URI_TOO_LONG);
             return;
         }
-
+        parseOriginalUri(request);
         doNext(request, response);
     }
 
     /**
      * @param request
-     * @deprecated
      */
-//    private void decodeOriginalUri(HttpRequest request) {
-//        /**
-//         *http_URL = "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
-//         *1. 如果 Request-URI 是绝对地址(absoluteURI)，那么主机(host)是 Request-URI 的 一部分。任何出现在请求里 Host 头域的值应当被忽略。
-//         *2. 假如 Request-URI 不是绝对地址(absoluteURI)，并且请求包括一个 Host 头域，则主 机(host)由该 Host 头域的值决定.
-//         *3. 假如由规则1或规则2定义的主机(host)对服务器来说是一个无效的主机(host)， 则应当以一个 400(坏请求)错误消息返回。
-//         */
-//        String originalUri = request.getOriginalUri();
-//        boolean absoulute = !StringUtils.startsWith(originalUri, "/");//是否绝对路径
-//        String queryString = StringUtils.substringAfter(originalUri, "?");
-//        request.setQueryString(queryString);
-//        //去除query部分
-//        if (StringUtils.isNotBlank(queryString)) {
-//            originalUri = StringUtils.substringBefore(originalUri, "?");
-//        }
-//        String headHost = request.getHeader(HttpHeaderNames.HOST);
-//
-//        if (absoulute) {
-//            if (!StringUtils.isBlank(headHost)) {
-//                LOGGER.debug("absoulute originalUri:{} ,ignore HEAD HOST:{}", originalUri, headHost);
-//            }
-//            request.setScheme(StringUtils.substringBefore(originalUri, ":"));
-//            originalUri = StringUtils.substringAfter(originalUri, "://");//去除scheme部分,host [ ":" port ] [ abs_path]s
-//            if (originalUri.indexOf('/') == -1) {
-//                originalUri = originalUri + "/";
-//            }
-//            if (originalUri.indexOf(":") > 0) {//包含端口号
-//                request.setHost(StringUtils.substringBefore(originalUri, ":"));
-//                request.setPort(NumberUtils.toInt(StringUtils.substringBetween(originalUri, ":", "/"), -1));
-//            } else {
-//                request.setHost(StringUtils.substringBefore(originalUri, "/"));
-//                request.setPort(80);
-//            }
-//            request.setRequestURI("/" + StringUtils.substringAfter(originalUri, "/"));
-//        } else {
-//            if (headHost.indexOf(":") > 0) {
-//                request.setHost(StringUtils.substringBefore(headHost, ":"));
-//                request.setPort(NumberUtils.toInt(StringUtils.substringAfter(headHost, ":"), -1));
-//            } else {
-//                request.setHost(headHost);
-//                request.setPort(80);
-//            }
-//            request.setRequestURI(originalUri);
-//        }
-//    }
+    private void parseOriginalUri(HttpRequest request) {
+        /**
+         *http_URL = "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
+         *1. 如果 Request-URI 是绝对地址(absoluteURI)，那么主机(host)是 Request-URI 的 一部分。任何出现在请求里 Host 头域的值应当被忽略。
+         *2. 假如 Request-URI 不是绝对地址(absoluteURI)，并且请求包括一个 Host 头域，则主 机(host)由该 Host 头域的值决定.
+         *3. 假如由规则1或规则2定义的主机(host)对服务器来说是一个无效的主机(host)， 则应当以一个 400(坏请求)错误消息返回。
+         */
+        String originalUri = request.getOriginalUri();
+        int schemeIndex = originalUri.indexOf("://");
+        int queryStringIndex = StringUtils.indexOf(originalUri, "?");
+        if (queryStringIndex != StringUtils.INDEX_NOT_FOUND) {
+            request.setQueryString(StringUtils.substring(originalUri, queryStringIndex + 1));
+        }
+
+        if (schemeIndex > 0) {//绝对路径
+            request.setScheme(originalUri.substring(0, schemeIndex));
+            int uriIndex = originalUri.indexOf('/', schemeIndex + 3);
+            if (uriIndex == StringUtils.INDEX_NOT_FOUND) {
+                request.setRequestURI("/");
+            } else {
+
+                request.setRequestURI(queryStringIndex > 0 ?
+                        StringUtils.substring(originalUri, uriIndex, queryStringIndex)
+                        : StringUtils.substring(originalUri, uriIndex));
+            }
+
+        } else {
+            request.setRequestURI(queryStringIndex > 0 ?
+                    StringUtils.substring(originalUri, 0, queryStringIndex)
+                    : originalUri);
+        }
+    }
+
 }

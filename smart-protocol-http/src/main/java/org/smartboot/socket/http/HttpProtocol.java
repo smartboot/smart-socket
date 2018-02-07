@@ -29,9 +29,8 @@ import java.nio.ByteBuffer;
  * Created by 三刀 on 2017/6/20.
  */
 public class HttpProtocol implements Protocol<HttpRequest> {
-    private static final Logger LOGGER = LogManager.getLogger(HttpProtocol.class);
     public static final byte[] CRLF = {Consts.CR, Consts.LF};
-
+    private static final Logger LOGGER = LogManager.getLogger(HttpProtocol.class);
     private static final byte[] SP = {Consts.SP};
 
     @Override

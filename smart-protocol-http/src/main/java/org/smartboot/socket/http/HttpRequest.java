@@ -30,6 +30,8 @@ public class HttpRequest {
     private String method, originalUri, protocol, contentType;
 
     private String scheme;
+
+    private String requestURI;
     /**
      * http://localhost?aa=aa  ?后面部分
      */
@@ -94,6 +96,30 @@ public class HttpRequest {
 
     public int getContentLength() {
         return contentLength;
+    }
+
+    public String getScheme() {
+        return scheme;
+    }
+
+    public void setScheme(String scheme) {
+        this.scheme = scheme;
+    }
+
+    public String getQueryString() {
+        return queryString;
+    }
+
+    public void setQueryString(String queryString) {
+        this.queryString = queryString;
+    }
+
+    public String getRequestURI() {
+        return requestURI;
+    }
+
+    public void setRequestURI(String requestURI) {
+        this.requestURI = requestURI;
     }
 
     @Override
