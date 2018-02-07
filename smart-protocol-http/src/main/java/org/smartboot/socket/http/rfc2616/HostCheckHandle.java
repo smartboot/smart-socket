@@ -23,9 +23,9 @@ import java.io.IOException;
  * @author 三刀
  * @version V1.0 , 2018/2/7
  */
-public class HostCheckFilter extends HttpFilter {
+public class HostCheckHandle extends HttpHandle {
     @Override
-    public void doFilter(HttpRequest request, HttpResponse response) throws IOException {
+    public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
         if (request.getHeader(HttpHeaderNames.HOST) == null) {
             response.setHttpStatus(HttpStatus.BAD_REQUEST);
             return;

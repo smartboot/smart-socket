@@ -25,12 +25,12 @@ import java.io.IOException;
  * @author 三刀
  * @version V1.0 , 2018/2/6
  */
-public class URICheckFilter extends HttpFilter {
+public class URICheckHandle extends HttpHandle {
     public static final int MAX_LENGTH = 255 * 1024;
-    private static final Logger LOGGER = LogManager.getLogger(URICheckFilter.class);
+    private static final Logger LOGGER = LogManager.getLogger(URICheckHandle.class);
 
     @Override
-    public void doFilter(HttpRequest request, HttpResponse response) throws IOException {
+    public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
 
         if (StringUtils.length(request.getOriginalUri()) > MAX_LENGTH) {
             response.setHttpStatus(HttpStatus.URI_TOO_LONG);

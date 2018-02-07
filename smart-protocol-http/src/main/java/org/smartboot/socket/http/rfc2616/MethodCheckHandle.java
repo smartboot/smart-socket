@@ -29,9 +29,9 @@ import java.io.IOException;
  * @author 三刀
  * @version V1.0 , 2018/2/6
  */
-public class MethodCheckFilter extends HttpFilter {
+public class MethodCheckHandle extends HttpHandle {
     @Override
-    public void doFilter(HttpRequest request, HttpResponse response) throws IOException {
+    public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
         MethodEnum methodEnum = MethodEnum.getByMethod(request.getMethod());//大小写敏感
         if (methodEnum == null) {
             response.setHttpStatus(HttpStatus.NOT_IMPLEMENTED);

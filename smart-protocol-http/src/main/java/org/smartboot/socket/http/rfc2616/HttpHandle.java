@@ -17,15 +17,15 @@ import java.io.IOException;
  * @author 三刀
  * @version V1.0 , 2018/2/6
  */
-public abstract class HttpFilter {
+public abstract class HttpHandle {
 
-    private HttpFilter nextFilter;
+    private HttpHandle nextHandle;
 
-    public abstract void doFilter(HttpRequest request, HttpResponse response) throws IOException;
+    public abstract void doHandle(HttpRequest request, HttpResponse response) throws IOException;
 
     final void doNext(HttpRequest request, HttpResponse response) throws IOException {
-        if (nextFilter != null) {
-            nextFilter.doFilter(request, response);
+        if (nextHandle != null) {
+            nextHandle.doHandle(request, response);
         }
     }
 
@@ -35,12 +35,12 @@ public abstract class HttpFilter {
      * @param nextFilter
      * @return
      */
-    public final HttpFilter next(HttpFilter nextFilter) {
-        HttpFilter lasterFilter = this;
-        while (lasterFilter.nextFilter != null) {
-            lasterFilter = lasterFilter.nextFilter;
+    public final HttpHandle next(HttpHandle nextFilter) {
+        HttpHandle httpHandle = this;
+        while (httpHandle.nextHandle != null) {
+            httpHandle = httpHandle.nextHandle;
         }
-        lasterFilter.nextFilter = nextFilter;
+        httpHandle.nextHandle = nextFilter;
         return this;
     }
 }

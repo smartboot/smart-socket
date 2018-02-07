@@ -14,10 +14,14 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.http.enums.HttpStatus;
-import org.smartboot.socket.http.rfc2616.HttpFilterGroup;
+import org.smartboot.socket.http.handle.StaticResourceHandle;
+import org.smartboot.socket.http.rfc2616.HttpHandle;
+import org.smartboot.socket.http.rfc2616.HttpHandleGroup;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,8 +33,28 @@ import java.util.concurrent.Executors;
 public final class HttpMessageProcessor implements MessageProcessor<HttpRequest> {
     private static final Logger LOGGER = LogManager.getLogger(HttpMessageProcessor.class);
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private Map<String, HttpHandle> handleMap = new HashMap<>();
+    private StaticResourceHandle defaultHandle = new StaticResourceHandle();
 
     public HttpMessageProcessor() {
+        HttpHandleGroup.group().getCheckFilter()
+                .next(new HttpHandle() {
+                    @Override
+                    public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
+                        HttpHandle httpHandle = null;
+                        for (Map.Entry<String, HttpHandle> entity : handleMap.entrySet()) {
+
+                            if (request.getRequestURI().matches(entity.getKey())) {
+                                httpHandle = entity.getValue();
+                                break;
+                            }
+                        }
+                        if (httpHandle == null) {
+                            httpHandle = defaultHandle;
+                        }
+                        httpHandle.doHandle(request, response);
+                    }
+                });
     }
 
 
@@ -68,7 +92,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
         httpResponse.setOutputStream(outputStream);
 
         try {
-            HttpFilterGroup.group().getCheckFilter().doFilter(request, httpResponse);
+            HttpHandleGroup.group().getCheckFilter().doHandle(request, httpResponse);
         } catch (Exception e) {
             httpResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             httpResponse.getOutputStream().write(e.fillInStackTrace().toString().getBytes());
@@ -77,4 +101,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
         session.close(false);
     }
 
+    public void route(String urlPattern, HttpHandle httpHandle) {
+        handleMap.put(urlPattern, httpHandle);
+    }
 }

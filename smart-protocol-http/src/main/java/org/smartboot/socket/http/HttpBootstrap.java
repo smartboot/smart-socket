@@ -11,6 +11,7 @@ package org.smartboot.socket.http;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
+import org.smartboot.socket.http.rfc2616.HttpHandle;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSSLQuickServer;
 
@@ -20,14 +21,19 @@ import java.net.UnknownHostException;
 public class HttpBootstrap {
 
     public static void main(String[] args) throws UnknownHostException {
-        HttpMessageProcessor processor=new HttpMessageProcessor();
-
-        http();
+        HttpMessageProcessor processor = new HttpMessageProcessor();
+        processor.route("/", new HttpHandle() {
+            @Override
+            public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
+                response.getOutputStream().write("Hello smart-socket http server!".getBytes());
+            }
+        });
+        http(processor);
     }
 
-    static void http() {
+    static void http(HttpMessageProcessor processor) {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
-        AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(8888, new HttpProtocol(), new HttpMessageProcessor());
+        AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(8888, new HttpProtocol(), processor);
         server.setFilters(new Filter[]{new QuickMonitorTimer<HttpRequest>()});
         try {
             server.start();
@@ -36,9 +42,9 @@ public class HttpBootstrap {
         }
     }
 
-    static void https() {
+    static void https(HttpMessageProcessor processor) {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
-        AioSSLQuickServer<HttpRequest> server = new AioSSLQuickServer<HttpRequest>(8889, new HttpProtocol(), new HttpMessageProcessor());
+        AioSSLQuickServer<HttpRequest> server = new AioSSLQuickServer<HttpRequest>(8889, new HttpProtocol(), processor);
         server
                 .setClientAuth(ClientAuth.OPTIONAL)
                 .setKeyStore("server.jks", "storepass")
