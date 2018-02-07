@@ -25,7 +25,7 @@ import java.io.IOException;
  * @author 三刀
  * @version V1.0 , 2018/2/6
  */
-public class URICheckHandle extends HttpHandle {
+class URICheckHandle extends HttpHandle {
     public static final int MAX_LENGTH = 255 * 1024;
     private static final Logger LOGGER = LogManager.getLogger(URICheckHandle.class);
 

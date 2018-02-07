@@ -23,7 +23,7 @@ import java.io.IOException;
  * @author 三刀
  * @version V1.0 , 2018/2/7
  */
-public class HostCheckHandle extends HttpHandle {
+class HostCheckHandle extends HttpHandle {
     @Override
     public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
         if (request.getHeader(HttpHeaderNames.HOST) == null) {

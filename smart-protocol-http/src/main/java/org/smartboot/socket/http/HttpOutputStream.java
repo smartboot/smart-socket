@@ -22,7 +22,7 @@ import java.util.Map;
  * @author 三刀
  * @version V1.0 , 2018/2/3
  */
-public class HttpOutputStream extends OutputStream {
+final class HttpOutputStream extends OutputStream {
 
     private AioSession aioSession;
 

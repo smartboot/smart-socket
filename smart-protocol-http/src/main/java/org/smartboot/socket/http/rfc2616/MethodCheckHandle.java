@@ -29,7 +29,7 @@ import java.io.IOException;
  * @author 三刀
  * @version V1.0 , 2018/2/6
  */
-public class MethodCheckHandle extends HttpHandle {
+class MethodCheckHandle extends HttpHandle {
     @Override
     public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
         MethodEnum methodEnum = MethodEnum.getByMethod(request.getMethod());//大小写敏感
