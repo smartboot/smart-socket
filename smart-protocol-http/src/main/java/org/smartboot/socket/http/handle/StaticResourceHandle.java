@@ -19,7 +19,6 @@ import java.io.IOException;
  * @version V1.0 , 2018/2/7
  */
 public class StaticResourceHandle extends HttpHandle {
-    private String baseDir="/Users/zhengjunwei/Downloads";
     @Override
     public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
         response.getOutputStream().write(request.toString().getBytes());
