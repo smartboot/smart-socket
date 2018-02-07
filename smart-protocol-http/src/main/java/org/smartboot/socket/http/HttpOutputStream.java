@@ -10,6 +10,7 @@ package org.smartboot.socket.http;
 
 import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.http.utils.Consts;
+import org.smartboot.socket.http.utils.HttpHeaderNames;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -30,6 +31,8 @@ public class HttpOutputStream extends OutputStream {
     private ByteBuffer cacheBuffer = ByteBuffer.allocate(512);
     private boolean committed = false, closed = false;
 
+    private boolean chunked = false;
+
     public HttpOutputStream(AioSession aioSession, HttpResponse httpResponse) {
         this.aioSession = aioSession;
         this.httpResponse = httpResponse;
@@ -45,12 +48,16 @@ public class HttpOutputStream extends OutputStream {
                 committed = true;
             }
             cacheBuffer.flip();
-            aioSession.write(cacheBuffer);
+            writeCacheBuffer(cacheBuffer);
             cacheBuffer = ByteBuffer.allocate(512);
+            cacheBuffer.put((byte) b);
         }
     }
 
     private void writeHead() throws IOException {
+        if (httpResponse.getHttpStatus() == null) {
+            httpResponse.setHttpStatus(HttpStatus.OK);
+        }
         ByteBuffer headBuffer = ByteBuffer.allocate(512);
         headBuffer.put(getBytes(httpResponse.getProtocol()))
                 .put(Consts.SP)
@@ -59,8 +66,14 @@ public class HttpOutputStream extends OutputStream {
                 .put(getBytes(httpResponse.getHttpStatus().getReasonPhrase()))
                 .put(Consts.CR).put(Consts.LF);
 
-        if (httpResponse.getHttpStatus() == HttpStatus.OK) {
+        //自动识别Transfer-Encoding
+        Map<String, String> headMap = httpResponse.getHeadMap();
+        if (!headMap.containsKey(HttpHeaderNames.CONTENT_LENGTH) && !headMap.containsKey(HttpHeaderNames.TRANSFER_ENCODING)
+                && httpResponse.getHttpStatus() == HttpStatus.OK) {
+            httpResponse.setHeader(HttpHeaderNames.TRANSFER_ENCODING, "chunked");
+            chunked = true;
         }
+
         for (Map.Entry<String, String> entry : httpResponse.getHeadMap().entrySet()) {
             byte[] headKey = getBytes(entry.getKey());
             byte[] headVal = getBytes(entry.getValue());
@@ -95,7 +108,7 @@ public class HttpOutputStream extends OutputStream {
         }
         cacheBuffer.flip();
         if (cacheBuffer.hasRemaining()) {
-            aioSession.write(cacheBuffer);
+            writeCacheBuffer(cacheBuffer);
             cacheBuffer = ByteBuffer.allocate(512);
         } else {
             cacheBuffer.clear();
@@ -109,6 +122,9 @@ public class HttpOutputStream extends OutputStream {
             return;
         }
         flush();
+        if (chunked) {
+            aioSession.write(ByteBuffer.wrap(new byte[]{'0', '\r', '\n', '\r', '\n'}));
+        }
         aioSession.close(false);
         closed = true;
     }
@@ -117,7 +133,13 @@ public class HttpOutputStream extends OutputStream {
         return str.getBytes(Consts.DEFAULT_CHARSET);
     }
 
-    private void writeBodyData(ByteBuffer buffer) {
-
+    private void writeCacheBuffer(ByteBuffer cacheBuffer) throws IOException {
+        if (chunked) {
+            aioSession.write(ByteBuffer.wrap(getBytes(Integer.toHexString(cacheBuffer.remaining()) + "\r\n")));
+            aioSession.write(cacheBuffer);
+            aioSession.write(ByteBuffer.wrap(HttpProtocol.CRLF));
+        } else {
+            aioSession.write(cacheBuffer);
+        }
     }
 }

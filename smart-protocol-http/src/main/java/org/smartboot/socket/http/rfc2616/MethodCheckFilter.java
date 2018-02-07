@@ -13,6 +13,8 @@ import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.http.enums.MethodEnum;
 
+import java.io.IOException;
+
 /**
  * RFC2616 5.1.1
  * 方法标记指明了在被 Request-URI 指定的资源上执行的方法。这种方法是大小写敏感的。
@@ -27,9 +29,9 @@ import org.smartboot.socket.http.enums.MethodEnum;
  * @author 三刀
  * @version V1.0 , 2018/2/6
  */
-public class MethodCheckFilter extends CheckFilter {
+public class MethodCheckFilter extends HttpFilter {
     @Override
-    public void doFilter(HttpRequest request, HttpResponse response) {
+    public void doFilter(HttpRequest request, HttpResponse response) throws IOException {
         MethodEnum methodEnum = MethodEnum.getByMethod(request.getMethod());//大小写敏感
         if (methodEnum == null) {
             response.setHttpStatus(HttpStatus.NOT_IMPLEMENTED);

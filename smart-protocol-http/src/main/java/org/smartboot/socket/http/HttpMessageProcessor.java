@@ -14,12 +14,15 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.http.enums.HttpStatus;
-import org.smartboot.socket.http.rfc2616.CheckFilter;
-import org.smartboot.socket.http.rfc2616.CheckFilterGroup;
+import org.smartboot.socket.http.rfc2616.HttpFilter;
+import org.smartboot.socket.http.rfc2616.HttpFilterGroup;
+import org.smartboot.socket.http.route.Route;
+import org.smartboot.socket.http.route.StaticResourceRoute;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,6 +34,12 @@ import java.util.concurrent.Executors;
 public final class HttpMessageProcessor implements MessageProcessor<HttpRequest> {
     private static final Logger LOGGER = LogManager.getLogger(HttpMessageProcessor.class);
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    private List<Route> routeList = new ArrayList<>();
+
+    {
+        routeList.add(new StaticResourceRoute());
+    }
 
     @Override
     public void process(final AioSession<HttpRequest> session, final HttpRequest entry) {
@@ -60,28 +69,30 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
 
     }
 
-    private void process0(AioSession<HttpRequest> session, HttpRequest request) throws IOException {
+    private void process0(final AioSession<HttpRequest> session, HttpRequest request) throws IOException {
         HttpResponse httpResponse = new HttpResponse(request.getProtocol());
         HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
         httpResponse.setOutputStream(outputStream);
 
-        CheckFilterGroup.group().getCheckFilter().next(new CheckFilter() {
+        HttpFilterGroup.group().getCheckFilter().next(new HttpFilter() {
             @Override
-            public void doFilter(HttpRequest request, HttpResponse response) {
-
-                response.setHttpStatus(HttpStatus.OK);
-                response.setHeader("Content-Length", "24");
-                try {
-                    OutputStream outputStream = response.getOutputStream();
-                    outputStream.write("smart-socket http server".getBytes());
-                    outputStream.flush();
-                    outputStream.close();
-                } catch (IOException e) {
-                    LOGGER.catching(e);
+            public void doFilter(final HttpRequest request, HttpResponse response) throws IOException {
+                Route route = null;
+                for (Route r : routeList) {
+                    if (request.getOriginalUri().matches(r.urlPattern())) {
+                        route = r;
+                        break;
+                    }
                 }
+                if (route == null) {
+                    response.setHttpStatus(HttpStatus.NOT_FOUND);
+                    return;
+                }
+                route.process(request, response);
+
             }
         }).doFilter(request, httpResponse);
-        httpResponse.getOutputStream().flush();
+        httpResponse.getOutputStream().close();
         session.close(false);
     }
 

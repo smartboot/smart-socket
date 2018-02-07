@@ -14,9 +14,20 @@ package org.smartboot.socket.http.enums;
  */
 public enum HttpPartEnum {
     /**
-     * 请求行
+     * 请求行:Method
      */
-    REQUEST_LINE,
+    REQUEST_LINE_METHOD,
+
+    /**
+     * 请求行:Request_URL
+     */
+    REQUEST_LINE_URL,
+
+    /**
+     * 请求行:HTTP_VERSION
+     */
+    REQUEST_LINE_VERSION,
+
     /**
      * 请求头部
      */

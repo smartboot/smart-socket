@@ -11,17 +11,19 @@ package org.smartboot.socket.http.rfc2616;
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 
+import java.io.IOException;
+
 /**
  * @author 三刀
  * @version V1.0 , 2018/2/6
  */
-public abstract class CheckFilter {
+public abstract class HttpFilter {
 
-    private CheckFilter nextFilter;
+    private HttpFilter nextFilter;
 
-    public abstract void doFilter(HttpRequest request, HttpResponse response);
+    public abstract void doFilter(HttpRequest request, HttpResponse response) throws IOException;
 
-    final void doNext(HttpRequest request, HttpResponse response) {
+    final void doNext(HttpRequest request, HttpResponse response) throws IOException {
         if (nextFilter != null) {
             nextFilter.doFilter(request, response);
         }
@@ -33,8 +35,8 @@ public abstract class CheckFilter {
      * @param nextFilter
      * @return
      */
-    public final CheckFilter next(CheckFilter nextFilter) {
-        CheckFilter lasterFilter = this;
+    public final HttpFilter next(HttpFilter nextFilter) {
+        HttpFilter lasterFilter = this;
         while (lasterFilter.nextFilter != null) {
             lasterFilter = lasterFilter.nextFilter;
         }

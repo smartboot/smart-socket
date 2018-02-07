@@ -17,6 +17,7 @@ import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.extension.decoder.StreamFrameDecoder;
 import org.smartboot.socket.http.enums.BodyTypeEnum;
 import org.smartboot.socket.http.enums.HttpPartEnum;
+import org.smartboot.socket.http.utils.Consts;
 import org.smartboot.socket.http.utils.EmptyInputStream;
 import org.smartboot.socket.http.utils.HttpHeaderNames;
 import org.smartboot.socket.transport.AioSession;
@@ -29,7 +30,9 @@ import java.nio.ByteBuffer;
  */
 public class HttpProtocol implements Protocol<HttpRequest> {
     private static final Logger LOGGER = LogManager.getLogger(HttpProtocol.class);
-    private static final byte[] LINE_END_BYTES = {'\r', '\n'};
+    public static final byte[] CRLF = {Consts.CR, Consts.LF};
+
+    private static final byte[] SP = {Consts.SP};
 
     @Override
     public HttpRequest decode(ByteBuffer buffer, AioSession<HttpRequest> session, boolean eof) {
@@ -42,9 +45,21 @@ public class HttpProtocol implements Protocol<HttpRequest> {
         while (buffer.hasRemaining() && continueDecode) {
             switch (decodeUnit.partEnum) {
                 //解析请求行
-                case REQUEST_LINE:
+                case REQUEST_LINE_METHOD:
                     if (decodeUnit.headPartDecoder.decode(buffer)) {
-                        decodeRequestLine(decodeUnit);
+                        decodeRequestLineMethod(decodeUnit);
+                    }
+                    break;
+                //解析请求行:URL
+                case REQUEST_LINE_URL:
+                    if (decodeUnit.headPartDecoder.decode(buffer)) {
+                        decodeRequestLineURL(decodeUnit);
+                    }
+                    break;
+                //解析请求行:HTTP_VERSION
+                case REQUEST_LINE_VERSION:
+                    if (decodeUnit.headPartDecoder.decode(buffer)) {
+                        decodeHttpVersion(decodeUnit);
                     }
                     break;
                 //解析消息头
@@ -95,8 +110,8 @@ public class HttpProtocol implements Protocol<HttpRequest> {
         if (session.getAttachment() == null) {
             decodeUnit = new HttpDecodeUnit();
             decodeUnit.entity = new HttpRequest(session);
-            decodeUnit.partEnum = HttpPartEnum.REQUEST_LINE;
-            decodeUnit.headPartDecoder = new DelimiterFrameDecoder(LINE_END_BYTES, 10);
+            decodeUnit.partEnum = HttpPartEnum.REQUEST_LINE_METHOD;
+            decodeUnit.headPartDecoder = new DelimiterFrameDecoder(SP, 10);
             session.setAttachment(decodeUnit);
         } else {
             decodeUnit = (HttpDecodeUnit) session.getAttachment();
@@ -109,19 +124,49 @@ public class HttpProtocol implements Protocol<HttpRequest> {
         return null;
     }
 
+
     /**
      * 解析请求行
      *
      * @param unit
      */
-    private void decodeRequestLine(HttpDecodeUnit unit) {
+    private void decodeRequestLineMethod(HttpDecodeUnit unit) {
         ByteBuffer requestLineBuffer = unit.headPartDecoder.getBuffer();
-        String[] requestLineDatas = StringUtils.split(new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining()), " ");
+        HttpRequest request = unit.entity;
+        request.setMethod(new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - SP.length));
+
+        //识别一下一个解码阶段
+        unit.headPartDecoder.reset();
+        unit.partEnum = HttpPartEnum.REQUEST_LINE_URL;
+    }
+
+    /**
+     * 解析请求行
+     *
+     * @param unit
+     */
+    private void decodeRequestLineURL(HttpDecodeUnit unit) {
+        ByteBuffer requestLineBuffer = unit.headPartDecoder.getBuffer();
+        String uri = new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - SP.length);
+
+        unit.entity.setOriginalUri(uri);
+
+        //识别一下一个解码阶段
+        unit.headPartDecoder.reset(CRLF);
+        unit.partEnum = HttpPartEnum.REQUEST_LINE_VERSION;
+    }
+
+    /**
+     * 解析请求行
+     *
+     * @param unit
+     */
+    private void decodeHttpVersion(HttpDecodeUnit unit) {
+        ByteBuffer requestLineBuffer = unit.headPartDecoder.getBuffer();
+        String httpVersion = new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - CRLF.length);
 
         HttpRequest request = unit.entity;
-        request.setMethod(requestLineDatas[0]);
-        request.setOriginalUri(requestLineDatas[1]);
-        request.setProtocol(requestLineDatas[2].trim());
+        request.setProtocol(httpVersion);
 
         //识别一下一个解码阶段
         unit.headPartDecoder.reset();
@@ -137,7 +182,7 @@ public class HttpProtocol implements Protocol<HttpRequest> {
         ByteBuffer headLineBuffer = unit.headPartDecoder.getBuffer();
 
         //消息头已结束
-        if (headLineBuffer.remaining() == LINE_END_BYTES.length) {
+        if (headLineBuffer.remaining() == CRLF.length) {
             unit.partEnum = HttpPartEnum.HEAD_END_LINE;
             unit.headPartDecoder.reset();
             return;
