@@ -34,9 +34,10 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
     private static final Logger LOGGER = LogManager.getLogger(HttpMessageProcessor.class);
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private Map<String, HttpHandle> handleMap = new HashMap<>();
-    private StaticResourceHandle defaultHandle = new StaticResourceHandle();
+    private StaticResourceHandle defaultHandle;
 
-    public HttpMessageProcessor() {
+    public HttpMessageProcessor(String baseDir) {
+        defaultHandle = new StaticResourceHandle(baseDir);
         HttpHandleGroup.group().getCheckFilter()
                 .next(new HttpHandle() {
                     @Override

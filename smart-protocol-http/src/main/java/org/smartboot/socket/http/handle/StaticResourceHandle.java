@@ -20,12 +20,18 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
+ * 静态资源加载Handle
+ *
  * @author 三刀
  * @version V1.0 , 2018/2/7
  */
 public class StaticResourceHandle extends HttpHandle {
     private static final int READ_BUFFER = 1024;
-    private String baseDir = "/Users/zhengjunwei/Downloads";
+    private String baseDir;
+
+    public StaticResourceHandle(String baseDir) {
+        this.baseDir = baseDir;
+    }
 
     @Override
     public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
