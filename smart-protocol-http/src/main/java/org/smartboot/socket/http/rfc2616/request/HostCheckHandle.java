@@ -12,7 +12,7 @@ import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.http.rfc2616.HttpHandle;
-import org.smartboot.socket.http.utils.HttpHeaderNames;
+import org.smartboot.socket.http.utils.HttpHeader;
 
 import java.io.IOException;
 
@@ -27,7 +27,7 @@ import java.io.IOException;
 public class HostCheckHandle extends HttpHandle {
     @Override
     public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
-        if (request.getHeader(HttpHeaderNames.HOST) == null) {
+        if (request.getHeader(HttpHeader.Names.HOST) == null) {
             response.setHttpStatus(HttpStatus.BAD_REQUEST);
             return;
         }

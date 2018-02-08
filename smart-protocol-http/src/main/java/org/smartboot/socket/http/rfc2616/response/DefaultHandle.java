@@ -13,7 +13,7 @@ import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.http.rfc2616.HttpHandle;
 import org.smartboot.socket.http.utils.Consts;
-import org.smartboot.socket.http.utils.HttpHeaderNames;
+import org.smartboot.socket.http.utils.HttpHeader;
 
 import java.io.IOException;
 
@@ -27,12 +27,12 @@ public class DefaultHandle extends HttpHandle {
         if (response.getHttpStatus() == null) {
             response.setHttpStatus(HttpStatus.OK);
         }
-        if (response.getHeader(HttpHeaderNames.CONTENT_LENGTH) == null && response.getHeader(HttpHeaderNames.TRANSFER_ENCODING) == null
+        if (response.getHeader(HttpHeader.Names.CONTENT_LENGTH) == null && response.getHeader(HttpHeader.Names.TRANSFER_ENCODING) == null
                 && response.getHttpStatus() == HttpStatus.OK) {
-            response.setHeader(HttpHeaderNames.TRANSFER_ENCODING, Consts.CHUNKED);
+            response.setHeader(HttpHeader.Names.TRANSFER_ENCODING, Consts.CHUNKED);
         }
-        if (response.getHeader(HttpHeaderNames.HOST) == null) {
-            response.setHeader(HttpHeaderNames.HOST, "smart-socket");
+        if (response.getHeader(HttpHeader.Names.HOST) == null) {
+            response.setHeader(HttpHeader.Names.HOST, "smart-socket");
         }
         doNext(request, response);
     }

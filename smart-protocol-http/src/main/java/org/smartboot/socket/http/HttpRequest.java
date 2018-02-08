@@ -12,7 +12,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.lang.math.NumberUtils;
-import org.smartboot.socket.http.utils.HttpHeaderNames;
+import org.smartboot.socket.http.utils.HttpHeader;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.InputStream;
@@ -54,9 +54,9 @@ public class HttpRequest {
 
     public void setHeader(String name, String value) {
         headMap.put(name, value);
-        if (StringUtils.equals(name, HttpHeaderNames.CONTENT_LENGTH)) {
+        if (StringUtils.equals(name, HttpHeader.Names.CONTENT_LENGTH)) {
             contentLength = NumberUtils.toInt(value, -1);
-        } else if (StringUtils.startsWith(name, HttpHeaderNames.CONTENT_TYPE)) {
+        } else if (StringUtils.startsWith(name, HttpHeader.Names.CONTENT_TYPE)) {
             contentType = value;
         }
     }

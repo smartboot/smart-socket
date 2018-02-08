@@ -19,7 +19,7 @@ import org.smartboot.socket.http.enums.BodyTypeEnum;
 import org.smartboot.socket.http.enums.HttpPartEnum;
 import org.smartboot.socket.http.utils.Consts;
 import org.smartboot.socket.http.utils.EmptyInputStream;
-import org.smartboot.socket.http.utils.HttpHeaderNames;
+import org.smartboot.socket.http.utils.HttpHeader;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
@@ -203,7 +203,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
         }
         unit.partEnum = HttpPartEnum.BODY;
         //识别Body解码器
-        String contentType = unit.entity.getHeader(HttpHeaderNames.CONTENT_TYPE);
+        String contentType = unit.entity.getHeader(HttpHeader.Names.CONTENT_TYPE);
         int contentLength = unit.entity.getContentLength();
         if (StringUtils.startsWith(contentType, "multipart/form-data")) {
             unit.bodyTypeEnum = BodyTypeEnum.STREAM;

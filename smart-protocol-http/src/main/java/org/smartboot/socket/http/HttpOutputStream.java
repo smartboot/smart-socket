@@ -11,7 +11,7 @@ package org.smartboot.socket.http;
 import org.apache.commons.lang.StringUtils;
 import org.smartboot.socket.http.rfc2616.HttpHandleGroup;
 import org.smartboot.socket.http.utils.Consts;
-import org.smartboot.socket.http.utils.HttpHeaderNames;
+import org.smartboot.socket.http.utils.HttpHeader;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -64,7 +64,7 @@ final class HttpOutputStream extends OutputStream {
 
     private void writeHead() throws IOException {
         HttpHandleGroup.group().getLastHandle().doHandle(request, new NoneOutputHttpResponWrap(response));//防止在handle中调用outputStream操作
-        chunked = StringUtils.equals(Consts.CHUNKED, response.getHeader(HttpHeaderNames.TRANSFER_ENCODING));
+        chunked = StringUtils.equals(Consts.CHUNKED, response.getHeader(HttpHeader.Names.TRANSFER_ENCODING));
 
         ByteBuffer headBuffer = ByteBuffer.allocate(512);
         headBuffer.put(getBytes(response.getProtocol()))
