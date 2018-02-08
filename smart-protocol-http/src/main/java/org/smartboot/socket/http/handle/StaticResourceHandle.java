@@ -10,17 +10,39 @@ package org.smartboot.socket.http.handle;
 
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
+import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.http.rfc2616.HttpHandle;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 
 /**
  * @author 三刀
  * @version V1.0 , 2018/2/7
  */
 public class StaticResourceHandle extends HttpHandle {
+    private static final int READ_BUFFER = 1024;
+    private String baseDir = "/Users/zhengjunwei/Downloads";
+
     @Override
     public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
-        response.getOutputStream().write(request.toString().getBytes());
+        File file = new File(baseDir + request.getRequestURI());
+        if (!file.isFile()) {
+            response.setHttpStatus(HttpStatus.NOT_FOUND);
+            return;
+        }
+        FileInputStream fis = new FileInputStream(file);
+        FileChannel fileChannel = fis.getChannel();
+        long fileSize = fileChannel.size();
+        long readPos = 0;
+        while (readPos < fileSize) {
+            MappedByteBuffer mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, readPos, fileSize - readPos > READ_BUFFER ? READ_BUFFER : fileSize - readPos);
+            readPos += mappedByteBuffer.remaining();
+            response.write(mappedByteBuffer);
+        }
+        fis.close();
     }
 }

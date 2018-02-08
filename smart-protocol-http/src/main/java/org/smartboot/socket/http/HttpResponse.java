@@ -10,7 +10,9 @@ package org.smartboot.socket.http;
 
 import org.smartboot.socket.http.enums.HttpStatus;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +31,7 @@ public class HttpResponse {
 
     private Map<String, String> headMap = new HashMap<String, String>();
 
-    private OutputStream outputStream;
+    private HttpOutputStream outputStream;
 
 
     public HttpResponse(String protocol) {
@@ -40,7 +42,7 @@ public class HttpResponse {
         return outputStream;
     }
 
-    void setOutputStream(OutputStream outputStream) {
+    void setOutputStream(HttpOutputStream outputStream) {
         this.outputStream = outputStream;
     }
 
@@ -62,5 +64,9 @@ public class HttpResponse {
 
     String getProtocol() {
         return protocol;
+    }
+
+    public void write(ByteBuffer buffer) throws IOException {
+        outputStream.write(buffer);
     }
 }

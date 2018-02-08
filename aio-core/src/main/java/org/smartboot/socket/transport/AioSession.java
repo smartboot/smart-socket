@@ -127,8 +127,9 @@ public class AioSession<T> {
         int index = 0;
         while (index < data.length) {
             ByteBuffer srcBuffer = writeCacheQueue.poll();
-            System.arraycopy(srcBuffer.array(), srcBuffer.position(), data, index, srcBuffer.remaining());
-            index += srcBuffer.remaining();
+            int remain = srcBuffer.remaining();
+            srcBuffer.get(data, index, remain);
+            index += remain;
         }
         writeBuffer = ByteBuffer.wrap(data);
         continueWrite();

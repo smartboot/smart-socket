@@ -54,6 +54,11 @@ final class HttpOutputStream extends OutputStream {
         }
     }
 
+    public void write(ByteBuffer buffer) throws IOException {
+        flush();
+        writeCacheBuffer(buffer);
+    }
+
     private void writeHead() throws IOException {
         if (httpResponse.getHttpStatus() == null) {
             httpResponse.setHttpStatus(HttpStatus.OK);
@@ -142,4 +147,5 @@ final class HttpOutputStream extends OutputStream {
             aioSession.write(cacheBuffer);
         }
     }
+
 }
