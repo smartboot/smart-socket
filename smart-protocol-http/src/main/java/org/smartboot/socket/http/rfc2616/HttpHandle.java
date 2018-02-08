@@ -23,7 +23,7 @@ public abstract class HttpHandle {
 
     public abstract void doHandle(HttpRequest request, HttpResponse response) throws IOException;
 
-    final void doNext(HttpRequest request, HttpResponse response) throws IOException {
+    protected final void doNext(HttpRequest request, HttpResponse response) throws IOException {
         if (nextHandle != null) {
             nextHandle.doHandle(request, response);
         }
@@ -32,15 +32,15 @@ public abstract class HttpHandle {
     /**
      * 添加CheckFilter至末尾
      *
-     * @param nextFilter
+     * @param nextHandle
      * @return
      */
-    public final HttpHandle next(HttpHandle nextFilter) {
+    public final HttpHandle next(HttpHandle nextHandle) {
         HttpHandle httpHandle = this;
         while (httpHandle.nextHandle != null) {
             httpHandle = httpHandle.nextHandle;
         }
-        httpHandle.nextHandle = nextFilter;
+        httpHandle.nextHandle = nextHandle;
         return this;
     }
 }

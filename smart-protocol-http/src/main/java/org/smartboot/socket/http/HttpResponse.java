@@ -9,6 +9,7 @@
 package org.smartboot.socket.http;
 
 import org.smartboot.socket.http.enums.HttpStatus;
+import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,17 +34,13 @@ public class HttpResponse {
 
     private HttpOutputStream outputStream;
 
-
-    public HttpResponse(String protocol) {
-        this.protocol = protocol;
+    public HttpResponse(AioSession<HttpRequest> session, HttpRequest request) {
+        this.protocol = request.getProtocol();
+        this.outputStream = new HttpOutputStream(session, this, request);
     }
 
     public OutputStream getOutputStream() {
         return outputStream;
-    }
-
-    void setOutputStream(HttpOutputStream outputStream) {
-        this.outputStream = outputStream;
     }
 
     public HttpStatus getHttpStatus() {
@@ -60,6 +57,10 @@ public class HttpResponse {
 
     public void setHeader(String name, String value) {
         headMap.put(name, value);
+    }
+
+    public String getHeader(String name) {
+        return headMap.get(name);
     }
 
     String getProtocol() {

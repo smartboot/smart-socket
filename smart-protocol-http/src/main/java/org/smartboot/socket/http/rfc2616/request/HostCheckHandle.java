@@ -1,16 +1,17 @@
 /*
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: HostCheckFilter.java
- * Date: 2018-02-07
+ * file name: HostCheckHandle.java
+ * Date: 2018-02-08
  * Author: sandao
  */
 
-package org.smartboot.socket.http.rfc2616;
+package org.smartboot.socket.http.rfc2616.request;
 
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
+import org.smartboot.socket.http.rfc2616.HttpHandle;
 import org.smartboot.socket.http.utils.HttpHeaderNames;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ import java.io.IOException;
  * @author 三刀
  * @version V1.0 , 2018/2/7
  */
-class HostCheckHandle extends HttpHandle {
+public class HostCheckHandle extends HttpHandle {
     @Override
     public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
         if (request.getHeader(HttpHeaderNames.HOST) == null) {

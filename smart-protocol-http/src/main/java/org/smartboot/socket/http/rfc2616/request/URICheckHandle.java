@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: URICheckFilter.java
- * Date: 2018-02-06
+ * file name: URICheckHandle.java
+ * Date: 2018-02-08
  * Author: sandao
  */
 
-package org.smartboot.socket.http.rfc2616;
+package org.smartboot.socket.http.rfc2616.request;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
+import org.smartboot.socket.http.rfc2616.HttpHandle;
 
 import java.io.IOException;
 
@@ -25,7 +26,7 @@ import java.io.IOException;
  * @author 三刀
  * @version V1.0 , 2018/2/6
  */
-class URICheckHandle extends HttpHandle {
+public class URICheckHandle extends HttpHandle {
     public static final int MAX_LENGTH = 255 * 1024;
     private static final Logger LOGGER = LogManager.getLogger(URICheckHandle.class);
 

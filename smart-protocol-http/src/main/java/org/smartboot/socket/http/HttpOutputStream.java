@@ -8,7 +8,8 @@
 
 package org.smartboot.socket.http;
 
-import org.smartboot.socket.http.enums.HttpStatus;
+import org.apache.commons.lang.StringUtils;
+import org.smartboot.socket.http.rfc2616.HttpHandleGroup;
 import org.smartboot.socket.http.utils.Consts;
 import org.smartboot.socket.http.utils.HttpHeaderNames;
 import org.smartboot.socket.transport.AioSession;
@@ -26,16 +27,18 @@ final class HttpOutputStream extends OutputStream {
 
     private AioSession aioSession;
 
-    private HttpResponse httpResponse;
+    private HttpResponse response;
 
     private ByteBuffer cacheBuffer = ByteBuffer.allocate(512);
     private boolean committed = false, closed = false;
 
     private boolean chunked = false;
+    private HttpRequest request;
 
-    public HttpOutputStream(AioSession aioSession, HttpResponse httpResponse) {
+    public HttpOutputStream(AioSession aioSession, HttpResponse response, HttpRequest request) {
         this.aioSession = aioSession;
-        this.httpResponse = httpResponse;
+        this.response = response;
+        this.request = request;
     }
 
     @Override
@@ -60,26 +63,19 @@ final class HttpOutputStream extends OutputStream {
     }
 
     private void writeHead() throws IOException {
-        if (httpResponse.getHttpStatus() == null) {
-            httpResponse.setHttpStatus(HttpStatus.OK);
-        }
+        HttpHandleGroup.group().getLastHandle().doHandle(request, response);
+        chunked = StringUtils.equals(Consts.CHUNKED, response.getHeader(HttpHeaderNames.TRANSFER_ENCODING));
+
         ByteBuffer headBuffer = ByteBuffer.allocate(512);
-        headBuffer.put(getBytes(httpResponse.getProtocol()))
+        headBuffer.put(getBytes(response.getProtocol()))
                 .put(Consts.SP)
-                .put(getBytes(String.valueOf(httpResponse.getHttpStatus().value())))
+                .put(getBytes(String.valueOf(response.getHttpStatus().value())))
                 .put(Consts.SP)
-                .put(getBytes(httpResponse.getHttpStatus().getReasonPhrase()))
+                .put(getBytes(response.getHttpStatus().getReasonPhrase()))
                 .put(Consts.CR).put(Consts.LF);
 
-        //自动识别Transfer-Encoding
-        Map<String, String> headMap = httpResponse.getHeadMap();
-        if (!headMap.containsKey(HttpHeaderNames.CONTENT_LENGTH) && !headMap.containsKey(HttpHeaderNames.TRANSFER_ENCODING)
-                && httpResponse.getHttpStatus() == HttpStatus.OK) {
-            httpResponse.setHeader(HttpHeaderNames.TRANSFER_ENCODING, "chunked");
-            chunked = true;
-        }
 
-        for (Map.Entry<String, String> entry : httpResponse.getHeadMap().entrySet()) {
+        for (Map.Entry<String, String> entry : response.getHeadMap().entrySet()) {
             byte[] headKey = getBytes(entry.getKey());
             byte[] headVal = getBytes(entry.getValue());
 

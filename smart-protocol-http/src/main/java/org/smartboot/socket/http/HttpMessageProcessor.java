@@ -38,7 +38,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
 
     public HttpMessageProcessor(String baseDir) {
         defaultHandle = new StaticResourceHandle(baseDir);
-        HttpHandleGroup.group().getCheckFilter()
+        HttpHandleGroup.group().getHttpHandle()
                 .next(new HttpHandle() {
                     @Override
                     public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
@@ -88,12 +88,9 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
     }
 
     private void process0(final AioSession<HttpRequest> session, HttpRequest request) throws IOException {
-        HttpResponse httpResponse = new HttpResponse(request.getProtocol());
-        HttpOutputStream outputStream = new HttpOutputStream(session, httpResponse);
-        httpResponse.setOutputStream(outputStream);
-
+        HttpResponse httpResponse = new HttpResponse(session, request);
         try {
-            HttpHandleGroup.group().getCheckFilter().doHandle(request, httpResponse);
+            HttpHandleGroup.group().getHttpHandle().doHandle(request, httpResponse);
         } catch (Exception e) {
             httpResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             httpResponse.getOutputStream().write(e.fillInStackTrace().toString().getBytes());

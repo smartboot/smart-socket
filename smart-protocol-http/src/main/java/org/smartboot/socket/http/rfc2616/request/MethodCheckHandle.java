@@ -1,17 +1,18 @@
 /*
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: MethodCheckFilter.java
- * Date: 2018-02-06
+ * file name: MethodCheckHandle.java
+ * Date: 2018-02-08
  * Author: sandao
  */
 
-package org.smartboot.socket.http.rfc2616;
+package org.smartboot.socket.http.rfc2616.request;
 
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.http.enums.MethodEnum;
+import org.smartboot.socket.http.rfc2616.HttpHandle;
 
 import java.io.IOException;
 
@@ -29,7 +30,7 @@ import java.io.IOException;
  * @author 三刀
  * @version V1.0 , 2018/2/6
  */
-class MethodCheckHandle extends HttpHandle {
+public class MethodCheckHandle extends HttpHandle {
     @Override
     public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
         MethodEnum methodEnum = MethodEnum.getByMethod(request.getMethod());//大小写敏感
