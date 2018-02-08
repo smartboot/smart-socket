@@ -242,7 +242,7 @@ public class AioSession<T> {
             } catch (Exception e) {
                 logger.catching(e);
                 for (Filter<T> h : ioServerConfig.getFilters()) {
-                    h.processFailHandler(this, dataEntry, e);
+                    h.processFail(this, dataEntry, e);
                 }
             }
 
