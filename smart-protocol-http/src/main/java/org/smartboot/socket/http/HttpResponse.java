@@ -34,6 +34,10 @@ public class HttpResponse {
 
     private HttpOutputStream outputStream;
 
+    protected HttpResponse() {
+
+    }
+
     public HttpResponse(AioSession<HttpRequest> session, HttpRequest request) {
         this.protocol = request.getProtocol();
         this.outputStream = new HttpOutputStream(session, this, request);
