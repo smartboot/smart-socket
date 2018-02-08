@@ -78,4 +78,8 @@ public interface HttpHeader {
         String WARNING = "Warning";
         String WWW_AUTHENTICATE = "WWW-Authenticate";
     }
+
+    interface Values {
+        String CHUNKED = "chunked";
+    }
 }

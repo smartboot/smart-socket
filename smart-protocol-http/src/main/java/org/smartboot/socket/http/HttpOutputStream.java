@@ -64,7 +64,7 @@ final class HttpOutputStream extends OutputStream {
 
     private void writeHead() throws IOException {
         HttpHandleGroup.group().getLastHandle().doHandle(request, new NoneOutputHttpResponWrap(response));//防止在handle中调用outputStream操作
-        chunked = StringUtils.equals(Consts.CHUNKED, response.getHeader(HttpHeader.Names.TRANSFER_ENCODING));
+        chunked = StringUtils.equals(HttpHeader.Values.CHUNKED, response.getHeader(HttpHeader.Names.TRANSFER_ENCODING));
 
         ByteBuffer headBuffer = ByteBuffer.allocate(512);
         headBuffer.put(getBytes(response.getProtocol()))

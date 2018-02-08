@@ -67,5 +67,4 @@ public interface Consts {
      */
     public static final char SP_CHAR = (char) SP;
 
-    public static final String CHUNKED = "chunked";
 }
