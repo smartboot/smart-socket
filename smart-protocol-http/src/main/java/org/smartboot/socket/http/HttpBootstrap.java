@@ -21,7 +21,7 @@ import java.net.UnknownHostException;
 public class HttpBootstrap {
 
     public static void main(String[] args) throws UnknownHostException {
-        HttpMessageProcessor processor = new HttpMessageProcessor("/Users/zhengjunwei/Downloads");
+        HttpMessageProcessor processor = new HttpMessageProcessor("/");
         processor.route("/", new HttpHandle() {
             @Override
             public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
