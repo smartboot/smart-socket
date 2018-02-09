@@ -62,8 +62,8 @@ public class AioSession<T> {
      * 响应消息缓存队列
      */
     private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
-    private ReadCompletionHandler aioReadCompletionHandler;
-    private WriteCompletionHandler aioWriteCompletionHandler;
+    private ReadCompletionHandler readCompletionHandler;
+    private WriteCompletionHandler writeCompletionHandler;
     /**
      * 输出信号量
      */
@@ -73,14 +73,14 @@ public class AioSession<T> {
     /**
      * @param channel
      * @param config
-     * @param aioReadCompletionHandler
-     * @param aioWriteCompletionHandler
+     * @param readCompletionHandler
+     * @param writeCompletionHandler
      * @param serverSession             是否服务端Session
      */
-    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler aioReadCompletionHandler, WriteCompletionHandler aioWriteCompletionHandler, boolean serverSession) {
+    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, boolean serverSession) {
         this.channel = channel;
-        this.aioReadCompletionHandler = aioReadCompletionHandler;
-        this.aioWriteCompletionHandler = aioWriteCompletionHandler;
+        this.readCompletionHandler = readCompletionHandler;
+        this.writeCompletionHandler = writeCompletionHandler;
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
         this.serverFlowLimit = serverSession ? false : null;
@@ -147,7 +147,7 @@ public class AioSession<T> {
      * @param buffer
      */
     protected final void readFromChannel0(ByteBuffer buffer) {
-        channel.read(buffer, this, aioReadCompletionHandler);
+        channel.read(buffer, this, readCompletionHandler);
     }
 
     /**
@@ -156,7 +156,7 @@ public class AioSession<T> {
      * @param buffer
      */
     protected final void writeToChannel0(ByteBuffer buffer) {
-        channel.write(buffer, this, aioWriteCompletionHandler);
+        channel.write(buffer, this, writeCompletionHandler);
     }
 
     public final void write(final ByteBuffer buffer) throws IOException {
