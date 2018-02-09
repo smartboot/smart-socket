@@ -25,6 +25,15 @@ import java.util.TimeZone;
  * @version V1.0 , 2018/2/8
  */
 public class DefaultHandle extends HttpHandle {
+    private ThreadLocal<SimpleDateFormat> simpleDateFormatThreadLocal = new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+            SimpleDateFormat sdf = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+            sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+            return sdf;
+        }
+    };
+
     public static void main(String[] args) {
         SimpleDateFormat sdf = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -51,9 +60,7 @@ public class DefaultHandle extends HttpHandle {
          * RFC2616 3.3.1
          * 只能用 RFC 1123 里定义的日期格式来填充头域 (header field)的值里用到 HTTP-date 的地方
          */
-        SimpleDateFormat sdf = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
-        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
-        response.setHeader(HttpHeader.Names.DATE, sdf.format(new Date()));
+        response.setHeader(HttpHeader.Names.DATE, simpleDateFormatThreadLocal.get().format(new Date()));
 
         doNext(request, response);
     }
