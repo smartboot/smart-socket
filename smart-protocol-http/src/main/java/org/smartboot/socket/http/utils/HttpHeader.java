@@ -81,5 +81,7 @@ public interface HttpHeader {
 
     interface Values {
         String CHUNKED = "chunked";
+
+        String MULTIPART_FORM_DATA = "multipart/form-data";
     }
 }

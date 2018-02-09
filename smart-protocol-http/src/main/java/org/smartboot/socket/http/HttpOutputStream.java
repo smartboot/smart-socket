@@ -27,7 +27,7 @@ final class HttpOutputStream extends OutputStream {
 
     private AioSession aioSession;
 
-    private HttpResponse response;
+    private DefaultHttpResponse response;
 
     private ByteBuffer cacheBuffer = ByteBuffer.allocate(512);
     private boolean committed = false, closed = false;
@@ -35,7 +35,7 @@ final class HttpOutputStream extends OutputStream {
     private boolean chunked = false;
     private HttpRequest request;
 
-    public HttpOutputStream(AioSession aioSession, HttpResponse response, HttpRequest request) {
+    public HttpOutputStream(AioSession aioSession, DefaultHttpResponse response, HttpRequest request) {
         this.aioSession = aioSession;
         this.response = response;
         this.request = request;
@@ -63,11 +63,11 @@ final class HttpOutputStream extends OutputStream {
     }
 
     private void writeHead() throws IOException {
-        HttpHandleGroup.group().getLastHandle().doHandle(request, new NoneOutputHttpResponWrap(response));//防止在handle中调用outputStream操作
+        HttpHandleGroup.group().getLastHandle().doHandle(request, new NoneOutputHttpResponseWrap(response));//防止在handle中调用outputStream操作
         chunked = StringUtils.equals(HttpHeader.Values.CHUNKED, response.getHeader(HttpHeader.Names.TRANSFER_ENCODING));
 
         ByteBuffer headBuffer = ByteBuffer.allocate(512);
-        headBuffer.put(getBytes(response.getProtocol()))
+        headBuffer.put(getBytes(request.getProtocol()))
                 .put(Consts.SP)
                 .put(getBytes(String.valueOf(response.getHttpStatus().value())))
                 .put(Consts.SP)

@@ -14,9 +14,11 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.http.enums.HttpStatus;
+import org.smartboot.socket.http.enums.MethodEnum;
 import org.smartboot.socket.http.handle.StaticResourceHandle;
 import org.smartboot.socket.http.rfc2616.HttpHandle;
 import org.smartboot.socket.http.rfc2616.HttpHandleGroup;
+import org.smartboot.socket.http.utils.HttpHeader;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -62,7 +64,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
     @Override
     public void process(final AioSession<HttpRequest> session, final HttpRequest entry) {
         //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
-        if (StringUtils.equalsIgnoreCase(entry.getMethod(), "POST") && StringUtils.equals(entry.getContentType(), "multipart/form-data")) {
+        if (StringUtils.equalsIgnoreCase(entry.getMethod(), MethodEnum.POST.getMethod()) && StringUtils.equals(entry.getContentType(), HttpHeader.Values.MULTIPART_FORM_DATA)) {
             executorService.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -88,7 +90,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
     }
 
     private void process0(final AioSession<HttpRequest> session, HttpRequest request) throws IOException {
-        HttpResponse httpResponse = new HttpResponse(session, request);
+        HttpResponse httpResponse = new DefaultHttpResponse(session, request);
         try {
             HttpHandleGroup.group().getHttpHandle().doHandle(request, httpResponse);
         } catch (Exception e) {

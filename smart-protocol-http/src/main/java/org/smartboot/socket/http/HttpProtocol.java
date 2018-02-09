@@ -17,6 +17,7 @@ import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.extension.decoder.StreamFrameDecoder;
 import org.smartboot.socket.http.enums.BodyTypeEnum;
 import org.smartboot.socket.http.enums.HttpPartEnum;
+import org.smartboot.socket.http.enums.MethodEnum;
 import org.smartboot.socket.http.utils.Consts;
 import org.smartboot.socket.http.utils.EmptyInputStream;
 import org.smartboot.socket.http.utils.HttpHeader;
@@ -197,7 +198,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
 
     private void decodeHeadEnd(HttpDecodeUnit unit) {
 
-        if (!StringUtils.equals("POST", unit.entity.getMethod())) {
+        if (!StringUtils.equals(MethodEnum.POST.getMethod(), unit.entity.getMethod())) {
             unit.partEnum = HttpPartEnum.END;
             return;
         }
@@ -205,7 +206,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
         //识别Body解码器
         String contentType = unit.entity.getHeader(HttpHeader.Names.CONTENT_TYPE);
         int contentLength = unit.entity.getContentLength();
-        if (StringUtils.startsWith(contentType, "multipart/form-data")) {
+        if (StringUtils.startsWith(contentType, HttpHeader.Values.MULTIPART_FORM_DATA)) {
             unit.bodyTypeEnum = BodyTypeEnum.STREAM;
             unit.streamBodyDecoder = new StreamFrameDecoder(contentLength);
             unit.entity.setInputStream(unit.streamBodyDecoder.getInputStream());

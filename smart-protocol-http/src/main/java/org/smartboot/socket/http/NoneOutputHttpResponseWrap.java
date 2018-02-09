@@ -13,16 +13,15 @@ import org.smartboot.socket.http.enums.HttpStatus;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.Map;
 
 /**
  * @author 三刀
  * @version V1.0 , 2018/2/8
  */
-class NoneOutputHttpResponWrap extends HttpResponse {
+class NoneOutputHttpResponseWrap implements HttpResponse {
     private HttpResponse response;
 
-    public NoneOutputHttpResponWrap(HttpResponse response) {
+    public NoneOutputHttpResponseWrap(HttpResponse response) {
         this.response = response;
     }
 
@@ -42,11 +41,6 @@ class NoneOutputHttpResponWrap extends HttpResponse {
     }
 
     @Override
-    Map<String, String> getHeadMap() {
-        return response.getHeadMap();
-    }
-
-    @Override
     public void setHeader(String name, String value) {
         response.setHeader(name, value);
     }
@@ -54,11 +48,6 @@ class NoneOutputHttpResponWrap extends HttpResponse {
     @Override
     public String getHeader(String name) {
         return response.getHeader(name);
-    }
-
-    @Override
-    String getProtocol() {
-        return response.getProtocol();
     }
 
     @Override
