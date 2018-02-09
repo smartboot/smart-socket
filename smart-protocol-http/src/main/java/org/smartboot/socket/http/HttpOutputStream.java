@@ -124,7 +124,7 @@ final class HttpOutputStream extends OutputStream {
         }
         flush();
         if (chunked) {
-            aioSession.write(ByteBuffer.wrap(new byte[]{'0', '\r', '\n', '\r', '\n'}));
+            aioSession.write(ByteBuffer.wrap(new byte[]{'0', Consts.CR, Consts.LF, Consts.CR, Consts.LF}));
         }
         aioSession.close(false);
         closed = true;
