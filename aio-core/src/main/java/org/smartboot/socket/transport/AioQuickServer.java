@@ -25,7 +25,8 @@ import java.util.concurrent.ThreadFactory;
 
 /**
  * AIO服务端
- * Created by 三刀 on 2017/6/28.
+ * @author 三刀
+ * @since 1.0.0
  */
 public class AioQuickServer<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickServer.class);

@@ -43,5 +43,9 @@ public enum HttpPartEnum {
     /**
      * 结束
      */
-    END;
+    END,
+    /**
+     * Websocket数据帧
+     */
+    WS_DATA_FRAMING;
 }

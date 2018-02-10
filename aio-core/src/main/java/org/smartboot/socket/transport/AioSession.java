@@ -24,18 +24,19 @@ import java.util.concurrent.Semaphore;
 
 /**
  * AIO传输层会话
- * Created by 三刀 on 2017/6/29.
+ * @author 三刀
+ * @since 1.0.0
  */
 public class AioSession<T> {
-    /* Session状态:已关闭 */
+    /** Session状态:已关闭 */
     protected static final byte SESSION_STATUS_CLOSED = 1,
-    /*Session状态:关闭中*/
+    /**Session状态:关闭中*/
     SESSION_STATUS_CLOSING = 2,
-    /* Session状态:正常 */
+    /** Session状态:正常 */
     SESSION_STATUS_ENABLED = 3;
     private static final Logger logger = LogManager.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
-    /* Session ID生成器 */
+    /** Session ID生成器 */
     private static int NEXT_ID = 0;
     /**
      * 唯一标识
@@ -84,7 +85,8 @@ public class AioSession<T> {
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
         this.serverFlowLimit = serverSession ? false : null;
-        config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);//触发状态机
+        //触发状态机
+        config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
     }
 
@@ -185,8 +187,9 @@ public class AioSession<T> {
      * @param immediate true:立即关闭,false:响应消息发送完后关闭
      */
     public void close(boolean immediate) {
+        //status == SESSION_STATUS_CLOSED说明close方法被重复调用
         if (status == SESSION_STATUS_CLOSED) {
-            logger.warn("ignore, session:{} is closed:", getSessionID());//说明close方法被重复调用
+            logger.warn("ignore, session:{} is closed:", getSessionID());
             return;
         }
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
@@ -260,7 +263,8 @@ public class AioSession<T> {
         //数据读取完毕
         if (readBuffer.remaining() == 0) {
             readBuffer.clear();
-        } else if (readBuffer.position() > 0) {// 仅当发生数据读取时调用compact,减少内存拷贝
+        } else if (readBuffer.position() > 0) {
+            // 仅当发生数据读取时调用compact,减少内存拷贝
             readBuffer.compact();
         } else {
             readBuffer.position(readBuffer.limit());

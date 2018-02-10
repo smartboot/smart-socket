@@ -74,6 +74,12 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                     //识别如何处理Body部分
                 case HEAD_END_LINE: {
                     decodeHeadEnd(decodeUnit);
+                    //websocket消息
+                    if (decodeUnit.partEnum == HttpPartEnum.WS_DATA_FRAMING) {
+                        returnEntity = true;
+                        break;
+                    }
+                    //普通http消息
                     if (decodeUnit.partEnum == HttpPartEnum.END) {
                         returnEntity = true;
                         continueDecode = false;
@@ -88,6 +94,10 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                     decodeBody(decodeUnit, buffer);
                     break;
                 }
+                case WS_DATA_FRAMING:
+                    decodeWsDataFraming(decodeUnit, buffer);
+                    continueDecode = false;
+                    break;
                 default: {
                     session.setAttachment(null);
                 }
@@ -97,6 +107,19 @@ final class HttpProtocol implements Protocol<HttpRequest> {
             session.setAttachment(null);
         }
         return returnEntity ? entity : null;
+    }
+
+    /**
+     * 家吗websocket数据帧
+     *
+     * @param decodeUnit
+     * @param buffer
+     */
+    private void decodeWsDataFraming(HttpDecodeUnit decodeUnit, ByteBuffer buffer) {
+        if (buffer.remaining() < 2) {
+            return;
+        }
+
     }
 
     /**
@@ -197,23 +220,31 @@ final class HttpProtocol implements Protocol<HttpRequest> {
     }
 
     private void decodeHeadEnd(HttpDecodeUnit unit) {
+        HttpRequest request = unit.entity;
+        //Websocket消息
+        if (StringUtils.equals(request.getHeader(HttpHeader.Names.CONNECTION), HttpHeader.Values.UPGRADE)
+                && StringUtils.equals(request.getHeader(HttpHeader.Names.UPGRADE), HttpHeader.Values.WEBSOCKET)) {
+            unit.partEnum = HttpPartEnum.WS_DATA_FRAMING;
+            request.setInputStream(new EmptyInputStream());
+            return;
+        }
 
-        if (!StringUtils.equals(MethodEnum.POST.getMethod(), unit.entity.getMethod())) {
+        if (!StringUtils.equals(MethodEnum.POST.getMethod(), request.getMethod())) {
             unit.partEnum = HttpPartEnum.END;
             return;
         }
         unit.partEnum = HttpPartEnum.BODY;
         //识别Body解码器
-        String contentType = unit.entity.getHeader(HttpHeader.Names.CONTENT_TYPE);
-        int contentLength = unit.entity.getContentLength();
+        String contentType = request.getHeader(HttpHeader.Names.CONTENT_TYPE);
+        int contentLength = request.getContentLength();
         if (StringUtils.startsWith(contentType, HttpHeader.Values.MULTIPART_FORM_DATA)) {
             unit.bodyTypeEnum = BodyTypeEnum.STREAM;
             unit.streamBodyDecoder = new StreamFrameDecoder(contentLength);
-            unit.entity.setInputStream(unit.streamBodyDecoder.getInputStream());
+            request.setInputStream(unit.streamBodyDecoder.getInputStream());
         } else {
             unit.bodyTypeEnum = BodyTypeEnum.FORM;
             unit.formBodyDecoder = new FixedLengthFrameDecoder(contentLength);
-            unit.entity.setInputStream(new EmptyInputStream());
+            request.setInputStream(new EmptyInputStream());
         }
     }
 

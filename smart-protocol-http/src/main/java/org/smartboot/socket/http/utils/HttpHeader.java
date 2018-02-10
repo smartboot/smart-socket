@@ -83,5 +83,9 @@ public interface HttpHeader {
         String CHUNKED = "chunked";
 
         String MULTIPART_FORM_DATA = "multipart/form-data";
+
+        String UPGRADE = "Upgrade";
+
+        String WEBSOCKET = "websocket";
     }
 }

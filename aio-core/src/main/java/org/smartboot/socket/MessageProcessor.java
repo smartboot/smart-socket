@@ -21,7 +21,8 @@ public interface MessageProcessor<T> {
     /**
      * 处理接收到的消息
      *
-     * @param session
+     * @param session 通信会话
+     * @param msg     待处理的业务消息
      * @throws Exception
      */
     public void process(AioSession<T> session, T msg);
