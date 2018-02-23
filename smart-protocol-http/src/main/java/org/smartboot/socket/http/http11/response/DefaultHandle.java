@@ -6,13 +6,14 @@
  * Author: sandao
  */
 
-package org.smartboot.socket.http.rfc2616.response;
+package org.smartboot.socket.http.http11.response;
 
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
-import org.smartboot.socket.http.rfc2616.HttpHandle;
-import org.smartboot.socket.http.utils.HttpHeader;
+import org.smartboot.socket.http.handle.HttpHandle;
+import org.smartboot.socket.http.http11.Http11Request;
+import org.smartboot.socket.http.utils.HttpHeaderConstant;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -41,26 +42,26 @@ public class DefaultHandle extends HttpHandle {
     }
 
     @Override
-    public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
+    public void doHandle(Http11Request request, HttpResponse response) throws IOException {
         if (response.getHttpStatus() == null) {
             response.setHttpStatus(HttpStatus.OK);
         }
-        if (response.getHeader(HttpHeader.Names.CONTENT_LENGTH) == null && response.getHeader(HttpHeader.Names.TRANSFER_ENCODING) == null
+        if (response.getHeader(HttpHeaderConstant.Names.CONTENT_LENGTH) == null && response.getHeader(HttpHeaderConstant.Names.TRANSFER_ENCODING) == null
                 && response.getHttpStatus() == HttpStatus.OK) {
-            response.setHeader(HttpHeader.Names.TRANSFER_ENCODING, HttpHeader.Values.CHUNKED);
+            response.setHeader(HttpHeaderConstant.Names.TRANSFER_ENCODING, HttpHeaderConstant.Values.CHUNKED);
         }
-        if (response.getHeader(HttpHeader.Names.SERVER) == null) {
-            response.setHeader(HttpHeader.Names.SERVER, "smart-sockets");
+        if (response.getHeader(HttpHeaderConstant.Names.SERVER) == null) {
+            response.setHeader(HttpHeaderConstant.Names.SERVER, "smart-sockets");
         }
-        if (response.getHeader(HttpHeader.Names.HOST) == null) {
-            response.setHeader(HttpHeader.Names.HOST, "localhost");
+        if (response.getHeader(HttpHeaderConstant.Names.HOST) == null) {
+            response.setHeader(HttpHeaderConstant.Names.HOST, "localhost");
         }
 
         /**
          * RFC2616 3.3.1
          * 只能用 RFC 1123 里定义的日期格式来填充头域 (header field)的值里用到 HTTP-date 的地方
          */
-        response.setHeader(HttpHeader.Names.DATE, simpleDateFormatThreadLocal.get().format(new Date()));
+        response.setHeader(HttpHeaderConstant.Names.DATE, simpleDateFormatThreadLocal.get().format(new Date()));
 
         doNext(request, response);
     }

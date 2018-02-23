@@ -2,7 +2,7 @@
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: HttpPartEnum.java
- * Date: 2018-02-06
+ * Date: 2018-02-17
  * Author: sandao
  */
 
@@ -10,7 +10,7 @@ package org.smartboot.socket.http.enums;
 
 /**
  * @author 三刀
- * @version V1.0 , 2017/8/30
+ * @version V1.0 , 2018/2/16
  */
 public enum HttpPartEnum {
     /**
@@ -39,13 +39,9 @@ public enum HttpPartEnum {
     /**
      * 请求体
      */
-    BODY,
+    CONTENT,
     /**
      * 结束
      */
-    END,
-    /**
-     * Websocket数据帧
-     */
-    WS_DATA_FRAMING;
+    END;
 }

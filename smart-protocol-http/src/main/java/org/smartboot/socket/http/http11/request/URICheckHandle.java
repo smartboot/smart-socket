@@ -6,15 +6,15 @@
  * Author: sandao
  */
 
-package org.smartboot.socket.http.rfc2616.request;
+package org.smartboot.socket.http.http11.request;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
-import org.smartboot.socket.http.rfc2616.HttpHandle;
+import org.smartboot.socket.http.handle.HttpHandle;
+import org.smartboot.socket.http.http11.Http11Request;
 
 import java.io.IOException;
 
@@ -31,7 +31,7 @@ public class URICheckHandle extends HttpHandle {
     private static final Logger LOGGER = LogManager.getLogger(URICheckHandle.class);
 
     @Override
-    public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
+    public void doHandle(Http11Request request, HttpResponse response) throws IOException {
 
         if (StringUtils.length(request.getOriginalUri()) > MAX_LENGTH) {
             response.setHttpStatus(HttpStatus.URI_TOO_LONG);
@@ -44,7 +44,7 @@ public class URICheckHandle extends HttpHandle {
     /**
      * @param request
      */
-    private void parseOriginalUri(HttpRequest request) {
+    private void parseOriginalUri(Http11Request request) {
         /**
          *http_URL = "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
          *1. 如果 Request-URI 是绝对地址(absoluteURI)，那么主机(host)是 Request-URI 的 一部分。任何出现在请求里 Host 头域的值应当被忽略。

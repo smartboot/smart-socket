@@ -8,10 +8,9 @@
 
 package org.smartboot.socket.http.handle;
 
-import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
-import org.smartboot.socket.http.rfc2616.HttpHandle;
+import org.smartboot.socket.http.http11.Http11Request;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +33,7 @@ public class StaticResourceHandle extends HttpHandle {
     }
 
     @Override
-    public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
+    public void doHandle(Http11Request request, HttpResponse response) throws IOException {
         File file = new File(baseDir + request.getRequestURI());
         if (!file.isFile()) {
             response.setHttpStatus(HttpStatus.NOT_FOUND);

@@ -11,7 +11,8 @@ package org.smartboot.socket.http;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
-import org.smartboot.socket.http.rfc2616.HttpHandle;
+import org.smartboot.socket.http.handle.HttpHandle;
+import org.smartboot.socket.http.http11.Http11Request;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSSLQuickServer;
 
@@ -24,7 +25,7 @@ public class HttpBootstrap {
         HttpMessageProcessor processor = new HttpMessageProcessor("/Users/zhengjunwei/Downloads");
         processor.route("/", new HttpHandle() {
             @Override
-            public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
+            public void doHandle(Http11Request request, HttpResponse response) throws IOException {
                 response.getOutputStream().write("Hello smart-socket http server!".getBytes());
             }
         });

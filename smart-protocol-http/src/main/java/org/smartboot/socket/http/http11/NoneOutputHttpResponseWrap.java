@@ -1,13 +1,14 @@
 /*
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: HttpResponWrap.java
- * Date: 2018-02-08
+ * file name: NoneOutputHttpResponseWrap.java
+ * Date: 2018-02-17
  * Author: sandao
  */
 
-package org.smartboot.socket.http;
+package org.smartboot.socket.http.http11;
 
+import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
 
 import java.io.IOException;

@@ -6,13 +6,13 @@
  * Author: sandao
  */
 
-package org.smartboot.socket.http.rfc2616.request;
+package org.smartboot.socket.http.http11.request;
 
-import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
-import org.smartboot.socket.http.rfc2616.HttpHandle;
-import org.smartboot.socket.http.utils.HttpHeader;
+import org.smartboot.socket.http.handle.HttpHandle;
+import org.smartboot.socket.http.http11.Http11Request;
+import org.smartboot.socket.http.utils.HttpHeaderConstant;
 
 import java.io.IOException;
 
@@ -26,8 +26,8 @@ import java.io.IOException;
  */
 public class HostCheckHandle extends HttpHandle {
     @Override
-    public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
-        if (request.getHeader(HttpHeader.Names.HOST) == null) {
+    public void doHandle(Http11Request request, HttpResponse response) throws IOException {
+        if (request.getHeader(HttpHeaderConstant.Names.HOST) == null) {
             response.setHttpStatus(HttpStatus.BAD_REQUEST);
             return;
         }

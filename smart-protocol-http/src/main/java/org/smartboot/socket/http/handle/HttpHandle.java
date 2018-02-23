@@ -1,15 +1,16 @@
 /*
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: CheckFilter.java
- * Date: 2018-02-06
+ * file name: HttpHandle.java
+ * Date: 2018-02-15
  * Author: sandao
  */
 
-package org.smartboot.socket.http.rfc2616;
+package org.smartboot.socket.http.handle;
 
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.HttpResponse;
+import org.smartboot.socket.http.http11.Http11Request;
 
 import java.io.IOException;
 
@@ -21,9 +22,9 @@ public abstract class HttpHandle {
 
     private HttpHandle nextHandle;
 
-    public abstract void doHandle(HttpRequest request, HttpResponse response) throws IOException;
+    public abstract void doHandle(Http11Request request, HttpResponse response) throws IOException;
 
-    protected final void doNext(HttpRequest request, HttpResponse response) throws IOException {
+    protected final void doNext(Http11Request request, HttpResponse response) throws IOException {
         if (nextHandle != null) {
             nextHandle.doHandle(request, response);
         }

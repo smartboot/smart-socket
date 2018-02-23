@@ -1,17 +1,16 @@
 /*
  * Copyright (c) 2018, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: BodyOutputStream.java
- * Date: 2018-02-03
+ * file name: HttpOutputStream.java
+ * Date: 2018-02-17
  * Author: sandao
  */
 
-package org.smartboot.socket.http;
+package org.smartboot.socket.http.http11;
 
 import org.apache.commons.lang.StringUtils;
-import org.smartboot.socket.http.rfc2616.HttpHandleGroup;
 import org.smartboot.socket.http.utils.Consts;
-import org.smartboot.socket.http.utils.HttpHeader;
+import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -33,9 +32,9 @@ final class HttpOutputStream extends OutputStream {
     private boolean committed = false, closed = false;
 
     private boolean chunked = false;
-    private HttpRequest request;
+    private Http11Request request;
 
-    public HttpOutputStream(AioSession aioSession, DefaultHttpResponse response, HttpRequest request) {
+    public HttpOutputStream(AioSession aioSession, DefaultHttpResponse response, Http11Request request) {
         this.aioSession = aioSession;
         this.response = response;
         this.request = request;
@@ -63,11 +62,11 @@ final class HttpOutputStream extends OutputStream {
     }
 
     private void writeHead() throws IOException {
-        HttpHandleGroup.group().getLastHandle().doHandle(request, new NoneOutputHttpResponseWrap(response));//防止在handle中调用outputStream操作
-        chunked = StringUtils.equals(HttpHeader.Values.CHUNKED, response.getHeader(HttpHeader.Names.TRANSFER_ENCODING));
+        Http11HandleGroup.group().getLastHandle().doHandle(request, new NoneOutputHttpResponseWrap(response));//防止在handle中调用outputStream操作
+        chunked = StringUtils.equals(HttpHeaderConstant.Values.CHUNKED, response.getHeader(HttpHeaderConstant.Names.TRANSFER_ENCODING));
 
         ByteBuffer headBuffer = ByteBuffer.allocate(512);
-        headBuffer.put(getBytes(request.getProtocol()))
+        headBuffer.put(getBytes(request.getHeader().getProtocol()))
                 .put(Consts.SP)
                 .put(getBytes(String.valueOf(response.getHttpStatus().value())))
                 .put(Consts.SP)
@@ -138,7 +137,7 @@ final class HttpOutputStream extends OutputStream {
         if (chunked) {
             aioSession.write(ByteBuffer.wrap(getBytes(Integer.toHexString(cacheBuffer.remaining()) + "\r\n")));
             aioSession.write(cacheBuffer);
-            aioSession.write(ByteBuffer.wrap(HttpProtocol.CRLF));
+            aioSession.write(ByteBuffer.wrap(Consts.CRLF));
         } else {
             aioSession.write(cacheBuffer);
         }

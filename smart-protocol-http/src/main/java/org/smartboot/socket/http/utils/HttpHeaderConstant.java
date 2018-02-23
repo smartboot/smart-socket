@@ -12,7 +12,7 @@ package org.smartboot.socket.http.utils;
  * @author 三刀
  * @version V1.0 , 2018/2/8
  */
-public interface HttpHeader {
+public interface HttpHeaderConstant {
 
     interface Names {
         String ACCEPT = "Accept";

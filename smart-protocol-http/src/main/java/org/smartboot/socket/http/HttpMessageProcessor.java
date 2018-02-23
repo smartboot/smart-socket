@@ -15,10 +15,12 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.http.enums.MethodEnum;
+import org.smartboot.socket.http.handle.HttpHandle;
 import org.smartboot.socket.http.handle.StaticResourceHandle;
-import org.smartboot.socket.http.rfc2616.HttpHandle;
-import org.smartboot.socket.http.rfc2616.HttpHandleGroup;
-import org.smartboot.socket.http.utils.HttpHeader;
+import org.smartboot.socket.http.http11.DefaultHttpResponse;
+import org.smartboot.socket.http.http11.Http11HandleGroup;
+import org.smartboot.socket.http.http11.Http11Request;
+import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -40,10 +42,10 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
 
     public HttpMessageProcessor(String baseDir) {
         defaultHandle = new StaticResourceHandle(baseDir);
-        HttpHandleGroup.group().getHttpHandle()
+        Http11HandleGroup.group().getHttpHandle()
                 .next(new HttpHandle() {
                     @Override
-                    public void doHandle(HttpRequest request, HttpResponse response) throws IOException {
+                    public void doHandle(Http11Request request, HttpResponse response) throws IOException {
                         HttpHandle httpHandle = null;
                         for (Map.Entry<String, HttpHandle> entity : handleMap.entrySet()) {
 
@@ -63,23 +65,26 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
 
     @Override
     public void process(final AioSession<HttpRequest> session, final HttpRequest entry) {
-        //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
-        if (StringUtils.equalsIgnoreCase(entry.getMethod(), MethodEnum.POST.getMethod()) && StringUtils.equals(entry.getContentType(), HttpHeader.Values.MULTIPART_FORM_DATA)) {
-            executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        process0(session, entry);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+        if (entry instanceof Http11Request) {
+            final Http11Request request = (Http11Request) entry;
+            //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
+            if (entry.getHeader().getMethod() == MethodEnum.POST && StringUtils.equals(request.getContentType(), HttpHeaderConstant.Values.MULTIPART_FORM_DATA)) {
+                executorService.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            process0(session, request);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
+                });
+            } else {
+                try {
+                    process0(session, request);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            });
-        } else {
-            try {
-                process0(session, entry);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
@@ -89,10 +94,10 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
 
     }
 
-    private void process0(final AioSession<HttpRequest> session, HttpRequest request) throws IOException {
+    private void process0(final AioSession<HttpRequest> session, Http11Request request) throws IOException {
         HttpResponse httpResponse = new DefaultHttpResponse(session, request);
         try {
-            HttpHandleGroup.group().getHttpHandle().doHandle(request, httpResponse);
+            Http11HandleGroup.group().getHttpHandle().doHandle(request, httpResponse);
         } catch (Exception e) {
             httpResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             httpResponse.getOutputStream().write(e.fillInStackTrace().toString().getBytes());
