@@ -75,8 +75,8 @@ public class Http11Request extends HttpRequest {
     }
 
 
-    public String getProtocol() {
-        return header.getProtocol();
+    public String getHttpVersion() {
+        return header.getHttpVersion();
     }
 
 

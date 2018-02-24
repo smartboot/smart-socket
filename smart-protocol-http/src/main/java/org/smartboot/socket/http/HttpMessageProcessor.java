@@ -73,7 +73,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
                     @Override
                     public void run() {
                         try {
-                            process0(session, request);
+                            processHttp11(session, request);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -81,7 +81,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
                 });
             } else {
                 try {
-                    process0(session, request);
+                    processHttp11(session, request);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -94,7 +94,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
 
     }
 
-    private void process0(final AioSession<HttpRequest> session, Http11Request request) throws IOException {
+    private void processHttp11(final AioSession<HttpRequest> session, Http11Request request) throws IOException {
         HttpResponse httpResponse = new DefaultHttpResponse(session, request);
         try {
             Http11HandleGroup.group().getHttpHandle().doHandle(request, httpResponse);

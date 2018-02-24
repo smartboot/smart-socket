@@ -199,7 +199,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
         ByteBuffer requestLineBuffer = unit.headPartDecoder.getBuffer();
         String httpVersion = new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - Consts.CRLF.length);
 
-        unit.header.setProtocol(httpVersion);
+        unit.header.setHttpVersion(httpVersion);
 
         //识别一下一个解码阶段
         unit.headPartDecoder.reset();

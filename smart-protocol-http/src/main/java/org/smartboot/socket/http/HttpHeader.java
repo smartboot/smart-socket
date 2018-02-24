@@ -8,10 +8,7 @@
 
 package org.smartboot.socket.http;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.smartboot.socket.http.enums.MethodEnum;
-import org.smartboot.socket.http.utils.HttpHeaderConstant;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +23,7 @@ public class HttpHeader {
 
     private MethodEnum method;
     private String originalUri;
-    private String protocol;
+    private String httpVersion;
 
     private String scheme;
 
@@ -48,12 +45,12 @@ public class HttpHeader {
         this.originalUri = originalUri;
     }
 
-    public String getProtocol() {
-        return protocol;
+    public String getHttpVersion() {
+        return httpVersion;
     }
 
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
+    public void setHttpVersion(String httpVersion) {
+        this.httpVersion = httpVersion;
     }
 
     public String getScheme() {
