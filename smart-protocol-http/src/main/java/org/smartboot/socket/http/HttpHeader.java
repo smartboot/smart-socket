@@ -25,8 +25,6 @@ public class HttpHeader {
     private String originalUri;
     private String httpVersion;
 
-    private String scheme;
-
     private Map<String, String> headerMap = new HashMap<String, String>();
 
     public MethodEnum getMethod() {
@@ -51,14 +49,6 @@ public class HttpHeader {
 
     public void setHttpVersion(String httpVersion) {
         this.httpVersion = httpVersion;
-    }
-
-    public String getScheme() {
-        return scheme;
-    }
-
-    public void setScheme(String scheme) {
-        this.scheme = scheme;
     }
 
     public void setHeader(String name, String value) {

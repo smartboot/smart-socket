@@ -30,8 +30,6 @@ public class Http11Request extends HttpRequest {
     private int contentLength = -1;
     private String contentType;
 
-    private String scheme;
-
     private String requestURI;
     /**
      * http://localhost?aa=aa  ?后面部分
@@ -86,14 +84,6 @@ public class Http11Request extends HttpRequest {
 
     public int getContentLength() {
         return contentLength;
-    }
-
-    public String getScheme() {
-        return scheme;
-    }
-
-    public void setScheme(String scheme) {
-        this.scheme = scheme;
     }
 
     public String getQueryString() {
