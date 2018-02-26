@@ -11,6 +11,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <name>smart-socket-parent</name>
+    <description>A high performance network application framework based on Java AIO</description>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.smartboot.socket</groupId>
     <artifactId>smart-socket-parent</artifactId>
