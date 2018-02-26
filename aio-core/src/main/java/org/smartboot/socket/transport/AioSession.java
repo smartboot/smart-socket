@@ -25,7 +25,7 @@ import java.util.concurrent.Semaphore;
 /**
  * AIO传输层会话
  * @author 三刀
- * @since 1.0.0
+ * @version V1.0.0
  */
 public class AioSession<T> {
     /** Session状态:已关闭 */

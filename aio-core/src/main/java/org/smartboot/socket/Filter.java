@@ -14,6 +14,7 @@ import org.smartboot.socket.transport.AioSession;
  * 消息过滤器
  *
  * @author 三刀
+ * @version V1.0.0
  */
 public interface Filter<T> {
 

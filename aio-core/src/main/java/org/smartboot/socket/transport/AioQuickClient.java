@@ -26,6 +26,7 @@ import java.util.concurrent.ThreadFactory;
  * AIO实现的客户端服务
  *
  * @author 三刀
+ * @version V1.0.0
  */
 public class AioQuickClient<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickClient.class);

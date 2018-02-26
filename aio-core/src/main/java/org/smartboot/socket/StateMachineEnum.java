@@ -10,7 +10,7 @@ package org.smartboot.socket;
 
 /**
  * @author 三刀
- * @version V1.0 , 2017/9/12
+ * @version V1.0.0
  */
 public enum StateMachineEnum {
     /**连接已建立并构建Session对象*/

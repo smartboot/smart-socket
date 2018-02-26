@@ -26,7 +26,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * AIO服务端
  * @author 三刀
- * @since 1.0.0
+ * @version V1.0.0
  */
 public class AioQuickServer<T> {
     private static final Logger LOGGER = LogManager.getLogger(AioQuickServer.class);
@@ -178,6 +178,11 @@ public class AioQuickServer<T> {
         return this;
     }
 
+    /**
+     * 是否启用控制台Banner打印
+     * @param bannerEnabled
+     * @return
+     */
     public final AioQuickServer<T> setBannerEnabled(boolean bannerEnabled) {
         config.setBannerEnabled(bannerEnabled);
         return this;

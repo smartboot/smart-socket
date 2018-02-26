@@ -17,6 +17,9 @@ import java.nio.channels.CompletionHandler;
 
 /**
  * 读写事件回调处理类
+ *
+ * @author 三刀
+ * @version V1.0.0
  */
 class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
     private static final Logger LOGGER = LogManager.getLogger(WriteCompletionHandler.class);

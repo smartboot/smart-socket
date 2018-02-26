@@ -16,7 +16,7 @@ import org.smartboot.socket.Protocol;
  * Quickly服务端/客户端配置信息 T:解码后生成的对象类型
  *
  * @author 三刀
- * @since 1.0.0
+ * @version V1.0.0
  */
 final class IoServerConfig<T> {
 
