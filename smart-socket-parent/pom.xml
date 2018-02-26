@@ -14,13 +14,13 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.smartboot.socket</groupId>
     <artifactId>smart-socket-parent</artifactId>
-    <version>1.3.2-SNAPSHOT</version>
+    <version>1.3.2</version>
 
     <packaging>pom</packaging>
 
     <properties>
         <log4j.version>2.10.0</log4j.version>
-        <aio.version>1.3.2-SNAPSHOT</aio.version>
+        <aio.version>1.3.2</aio.version>
     </properties>
     <dependencyManagement>
         <dependencies>
