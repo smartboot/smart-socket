@@ -21,25 +21,22 @@ import org.smartboot.socket.http.enums.HttpPartEnum;
 public class HttpDecodeUnit {
     HttpHeader header;
     HttpRequest entity;
-
-    boolean returnEntity;
-
     HttpContentDecoder contentDecoder;
-
     /**
      * 当前解码阶段
      */
-    HttpPartEnum partEnum;
-
+    private HttpPartEnum decodePartEnum;
     BodyTypeEnum bodyTypeEnum;
     /**
      * 结束标解码器
      */
     DelimiterFrameDecoder headPartDecoder;
-
     FixedLengthFrameDecoder formBodyDecoder;
-
     StreamFrameDecoder streamBodyDecoder;
+    /**
+     * 部分解码完成,可进行业务处理
+     */
+    private boolean partFinished;
 
     public HttpHeader getHeader() {
         return header;
@@ -57,12 +54,12 @@ public class HttpDecodeUnit {
         this.entity = entity;
     }
 
-    public boolean isReturnEntity() {
-        return returnEntity;
+    public boolean isPartFinished() {
+        return partFinished;
     }
 
-    public void setReturnEntity(boolean returnEntity) {
-        this.returnEntity = returnEntity;
+    public void setPartFinished(boolean partFinished) {
+        this.partFinished = partFinished;
     }
 
     public HttpContentDecoder getContentDecoder() {
@@ -73,12 +70,12 @@ public class HttpDecodeUnit {
         this.contentDecoder = contentDecoder;
     }
 
-    public HttpPartEnum getPartEnum() {
-        return partEnum;
+    public HttpPartEnum getDecodePartEnum() {
+        return decodePartEnum;
     }
 
-    public void setPartEnum(HttpPartEnum partEnum) {
-        this.partEnum = partEnum;
+    public void setDecodePartEnum(HttpPartEnum decodePartEnum) {
+        this.decodePartEnum = decodePartEnum;
     }
 
     public BodyTypeEnum getBodyTypeEnum() {

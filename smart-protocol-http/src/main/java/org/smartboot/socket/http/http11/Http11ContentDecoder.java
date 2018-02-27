@@ -26,13 +26,13 @@ public class Http11ContentDecoder extends HttpContentDecoder {
             case FORM:
                 if (decodeUnit.getFormBodyDecoder().decode(buffer)) {
                     decodeBodyForm(decodeUnit);
-                    decodeUnit.setPartEnum(HttpPartEnum.END);
-                    decodeUnit.setReturnEntity(true);
+                    decodeUnit.setDecodePartEnum(HttpPartEnum.END);
+                    decodeUnit.setPartFinished(true);
                 }
                 break;
             case STREAM:
                 if (decodeUnit.getStreamBodyDecoder().decode(buffer)) {
-                    decodeUnit.setPartEnum(HttpPartEnum.END);
+                    decodeUnit.setDecodePartEnum(HttpPartEnum.END);
                 }
                 break;
             default:

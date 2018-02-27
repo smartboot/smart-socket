@@ -48,8 +48,8 @@ final class HttpProtocol implements Protocol<HttpRequest> {
 
         HttpDecodeUnit decodeUnit = getHttpDecodeUnit(session);
 
-        while (buffer.hasRemaining() && decodeUnit.partEnum != HttpPartEnum.END) {
-            switch (decodeUnit.partEnum) {
+        while (buffer.hasRemaining() && decodeUnit.getDecodePartEnum() != HttpPartEnum.END) {
+            switch (decodeUnit.getDecodePartEnum()) {
                 //解析请求行
                 case REQUEST_LINE_METHOD:
                     if (decodeUnit.headPartDecoder.decode(buffer)) {
@@ -74,7 +74,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                         decodeHeadLine(decodeUnit);
                     }
                     //本行仅有\r\n表示消息体部分已结束
-                    if (decodeUnit.partEnum != HttpPartEnum.HEAD_END_LINE) {
+                    if (decodeUnit.getDecodePartEnum() != HttpPartEnum.HEAD_END_LINE) {
                         break;
                     }
                     //识别如何处理Body部分
@@ -93,8 +93,8 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                         Http11Request request = new Http11Request(httpHeader);
                         decodeUnit.entity = request;
                         if (MethodEnum.POST != request.getHeader().getMethod()) {
-                            decodeUnit.setPartEnum(HttpPartEnum.END);
-                            decodeUnit.setReturnEntity(true);
+                            decodeUnit.setDecodePartEnum(HttpPartEnum.END);
+                            decodeUnit.setPartFinished(true);
                             break;
                         } else {
                             //识别Body解码器
@@ -102,7 +102,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                             int contentLength = NumberUtils.toInt(httpHeader.getHeader(HttpHeaderConstant.Names.CONTENT_LENGTH), -1);
                             if (StringUtils.startsWith(contentType, HttpHeaderConstant.Values.MULTIPART_FORM_DATA)) {
                                 decodeUnit.bodyTypeEnum = BodyTypeEnum.STREAM;
-                                decodeUnit.setReturnEntity(true);
+                                decodeUnit.setPartFinished(true);
                                 decodeUnit.streamBodyDecoder = new StreamFrameDecoder(contentLength);
                                 request.setInputStream(decodeUnit.streamBodyDecoder.getInputStream());
                             } else {
@@ -112,7 +112,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                             }
                         }
                     }
-                    decodeUnit.partEnum = HttpPartEnum.CONTENT;
+                    decodeUnit.setDecodePartEnum(HttpPartEnum.CONTENT);
                 }
                 case CONTENT: {
                     decodeUnit.contentDecoder.decode(decodeUnit, buffer);
@@ -123,13 +123,14 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                 }
             }
         }
-        if (decodeUnit.partEnum == HttpPartEnum.END) {
+        if (decodeUnit.getDecodePartEnum() == HttpPartEnum.END) {
             session.setAttachment(null);
         }
-        try {
-            return decodeUnit.returnEntity ? decodeUnit.entity : null;
-        } finally {
-            decodeUnit.setReturnEntity(false);
+        if (decodeUnit.isPartFinished()) {
+            decodeUnit.setPartFinished(false);//重置状态
+            return decodeUnit.entity;
+        } else {
+            return null;
         }
     }
 
@@ -145,7 +146,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
             decodeUnit = new HttpDecodeUnit();
             decodeUnit.header = new HttpHeader();
 //            decodeUnit.entity = new HttpRequest(session);
-            decodeUnit.partEnum = HttpPartEnum.REQUEST_LINE_METHOD;
+            decodeUnit.setDecodePartEnum(HttpPartEnum.REQUEST_LINE_METHOD);
             decodeUnit.headPartDecoder = new DelimiterFrameDecoder(SP, 10);
             session.setAttachment(decodeUnit);
         } else {
@@ -171,7 +172,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
 
         //识别一下一个解码阶段
         unit.headPartDecoder.reset();
-        unit.partEnum = HttpPartEnum.REQUEST_LINE_URL;
+        unit.setDecodePartEnum(HttpPartEnum.REQUEST_LINE_URL);
     }
 
     /**
@@ -187,7 +188,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
 
         //识别一下一个解码阶段
         unit.headPartDecoder.reset(Consts.CRLF);
-        unit.partEnum = HttpPartEnum.REQUEST_LINE_VERSION;
+        unit.setDecodePartEnum(HttpPartEnum.REQUEST_LINE_VERSION);
     }
 
     /**
@@ -203,7 +204,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
 
         //识别一下一个解码阶段
         unit.headPartDecoder.reset();
-        unit.partEnum = HttpPartEnum.HEAD_LINE;
+        unit.setDecodePartEnum(HttpPartEnum.HEAD_LINE);
     }
 
     /**
@@ -216,7 +217,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
 
         //消息头已结束
         if (headLineBuffer.remaining() == Consts.CRLF.length) {
-            unit.partEnum = HttpPartEnum.HEAD_END_LINE;
+            unit.setDecodePartEnum(HttpPartEnum.HEAD_END_LINE);
             unit.headPartDecoder.reset();
             return;
         }
@@ -226,6 +227,6 @@ final class HttpProtocol implements Protocol<HttpRequest> {
 
         //识别一下一个解码阶段
         unit.headPartDecoder.reset();
-        unit.partEnum = HttpPartEnum.HEAD_LINE;
+        unit.setDecodePartEnum(HttpPartEnum.HEAD_LINE);
     }
 }
