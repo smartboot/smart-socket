@@ -15,7 +15,6 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
@@ -25,6 +24,7 @@ import java.util.concurrent.ThreadFactory;
 
 /**
  * AIO服务端
+ *
  * @author 三刀
  * @version V1.0.0
  */
@@ -49,19 +49,10 @@ public class AioQuickServer<T> {
         bind(port).setProtocol(protocol).setProcessor(messageProcessor);
     }
 
-    /**
-     * 打印banner
-     *
-     * @param out
-     */
-    private static void printBanner(PrintStream out) {
-        out.println(IoServerConfig.BANNER);
-        out.println(" :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
-    }
-
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
-            printBanner(System.out);
+            System.out.println(IoServerConfig.BANNER);
+            System.out.println(" :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
         }
         start0();
     }
@@ -180,6 +171,7 @@ public class AioQuickServer<T> {
 
     /**
      * 是否启用控制台Banner打印
+     *
      * @param bannerEnabled
      * @return
      */

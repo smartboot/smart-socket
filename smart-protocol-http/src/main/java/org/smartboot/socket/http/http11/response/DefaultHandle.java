@@ -51,7 +51,7 @@ public class DefaultHandle extends HttpHandle {
             response.setHeader(HttpHeaderConstant.Names.TRANSFER_ENCODING, HttpHeaderConstant.Values.CHUNKED);
         }
         if (response.getHeader(HttpHeaderConstant.Names.SERVER) == null) {
-            response.setHeader(HttpHeaderConstant.Names.SERVER, "smart-sockets");
+            response.setHeader(HttpHeaderConstant.Names.SERVER, "smart-socket");
         }
         if (response.getHeader(HttpHeaderConstant.Names.HOST) == null) {
             response.setHeader(HttpHeaderConstant.Names.HOST, "localhost");
