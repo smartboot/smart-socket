@@ -24,19 +24,28 @@ import java.util.concurrent.Semaphore;
 
 /**
  * AIO传输层会话
+ *
  * @author 三刀
  * @version V1.0.0
  */
 public class AioSession<T> {
-    /** Session状态:已关闭 */
+    /**
+     * Session状态:已关闭
+     */
     protected static final byte SESSION_STATUS_CLOSED = 1,
-    /**Session状态:关闭中*/
+    /**
+     * Session状态:关闭中
+     */
     SESSION_STATUS_CLOSING = 2,
-    /** Session状态:正常 */
+    /**
+     * Session状态:正常
+     */
     SESSION_STATUS_ENABLED = 3;
     private static final Logger logger = LogManager.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
-    /** Session ID生成器 */
+    /**
+     * Session ID生成器
+     */
     private static int NEXT_ID = 0;
     /**
      * 唯一标识
@@ -76,7 +85,7 @@ public class AioSession<T> {
      * @param config
      * @param readCompletionHandler
      * @param writeCompletionHandler
-     * @param serverSession             是否服务端Session
+     * @param serverSession          是否服务端Session
      */
     AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, boolean serverSession) {
         this.channel = channel;
@@ -107,8 +116,9 @@ public class AioSession<T> {
             continueWrite();
             return;
         }
-        writeBuffer = null;
+
         if (writeCacheQueue.isEmpty()) {
+            writeBuffer = null;
             semaphore.release();
             //此时可能是Closing或Closed状态
             if (isInvalid()) {
@@ -125,15 +135,15 @@ public class AioSession<T> {
         while (iterable.hasNext() && totalSize <= MAX_WRITE_SIZE) {
             totalSize += iterable.next().remaining();
         }
-        byte[] data = new byte[totalSize];
-        int index = 0;
-        while (index < data.length) {
-            ByteBuffer srcBuffer = writeCacheQueue.poll();
-            int remain = srcBuffer.remaining();
-            srcBuffer.get(data, index, remain);
-            index += remain;
+        if (writeBuffer == null || totalSize * 2 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
+            writeBuffer = ByteBuffer.allocate(totalSize);
+        } else {
+            writeBuffer.clear().limit(totalSize);
         }
-        writeBuffer = ByteBuffer.wrap(data);
+        while (writeBuffer.hasRemaining()) {
+            writeBuffer.put(writeCacheQueue.poll());
+        }
+        writeBuffer.flip();
         continueWrite();
 
         //如果存在流控并符合释放条件，则触发读操作

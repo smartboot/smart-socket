@@ -9,7 +9,7 @@ import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
-import org.smartboot.socket.transport.AioSSLQuickClient;
+import org.smartboot.socket.transport.AioQuickClient;
 
 import java.nio.channels.AsynchronousChannelGroup;
 import java.util.Properties;
@@ -40,15 +40,15 @@ public class P2PMultiClient {
                         e1.printStackTrace();
                     }
                     P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-                    AioSSLQuickClient<BaseMessage> client = new AioSSLQuickClient<BaseMessage>("127.0.0.1", 9222, new P2PProtocol(messageFactory), processor);
-                    client.setKeyStore("client.jks", "storepass")
-                            .setTrust("trustedCerts.jks", "storepass")
-                            .setKeyPassword("keypass")
-                            .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
-                            .setWriteQueueSize(16384)
-//                            .setSsl(true)
-
-                    ;
+//                    AioSSLQuickClient<BaseMessage> client = new AioSSLQuickClient<BaseMessage>("127.0.0.1", 9222, new P2PProtocol(messageFactory), processor);
+//                    client.setKeyStore("client.jks", "storepass")
+//                            .setTrust("trustedCerts.jks", "storepass")
+//                            .setKeyPassword("keypass")
+//                            .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
+//                            .setWriteQueueSize(16384);
+                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("127.0.0.1", 9222, new P2PProtocol(messageFactory), processor);
+                    client.setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
+                            .setWriteQueueSize(16384);
                     try {
                         client.start(asynchronousChannelGroup);
 //                        Thread.sleep(4000);
@@ -62,8 +62,8 @@ public class P2PMultiClient {
                         DetectMessageReq request = new DetectMessageReq();
                         request.setDetect("台州人在杭州:" + num);
                         try {
-//                            processor.getSession().sendWithoutResponse(request);
-                            logger.info(processor.getSession().sendWithResponse(request,0));
+                            processor.getSession().sendWithoutResponse(request);
+//                            logger.info(processor.getSession().sendWithResponse(request, 0));
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();
