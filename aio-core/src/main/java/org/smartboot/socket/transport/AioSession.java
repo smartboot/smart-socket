@@ -135,15 +135,21 @@ public class AioSession<T> {
         while (iterable.hasNext() && totalSize <= MAX_WRITE_SIZE) {
             totalSize += iterable.next().remaining();
         }
-        if (writeBuffer == null || totalSize * 2 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
-            writeBuffer = ByteBuffer.allocate(totalSize);
+        ByteBuffer headBuffer = writeCacheQueue.poll();
+        if (headBuffer.remaining() == totalSize) {
+            writeBuffer = headBuffer;
         } else {
-            writeBuffer.clear().limit(totalSize);
+            if (writeBuffer == null || totalSize * 2 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
+                writeBuffer = ByteBuffer.allocate(totalSize);
+            } else {
+                writeBuffer.clear().limit(totalSize);
+            }
+            writeBuffer.put(headBuffer);
+            while (writeBuffer.hasRemaining()) {
+                writeBuffer.put(writeCacheQueue.poll());
+            }
+            writeBuffer.flip();
         }
-        while (writeBuffer.hasRemaining()) {
-            writeBuffer.put(writeCacheQueue.poll());
-        }
-        writeBuffer.flip();
         continueWrite();
 
         //如果存在流控并符合释放条件，则触发读操作
