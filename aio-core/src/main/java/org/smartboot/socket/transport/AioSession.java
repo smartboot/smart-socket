@@ -77,13 +77,7 @@ public class AioSession<T> {
     /**
      * 输出信号量
      */
-    private Semaphore writeSemaphore = new Semaphore(1);
-
-    /**
-     * 数据读取信号量
-     */
-    private Semaphore readSemaphore = null;
-
+    private Semaphore semaphore = new Semaphore(1);
     private IoServerConfig<T> ioServerConfig;
 
     /**
@@ -100,7 +94,6 @@ public class AioSession<T> {
         this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
         this.ioServerConfig = config;
         this.serverFlowLimit = serverSession ? false : null;
-        this.readSemaphore = serverSession ? new Semaphore(1) : null;//仅服务端因流控导致存在读资源竞争
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
@@ -126,13 +119,13 @@ public class AioSession<T> {
 
         if (writeCacheQueue.isEmpty()) {
             writeBuffer = null;
-            writeSemaphore.release();
+            semaphore.release();
             //此时可能是Closing或Closed状态
             if (isInvalid()) {
                 close();
             }
             //也许此时有新的消息通过write方法添加到writeCacheQueue中
-            else if (writeCacheQueue.size() > 0 && writeSemaphore.tryAcquire()) {
+            else if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
                 writeToChannel();
             }
             return;
@@ -157,18 +150,15 @@ public class AioSession<T> {
             }
             writeBuffer.flip();
         }
-        continueWrite();
 
         //如果存在流控并符合释放条件，则触发读操作
+        //一定要放在continueWrite之前
         if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             serverFlowLimit = false;
             continueRead();
         }
+        continueWrite();
+
     }
 
     /**
@@ -177,9 +167,7 @@ public class AioSession<T> {
      * @param buffer
      */
     protected final void readFromChannel0(ByteBuffer buffer) {
-        if (readSemaphore == null || readSemaphore.tryAcquire()) {
-            channel.read(buffer, this, readCompletionHandler);
-        }
+        channel.read(buffer, this, readCompletionHandler);
     }
 
     /**
@@ -201,7 +189,7 @@ public class AioSession<T> {
         } catch (InterruptedException e) {
             logger.error(e);
         }
-        if (writeSemaphore.tryAcquire()) {
+        if (semaphore.tryAcquire()) {
             writeToChannel();
         }
     }
@@ -233,9 +221,9 @@ public class AioSession<T> {
                 logger.catching(e);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty() && writeSemaphore.tryAcquire()) {
+        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
             close(true);
-            writeSemaphore.release();
+            semaphore.release();
         } else {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
         }
@@ -262,9 +250,6 @@ public class AioSession<T> {
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
     void readFromChannel(boolean eof) {
-        if (readSemaphore != null) {
-            readSemaphore.release();
-        }
         readBuffer.flip();
 
         T dataEntry;
