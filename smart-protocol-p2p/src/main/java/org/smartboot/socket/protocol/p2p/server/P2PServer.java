@@ -34,7 +34,7 @@ public class P2PServer {
 //                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()});
 
 
-        AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>(9222, new P2PProtocol(messageFactory), new P2PServerMessageProcessor(messageFactory));
+        AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>(8888, new P2PProtocol(messageFactory), new P2PServerMessageProcessor(messageFactory));
         server.setThreadNum(16)
                 .setWriteQueueSize(16384)
                 .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()});
