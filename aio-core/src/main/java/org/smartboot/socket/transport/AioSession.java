@@ -54,7 +54,7 @@ public class AioSession<T> {
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
-    protected volatile Boolean serverFlowLimit;
+    protected Boolean serverFlowLimit;
     /**
      * 底层通信channel对象
      */
