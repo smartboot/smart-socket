@@ -11,7 +11,7 @@
 
     <Properties>
         <!-- 设置为生产环境的日志存放目录 -->
-        <Property name="logPath">/opt/logs/smart-sockert</Property>
+        <Property name="logPath">/opt/logs/smart-socket</Property>
     </Properties>
 
     <Appenders>
@@ -20,8 +20,8 @@
                     pattern="[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%t] %-5level %M(%F:%L) - %msg%xEx%n"/>
         </Console>
 
-        <RollingFile name="DefaultRollingFile" fileName="${logPath}/p2p.log"
-                     filePattern="${logPath}/p2p-%d{MM-dd-yyyy}-%i.log">
+        <RollingFile name="DefaultRollingFile" fileName="${logPath}/p2p-server.log"
+                     filePattern="${logPath}/p2p-server-%d{MM-dd-yyyy}-%i.log">
             <PatternLayout
                     pattern="[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%t] %-5level %M(%F:%L) - %msg%xEx%n"/>
             <Policies>
