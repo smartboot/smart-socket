@@ -28,8 +28,8 @@
         <Root level="debug">
             <!-- 生产环境停用Console -->
             <appender-ref ref="Console"/>
-            <appender-ref ref="DefaultRollingFile"/>
-        </Root>
+            <!--<appender-ref ref="DefaultRollingFile"/>-->
+        </Root>s
 
     </Loggers>
 
