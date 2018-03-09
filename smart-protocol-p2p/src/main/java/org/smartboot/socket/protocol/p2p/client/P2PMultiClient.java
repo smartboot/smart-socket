@@ -25,7 +25,7 @@ public class P2PMultiClient {
             }
         });
         for (int i = 0; i < 10; i++) {
-            new Thread("CLient-Thread-" + i) {
+            new Thread("Client-Thread-" + i) {
                 private Logger logger = LogManager.getLogger(this.getClass());
 
                 @Override
@@ -46,7 +46,7 @@ public class P2PMultiClient {
 //                            .setKeyPassword("keypass")
 //                            .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
 //                            .setWriteQueueSize(16384);
-                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("127.0.0.1", 8888, new P2PProtocol(messageFactory), processor);
+                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("localhost", 8888, new P2PProtocol(messageFactory), processor);
                     client.setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
                             .setWriteQueueSize(16384);
                     try {

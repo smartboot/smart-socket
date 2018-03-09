@@ -63,7 +63,7 @@ public class AioQuickServer<T> {
 
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, "AIO-Thread-" + (++index));
+                return new Thread(r, "smart-socket:AIO-" + (++index));
             }
         });
         this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()), 1000);
