@@ -19,6 +19,20 @@ import org.smartboot.socket.transport.AioSession;
 public interface Filter<T> {
 
     /**
+     * 建立连接时触发过滤器
+     *
+     * @param session
+     */
+    void connected(AioSession<T> session);
+
+    /**
+     * 网络断链
+     *
+     * @param session
+     */
+    void closed(AioSession<T> session);
+
+    /**
      * 数据读取过滤,可用于统计流量
      *
      * @param session

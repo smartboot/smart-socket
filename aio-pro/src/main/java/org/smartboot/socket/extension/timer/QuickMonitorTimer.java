@@ -14,6 +14,7 @@ import org.smartboot.socket.Filter;
 import org.smartboot.socket.transport.AioSession;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -48,6 +49,23 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
 
     private AtomicLong totleProcessMsgNum = new AtomicLong(0);
 
+    /**
+     * 新建连接数
+     */
+    private AtomicInteger newConnect = new AtomicInteger(0);
+
+    /**
+     * 断链数
+     */
+    private AtomicInteger disConnect = new AtomicInteger(0);
+
+    /**
+     * 在线连接数
+     */
+    private AtomicInteger onlineCount = new AtomicInteger(0);
+
+    private AtomicInteger totalConnect = new AtomicInteger(0);
+
     @Override
     protected long getDelay() {
         return getPeriod();
@@ -62,6 +80,16 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
     public void processFilter(AioSession<T> session, T d) {
         processMsgNum.incrementAndGet();
         totleProcessMsgNum.incrementAndGet();
+    }
+
+    @Override
+    public void connected(AioSession<T> session) {
+        newConnect.incrementAndGet();
+    }
+
+    @Override
+    public void closed(AioSession<T> session) {
+        disConnect.incrementAndGet();
     }
 
     @Override
@@ -90,12 +118,17 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
         long curOutFlow = outFlow.getAndSet(0);
         long curDiscardNum = processFailNum.getAndSet(0);
         long curProcessMsgNum = processMsgNum.getAndSet(0);
+        int connectCount = newConnect.getAndSet(0);
+        int disConnectCount = disConnect.getAndSet(0);
         logger.info("\r\n-----这一分钟发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n处理失败消息数:\t" + curDiscardNum
                 + "\r\n已处理消息量:\t" + curProcessMsgNum
-                + "\r\n已处理消息总量:\t" + totleProcessMsgNum.get());
+                + "\r\n已处理消息总量:\t" + totleProcessMsgNum.get()
+                + "\r\n新建连接数:\t" + connectCount
+                + "\r\n断开连接数:\t" + disConnectCount
+                + "\r\n在线连接数:\t" + onlineCount.addAndGet(connectCount - disConnectCount)
+                + "\r\n总连接数:\t" + totalConnect.addAndGet(connectCount));
     }
-
 
 }

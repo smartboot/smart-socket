@@ -97,6 +97,9 @@ public class AioSession<T> {
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
+        for (Filter<T> filter : config.getFilters()) {
+            filter.connected(this);
+        }
     }
 
     /**
@@ -219,6 +222,9 @@ public class AioSession<T> {
                 }
             } catch (IOException e) {
                 logger.catching(e);
+            }
+            for (Filter<T> filter : ioServerConfig.getFilters()) {
+                filter.closed(this);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
         } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
