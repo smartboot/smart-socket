@@ -238,8 +238,6 @@ public class AioSession<T> {
 
     /**
      * 获取当前Session的唯一标识
-     *
-     * @return
      */
     public final String getSessionID() {
         return "aiosession:" + sessionId + "-" + hashCode();

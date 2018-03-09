@@ -102,7 +102,6 @@ public class AioQuickServer<T> {
      * 设置服务绑定的端口
      *
      * @param port
-     * @return
      */
     public final AioQuickServer<T> bind(int port) {
         this.config.setPort(port);
@@ -113,7 +112,6 @@ public class AioQuickServer<T> {
      * 设置处理线程数量
      *
      * @param num
-     * @return
      */
     public final AioQuickServer<T> setThreadNum(int num) {
         this.config.setThreadNum(num);
@@ -129,7 +127,6 @@ public class AioQuickServer<T> {
      * 设置消息过滤器,执行顺序以数组中的顺序为准
      *
      * @param filters
-     * @return
      */
     public final AioQuickServer<T> setFilters(Filter<T>... filters) {
         this.config.setFilters(filters);
@@ -140,7 +137,6 @@ public class AioQuickServer<T> {
      * 设置消息处理器
      *
      * @param processor
-     * @return
      */
     public final AioQuickServer<T> setProcessor(MessageProcessor<T> processor) {
         this.config.setProcessor(processor);
@@ -151,7 +147,6 @@ public class AioQuickServer<T> {
      * 设置输出队列缓冲区长度
      *
      * @param size
-     * @return
      */
     public final AioQuickServer<T> setWriteQueueSize(int size) {
         this.config.setWriteQueueSize(size);
@@ -162,7 +157,6 @@ public class AioQuickServer<T> {
      * 设置读缓存区大小
      *
      * @param size
-     * @return
      */
     public final AioQuickServer<T> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
@@ -173,7 +167,6 @@ public class AioQuickServer<T> {
      * 是否启用控制台Banner打印
      *
      * @param bannerEnabled
-     * @return
      */
     public final AioQuickServer<T> setBannerEnabled(boolean bannerEnabled) {
         config.setBannerEnabled(bannerEnabled);

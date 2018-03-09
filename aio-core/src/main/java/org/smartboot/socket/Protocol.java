@@ -36,7 +36,7 @@ public interface Protocol<T> {
      *
      * @param msg
      * @param session
-     * @return
+     * @return 将业务消息编码成ByteBuffer
      */
     public ByteBuffer encode(T msg, AioSession<T> session);
 }

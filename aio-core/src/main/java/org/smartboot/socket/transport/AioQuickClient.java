@@ -106,7 +106,6 @@ public class AioQuickClient<T> {
      *
      * @param host
      * @param port
-     * @return
      */
     public final AioQuickClient<T> connect(String host, int port) {
         this.config.setHost(host);
@@ -118,7 +117,6 @@ public class AioQuickClient<T> {
      * 设置协议对象
      *
      * @param protocol
-     * @return
      */
     public final AioQuickClient<T> setProtocol(Protocol<T> protocol) {
         this.config.setProtocol(protocol);
@@ -129,7 +127,6 @@ public class AioQuickClient<T> {
      * 设置消息过滤器,执行顺序以数组中的顺序为准
      *
      * @param filters
-     * @return
      */
     public final AioQuickClient<T> setFilters(Filter<T>[] filters) {
         this.config.setFilters(filters);
@@ -140,7 +137,6 @@ public class AioQuickClient<T> {
      * 设置消息处理器
      *
      * @param processor
-     * @return
      */
     public final AioQuickClient<T> setProcessor(MessageProcessor<T> processor) {
         this.config.setProcessor(processor);
@@ -151,7 +147,6 @@ public class AioQuickClient<T> {
      * 设置读缓存区大小
      *
      * @param size
-     * @return
      */
     public final AioQuickClient<T> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
@@ -162,7 +157,6 @@ public class AioQuickClient<T> {
      * 设置输出队列缓冲区长度
      *
      * @param size
-     * @return
      */
     public final AioQuickClient<T> setWriteQueueSize(int size) {
         this.config.setWriteQueueSize(size);

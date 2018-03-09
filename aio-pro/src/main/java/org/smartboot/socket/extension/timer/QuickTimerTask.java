@@ -29,10 +29,12 @@ public abstract class QuickTimerTask extends TimerTask {
         logger.info("Regist QuickTimerTask---- " + this.getClass().getSimpleName());
     }
 
+    public static void cancelQuickTask() {
+        timer.cancel();
+    }
+
     /**
      * 获取定时任务的延迟启动时间
-     *
-     * @return
      */
     protected long getDelay() {
         return 0;
@@ -40,12 +42,6 @@ public abstract class QuickTimerTask extends TimerTask {
 
     /**
      * 获取定时任务的执行频率
-     *
-     * @return
      */
     protected abstract long getPeriod();
-
-    public static void cancelQuickTask() {
-        timer.cancel();
-    }
 }
