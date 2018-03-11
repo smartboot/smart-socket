@@ -128,7 +128,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
                 + "\r\n新建连接数:\t" + connectCount
                 + "\r\n断开连接数:\t" + disConnectCount
                 + "\r\n在线连接数:\t" + onlineCount.addAndGet(connectCount - disConnectCount)
-                + "\r\n总连接数:\t" + totalConnect.addAndGet(connectCount));
+                + "\r\n总连接次数:\t" + totalConnect.addAndGet(connectCount));
     }
 
 }
