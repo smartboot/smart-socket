@@ -43,7 +43,7 @@ public class P2PDisconnectClient {
                         AioQuickClient<BaseMessage> client = null;
                         try {
                             P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-                            client = new AioQuickClient<BaseMessage>().connect("118.25.26.239", 8888)
+                            client = new AioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
                                     .setProtocol(new P2PProtocol(messageFactory))
                                     .setProcessor(processor);
                             client.start(asynchronousChannelGroup);
@@ -89,7 +89,7 @@ public class P2PDisconnectClient {
                         e1.printStackTrace();
                     }
                     P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("118.25.26.239", 8888, new P2PProtocol(messageFactory), processor);
+                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("127.0.0.1", 8888, new P2PProtocol(messageFactory), processor);
                     client.setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
                             .setWriteQueueSize(16384);
                     try {
