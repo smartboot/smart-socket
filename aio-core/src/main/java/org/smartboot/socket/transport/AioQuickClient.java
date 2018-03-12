@@ -162,4 +162,14 @@ public class AioQuickClient<T> {
         this.config.setWriteQueueSize(size);
         return this;
     }
+
+    /**
+     * 是否启用DirectByteBuffer
+     *
+     * @param directBuffer
+     */
+    public final AioQuickClient<T> setDirectBuffer(boolean directBuffer) {
+        config.setDirectBuffer(directBuffer);
+        return this;
+    }
 }

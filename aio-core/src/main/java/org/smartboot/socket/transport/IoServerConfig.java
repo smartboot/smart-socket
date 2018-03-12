@@ -64,6 +64,8 @@ final class IoServerConfig<T> {
      */
     private Protocol<T> protocol;
 
+    private boolean directBuffer;
+
     /**
      * 服务器处理线程数
      */
@@ -170,5 +172,13 @@ final class IoServerConfig<T> {
 
     public void setBannerEnabled(boolean bannerEnabled) {
         this.bannerEnabled = bannerEnabled;
+    }
+
+    public boolean isDirectBuffer() {
+        return directBuffer;
+    }
+
+    public void setDirectBuffer(boolean directBuffer) {
+        this.directBuffer = directBuffer;
     }
 }

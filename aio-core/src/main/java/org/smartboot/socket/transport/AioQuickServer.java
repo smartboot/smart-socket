@@ -172,4 +172,14 @@ public class AioQuickServer<T> {
         config.setBannerEnabled(bannerEnabled);
         return this;
     }
+
+    /**
+     * 是否启用DirectByteBuffer
+     *
+     * @param directBuffer
+     */
+    public final AioQuickServer<T> setDirectBuffer(boolean directBuffer) {
+        config.setDirectBuffer(directBuffer);
+        return this;
+    }
 }
