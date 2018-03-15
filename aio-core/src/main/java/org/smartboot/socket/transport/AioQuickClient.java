@@ -27,7 +27,6 @@ import java.util.concurrent.ThreadFactory;
  * @version V1.0.0
  */
 public class AioQuickClient<T> {
-    protected AsynchronousSocketChannel socketChannel = null;
     /**
      * IO事件处理线程组
      */
@@ -59,7 +58,7 @@ public class AioQuickClient<T> {
      * @throws InterruptedException
      */
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
-        this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
         session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);

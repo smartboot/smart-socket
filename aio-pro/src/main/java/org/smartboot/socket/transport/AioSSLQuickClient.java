@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.transport;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.ssl.SSLConfig;
@@ -27,7 +25,6 @@ import java.util.concurrent.ExecutionException;
  * Created by 三刀 on 2017/6/28.
  */
 public final class AioSSLQuickClient<T> extends AioQuickClient<T> {
-    private static final Logger LOGGER = LogManager.getLogger(AioSSLQuickClient.class);
     private SSLService sslService;
 
     private SSLConfig sslConfig = new SSLConfig();
@@ -52,7 +49,7 @@ public final class AioSSLQuickClient<T> extends AioQuickClient<T> {
         //启动SSL服务
         sslConfig.setClientMode(true);
         sslService = new SSLService(sslConfig);
-        this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
         session = new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), sslService);

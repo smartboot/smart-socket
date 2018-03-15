@@ -52,7 +52,7 @@ public class P2PDisconnectClient {
                                 try {
 //                                    processor.getSession().sendWithoutResponse(request);
                                     logger.info(processor.getSession().sendWithResponse(request, 0));
-//                                    Thread.sleep(100);
+                                    Thread.sleep(10);
                                 } catch (Exception e) {
                                     System.out.println(num);
                                     e.printStackTrace();
@@ -104,7 +104,7 @@ public class P2PDisconnectClient {
                         request.setDetect("台州人在杭州:" + num);
                         try {
                             logger.info(processor.getSession().sendWithResponse(request, 0));
-                            Thread.sleep(100);
+                            Thread.sleep(10);
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();
