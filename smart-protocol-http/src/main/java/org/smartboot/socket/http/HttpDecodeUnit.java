@@ -8,6 +8,7 @@
 
 package org.smartboot.socket.http;
 
+import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.extension.decoder.StreamFrameDecoder;
@@ -21,7 +22,7 @@ import org.smartboot.socket.http.enums.HttpPartEnum;
 public class HttpDecodeUnit {
     HttpHeader header;
     HttpRequest entity;
-    HttpContentDecoder contentDecoder;
+    Protocol<HttpRequest> contentDecoder;
     /**
      * 当前解码阶段
      */
@@ -62,11 +63,11 @@ public class HttpDecodeUnit {
         this.partFinished = partFinished;
     }
 
-    public HttpContentDecoder getContentDecoder() {
+    public Protocol<HttpRequest> getContentDecoder() {
         return contentDecoder;
     }
 
-    public void setContentDecoder(HttpContentDecoder contentDecoder) {
+    public void setContentDecoder(Protocol<HttpRequest> contentDecoder) {
         this.contentDecoder = contentDecoder;
     }
 

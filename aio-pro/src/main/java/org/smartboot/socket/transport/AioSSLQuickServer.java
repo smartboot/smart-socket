@@ -27,8 +27,6 @@ public class AioSSLQuickServer<T> extends AioQuickServer<T> {
 
     private SSLService sslService;
 
-    public AioSSLQuickServer() {
-    }
 
     /**
      * @param port             绑定服务端口号

@@ -9,10 +9,7 @@ import java.io.IOException;
  */
 public class IntegerServer {
     public static void main(String[] args) {
-        AioQuickServer<Integer> server = new AioQuickServer<Integer>()
-                .bind(8888)
-                .setProtocol(new IntegerProtocol())
-                .setProcessor(new IntegerServerProcessor());
+        AioQuickServer<Integer> server = new AioQuickServer<Integer>(8888, new IntegerProtocol(), new IntegerServerProcessor());
         try {
             server.start();
         } catch (IOException e) {

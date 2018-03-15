@@ -43,9 +43,7 @@ public class P2PDisconnectClient {
                         AioQuickClient<BaseMessage> client = null;
                         try {
                             P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-                            client = new AioQuickClient<BaseMessage>().connect("127.0.0.1", 8888)
-                                    .setProtocol(new P2PProtocol(messageFactory))
-                                    .setProcessor(processor);
+                            client = new AioQuickClient<BaseMessage>("127.0.0.1", 8888, new P2PProtocol(messageFactory), processor);
                             client.start(asynchronousChannelGroup);
                             long num = 0;
                             while (num++ < 10) {
@@ -54,7 +52,7 @@ public class P2PDisconnectClient {
                                 try {
 //                                    processor.getSession().sendWithoutResponse(request);
                                     logger.info(processor.getSession().sendWithResponse(request, 0));
-                                    Thread.sleep(100);
+//                                    Thread.sleep(100);
                                 } catch (Exception e) {
                                     System.out.println(num);
                                     e.printStackTrace();
