@@ -15,11 +15,13 @@ import org.smartboot.socket.Filter;
 import org.smartboot.socket.StateMachineEnum;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -68,6 +70,7 @@ public class AioSession<T> {
      * 附件对象
      */
     private Object attachment;
+
     /**
      * 响应消息缓存队列
      */
@@ -79,6 +82,7 @@ public class AioSession<T> {
      */
     private Semaphore semaphore = new Semaphore(1);
     private IoServerConfig<T> ioServerConfig;
+    private InputStream inputStream;
 
     /**
      * @param channel
@@ -108,7 +112,6 @@ public class AioSession<T> {
     public void initSession() {
         continueRead();
     }
-
 
     /**
      * 触发AIO的写操作,
@@ -201,7 +204,6 @@ public class AioSession<T> {
         close(true);
     }
 
-
     /**
      * * 是否立即关闭会话
      *
@@ -234,7 +236,6 @@ public class AioSession<T> {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
         }
     }
-
 
     /**
      * 获取当前Session的唯一标识
@@ -346,5 +347,40 @@ public class AioSession<T> {
 
     private ByteBuffer newByteBuffer0(int size) {
         return ioServerConfig.isDirectBuffer() ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+    }
+
+    /**
+     * 获得数据输入流对象
+     *
+     * @return
+     */
+    public InputStream getInputStream() {
+        if (inputStream != null) {
+            return inputStream;
+        }
+        synchronized (this) {
+            if (inputStream == null) {
+                inputStream = new InnerInputStream();
+            }
+        }
+        return inputStream;
+    }
+
+    private class InnerInputStream extends InputStream {
+
+        @Override
+        public int read() throws IOException {
+            if (readBuffer.hasRemaining()) {
+                return readBuffer.get();
+            }
+
+            Future<Integer> future = channel.read(readBuffer);
+            try {
+                return future.get() == -1 ? -1 : read();
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
+        }
+
     }
 }
