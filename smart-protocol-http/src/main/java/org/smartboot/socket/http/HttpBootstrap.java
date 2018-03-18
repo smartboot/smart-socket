@@ -36,6 +36,7 @@ public class HttpBootstrap {
     static void http(HttpMessageProcessor processor) {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
         AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(8888, new HttpProtocol(), processor);
+        server.setDirectBuffer(true);
         server.setFilters(new Filter[]{new QuickMonitorTimer<HttpRequest>()});
         try {
             server.start();

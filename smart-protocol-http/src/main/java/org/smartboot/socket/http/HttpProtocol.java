@@ -115,7 +115,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                     decodeUnit.setDecodePartEnum(HttpPartEnum.CONTENT);
                 }
                 case CONTENT: {
-                    decodeUnit.contentDecoder.decode(decodeUnit, buffer);
+                    decodeUnit.contentDecoder.decode(buffer, session, eof);
                     break;
                 }
                 default: {

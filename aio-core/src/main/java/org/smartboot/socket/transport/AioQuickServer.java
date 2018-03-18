@@ -37,16 +37,15 @@ public class AioQuickServer<T> {
     protected ReadCompletionHandler<T> aioReadCompletionHandler = new ReadCompletionHandler<>();
     protected WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
-    public AioQuickServer() {
-    }
-
     /**
      * @param port             绑定服务端口号
      * @param protocol         协议编解码
      * @param messageProcessor 消息处理器
      */
     public AioQuickServer(int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
-        bind(port).setProtocol(protocol).setProcessor(messageProcessor);
+        config.setPort(port);
+        config.setProtocol(protocol);
+        config.setProcessor(messageProcessor);
     }
 
     public void start() throws IOException {
@@ -98,15 +97,6 @@ public class AioQuickServer<T> {
         asynchronousChannelGroup.shutdown();
     }
 
-    /**
-     * 设置服务绑定的端口
-     *
-     * @param port
-     */
-    public final AioQuickServer<T> bind(int port) {
-        this.config.setPort(port);
-        return this;
-    }
 
     /**
      * 设置处理线程数量
@@ -118,10 +108,6 @@ public class AioQuickServer<T> {
         return this;
     }
 
-    public final AioQuickServer<T> setProtocol(Protocol<T> protocol) {
-        this.config.setProtocol(protocol);
-        return this;
-    }
 
     /**
      * 设置消息过滤器,执行顺序以数组中的顺序为准
@@ -133,15 +119,6 @@ public class AioQuickServer<T> {
         return this;
     }
 
-    /**
-     * 设置消息处理器
-     *
-     * @param processor
-     */
-    public final AioQuickServer<T> setProcessor(MessageProcessor<T> processor) {
-        this.config.setProcessor(processor);
-        return this;
-    }
 
     /**
      * 设置输出队列缓冲区长度
@@ -170,6 +147,16 @@ public class AioQuickServer<T> {
      */
     public final AioQuickServer<T> setBannerEnabled(boolean bannerEnabled) {
         config.setBannerEnabled(bannerEnabled);
+        return this;
+    }
+
+    /**
+     * 是否启用DirectByteBuffer
+     *
+     * @param directBuffer
+     */
+    public final AioQuickServer<T> setDirectBuffer(boolean directBuffer) {
+        config.setDirectBuffer(directBuffer);
         return this;
     }
 }

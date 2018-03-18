@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.transport;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.ssl.SSLConfig;
@@ -26,14 +24,10 @@ import java.util.concurrent.ExecutionException;
  * AIO实现的客户端服务
  * Created by 三刀 on 2017/6/28.
  */
-public class AioSSLQuickClient<T> extends AioQuickClient<T> {
-    private static final Logger LOGGER = LogManager.getLogger(AioSSLQuickClient.class);
+public final class AioSSLQuickClient<T> extends AioQuickClient<T> {
     private SSLService sslService;
 
     private SSLConfig sslConfig = new SSLConfig();
-
-    public AioSSLQuickClient() {
-    }
 
     /**
      * @param host             远程服务器地址
@@ -55,10 +49,10 @@ public class AioSSLQuickClient<T> extends AioQuickClient<T> {
         //启动SSL服务
         sslConfig.setClientMode(true);
         sslService = new SSLService(sslConfig);
-        this.socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
-        AioSession session = new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), sslService);
+        session = new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), sslService);
         session.initSession();
     }
 

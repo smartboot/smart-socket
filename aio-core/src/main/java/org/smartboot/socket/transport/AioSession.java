@@ -96,7 +96,7 @@ public class AioSession<T> {
         this.serverFlowLimit = serverSession ? false : null;
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
-        this.readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
+        this.readBuffer = newByteBuffer0(config.getReadBufferSize());
         for (Filter<T> filter : config.getFilters()) {
             filter.connected(this);
         }
@@ -143,7 +143,7 @@ public class AioSession<T> {
             writeBuffer = headBuffer;
         } else {
             if (writeBuffer == null || totalSize * 2 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
-                writeBuffer = ByteBuffer.allocate(totalSize);
+                writeBuffer = newByteBuffer0(totalSize);
             } else {
                 writeBuffer.clear().limit(totalSize);
             }
@@ -344,4 +344,7 @@ public class AioSession<T> {
         return this.ioServerConfig;
     }
 
+    private ByteBuffer newByteBuffer0(int size) {
+        return ioServerConfig.isDirectBuffer() ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+    }
 }

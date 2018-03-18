@@ -1,10 +1,10 @@
 package org.smartboot.socket.protocol.p2p.client;
 
-import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.StateMachineEnum;
 
 import java.nio.channels.AsynchronousChannelGroup;
 import java.util.concurrent.ThreadFactory;
@@ -20,19 +20,17 @@ public class P2PMaxConnectClient {
         int num = 0;
         try {
             while (true) {
-                final AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>()
-                        .setProcessor(new MessageProcessor<BaseMessage>() {
-                            @Override
-                            public void process(AioSession<BaseMessage> session, BaseMessage msg) {
+                final AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("127.0.0.1", 8888, null, new MessageProcessor<BaseMessage>() {
+                    @Override
+                    public void process(AioSession<BaseMessage> session, BaseMessage msg) {
 
-                            }
+                    }
 
-                            @Override
-                            public void stateEvent(AioSession<BaseMessage> session, StateMachineEnum stateEnum, Throwable throwable) {
+                    @Override
+                    public void stateEvent(AioSession<BaseMessage> session, StateMachineEnum stateEnum, Throwable throwable) {
 
-                            }
-                        })
-                        .connect("127.0.0.1", 8888);
+                    }
+                });
                 client.start(asynchronousChannelGroup);
                 num++;
                 Thread.sleep(1);
