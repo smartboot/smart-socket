@@ -355,32 +355,60 @@ public class AioSession<T> {
      * @return
      */
     public InputStream getInputStream() {
+        return getInputStream(-1);
+    }
+
+    public InputStream getInputStream(int length) {
         if (inputStream != null) {
             return inputStream;
         }
         synchronized (this) {
             if (inputStream == null) {
-                inputStream = new InnerInputStream();
+                inputStream = new InnerInputStream(length);
             }
         }
         return inputStream;
     }
 
     private class InnerInputStream extends InputStream {
+        private int remainLength;
+
+        public InnerInputStream(int length) {
+            this.remainLength = length > 0 ? -1 : length;
+        }
 
         @Override
         public int read() throws IOException {
+            if (remainLength == 0) {
+                return -1;
+            }
             if (readBuffer.hasRemaining()) {
+                if (remainLength > 0) {
+                    remainLength--;
+                }
                 return readBuffer.get();
             }
-
+            readBuffer.clear();
             Future<Integer> future = channel.read(readBuffer);
+
             try {
-                return future.get() == -1 ? -1 : read();
+                int readSize = future.get();
+                readBuffer.flip();
+                System.out.println(readSize + "  " + readBuffer.remaining());
+                if (readSize == -1) {
+                    remainLength = 0;
+                    return -1;
+                } else {
+                    return read();
+                }
             } catch (Exception e) {
                 throw new IOException(e);
             }
         }
 
+        @Override
+        public int available() throws IOException {
+            return remainLength == 0 ? 0 : readBuffer.remaining();
+        }
     }
 }

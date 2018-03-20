@@ -89,7 +89,8 @@ public class WebsocketDecoder implements Protocol<HttpRequest> {
                     if (dataFraming.getFramePayloadLength() > Integer.MAX_VALUE) {
                         throw new RuntimeException("too long");
                     }
-                    decodeUnit.setFormBodyDecoder(new FixedLengthFrameDecoder((int) dataFraming.getFramePayloadLength()));
+                    //todo
+//                    decodeUnit.setFormBodyDecoder(new FixedLengthFrameDecoder((int) dataFraming.getFramePayloadLength()));
                     dataFraming.setState(State.MASKING_KEY);
                     break;
                 }
@@ -106,15 +107,16 @@ public class WebsocketDecoder implements Protocol<HttpRequest> {
                     break;
                 }
                 case PAYLOAD: {
-                    if (decodeUnit.getFormBodyDecoder().decode(buffer)) {
-                        ByteBuffer payloadBuffer = decodeUnit.getFormBodyDecoder().getBuffer();
-
-                        //掩码处理
-                        if (dataFraming.isFrameMasked()) {
-                            unmask(dataFraming, payloadBuffer);
-                        }
-                        dataFraming.setData(payloadBuffer);
-                    }
+                    //todo
+//                    if (decodeUnit.getFormBodyDecoder().decode(buffer)) {
+//                        ByteBuffer payloadBuffer = decodeUnit.getFormBodyDecoder().getBuffer();
+//
+//                        //掩码处理
+//                        if (dataFraming.isFrameMasked()) {
+//                            unmask(dataFraming, payloadBuffer);
+//                        }
+//                        dataFraming.setData(payloadBuffer);
+//                    }
                     break;
                 }
             }

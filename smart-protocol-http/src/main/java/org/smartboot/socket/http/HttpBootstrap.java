@@ -17,6 +17,7 @@ import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSSLQuickServer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.UnknownHostException;
 
 public class HttpBootstrap {
@@ -29,8 +30,20 @@ public class HttpBootstrap {
                 response.getOutputStream().write("Hello smart-socket http server!".getBytes());
             }
         });
+        processor.route("/upload", new HttpHandle() {
+            @Override
+            public void doHandle(Http11Request request, HttpResponse response) throws IOException {
+                InputStream in = request.getInputStream();
+                byte[] buffer = new byte[1024];
+                int len = 0;
+                while ((len = in.read(buffer)) != -1) {
+                    System.out.println(new String(buffer, 0, len));
+                }
+                System.out.println("finish");
+            }
+        });
         http(processor);
-        https(processor);
+//        https(processor);
     }
 
     static void http(HttpMessageProcessor processor) {
