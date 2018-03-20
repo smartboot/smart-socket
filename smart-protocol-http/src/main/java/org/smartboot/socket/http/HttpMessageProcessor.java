@@ -90,9 +90,9 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
         }
 
         httpResponse.getOutputStream().close();
-//        if (!StringUtils.equalsIgnoreCase(HttpHeaderConstant.Values.KEEPALIVE, request.getHeader(HttpHeaderConstant.Names.CONNECTION))) {
-//            session.close(false);
-//        }
+        if (!StringUtils.equalsIgnoreCase(HttpHeaderConstant.Values.KEEPALIVE, request.getHeader(HttpHeaderConstant.Names.CONNECTION))) {
+            session.close(false);
+        }
 
 //        session.close(false);
     }

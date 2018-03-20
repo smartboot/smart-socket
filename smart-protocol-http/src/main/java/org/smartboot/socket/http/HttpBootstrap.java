@@ -26,9 +26,11 @@ public class HttpBootstrap {
     public static void main(String[] args) throws UnknownHostException {
         HttpMessageProcessor processor = new HttpMessageProcessor("/Users/zhengjunwei/Downloads");
         processor.route("/", new HttpHandle() {
+            byte[] body = "Hello smart-socket http server!".getBytes();
+
             @Override
             public void doHandle(Http11Request request, HttpResponse response) throws IOException {
-                byte[] body = "Hello smart-socket http server!".getBytes("utf8");
+
                 response.setHeader(HttpHeaderConstant.Names.CONTENT_LENGTH, body.length + "");
                 response.getOutputStream().write(body);
             }
