@@ -8,6 +8,7 @@
 
 package org.smartboot.socket.http;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
@@ -18,6 +19,7 @@ import org.smartboot.socket.http.handle.StaticResourceHandle;
 import org.smartboot.socket.http.http11.DefaultHttpResponse;
 import org.smartboot.socket.http.http11.Http11HandleGroup;
 import org.smartboot.socket.http.http11.Http11Request;
+import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
@@ -86,8 +88,13 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
             httpResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             httpResponse.getOutputStream().write(e.fillInStackTrace().toString().getBytes());
         }
+
         httpResponse.getOutputStream().close();
-        session.close(false);
+//        if (!StringUtils.equalsIgnoreCase(HttpHeaderConstant.Values.KEEPALIVE, request.getHeader(HttpHeaderConstant.Names.CONNECTION))) {
+//            session.close(false);
+//        }
+
+//        session.close(false);
     }
 
     public void route(String urlPattern, HttpHandle httpHandle) {

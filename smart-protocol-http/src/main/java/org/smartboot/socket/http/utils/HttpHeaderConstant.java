@@ -87,5 +87,7 @@ public interface HttpHeaderConstant {
         String UPGRADE = "Upgrade";
 
         String WEBSOCKET = "websocket";
+
+        String KEEPALIVE="keep-alive";
     }
 }
