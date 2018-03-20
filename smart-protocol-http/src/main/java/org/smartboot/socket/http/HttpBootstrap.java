@@ -13,6 +13,7 @@ import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.http.handle.HttpHandle;
 import org.smartboot.socket.http.http11.Http11Request;
+import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSSLQuickServer;
 
@@ -27,7 +28,9 @@ public class HttpBootstrap {
         processor.route("/", new HttpHandle() {
             @Override
             public void doHandle(Http11Request request, HttpResponse response) throws IOException {
-                response.getOutputStream().write("Hello smart-socket http server!".getBytes());
+                byte[] body = "Hello smart-socket http server!".getBytes("utf8");
+                response.setHeader(HttpHeaderConstant.Names.CONTENT_LENGTH, body.length + "");
+                response.getOutputStream().write(body);
             }
         });
         processor.route("/upload", new HttpHandle() {
@@ -50,6 +53,7 @@ public class HttpBootstrap {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
         AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(8888, new HttpProtocol(), processor);
         server.setDirectBuffer(true);
+        server.setWriteQueueSize(1024);
         server.setFilters(new Filter[]{new QuickMonitorTimer<HttpRequest>()});
         try {
             server.start();
