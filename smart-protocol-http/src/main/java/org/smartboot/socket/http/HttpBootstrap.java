@@ -13,20 +13,38 @@ import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.http.handle.HttpHandle;
 import org.smartboot.socket.http.http11.Http11Request;
+import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSSLQuickServer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.UnknownHostException;
 
 public class HttpBootstrap {
 
     public static void main(String[] args) throws UnknownHostException {
-        HttpMessageProcessor processor = new HttpMessageProcessor("/Users/zhengjunwei/Downloads");
+        HttpMessageProcessor processor = new HttpMessageProcessor("./");
         processor.route("/", new HttpHandle() {
+            byte[] body = "Hello smart-socket http server!".getBytes();
+
             @Override
             public void doHandle(Http11Request request, HttpResponse response) throws IOException {
-                response.getOutputStream().write("Hello smart-socket http server!".getBytes());
+
+                response.setHeader(HttpHeaderConstant.Names.CONTENT_LENGTH, body.length + "");
+                response.getOutputStream().write(body);
+            }
+        });
+        processor.route("/upload", new HttpHandle() {
+            @Override
+            public void doHandle(Http11Request request, HttpResponse response) throws IOException {
+                InputStream in = request.getInputStream();
+                byte[] buffer = new byte[1024];
+                int len = 0;
+                while ((len = in.read(buffer)) != -1) {
+                    System.out.println(new String(buffer, 0, len));
+                }
+                response.getOutputStream().write("Success".getBytes());
             }
         });
         http(processor);
@@ -37,6 +55,7 @@ public class HttpBootstrap {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
         AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(8888, new HttpProtocol(), processor);
         server.setDirectBuffer(true);
+        server.setWriteQueueSize(1024);
         server.setFilters(new Filter[]{new QuickMonitorTimer<HttpRequest>()});
         try {
             server.start();

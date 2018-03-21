@@ -9,10 +9,14 @@
 package org.smartboot.socket.http.http11;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.http.HttpDecodeUnit;
 import org.smartboot.socket.http.HttpRequest;
-import org.smartboot.socket.http.enums.HttpPartEnum;
+import org.smartboot.socket.http.enums.MethodEnum;
+import org.smartboot.socket.http.utils.EmptyInputStream;
+import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
@@ -24,7 +28,7 @@ import java.nio.ByteBuffer;
 public class Http11ContentDecoder implements Protocol<HttpRequest> {
 
     private void decodeBodyForm(HttpDecodeUnit unit) {
-        ByteBuffer buffer = unit.getFormBodyDecoder().getBuffer();
+        ByteBuffer buffer = unit.getFormDecoder().getBuffer();
         String[] paramArray = StringUtils.split(new String(buffer.array(), buffer.position(), buffer.remaining()), "&");
         for (int i = 0; i < paramArray.length; i++) {
             ((Http11Request) unit.getEntity()).setParam(StringUtils.substringBefore(paramArray[i], "=").trim(), StringUtils.substringAfter(paramArray[i], "=").trim());
@@ -37,27 +41,35 @@ public class Http11ContentDecoder implements Protocol<HttpRequest> {
         if (decodeUnit == null) {
             throw new RuntimeException("decodeUnit is null");
         }
-        HttpRequest httpRequest = decodeUnit.getEntity();
+        Http11Request httpRequest = (Http11Request) decodeUnit.getEntity();
         if (httpRequest == null) {
             throw new RuntimeException("request is null");
         }
-        switch (decodeUnit.getBodyTypeEnum()) {
-            case FORM:
-                if (decodeUnit.getFormBodyDecoder().decode(buffer)) {
-                    decodeBodyForm(decodeUnit);
-                    decodeUnit.setDecodePartEnum(HttpPartEnum.END);
-                    decodeUnit.setPartFinished(true);
-                }
-                break;
-            case STREAM:
-                if (decodeUnit.getStreamBodyDecoder().decode(buffer)) {
-                    decodeUnit.setDecodePartEnum(HttpPartEnum.END);
-                }
-                break;
-            default:
-                throw new UnsupportedOperationException();
+        //非Post请求，解码完成
+        if (httpRequest.getHeader().getMethod() != MethodEnum.POST) {
+            httpRequest.setInputStream(new EmptyInputStream());
+            return httpRequest;
         }
-        return null;
+
+        FixedLengthFrameDecoder formDecoder = decodeUnit.getFormDecoder();
+        if (formDecoder == null) {
+            if (StringUtils.startsWith(httpRequest.getHeader().getHeader(HttpHeaderConstant.Names.CONTENT_TYPE), HttpHeaderConstant.Values.MULTIPART_FORM_DATA)) {
+                int contentLength = NumberUtils.toInt(httpRequest.getHeader().getHeader(HttpHeaderConstant.Names.CONTENT_LENGTH), -1);
+                httpRequest.setInputStream(session.getInputStream(contentLength));
+                return httpRequest;
+            } else {
+                int contentLength = NumberUtils.toInt(httpRequest.getHeader().getHeader(HttpHeaderConstant.Names.CONTENT_LENGTH), -1);
+                formDecoder = new FixedLengthFrameDecoder(contentLength);
+                decodeUnit.setFormDecoder(formDecoder);
+                httpRequest.setInputStream(new EmptyInputStream());
+            }
+        }
+        if (formDecoder.decode(buffer)) {
+            decodeBodyForm(decodeUnit);
+            return httpRequest;
+        } else {
+            return null;
+        }
     }
 
     @Override

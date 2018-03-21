@@ -11,8 +11,6 @@ package org.smartboot.socket.http;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
-import org.smartboot.socket.extension.decoder.StreamFrameDecoder;
-import org.smartboot.socket.http.enums.BodyTypeEnum;
 import org.smartboot.socket.http.enums.HttpPartEnum;
 
 /**
@@ -20,24 +18,19 @@ import org.smartboot.socket.http.enums.HttpPartEnum;
  * @version V1.0 , 2018/2/16
  */
 public class HttpDecodeUnit {
-    HttpHeader header;
-    HttpRequest entity;
-    Protocol<HttpRequest> contentDecoder;
+    private HttpHeader header;
+    private HttpRequest entity;
+    private Protocol<HttpRequest> contentDecoder;
+    /**
+     * 结束标解码器
+     */
+    private DelimiterFrameDecoder headPartDecoder;
     /**
      * 当前解码阶段
      */
     private HttpPartEnum decodePartEnum;
-    BodyTypeEnum bodyTypeEnum;
-    /**
-     * 结束标解码器
-     */
-    DelimiterFrameDecoder headPartDecoder;
-    FixedLengthFrameDecoder formBodyDecoder;
-    StreamFrameDecoder streamBodyDecoder;
-    /**
-     * 部分解码完成,可进行业务处理
-     */
-    private boolean partFinished;
+
+    private FixedLengthFrameDecoder formDecoder;
 
     public HttpHeader getHeader() {
         return header;
@@ -53,14 +46,6 @@ public class HttpDecodeUnit {
 
     public void setEntity(HttpRequest entity) {
         this.entity = entity;
-    }
-
-    public boolean isPartFinished() {
-        return partFinished;
-    }
-
-    public void setPartFinished(boolean partFinished) {
-        this.partFinished = partFinished;
     }
 
     public Protocol<HttpRequest> getContentDecoder() {
@@ -79,14 +64,6 @@ public class HttpDecodeUnit {
         this.decodePartEnum = decodePartEnum;
     }
 
-    public BodyTypeEnum getBodyTypeEnum() {
-        return bodyTypeEnum;
-    }
-
-    public void setBodyTypeEnum(BodyTypeEnum bodyTypeEnum) {
-        this.bodyTypeEnum = bodyTypeEnum;
-    }
-
     public DelimiterFrameDecoder getHeadPartDecoder() {
         return headPartDecoder;
     }
@@ -95,19 +72,11 @@ public class HttpDecodeUnit {
         this.headPartDecoder = headPartDecoder;
     }
 
-    public FixedLengthFrameDecoder getFormBodyDecoder() {
-        return formBodyDecoder;
+    public FixedLengthFrameDecoder getFormDecoder() {
+        return formDecoder;
     }
 
-    public void setFormBodyDecoder(FixedLengthFrameDecoder formBodyDecoder) {
-        this.formBodyDecoder = formBodyDecoder;
-    }
-
-    public StreamFrameDecoder getStreamBodyDecoder() {
-        return streamBodyDecoder;
-    }
-
-    public void setStreamBodyDecoder(StreamFrameDecoder streamBodyDecoder) {
-        this.streamBodyDecoder = streamBodyDecoder;
+    public void setFormDecoder(FixedLengthFrameDecoder formDecoder) {
+        this.formDecoder = formDecoder;
     }
 }

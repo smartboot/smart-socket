@@ -14,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.http.enums.HttpStatus;
-import org.smartboot.socket.http.enums.MethodEnum;
 import org.smartboot.socket.http.handle.HttpHandle;
 import org.smartboot.socket.http.handle.StaticResourceHandle;
 import org.smartboot.socket.http.http11.DefaultHttpResponse;
@@ -67,24 +66,10 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
     public void process(final AioSession<HttpRequest> session, final HttpRequest entry) {
         if (entry instanceof Http11Request) {
             final Http11Request request = (Http11Request) entry;
-            //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
-            if (entry.getHeader().getMethod() == MethodEnum.POST && StringUtils.equals(request.getContentType(), HttpHeaderConstant.Values.MULTIPART_FORM_DATA)) {
-                executorService.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            processHttp11(session, request);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            } else {
-                try {
-                    processHttp11(session, request);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            try {
+                processHttp11(session, request);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -99,11 +84,17 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
         try {
             Http11HandleGroup.group().getHttpHandle().doHandle(request, httpResponse);
         } catch (Exception e) {
+            LOGGER.catching(e);
             httpResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             httpResponse.getOutputStream().write(e.fillInStackTrace().toString().getBytes());
         }
+
         httpResponse.getOutputStream().close();
-        session.close(false);
+        if (!StringUtils.equalsIgnoreCase(HttpHeaderConstant.Values.KEEPALIVE, request.getHeader(HttpHeaderConstant.Names.CONNECTION))) {
+            session.close(false);
+        }
+
+//        session.close(false);
     }
 
     public void route(String urlPattern, HttpHandle httpHandle) {
