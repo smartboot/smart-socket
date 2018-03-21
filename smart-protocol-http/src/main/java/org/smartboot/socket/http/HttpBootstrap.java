@@ -24,7 +24,7 @@ import java.net.UnknownHostException;
 public class HttpBootstrap {
 
     public static void main(String[] args) throws UnknownHostException {
-        HttpMessageProcessor processor = new HttpMessageProcessor("/Users/zhengjunwei/Downloads");
+        HttpMessageProcessor processor = new HttpMessageProcessor("./");
         processor.route("/", new HttpHandle() {
             byte[] body = "Hello smart-socket http server!".getBytes();
 
@@ -44,11 +44,11 @@ public class HttpBootstrap {
                 while ((len = in.read(buffer)) != -1) {
                     System.out.println(new String(buffer, 0, len));
                 }
-                System.out.println("finish");
+                response.getOutputStream().write("Success".getBytes());
             }
         });
         http(processor);
-//        https(processor);
+        https(processor);
     }
 
     static void http(HttpMessageProcessor processor) {

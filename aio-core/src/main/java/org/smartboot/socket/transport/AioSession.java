@@ -358,6 +358,12 @@ public class AioSession<T> {
         return getInputStream(-1);
     }
 
+    /**
+     * 获取已知长度的InputStream
+     *
+     * @param length
+     * @return
+     */
     public InputStream getInputStream(int length) {
         if (inputStream != null) {
             return inputStream;
@@ -374,7 +380,7 @@ public class AioSession<T> {
         private int remainLength;
 
         public InnerInputStream(int length) {
-            this.remainLength = length > 0 ? -1 : length;
+            this.remainLength = length >= 0 ? length : -1;
         }
 
         @Override
@@ -389,21 +395,24 @@ public class AioSession<T> {
                 return readBuffer.get();
             }
             readBuffer.clear();
-            Future<Integer> future = channel.read(readBuffer);
 
+            Future<Integer> future = null;
+            future = channel.read(readBuffer);
+            int readSize = 0;
             try {
-                int readSize = future.get();
-                readBuffer.flip();
-                System.out.println(readSize + "  " + readBuffer.remaining());
-                if (readSize == -1) {
-                    remainLength = 0;
-                    return -1;
-                } else {
-                    return read();
-                }
+                readSize = future.get();
             } catch (Exception e) {
+                logger.catching(e);
                 throw new IOException(e);
             }
+            readBuffer.flip();
+            if (readSize == -1) {
+                remainLength = 0;
+                return -1;
+            } else {
+                return read();
+            }
+
         }
 
         @Override
