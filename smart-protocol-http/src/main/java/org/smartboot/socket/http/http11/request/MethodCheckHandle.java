@@ -33,7 +33,7 @@ import java.io.IOException;
 public class MethodCheckHandle extends HttpHandle {
     @Override
     public void doHandle(Http11Request request, HttpResponse response) throws IOException {
-        MethodEnum methodEnum = MethodEnum.getByMethod(request.getMethod());//大小写敏感
+        MethodEnum methodEnum = request.getMethod();//大小写敏感
         if (methodEnum == null) {
             response.setHttpStatus(HttpStatus.NOT_IMPLEMENTED);
             return;

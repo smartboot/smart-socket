@@ -128,6 +128,15 @@ final class HttpProtocol implements Protocol<HttpRequest> {
         } else {
             decodeUnit = (HttpDecodeUnit) session.getAttachment();
         }
+        if (decodeUnit.getDecodePartEnum() == HttpPartEnum.END) {
+            HttpHeader httpHeader = decodeUnit.getHeader();
+            httpHeader.setHttpVersion(null);
+            httpHeader.setMethod(null);
+            httpHeader.setOriginalUri(null);
+            httpHeader.headerMap.clear();
+            decodeUnit.setDecodePartEnum(HttpPartEnum.REQUEST_LINE_METHOD);
+            decodeUnit.getHeadPartDecoder().reset(SP);
+        }
         return decodeUnit;
     }
 
@@ -144,7 +153,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
      */
     private void decodeRequestLineMethod(HttpDecodeUnit unit) {
         ByteBuffer requestLineBuffer = unit.getHeadPartDecoder().getBuffer();
-        unit.getHeader().setMethod(MethodEnum.getByMethod(new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - SP.length)));
+        unit.getHeader().setMethod(MethodEnum.getByMethod(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - SP.length));
 
         //识别一下一个解码阶段
         unit.getHeadPartDecoder().reset();

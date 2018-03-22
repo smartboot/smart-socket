@@ -77,6 +77,9 @@ public class DelimiterFrameDecoder implements SmartDecoder {
     }
 
     public ByteBuffer getBuffer() {
+        if (position == 0) {
+            return bufferList.get(position);
+        }
         byte[] data = new byte[(position) * bufferList.get(0).capacity() + bufferList.get(position).limit()];
         int index = 0;
         for (int i = 0; i < position; i++) {

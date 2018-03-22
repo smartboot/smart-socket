@@ -21,11 +21,10 @@ import java.util.Map;
  */
 public class HttpHeader {
 
+    Map<String, String> headerMap = new HashMap<String, String>();
     private MethodEnum method;
     private String originalUri;
     private String httpVersion;
-
-    private Map<String, String> headerMap = new HashMap<String, String>();
 
     public MethodEnum getMethod() {
         return method;

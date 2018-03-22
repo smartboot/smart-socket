@@ -27,9 +27,33 @@ public enum MethodEnum {
     CONNECT("CONNECT");
 
     private String method;
+    private byte[] bytes;
 
     MethodEnum(String method) {
         this.method = method;
+        this.bytes = method.getBytes();
+    }
+
+    public static MethodEnum getByMethod(byte[] bytes, int index, int length) {
+        if (bytes == null || index < 0 || index >= bytes.length || length + index > bytes.length) {
+            return null;
+        }
+        for (MethodEnum methodEnum : values()) {
+            if (methodEnum.bytes.length != length) {
+                continue;
+            }
+            boolean mark = true;
+            for (int i = 0; i < methodEnum.bytes.length; i++) {
+                if (methodEnum.bytes[i] != bytes[index + i]) {
+                    mark = false;
+                    break;
+                }
+            }
+            if (mark) {
+                return methodEnum;
+            }
+        }
+        return null;
     }
 
     public static MethodEnum getByMethod(String method) {
