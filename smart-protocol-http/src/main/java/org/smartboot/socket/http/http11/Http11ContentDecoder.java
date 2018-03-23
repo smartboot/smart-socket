@@ -47,7 +47,6 @@ public class Http11ContentDecoder implements Protocol<HttpRequest> {
         }
         //非Post请求，解码完成
         if (httpRequest.getHeader().getMethod() != MethodEnum.POST) {
-            httpRequest.setInputStream(new EmptyInputStream());
             return httpRequest;
         }
 

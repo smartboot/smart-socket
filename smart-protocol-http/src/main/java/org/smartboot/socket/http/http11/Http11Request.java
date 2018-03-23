@@ -15,6 +15,7 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.smartboot.socket.http.HttpHeader;
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.enums.MethodEnum;
+import org.smartboot.socket.http.utils.EmptyInputStream;
 import org.smartboot.socket.http.utils.HttpHeaderConstant;
 
 import java.io.InputStream;
@@ -45,7 +46,7 @@ public class Http11Request extends HttpRequest {
 
 
     public InputStream getInputStream() {
-        return inputStream;
+        return inputStream == null ? new EmptyInputStream() : inputStream;
     }
 
     public void setInputStream(InputStream inputStream) {

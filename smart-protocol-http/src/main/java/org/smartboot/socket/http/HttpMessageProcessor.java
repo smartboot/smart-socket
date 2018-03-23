@@ -90,6 +90,8 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
         }
 
         httpResponse.getOutputStream().close();
+
+//        session.write(ByteBuffer.wrap(a));
         if (!StringUtils.equalsIgnoreCase(HttpHeaderConstant.Values.KEEPALIVE, request.getHeader(HttpHeaderConstant.Names.CONNECTION))) {
             session.close(false);
         }
