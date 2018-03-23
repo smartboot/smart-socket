@@ -53,14 +53,6 @@ public class Http11Request extends HttpRequest {
         this.inputStream = inputStream;
     }
 
-    public void setHeader(String name, String value) {
-        if (StringUtils.equals(name, HttpHeaderConstant.Names.CONTENT_LENGTH)) {
-            contentLength = NumberUtils.toInt(value, -1);
-        } else if (StringUtils.startsWith(name, HttpHeaderConstant.Names.CONTENT_TYPE)) {
-            contentType = value;
-        }
-    }
-
     public String getHeader(String key) {
         return header.getHeader(key);
     }

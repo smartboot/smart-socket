@@ -45,16 +45,21 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
                 .next(new HttpHandle() {
                     @Override
                     public void doHandle(Http11Request request, HttpResponse response) throws IOException {
-                        HttpHandle httpHandle = null;
-                        for (Map.Entry<String, HttpHandle> entity : handleMap.entrySet()) {
 
-                            if (request.getRequestURI().matches(entity.getKey())) {
-                                httpHandle = entity.getValue();
-                                break;
+                        String uri = request.getRequestURI();
+                        HttpHandle httpHandle = handleMap.get(uri);
+                        if (httpHandle == null) {
+                            for (Map.Entry<String, HttpHandle> entity : handleMap.entrySet()) {
+                                if (uri.matches(entity.getKey())) {
+                                    httpHandle = entity.getValue();
+                                    handleMap.put(uri, httpHandle);
+                                    break;
+                                }
                             }
                         }
                         if (httpHandle == null) {
                             httpHandle = defaultHandle;
+                            handleMap.put(uri, httpHandle);
                         }
                         httpHandle.doHandle(request, response);
                     }
@@ -91,12 +96,10 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
 
         httpResponse.getOutputStream().close();
 
-//        session.write(ByteBuffer.wrap(a));
         if (!StringUtils.equalsIgnoreCase(HttpHeaderConstant.Values.KEEPALIVE, request.getHeader(HttpHeaderConstant.Names.CONNECTION))) {
             session.close(false);
         }
 
-//        session.close(false);
     }
 
     public void route(String urlPattern, HttpHandle httpHandle) {
