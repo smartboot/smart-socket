@@ -6,7 +6,7 @@
  * Author: sandao
  */
 
-package org.smartboot.socket;
+package org.smartboot.socket.util;
 
 /**
  * 扩展StringUtils方法

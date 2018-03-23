@@ -22,6 +22,7 @@ import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.http.websocket.DataFraming;
 import org.smartboot.socket.http.websocket.WebsocketDecoder;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.BufferUtils;
 
 import java.nio.ByteBuffer;
 
@@ -32,7 +33,6 @@ import java.nio.ByteBuffer;
 final class HttpProtocol implements Protocol<HttpRequest> {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpProtocol.class);
-    private static final byte[] SP = {Consts.SP};
 
     private WebsocketDecoder websocketDecoder = new WebsocketDecoder();
 
@@ -49,31 +49,58 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                 case REQUEST_LINE_METHOD:
                     if (decodeUnit.getHeadPartDecoder().decode(buffer)) {
                         decodeRequestLineMethod(decodeUnit);
+                    } else {
+                        break;
                     }
-                    break;
-                //解析请求行:URL
+                    //解析请求行:URL
                 case REQUEST_LINE_URL:
                     if (decodeUnit.getHeadPartDecoder().decode(buffer)) {
                         decodeRequestLineURL(decodeUnit);
+                    } else {
+                        break;
                     }
-                    break;
-                //解析请求行:HTTP_VERSION
+                    //解析请求行:HTTP_VERSION
                 case REQUEST_LINE_VERSION:
                     if (decodeUnit.getHeadPartDecoder().decode(buffer)) {
                         decodeHttpVersion(decodeUnit);
                     }
                     break;
-                //解析消息头
-                case HEAD_LINE:
+                //解析消息头Key部分
+                case HEAD_LINE_KEY:
                     if (decodeUnit.getHeadPartDecoder().decode(buffer)) {
-                        decodeHeadLine(decodeUnit);
-                    }
-                    //本行仅有\r\n表示消息体部分已结束
-                    if (decodeUnit.getDecodePartEnum() != HttpPartEnum.HEAD_END_LINE) {
+                        ByteBuffer headLineBuffer = decodeUnit.getHeadPartDecoder().getBuffer();
+                        BufferUtils.trim(headLineBuffer);
+                        decodeUnit.setHeaderKey(new String(headLineBuffer.array(), headLineBuffer.position(), headLineBuffer.remaining() - Consts.COLON_ARRAY.length));
+
+                        //解析消息头Value部分
+                        decodeUnit.getHeadPartDecoder().reset(Consts.CRLF);
+                        decodeUnit.setDecodePartEnum(HttpPartEnum.HEAD_LINE_VALUE);
+                    } else {
                         break;
                     }
-                    //识别如何处理Body部分
-                case HEAD_END_LINE: {
+                    //解析消息头Key部分
+                case HEAD_LINE_VALUE:
+                    if (decodeUnit.getHeadPartDecoder().decode(buffer)) {
+                        ByteBuffer headLineBuffer = decodeUnit.getHeadPartDecoder().getBuffer();
+                        BufferUtils.trim(headLineBuffer);
+                        decodeUnit.getHeader().setHeader(decodeUnit.getHeaderKey(), new String(headLineBuffer.array(), headLineBuffer.position(), headLineBuffer.remaining()));
+                        //检验Header解码是否结束
+                        decodeUnit.setDecodePartEnum(HttpPartEnum.HEAD_END_CHECK);
+                    } else {
+                        break;
+                    }
+                case HEAD_END_CHECK:
+                    if (buffer.remaining() < 2) {
+                        return null;
+                    }
+                    //非/r/n视为普通header行
+                    if (buffer.get(buffer.position()) != Consts.CR || buffer.get(buffer.position() + 1) != Consts.LF) {
+                        //识别一下一个解码阶段
+                        decodeUnit.getHeadPartDecoder().reset(Consts.COLON_ARRAY);
+                        decodeUnit.setDecodePartEnum(HttpPartEnum.HEAD_LINE_KEY);
+                        break;
+                    }
+                    buffer.position(buffer.position() + Consts.CRLF.length);
                     HttpHeader httpHeader = decodeUnit.getHeader();
                     //Websocket消息
                     if (StringUtils.equals(httpHeader.getHeader(HttpHeaderConstant.Names.CONNECTION), HttpHeaderConstant.Values.UPGRADE)
@@ -89,7 +116,6 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                         decodeUnit.setEntity(request);
                     }
                     decodeUnit.setDecodePartEnum(HttpPartEnum.CONTENT);
-                }
                 case CONTENT: {
                     HttpRequest request = decodeUnit.getContentDecoder().decode(buffer, session, eof);
                     if (request != null) {
@@ -123,7 +149,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
             decodeUnit.setHeader(new HttpHeader());
 //            decodeUnit.entity = new HttpRequest(session);
             decodeUnit.setDecodePartEnum(HttpPartEnum.REQUEST_LINE_METHOD);
-            decodeUnit.setHeadPartDecoder(new DelimiterFrameDecoder(SP, 10));
+            decodeUnit.setHeadPartDecoder(new DelimiterFrameDecoder(Consts.SP_ARRAY, 10));
             session.setAttachment(decodeUnit);
         } else {
             decodeUnit = (HttpDecodeUnit) session.getAttachment();
@@ -135,7 +161,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
             httpHeader.setOriginalUri(null);
             httpHeader.headerMap.clear();
             decodeUnit.setDecodePartEnum(HttpPartEnum.REQUEST_LINE_METHOD);
-            decodeUnit.getHeadPartDecoder().reset(SP);
+            decodeUnit.getHeadPartDecoder().reset(Consts.SP_ARRAY);
         }
         return decodeUnit;
     }
@@ -153,7 +179,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
      */
     private void decodeRequestLineMethod(HttpDecodeUnit unit) {
         ByteBuffer requestLineBuffer = unit.getHeadPartDecoder().getBuffer();
-        unit.getHeader().setMethod(MethodEnum.getByMethod(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - SP.length));
+        unit.getHeader().setMethod(MethodEnum.getByMethod(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - Consts.SP_ARRAY.length));
 
         //识别一下一个解码阶段
         unit.getHeadPartDecoder().reset();
@@ -167,7 +193,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
      */
     private void decodeRequestLineURL(HttpDecodeUnit unit) {
         ByteBuffer requestLineBuffer = unit.getHeadPartDecoder().getBuffer();
-        String uri = new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - SP.length);
+        String uri = new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - Consts.SP_ARRAY.length);
 
         unit.getHeader().setOriginalUri(uri);
 
@@ -188,30 +214,8 @@ final class HttpProtocol implements Protocol<HttpRequest> {
         unit.getHeader().setHttpVersion(httpVersion);
 
         //识别一下一个解码阶段
-        unit.getHeadPartDecoder().reset();
-        unit.setDecodePartEnum(HttpPartEnum.HEAD_LINE);
+        unit.getHeadPartDecoder().reset(Consts.COLON_ARRAY);
+        unit.setDecodePartEnum(HttpPartEnum.HEAD_END_CHECK);
     }
 
-    /**
-     * 解析消息头
-     *
-     * @param unit
-     */
-    private void decodeHeadLine(HttpDecodeUnit unit) {
-        ByteBuffer headLineBuffer = unit.getHeadPartDecoder().getBuffer();
-
-        //消息头已结束
-        if (headLineBuffer.remaining() == Consts.CRLF.length) {
-            unit.setDecodePartEnum(HttpPartEnum.HEAD_END_LINE);
-            unit.getHeadPartDecoder().reset();
-            return;
-        }
-        String headLine = new String(headLineBuffer.array(), 0, headLineBuffer.remaining());
-
-        unit.getHeader().setHeader(StringUtils.substringBefore(headLine, ":"), StringUtils.substringAfter(headLine, ":").trim());
-
-        //识别一下一个解码阶段
-        unit.getHeadPartDecoder().reset();
-        unit.setDecodePartEnum(HttpPartEnum.HEAD_LINE);
-    }
 }

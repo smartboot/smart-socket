@@ -20,6 +20,7 @@ import org.smartboot.socket.http.enums.HttpPartEnum;
 public class HttpDecodeUnit {
     private HttpHeader header;
     private HttpRequest entity;
+    private String headerKey;
     private Protocol<HttpRequest> contentDecoder;
     /**
      * 结束标解码器
@@ -79,4 +80,14 @@ public class HttpDecodeUnit {
     public void setFormDecoder(FixedLengthFrameDecoder formDecoder) {
         this.formDecoder = formDecoder;
     }
+
+    public String getHeaderKey() {
+        return headerKey;
+    }
+
+    public void setHeaderKey(String headerKey) {
+        this.headerKey = headerKey;
+    }
+
+
 }

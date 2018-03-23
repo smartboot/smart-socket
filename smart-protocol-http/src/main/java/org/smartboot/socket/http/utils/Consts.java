@@ -68,4 +68,8 @@ public interface Consts {
     public static final char SP_CHAR = (char) SP;
 
     public static final byte[] CRLF = {Consts.CR, Consts.LF};
+
+    byte[] COLON_ARRAY = {COLON};
+
+    byte[] SP_ARRAY = {SP};
 }

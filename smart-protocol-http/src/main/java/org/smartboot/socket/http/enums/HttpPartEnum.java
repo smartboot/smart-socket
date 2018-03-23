@@ -31,11 +31,15 @@ public enum HttpPartEnum {
     /**
      * 请求头部
      */
-    HEAD_LINE,
+    HEAD_LINE_KEY,
+
+    HEAD_LINE_VALUE,
+
+    HEAD_END_CHECK,
     /**
      * 空行
      */
-    HEAD_END_LINE,
+//    HEAD_END_LINE,
     /**
      * 请求体
      */
