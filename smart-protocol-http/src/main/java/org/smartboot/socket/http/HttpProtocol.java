@@ -33,9 +33,8 @@ import java.nio.ByteBuffer;
 final class HttpProtocol implements Protocol<HttpRequest> {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpProtocol.class);
-
+    private static final int READ_BUFFER = 128;
     private WebsocketDecoder websocketDecoder = new WebsocketDecoder();
-
     private Http11ContentDecoder http11ContentDecoder = new Http11ContentDecoder();
 
     @Override
@@ -148,7 +147,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
             decodeUnit.setHeader(new HttpHeader());
 //            decodeUnit.entity = new HttpRequest(session);
             decodeUnit.setDecodePartEnum(HttpPartEnum.REQUEST_LINE_METHOD);
-            decodeUnit.setHeadPartDecoder(new DelimiterFrameDecoder(Consts.SP_ARRAY, 10));
+            decodeUnit.setHeadPartDecoder(new DelimiterFrameDecoder(Consts.SP_ARRAY, READ_BUFFER));
             session.setAttachment(decodeUnit);
         } else {
             decodeUnit = (HttpDecodeUnit) session.getAttachment();
