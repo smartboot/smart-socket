@@ -129,7 +129,6 @@ final class HttpProtocol implements Protocol<HttpRequest> {
             }
         }
         if (decodeUnit.getDecodePartEnum() == HttpPartEnum.END) {
-            session.setAttachment(null);
             return decodeUnit.getEntity();
         } else {
             return null;
