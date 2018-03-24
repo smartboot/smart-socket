@@ -7,7 +7,7 @@
   ~ Author: sandao
   -->
 
-<Configuration status='fatal' packages="org.smartboot">
+<Configuration status='fatal' packages="org.smartboot.socket.http">
 
     <Properties>
         <!-- 设置为生产环境的日志存放目录 -->
