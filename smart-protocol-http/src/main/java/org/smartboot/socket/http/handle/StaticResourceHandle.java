@@ -8,6 +8,8 @@
 
 package org.smartboot.socket.http.handle;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.http.http11.Http11Request;
@@ -25,6 +27,7 @@ import java.nio.channels.FileChannel;
  * @version V1.0 , 2018/2/7
  */
 public class StaticResourceHandle extends HttpHandle {
+    private static final Logger LOGGER = LogManager.getLogger(StaticResourceHandle.class);
     private static final int READ_BUFFER = 1024;
     private String baseDir;
 
@@ -36,7 +39,8 @@ public class StaticResourceHandle extends HttpHandle {
     public void doHandle(Http11Request request, HttpResponse response) throws IOException {
         File file = new File(baseDir + request.getRequestURI());
         if (!file.isFile()) {
-            response.setHttpStatus(HttpStatus.NOT_FOUND);
+            LOGGER.warn("file:{} not found!", request.getRequestURI());
+                response.setHttpStatus(HttpStatus.NOT_FOUND);
             return;
         }
         FileInputStream fis = new FileInputStream(file);

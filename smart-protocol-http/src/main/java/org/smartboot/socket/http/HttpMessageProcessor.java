@@ -55,7 +55,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
     }
 
     private void processHttp11(final AioSession<HttpRequest> session, Http11Request request) throws IOException {
-        HttpResponse httpResponse = new DefaultHttpResponse(session, request,http11HandleGroup);
+        HttpResponse httpResponse = new DefaultHttpResponse(session, request, http11HandleGroup);
         try {
             http11HandleGroup.getPreHandle().doHandle(request, httpResponse);
         } catch (Exception e) {
@@ -66,7 +66,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
 
         httpResponse.getOutputStream().close();
 
-        if (!StringUtils.equalsIgnoreCase(HttpHeaderConstant.Values.KEEPALIVE, request.getHeader(HttpHeaderConstant.Names.CONNECTION))) {
+        if (!StringUtils.equalsIgnoreCase(HttpHeaderConstant.Values.KEEPALIVE, request.getHeader(HttpHeaderConstant.Names.CONNECTION)) || httpResponse.getHttpStatus() != HttpStatus.OK) {
             session.close(false);
         }
 
