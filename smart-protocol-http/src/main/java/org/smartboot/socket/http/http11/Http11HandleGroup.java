@@ -11,6 +11,7 @@ package org.smartboot.socket.http.http11;
 import org.smartboot.socket.http.handle.HttpHandle;
 import org.smartboot.socket.http.http11.request.HostCheckHandle;
 import org.smartboot.socket.http.http11.request.MethodCheckHandle;
+import org.smartboot.socket.http.http11.request.RouteHandle;
 import org.smartboot.socket.http.http11.request.URICheckHandle;
 import org.smartboot.socket.http.http11.response.DefaultHandle;
 
@@ -20,37 +21,32 @@ import org.smartboot.socket.http.http11.response.DefaultHandle;
  */
 public class Http11HandleGroup {
 
-    private static Http11HandleGroup group;
-    private HttpHandle httpHandle;
+    private Http11HandleGroup group;
 
+    private HttpHandle preHandle;
+    private RouteHandle routeHandle;
     private HttpHandle lastHandle;
 
-    private Http11HandleGroup() {
-        httpHandle = new MethodCheckHandle();
-        httpHandle.next(new HostCheckHandle()).next(new URICheckHandle());
+    public Http11HandleGroup(String baseDir) {
+        routeHandle = new RouteHandle(baseDir);
+        preHandle = new MethodCheckHandle();
+        preHandle.next(new HostCheckHandle()).next(new URICheckHandle());
+
+        preHandle.next(routeHandle);
 
 //        httpFilter.next(new HttpProcessFilter());
         lastHandle = new DefaultHandle();
     }
 
-    public static final Http11HandleGroup group() {
-        if (group != null) {
-            return group;
-        }
-        synchronized (Http11HandleGroup.class) {
-            if (group != null) {
-                return group;
-            }
-            group = new Http11HandleGroup();
-        }
-        return group;
-    }
-
-    public HttpHandle getHttpHandle() {
-        return httpHandle;
+    public HttpHandle getPreHandle() {
+        return preHandle;
     }
 
     public HttpHandle getLastHandle() {
         return lastHandle;
+    }
+
+    public RouteHandle getRouteHandle() {
+        return routeHandle;
     }
 }

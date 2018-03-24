@@ -24,21 +24,22 @@ import java.util.Map;
  */
 final class HttpOutputStream extends OutputStream {
 
+    boolean chunkedEnd = false;
     private AioSession aioSession;
-
     private DefaultHttpResponse response;
-
     private ByteBuffer cacheBuffer = ByteBuffer.allocate(512);
     private boolean committed = false, closed = false;
-
     private boolean chunked = false;
     private Http11Request request;
     private ByteBuffer headBuffer = ByteBuffer.allocate(512);
+    private byte[] endChunked = new byte[]{'0', Consts.CR, Consts.LF, Consts.CR, Consts.LF};
+    private Http11HandleGroup http11HandleGroup;
 
-    public HttpOutputStream(AioSession aioSession, DefaultHttpResponse response, Http11Request request) {
+    public HttpOutputStream(AioSession aioSession, DefaultHttpResponse response, Http11Request request, Http11HandleGroup http11HandleGroup) {
         this.aioSession = aioSession;
         this.response = response;
         this.request = request;
+        this.http11HandleGroup = http11HandleGroup;
     }
 
     @Override
@@ -71,7 +72,7 @@ final class HttpOutputStream extends OutputStream {
     }
 
     private void writeHead() throws IOException {
-        Http11HandleGroup.group().getLastHandle().doHandle(request, new NoneOutputHttpResponseWrap(response));//防止在handle中调用outputStream操作
+        http11HandleGroup.getLastHandle().doHandle(request, new NoneOutputHttpResponseWrap(response));//防止在handle中调用outputStream操作
         chunked = StringUtils.equals(HttpHeaderConstant.Values.CHUNKED, response.getHeader(HttpHeaderConstant.Names.TRANSFER_ENCODING));
 
         headBuffer.clear();
@@ -120,8 +121,11 @@ final class HttpOutputStream extends OutputStream {
             ByteBuffer buffer = null;
             if (chunked) {
                 byte[] start = getBytes(Integer.toHexString(cacheBuffer.remaining()) + "\r\n");
-                buffer = ByteBuffer.allocate(start.length + cacheBuffer.remaining() + Consts.CRLF.length);
+                buffer = ByteBuffer.allocate(start.length + cacheBuffer.remaining() + Consts.CRLF.length + (chunkedEnd ? endChunked.length : 0));
                 buffer.put(start).put(cacheBuffer).put(Consts.CRLF);
+                if (chunkedEnd) {
+                    buffer.put(endChunked);
+                }
 
             } else {
                 buffer = ByteBuffer.allocate(cacheBuffer.remaining());
@@ -129,6 +133,8 @@ final class HttpOutputStream extends OutputStream {
             }
             buffer.flip();
             aioSession.write(buffer);
+        } else if (chunked && chunkedEnd) {
+            aioSession.write(ByteBuffer.wrap(endChunked));
         }
         cacheBuffer.clear();
     }
@@ -138,16 +144,14 @@ final class HttpOutputStream extends OutputStream {
         if (closed) {
             return;
         }
+        chunkedEnd = true;
         flush();
-        if (chunked) {
-            aioSession.write(ByteBuffer.wrap(new byte[]{'0', Consts.CR, Consts.LF, Consts.CR, Consts.LF}));
-        }
-//        aioSession.close(false);
         closed = true;
     }
 
     private byte[] getBytes(String str) {
-        return str.getBytes(Consts.DEFAULT_CHARSET);
+//        return str.getBytes(Consts.DEFAULT_CHARSET);
+        return str.getBytes();
     }
 
 }

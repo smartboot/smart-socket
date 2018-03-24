@@ -34,8 +34,8 @@ public class DefaultHttpResponse implements HttpResponse {
 
     private HttpOutputStream outputStream;
 
-    public DefaultHttpResponse(AioSession<HttpRequest> session, Http11Request request) {
-        this.outputStream = new HttpOutputStream(session, this, request);
+    public DefaultHttpResponse(AioSession<HttpRequest> session, Http11Request request, Http11HandleGroup http11HandleGroup) {
+        this.outputStream = new HttpOutputStream(session, this, request,http11HandleGroup);
     }
 
     public OutputStream getOutputStream() {
