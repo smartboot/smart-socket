@@ -21,8 +21,6 @@ import org.smartboot.socket.http.http11.response.DefaultHandle;
  */
 public class Http11HandleGroup {
 
-    private Http11HandleGroup group;
-
     private HttpHandle preHandle;
     private RouteHandle routeHandle;
     private HttpHandle lastHandle;
@@ -34,7 +32,6 @@ public class Http11HandleGroup {
 
         preHandle.next(routeHandle);
 
-//        httpFilter.next(new HttpProcessFilter());
         lastHandle = new DefaultHandle();
     }
 

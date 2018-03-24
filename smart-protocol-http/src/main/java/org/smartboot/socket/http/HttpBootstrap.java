@@ -13,7 +13,6 @@ import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.http.handle.HttpHandle;
 import org.smartboot.socket.http.http11.Http11Request;
-import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSSLQuickServer;
 
@@ -24,7 +23,7 @@ import java.net.UnknownHostException;
 public class HttpBootstrap {
 
     public static void main(String[] args) throws UnknownHostException {
-        HttpMessageProcessor processor = new HttpMessageProcessor("./");
+        HttpMessageProcessor processor = new HttpMessageProcessor(System.getProperty("webapps.dir", "./"));
         processor.route("/", new HttpHandle() {
             byte[] body = "Hello smart-socket http server!".getBytes();
 
