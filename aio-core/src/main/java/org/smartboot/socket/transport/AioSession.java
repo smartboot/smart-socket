@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.pool.ByteBufferPool;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -124,6 +125,7 @@ public class AioSession<T> {
         }
 
         if (writeCacheQueue.isEmpty()) {
+            ByteBufferPool.getPool().release(writeBuffer);
             writeBuffer = null;
             semaphore.release();
             //此时可能是Closing或Closed状态
@@ -189,6 +191,9 @@ public class AioSession<T> {
         if (isInvalid()) {
             throw new IOException("session is " + status);
         }
+        if (buffer == null) {
+            throw new NullPointerException("buffer is null");
+        }
         try {
             //正常读取
             writeCacheQueue.put(buffer);
@@ -229,6 +234,7 @@ public class AioSession<T> {
                 filter.closed(this);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
+            ByteBufferPool.getPool().release(readBuffer);
         } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
             close(true);
             semaphore.release();
@@ -346,7 +352,8 @@ public class AioSession<T> {
     }
 
     private ByteBuffer newByteBuffer0(int size) {
-        return ioServerConfig.isDirectBuffer() ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+        return ioServerConfig.isDirectBuffer() ? ByteBufferPool.getPool().acquire(size) : ByteBuffer.allocate(size);
+//        return ioServerConfig.isDirectBuffer() ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
     /**
