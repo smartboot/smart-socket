@@ -13,7 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.pool.ByteBufferPool;
+import org.smartboot.socket.pool.DirectBufferPool;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -125,7 +125,7 @@ public class AioSession<T> {
         }
 
         if (writeCacheQueue.isEmpty()) {
-            ByteBufferPool.getPool().release(writeBuffer);
+            DirectBufferPool.getPool().release(writeBuffer);
             writeBuffer = null;
             semaphore.release();
             //此时可能是Closing或Closed状态
@@ -140,20 +140,25 @@ public class AioSession<T> {
         }
         Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
         int totalSize = 0;
-        while (iterable.hasNext() && totalSize <= MAX_WRITE_SIZE) {
-            totalSize += iterable.next().remaining();
+        while (iterable.hasNext()) {
+            int remain = iterable.next().remaining();
+            if (totalSize + remain > MAX_WRITE_SIZE) {
+                break;
+            }
+            totalSize += remain;
         }
         ByteBuffer headBuffer = writeCacheQueue.poll();
         if (headBuffer.remaining() == totalSize) {
             writeBuffer = headBuffer;
         } else {
             if (writeBuffer == null || totalSize * 2 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
+                DirectBufferPool.getPool().release(writeBuffer);
                 writeBuffer = newByteBuffer0(totalSize);
             } else {
                 writeBuffer.clear().limit(totalSize);
             }
             writeBuffer.put(headBuffer);
-            while (writeBuffer.hasRemaining()) {
+            while (writeBuffer.position() != totalSize) {
                 writeBuffer.put(writeCacheQueue.poll());
             }
             writeBuffer.flip();
@@ -234,7 +239,7 @@ public class AioSession<T> {
                 filter.closed(this);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-            ByteBufferPool.getPool().release(readBuffer);
+            DirectBufferPool.getPool().release(readBuffer);
         } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
             close(true);
             semaphore.release();
@@ -352,7 +357,7 @@ public class AioSession<T> {
     }
 
     private ByteBuffer newByteBuffer0(int size) {
-        return ioServerConfig.isDirectBuffer() ? ByteBufferPool.getPool().acquire(size) : ByteBuffer.allocate(size);
+        return ioServerConfig.isDirectBuffer() ? DirectBufferPool.getPool().acquire(size) : ByteBuffer.allocate(size);
 //        return ioServerConfig.isDirectBuffer() ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 

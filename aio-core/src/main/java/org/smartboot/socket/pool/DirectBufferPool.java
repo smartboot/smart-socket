@@ -9,13 +9,13 @@ import java.nio.ByteBuffer;
  * @author 三刀
  * @version V1.0 , 2018/3/25
  */
-public class ByteBufferPool extends ObjectPool<Integer, ByteBuffer> {
+public class DirectBufferPool extends ObjectPool<Integer, ByteBuffer> {
 
-    private static final Logger LOGGER = LogManager.getLogger(ByteBufferPool.class);
+    private static final Logger LOGGER = LogManager.getLogger(DirectBufferPool.class);
     private static final int[] keyArray = new int[]{32, 64, 128, 256, 512, 1024, 2048, 4096, 256 * 1024};
-    private static ByteBufferPool pool = new ByteBufferPool();
+    private static DirectBufferPool pool = new DirectBufferPool();
 
-    public static ByteBufferPool getPool() {
+    public static DirectBufferPool getPool() {
         return pool;
     }
 
@@ -25,13 +25,20 @@ public class ByteBufferPool extends ObjectPool<Integer, ByteBuffer> {
         for (int i = 0; i < len; i++) {
             ByteBuffer.allocateDirect(100);
         }
-        System.out.println(System.currentTimeMillis() - start);
+        System.out.println("DirectBuffer:" + (System.currentTimeMillis() - start));
+
         start = System.currentTimeMillis();
         for (int i = 0; i < len; i++) {
-            ByteBuffer b = ByteBufferPool.getPool().acquire(100);
-            ByteBufferPool.getPool().release(b);
+            ByteBuffer.allocate(100);
         }
-        System.out.println(System.currentTimeMillis() - start);
+        System.out.println("HeapBuffer:" + (System.currentTimeMillis() - start));
+
+        start = System.currentTimeMillis();
+        for (int i = 0; i < len; i++) {
+            ByteBuffer b = DirectBufferPool.getPool().acquire(100);
+            DirectBufferPool.getPool().release(b);
+        }
+        System.out.println("PoolBuffer:" + (System.currentTimeMillis() - start));
     }
 
     @Override
@@ -39,12 +46,11 @@ public class ByteBufferPool extends ObjectPool<Integer, ByteBuffer> {
         if (size > keyArray[keyArray.length - 1]) {
             LOGGER.warn("acquire bytebuffer too big ,size is:{}", size);
 //            return ByteBuffer.allocate(size);
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("");
         }
         for (int key : keyArray) {
             if (key >= size) {
                 ByteBuffer b = super.acquire(key);
-                b.clear();
                 return b;
             }
         }
@@ -53,14 +59,23 @@ public class ByteBufferPool extends ObjectPool<Integer, ByteBuffer> {
     }
 
     public void release(ByteBuffer t) {
-        if (t.isDirect()) {
-            super.release(t.capacity(), t);
+        if (t == null || !t.isDirect()) {
+            return;
+        }
+        for (int keySize : keyArray) {
+            if (keySize == t.capacity()) {
+                t.clear();
+                super.release(t.capacity(), t);
+                return;
+            }
         }
     }
 
     @Override
     public ByteBuffer init(Integer key) {
-        LOGGER.info("init byteBuffer, size:{}", key);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("init byteBuffer, size:{}", key);
+        }
         return ByteBuffer.allocateDirect(key);
     }
 }

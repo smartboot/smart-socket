@@ -19,10 +19,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class ObjectPool<K, T> {
     private static final Logger LOGGER = LogManager.getLogger(ObjectPool.class);
     private Map<K, ArrayBlockingQueue<T>> objects = new ConcurrentHashMap<>();
-    private int poolSize = 100;
+    private int poolSize = 64;
 
     public ObjectPool() {
-        this(100);
+        this(0);
     }
 
     public ObjectPool(int poolSize) {
@@ -40,15 +40,18 @@ public abstract class ObjectPool<K, T> {
                     return init(key);
                 }
             }
-            LOGGER.info("new Object for {}", key);
             return acquire(key);
         }
         T t = list.poll();
         if (t == null) {
-            LOGGER.warn("pool not enough,key:{}", key);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("pool not enough,key:{}", key);
+            }
             return init(key);
         } else {
-            LOGGER.info("acquire bytebuffer success ,key:{},size:{}", key, list.size());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("acquire bytebuffer success ,key:{},size:{}", key, list.size());
+            }
             return t;
         }
 //        return t != null ? t : init();
@@ -58,13 +61,14 @@ public abstract class ObjectPool<K, T> {
     public void release(K key, T t) {
         ArrayBlockingQueue<T> list = objects.get(key);
         if (list == null) {
-            LOGGER.info("no pool for {}", key);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("no pool for {}", key);
+            }
             return;
         }
-        if (!list.offer(t)) {
-            LOGGER.info("cache key:{} into pool fail", key);
-        } else {
-            LOGGER.info("cache key:{} into pool success,size:{}", key, list.size());
+        boolean suc = list.offer(t);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("release key:{} {}", key, suc ? "success" : "fail");
         }
     }
 
