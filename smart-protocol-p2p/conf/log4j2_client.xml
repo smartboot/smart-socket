@@ -34,7 +34,7 @@
     </Appenders>
 
     <Loggers>
-        <Root level="debug">
+        <Root level="info">
             <!-- 生产环境停用Console -->
             <appender-ref ref="DefaultRollingFile"/>
         </Root>

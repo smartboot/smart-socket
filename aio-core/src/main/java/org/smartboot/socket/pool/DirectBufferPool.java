@@ -44,6 +44,9 @@ public class DirectBufferPool extends ObjectPool<Integer, ByteBuffer> {
 
     @Override
     public ByteBuffer acquire(Integer size) {
+        if (true) {
+            return ByteBuffer.allocateDirect(size);
+        }
         if (size > keyArray[keyArray.length - 1]) {
             LOGGER.warn("acquire bytebuffer too big ,size is:{}", size);
 //            return ByteBuffer.allocate(size);
