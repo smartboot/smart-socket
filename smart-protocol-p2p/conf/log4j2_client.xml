@@ -11,7 +11,7 @@
 
     <Properties>
         <!-- 设置为生产环境的日志存放目录 -->
-        <Property name="logPath">/opt/logs/smart-socket</Property>
+        <Property name="logPath">../logs/</Property>
     </Properties>
 
     <Appenders>
