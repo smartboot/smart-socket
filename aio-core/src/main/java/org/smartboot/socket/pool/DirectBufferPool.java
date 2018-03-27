@@ -12,7 +12,8 @@ import java.nio.ByteBuffer;
 public class DirectBufferPool extends ObjectPool<Integer, ByteBuffer> {
 
     private static final Logger LOGGER = LogManager.getLogger(DirectBufferPool.class);
-    private static final int[] keyArray = new int[]{32, 64, 128, 256, 512, 1024, 2048, 4096, 256 * 1024};
+    private static final int[] keyArray = new int[]{32, 64, 128, 256, 512, 1024, 2048, 4 * 1024,
+            8 * 1024, 16 * 1024, 32 * 1024, 64 * 1024, 128 * 1024, 256 * 1024};
     private static DirectBufferPool pool = new DirectBufferPool();
 
     public static DirectBufferPool getPool() {
