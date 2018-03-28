@@ -2,7 +2,6 @@ package org.smartboot.socket.protocol.p2p.message;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.smartboot.socket.pool.DirectBufferPool;
 import org.smartboot.socket.protocol.p2p.DecodeException;
 
 import java.net.ProtocolException;
@@ -16,11 +15,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version BaseMessage.java, v 0.1 2015年8月22日 上午11:24:03 Seer Exp.
  */
 public abstract class BaseMessage {
-    private static AtomicInteger sequence = new AtomicInteger(0);
     /**
      * 消息头
      */
     private HeadMessage head;
+
+    private static AtomicInteger sequence = new AtomicInteger(0);
 
     public BaseMessage(HeadMessage head) {
         this.head = head;
@@ -56,8 +56,7 @@ public abstract class BaseMessage {
             throw new ProtocolException("Protocol head is unset!");
         }
         // 完成消息体编码便可获取实际消息大小
-//        ByteBuffer bodyBuffer = ByteBuffer.allocate(512);
-        ByteBuffer bodyBuffer = DirectBufferPool.getPool().acquire(512);
+        ByteBuffer bodyBuffer = ByteBuffer.allocate(512);
         bodyBuffer.position(HeadMessage.HEAD_MESSAGE_LENGTH);
         encodeBody(bodyBuffer);// 编码消息体
         bodyBuffer.flip();
