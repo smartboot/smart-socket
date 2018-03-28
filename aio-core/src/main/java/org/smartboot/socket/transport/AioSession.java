@@ -16,6 +16,7 @@ import org.smartboot.socket.StateMachineEnum;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InvalidObjectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -187,10 +188,13 @@ public class AioSession<T> {
 
     public final void write(final ByteBuffer buffer) throws IOException {
         if (isInvalid()) {
-            throw new IOException("session is " + status);
+            throw new IOException("session is " + (status == SESSION_STATUS_CLOSED ? "closed" : "invalid"));
         }
         if (buffer == null) {
             throw new NullPointerException("buffer is null");
+        }
+        if (!buffer.hasRemaining()) {
+            throw new InvalidObjectException("buffer has no remaining");
         }
         try {
             //正常读取
