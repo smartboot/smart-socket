@@ -14,6 +14,7 @@ import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.http.handle.HttpHandle;
 import org.smartboot.socket.http.http11.Http11Request;
+import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSSLQuickServer;
 
@@ -31,7 +32,7 @@ public class HttpBootstrap {
             @Override
             public void doHandle(Http11Request request, HttpResponse response) throws IOException {
 
-//                response.setHeader(HttpHeaderConstant.Names.CONTENT_LENGTH, body.length + "");
+                response.setHeader(HttpHeaderConstant.Names.CONTENT_LENGTH, body.length + "");
                 response.getOutputStream().write(body);
             }
         });
@@ -48,7 +49,7 @@ public class HttpBootstrap {
             }
         });
         http(processor);
-//        https(processor);
+        https(processor);
     }
 
     static void http(HttpMessageProcessor processor) {
@@ -71,8 +72,8 @@ public class HttpBootstrap {
         AioSSLQuickServer<HttpRequest> server = new AioSSLQuickServer<HttpRequest>(8889, new HttpProtocol(), processor);
         server
                 .setClientAuth(ClientAuth.OPTIONAL)
-                .setKeyStore("server.jks", "storepass")
-                .setTrust("trustedCerts.jks", "storepass")
+                .setKeyStore(ClassLoader.getSystemClassLoader().getResource("server.jks").getFile(), "storepass")
+                .setTrust(ClassLoader.getSystemClassLoader().getResource("trustedCerts.jks").getFile(), "storepass")
                 .setKeyPassword("keypass")
         ;
         try {
