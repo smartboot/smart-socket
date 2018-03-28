@@ -79,4 +79,9 @@ public class DirectBufferPool extends ObjectPool<Integer, ByteBuffer> {
         }
         return ByteBuffer.allocateDirect(key);
     }
+
+    @Override
+    public ByteBuffer emptyPool(Integer key) {
+        return ByteBuffer.allocate(key);
+    }
 }

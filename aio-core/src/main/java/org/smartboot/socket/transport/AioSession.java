@@ -159,7 +159,9 @@ public class AioSession<T> {
             }
             writeBuffer.put(headBuffer);
             while (writeBuffer.position() != totalSize) {
-                writeBuffer.put(writeCacheQueue.poll());
+                ByteBuffer b = writeCacheQueue.poll();
+                writeBuffer.put(b);
+                DirectBufferPool.getPool().release(b);
             }
             writeBuffer.flip();
         }

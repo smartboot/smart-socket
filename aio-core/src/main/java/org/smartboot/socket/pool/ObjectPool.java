@@ -37,6 +37,9 @@ public abstract class ObjectPool<K, T> {
                 if (list == null) {
                     list = new ArrayBlockingQueue<T>(poolSize);
                     objects.put(key, list);
+                    for (int i = 0; i < poolSize - 1; i++) {
+                        list.offer(init(key));
+                    }
                     return init(key);
                 }
             }
@@ -47,7 +50,7 @@ public abstract class ObjectPool<K, T> {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("pool not enough,key:{}", key);
             }
-            return init(key);
+            return emptyPool(key);
         } else {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("acquire bytebuffer success ,key:{},size:{}", key, list.size());
@@ -73,5 +76,7 @@ public abstract class ObjectPool<K, T> {
     }
 
     public abstract T init(K key);
+
+    public abstract T emptyPool(K key);
 }
 
