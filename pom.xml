@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
-        <version>1.3.4</version>
+        <version>1.3.5</version>
     </parent>
     <properties>
         <commons.lang.version>2.6</commons.lang.version>
