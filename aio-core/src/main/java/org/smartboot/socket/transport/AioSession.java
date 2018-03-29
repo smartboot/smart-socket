@@ -9,8 +9,8 @@
 package org.smartboot.socket.transport;
 
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.StateMachineEnum;
 
@@ -44,7 +44,7 @@ public class AioSession<T> {
      * Session状态:正常
      */
     SESSION_STATUS_ENABLED = 3;
-    private static final Logger logger = LogManager.getLogger(AioSession.class);
+    private static final Logger logger = LoggerFactory.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
     /**
      * Session ID生成器
@@ -200,7 +200,7 @@ public class AioSession<T> {
             //正常读取
             writeCacheQueue.put(buffer);
         } catch (InterruptedException e) {
-            logger.error(e);
+            logger.error("put buffer into cache fail", e);
         }
         if (semaphore.tryAcquire()) {
             writeToChannel();
@@ -230,7 +230,7 @@ public class AioSession<T> {
                     logger.debug("session:{} is closed:", getSessionID());
                 }
             } catch (IOException e) {
-                logger.catching(e);
+                logger.debug("close session exception", e);
             }
             for (Filter<T> filter : ioServerConfig.getFilters()) {
                 filter.closed(this);
@@ -273,7 +273,7 @@ public class AioSession<T> {
                 }
                 ioServerConfig.getProcessor().process(this, dataEntry);
             } catch (Exception e) {
-                logger.catching(e);
+                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
                 for (Filter<T> h : ioServerConfig.getFilters()) {
                     h.processFail(this, dataEntry, e);
                 }
@@ -409,7 +409,6 @@ public class AioSession<T> {
             try {
                 readSize = future.get();
             } catch (Exception e) {
-                logger.catching(e);
                 throw new IOException(e);
             }
             readBuffer.flip();

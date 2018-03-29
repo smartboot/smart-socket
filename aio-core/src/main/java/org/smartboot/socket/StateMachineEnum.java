@@ -17,6 +17,8 @@ public enum StateMachineEnum {
     NEW_SESSION,
     /**读通道已被关闭*/
     INPUT_SHUTDOWN,
+    /**业务处理异常*/
+    PROCESS_EXCEPTION,
     /**读操作异常*/
     INPUT_EXCEPTION,
     /**写操作异常*/

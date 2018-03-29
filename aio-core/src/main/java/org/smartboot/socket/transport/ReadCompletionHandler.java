@@ -8,8 +8,8 @@
 
 package org.smartboot.socket.transport;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.StateMachineEnum;
 
@@ -23,7 +23,7 @@ import java.nio.channels.CompletionHandler;
  * @version V1.0.0
  */
 class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
-    private static final Logger LOGGER = LogManager.getLogger(ReadCompletionHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
 
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
@@ -49,12 +49,12 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         try {
             aioSession.getServerConfig().getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
         } catch (Exception e) {
-            LOGGER.catching(e);
+            LOGGER.debug(e.getMessage(), e);
         }
         try {
             aioSession.close();
         } catch (Exception e) {
-            LOGGER.catching(e);
+            LOGGER.debug(e.getMessage(), e);
         }
     }
 }

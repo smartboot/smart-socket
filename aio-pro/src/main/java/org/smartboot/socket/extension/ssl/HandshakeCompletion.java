@@ -8,8 +8,8 @@
 
 package org.smartboot.socket.extension.ssl;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.channels.CompletionHandler;
@@ -19,7 +19,7 @@ import java.nio.channels.CompletionHandler;
  * @version V1.0 , 2018/1/2
  */
 class HandshakeCompletion implements CompletionHandler<Integer, HandshakeModel> {
-    private static final Logger logger = LogManager.getLogger(HandshakeCompletion.class);
+    private static final Logger logger = LoggerFactory.getLogger(HandshakeCompletion.class);
     private SSLService sslService;
 
     public HandshakeCompletion(SSLService sslService) {
@@ -44,6 +44,6 @@ class HandshakeCompletion implements CompletionHandler<Integer, HandshakeModel> 
         } catch (IOException e) {
             e.printStackTrace();
         }
-        logger.catching(exc);
+        logger.warn("handshake exception", exc);
     }
 }

@@ -8,8 +8,8 @@
 
 package org.smartboot.socket.transport;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.extension.ssl.HandshakeCallback;
 import org.smartboot.socket.extension.ssl.HandshakeModel;
 import org.smartboot.socket.extension.ssl.SSLService;
@@ -25,7 +25,7 @@ import java.nio.channels.AsynchronousSocketChannel;
  * @version V1.0 , 2017/12/19
  */
 public class SSLAioSession<T> extends AioSession<T> {
-    private static final Logger logger = LogManager.getLogger(SSLAioSession.class);
+    private static final Logger logger = LoggerFactory.getLogger(SSLAioSession.class);
     private ByteBuffer netWriteBuffer;
 
     private ByteBuffer netReadBuffer;
@@ -98,7 +98,7 @@ public class SSLAioSession<T> extends AioSession<T> {
             try {
                 this.wait();
             } catch (InterruptedException e) {
-                logger.catching(e);
+                logger.debug(e.getMessage(), e);
             }
         }
     }
@@ -201,7 +201,6 @@ public class SSLAioSession<T> extends AioSession<T> {
             }
             netReadBuffer.compact();
         } catch (SSLException e) {
-            logger.catching(e);
             throw new RuntimeException(e);
         }
     }

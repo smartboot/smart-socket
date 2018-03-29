@@ -8,8 +8,8 @@
 
 package org.smartboot.socket.extension.ssl;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.transport.SSLAioSession;
 
 import javax.net.ssl.KeyManager;
@@ -39,7 +39,7 @@ import java.security.cert.X509Certificate;
  */
 public class SSLService {
 
-    private static final Logger logger = LogManager.getLogger(SSLAioSession.class);
+    private static final Logger logger = LoggerFactory.getLogger(SSLAioSession.class);
 
     private SSLContext sslContext;
 
@@ -271,7 +271,7 @@ public class SSLService {
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
-            logger.catching(e);
+            logger.debug("", e);
         }
     }
 

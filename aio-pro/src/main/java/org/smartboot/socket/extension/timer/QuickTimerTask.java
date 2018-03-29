@@ -9,8 +9,8 @@
 
 package org.smartboot.socket.extension.timer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -21,7 +21,7 @@ import java.util.TimerTask;
  * @author 三刀
  */
 public abstract class QuickTimerTask extends TimerTask {
-    private static final Logger logger = LogManager.getLogger(QuickTimerTask.class);
+    private static final Logger logger = LoggerFactory.getLogger(QuickTimerTask.class);
     private static Timer timer = new Timer("Quick Timer", true);
 
     public QuickTimerTask() {

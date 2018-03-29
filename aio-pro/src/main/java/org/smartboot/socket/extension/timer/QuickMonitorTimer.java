@@ -8,8 +8,8 @@
 
 package org.smartboot.socket.extension.timer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.transport.AioSession;
 
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
  */
 public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
-    private static final Logger logger = LogManager.getLogger(QuickMonitorTimer.class);
+    private static final Logger logger = LoggerFactory.getLogger(QuickMonitorTimer.class);
     /**
      * 当前周期内消息 流量监控
      */

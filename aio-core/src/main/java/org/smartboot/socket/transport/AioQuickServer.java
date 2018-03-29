@@ -8,8 +8,8 @@
 
 package org.smartboot.socket.transport;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
@@ -29,7 +29,7 @@ import java.util.concurrent.ThreadFactory;
  * @version V1.0.0
  */
 public class AioQuickServer<T> {
-    private static final Logger LOGGER = LogManager.getLogger(AioQuickServer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AioQuickServer.class);
     protected AsynchronousServerSocketChannel serverSocketChannel = null;
     protected AsynchronousChannelGroup asynchronousChannelGroup;
     protected IoServerConfig<T> config = new IoServerConfig<>();
@@ -75,7 +75,7 @@ public class AioQuickServer<T> {
 
             @Override
             public void failed(Throwable exc, Object attachment) {
-                LOGGER.warn(exc);
+                LOGGER.warn("smart-socket server accept fail", exc);
             }
         });
 
@@ -92,7 +92,7 @@ public class AioQuickServer<T> {
         try {
             serverSocketChannel.close();
         } catch (IOException e) {
-            LOGGER.catching(e);
+            LOGGER.warn(e.getMessage(), e);
         }
         asynchronousChannelGroup.shutdown();
     }

@@ -52,7 +52,7 @@ public class HttpBootstrap {
         https(processor);
     }
 
-    static void http(HttpMessageProcessor processor) {
+    public static void http(HttpMessageProcessor processor) {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
         int port = NumberUtils.toInt(System.getProperty("port"), 8888);
         AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(port, new HttpProtocol(), processor);
