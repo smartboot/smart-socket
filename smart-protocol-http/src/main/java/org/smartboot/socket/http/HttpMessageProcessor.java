@@ -9,8 +9,8 @@
 package org.smartboot.socket.http;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.http.enums.HttpStatus;
@@ -29,7 +29,7 @@ import java.io.IOException;
  * @author 三刀
  */
 public final class HttpMessageProcessor implements MessageProcessor<HttpRequest> {
-    private static final Logger LOGGER = LogManager.getLogger(HttpMessageProcessor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpMessageProcessor.class);
     private Http11HandleGroup http11HandleGroup = null;
 
     public HttpMessageProcessor(String baseDir) {
@@ -59,7 +59,7 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
         try {
             http11HandleGroup.getPreHandle().doHandle(request, httpResponse);
         } catch (Exception e) {
-            LOGGER.catching(e);
+            LOGGER.debug("", e);
             httpResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             httpResponse.getOutputStream().write(e.fillInStackTrace().toString().getBytes());
         }

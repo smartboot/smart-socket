@@ -1,7 +1,7 @@
 package org.smartboot.socket.protocol.p2p.client;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.protocol.p2p.P2PProtocol;
@@ -26,7 +26,7 @@ public class P2PMultiClient {
         });
         for (int i = 0; i < 10; i++) {
             new Thread("Client-Thread-" + i) {
-                private Logger logger = LogManager.getLogger(this.getClass());
+                private Logger logger = LoggerFactory.getLogger(this.getClass());
 
                 @Override
                 public void run() {

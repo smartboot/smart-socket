@@ -9,8 +9,8 @@
 package org.smartboot.socket.http.http11.request;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.http.HttpResponse;
 import org.smartboot.socket.http.enums.HttpStatus;
 import org.smartboot.socket.http.handle.HttpHandle;
@@ -28,7 +28,7 @@ import java.io.IOException;
  */
 public class URICheckHandle extends HttpHandle {
     public static final int MAX_LENGTH = 255 * 1024;
-    private static final Logger LOGGER = LogManager.getLogger(URICheckHandle.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(URICheckHandle.class);
 
     @Override
     public void doHandle(Http11Request request, HttpResponse response) throws IOException {

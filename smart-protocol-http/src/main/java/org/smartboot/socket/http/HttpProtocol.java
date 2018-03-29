@@ -9,8 +9,8 @@
 package org.smartboot.socket.http;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
 import org.smartboot.socket.http.enums.HttpPartEnum;
@@ -32,7 +32,7 @@ import java.nio.ByteBuffer;
  */
 final class HttpProtocol implements Protocol<HttpRequest> {
 
-    private static final Logger LOGGER = LogManager.getLogger(HttpProtocol.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpProtocol.class);
     private static final int READ_BUFFER = 128;
     private WebsocketDecoder websocketDecoder = new WebsocketDecoder();
     private Http11ContentDecoder http11ContentDecoder = new Http11ContentDecoder();

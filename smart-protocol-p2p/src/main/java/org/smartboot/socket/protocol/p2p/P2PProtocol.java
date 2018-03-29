@@ -1,7 +1,7 @@
 package org.smartboot.socket.protocol.p2p;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.HeadMessage;
@@ -22,7 +22,7 @@ public final class P2PProtocol implements Protocol<BaseMessage> {
      * P2P消息标志性部分长度,消息头部的 幻数+消息大小 ,共8字节
      */
     private static final int MESSAGE_SIGN_LENGTH = 8;
-    private static Logger LOGGER = LogManager.getLogger(P2PProtocol.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(P2PProtocol.class);
     private P2pServiceMessageFactory serviceMessageFactory;
 
     public P2PProtocol(P2pServiceMessageFactory serviceMessageFactory) {
@@ -63,7 +63,7 @@ public final class P2PProtocol implements Protocol<BaseMessage> {
         try {
             return baseMessage.encode();
         } catch (ProtocolException e) {
-            LOGGER.catching(e);
+            LOGGER.warn("", e);
         }
         return null;
     }

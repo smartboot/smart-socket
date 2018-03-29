@@ -1,7 +1,7 @@
 package org.smartboot.socket.protocol.p2p;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.MessageType;
 import org.smartboot.socket.transport.AioSession;
@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class P2PSession implements Session<BaseMessage> {
     public static final String SESSION_KEY = "session";
-    private static Logger logger = LogManager.getLogger(P2PSession.class);
+    private static Logger logger = LoggerFactory.getLogger(P2PSession.class);
     /**
      * 会话创建时间
      */

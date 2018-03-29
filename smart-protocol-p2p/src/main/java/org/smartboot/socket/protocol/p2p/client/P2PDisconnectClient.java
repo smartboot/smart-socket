@@ -1,7 +1,7 @@
 package org.smartboot.socket.protocol.p2p.client;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.protocol.p2p.P2PProtocol;
@@ -19,7 +19,7 @@ import java.util.concurrent.ThreadFactory;
 
 public class P2PDisconnectClient {
     public static void main(String[] args) throws Exception {
-        final Logger logger = LogManager.getLogger(P2PDisconnectClient.class);
+        final Logger logger = LoggerFactory.getLogger(P2PDisconnectClient.class);
         final AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -51,7 +51,7 @@ public class P2PDisconnectClient {
                                 request.setDetect("台州人在杭州:" + num);
                                 try {
 //                                    processor.getSession().sendWithoutResponse(request);
-                                    logger.info(processor.getSession().sendWithResponse(request, 0));
+                                    logger.info("", processor.getSession().sendWithResponse(request, 0));
                                     Thread.sleep(10);
                                 } catch (Exception e) {
                                     System.out.println(num);
@@ -103,7 +103,7 @@ public class P2PDisconnectClient {
                         DetectMessageReq request = new DetectMessageReq();
                         request.setDetect("台州人在杭州:" + num);
                         try {
-                            logger.info(processor.getSession().sendWithResponse(request, 0));
+                            logger.info("", processor.getSession().sendWithResponse(request, 0));
                             Thread.sleep(10);
                         } catch (Exception e) {
                             System.out.println(num);
