@@ -34,7 +34,7 @@ public class AioQuickClient<T> {
     /**
      * 客户端服务配置
      */
-    protected IoServerConfig<T> config = new IoServerConfig<T>();
+    protected IoServerConfig<T> config = new IoServerConfig<>();
 
     protected AioSession session;
 

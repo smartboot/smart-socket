@@ -49,11 +49,11 @@ public class AioSession<T> {
     /**
      * Session ID生成器
      */
-    private static int NEXT_ID = 0;
+    private static int nextId = 0;
     /**
      * 唯一标识
      */
-    private final int sessionId = ++NEXT_ID;
+    private final int sessionId = ++nextId;
     /**
      * 数据read限流标志,仅服务端需要进行限流
      */
