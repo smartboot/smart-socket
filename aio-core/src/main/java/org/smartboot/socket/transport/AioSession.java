@@ -96,7 +96,7 @@ public class AioSession<T> {
         this.channel = channel;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
-        this.writeCacheQueue = new ArrayBlockingQueue<ByteBuffer>(config.getWriteQueueSize());
+        this.writeCacheQueue = new ArrayBlockingQueue<>(config.getWriteQueueSize());
         this.ioServerConfig = config;
         this.serverFlowLimit = serverSession ? false : null;
         //触发状态机
