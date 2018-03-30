@@ -340,12 +340,8 @@ public class AioSession<T> {
         }
     }
 
-    public final InetSocketAddress getRemoteAddress() {
-        try {
-            return (InetSocketAddress) channel.getRemoteAddress();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public final InetSocketAddress getRemoteAddress() throws IOException {
+        return (InetSocketAddress) channel.getRemoteAddress();
     }
 
     IoServerConfig getServerConfig() {
