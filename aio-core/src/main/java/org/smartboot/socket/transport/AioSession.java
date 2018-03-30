@@ -399,8 +399,7 @@ public class AioSession<T> {
             }
             readBuffer.clear();
 
-            Future<Integer> future = null;
-            future = channel.read(readBuffer);
+            Future<Integer> future = channel.read(readBuffer);
             int readSize = 0;
             try {
                 readSize = future.get();
