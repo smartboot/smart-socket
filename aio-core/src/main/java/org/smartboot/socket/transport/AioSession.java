@@ -201,6 +201,7 @@ public class AioSession<T> {
             writeCacheQueue.put(buffer);
         } catch (InterruptedException e) {
             logger.error("put buffer into cache fail", e);
+            Thread.currentThread().interrupt();
         }
         if (semaphore.tryAcquire()) {
             writeToChannel();
