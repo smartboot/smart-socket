@@ -35,15 +35,15 @@ public class AioSession<T> {
     /**
      * Session状态:已关闭
      */
-    protected static final byte SESSION_STATUS_CLOSED = 1,
+    protected static final byte SESSION_STATUS_CLOSED = 1;
     /**
      * Session状态:关闭中
      */
-    SESSION_STATUS_CLOSING = 2,
+    protected static final byte SESSION_STATUS_CLOSING = 2;
     /**
      * Session状态:正常
      */
-    SESSION_STATUS_ENABLED = 3;
+    protected static final byte SESSION_STATUS_ENABLED = 3;
     private static final Logger logger = LoggerFactory.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
     /**
@@ -62,7 +62,8 @@ public class AioSession<T> {
      * 底层通信channel对象
      */
     protected AsynchronousSocketChannel channel;
-    protected ByteBuffer readBuffer, writeBuffer;
+    protected ByteBuffer readBuffer;
+    protected ByteBuffer writeBuffer;
     /**
      * 会话当前状态
      */

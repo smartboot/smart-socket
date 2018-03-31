@@ -14,6 +14,7 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -57,12 +58,16 @@ public class AioQuickClient<T> {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
-        AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
-        socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        //连接成功则构造AIOSession对象
-        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
-        session.initSession();
+    public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
+        try {
+            AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+            socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
+            //连接成功则构造AIOSession对象
+            session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
+            session.initSession();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new ConnectException(e.getMessage());
+        }
     }
 
     /**
@@ -72,7 +77,7 @@ public class AioQuickClient<T> {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    public final void start() throws IOException, ExecutionException, InterruptedException {
+    public final void start() throws IOException {
         this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
