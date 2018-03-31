@@ -14,7 +14,6 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -66,7 +65,7 @@ public class AioQuickClient<T> {
             session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
             session.initSession();
         } catch (ExecutionException | InterruptedException e) {
-            throw new ConnectException(e.getMessage());
+            throw new RuntimeException(e    );
         }
     }
 

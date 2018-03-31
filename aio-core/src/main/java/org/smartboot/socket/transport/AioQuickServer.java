@@ -56,28 +56,32 @@ public class AioQuickServer<T> {
     }
 
     protected final void start0() throws IOException {
-        asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
-            byte index = 0;
+        try {
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+                byte index = 0;
 
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "smart-socket:AIO-" + (++index));
-            }
-        });
-        this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()), 1000);
-        serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
-            @Override
-            public void completed(final AsynchronousSocketChannel channel, Object attachment) {
-                serverSocketChannel.accept(attachment, this);
-                createSession(channel);
-            }
+                @Override
+                public Thread newThread(Runnable r) {
+                    return new Thread(r, "smart-socket:AIO-" + (++index));
+                }
+            });
+            this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()), 1000);
+            serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
+                @Override
+                public void completed(final AsynchronousSocketChannel channel, Object attachment) {
+                    serverSocketChannel.accept(attachment, this);
+                    createSession(channel);
+                }
 
-            @Override
-            public void failed(Throwable exc, Object attachment) {
-                LOGGER.warn("smart-socket server accept fail", exc);
-            }
-        });
-
+                @Override
+                public void failed(Throwable exc, Object attachment) {
+                    LOGGER.warn("smart-socket server accept fail", exc);
+                }
+            });
+        } catch (IOException e) {
+            shutdown();
+            throw e;
+        }
         LOGGER.info("smart-socket server started on port {}", config.getPort());
     }
 
@@ -89,11 +93,17 @@ public class AioQuickServer<T> {
 
     public final void shutdown() {
         try {
-            serverSocketChannel.close();
+            if (serverSocketChannel != null) {
+                serverSocketChannel.close();
+                serverSocketChannel = null;
+            }
         } catch (IOException e) {
             LOGGER.warn(e.getMessage(), e);
         }
-        asynchronousChannelGroup.shutdown();
+        if (asynchronousChannelGroup != null) {
+            asynchronousChannelGroup.shutdown();
+            asynchronousChannelGroup = null;
+        }
     }
 
 
