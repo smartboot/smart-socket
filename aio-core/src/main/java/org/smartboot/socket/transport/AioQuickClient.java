@@ -65,7 +65,8 @@ public class AioQuickClient<T> {
             session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
             session.initSession();
         } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e    );
+            shutdown();
+            throw new IOException(e);
         }
     }
 
