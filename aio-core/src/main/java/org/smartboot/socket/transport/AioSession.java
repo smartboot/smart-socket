@@ -138,6 +138,23 @@ public class AioSession<T> {
             }
             return;
         }
+
+        mergeWriteBuffer0();
+
+        //如果存在流控并符合释放条件，则触发读操作
+        //一定要放在continueWrite之前
+        if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
+            serverFlowLimit = false;
+            continueRead();
+        }
+        continueWrite();
+
+    }
+
+    /**
+     * merge the Bytebuffer of writeCacheQueue
+     */
+    private void mergeWriteBuffer0() {
         Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
         int totalSize = 0;
         while (iterable.hasNext() && totalSize <= MAX_WRITE_SIZE) {
@@ -158,15 +175,6 @@ public class AioSession<T> {
             }
             writeBuffer.flip();
         }
-
-        //如果存在流控并符合释放条件，则触发读操作
-        //一定要放在continueWrite之前
-        if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
-            serverFlowLimit = false;
-            continueRead();
-        }
-        continueWrite();
-
     }
 
     /**
