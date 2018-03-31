@@ -301,9 +301,6 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
 
-        if (serverFlowLimit != null && serverFlowLimit) {
-            throw new RuntimeException("不该出现的情况");
-        }
         //触发流控
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit = true;
@@ -332,12 +329,8 @@ public class AioSession<T> {
         write(ioServerConfig.getProtocol().encode(t, this));
     }
 
-    public final InetSocketAddress getLocalAddress() {
-        try {
-            return (InetSocketAddress) channel.getLocalAddress();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public final InetSocketAddress getLocalAddress() throws IOException {
+        return (InetSocketAddress) channel.getLocalAddress();
     }
 
     public final InetSocketAddress getRemoteAddress() throws IOException {

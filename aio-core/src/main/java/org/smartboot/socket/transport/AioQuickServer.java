@@ -50,8 +50,7 @@ public class AioQuickServer<T> {
 
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
-            System.out.println(IoServerConfig.BANNER);
-            System.out.println(" :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
+            LOGGER.info(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
         }
         start0();
     }
