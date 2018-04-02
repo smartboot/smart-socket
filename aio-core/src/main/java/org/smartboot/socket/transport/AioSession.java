@@ -234,15 +234,7 @@ public class AioSession<T> {
         }
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
-            try {
-                channel.close();
-            } catch (IOException e) {
-                logger.debug("close session exception", e);
-            }
-            for (Filter<T> filter : ioServerConfig.getFilters()) {
-                filter.closed(this);
-            }
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
+            close0();
         } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
             close(true);
             semaphore.release();
@@ -251,11 +243,26 @@ public class AioSession<T> {
         }
     }
 
+    private void close0() {
+        try {
+            if (channel != null) {
+                channel.close();
+                channel = null;
+            }
+        } catch (IOException e) {
+            logger.debug("close session exception", e);
+        }
+        for (Filter<T> filter : ioServerConfig.getFilters()) {
+            filter.closed(this);
+        }
+        ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
+    }
+
     /**
      * 获取当前Session的唯一标识
      */
     public final String getSessionID() {
-        return "aiosession:" + sessionId + "-" + hashCode();
+        return "aioSession:" + sessionId + "-" + hashCode();
     }
 
     /**
