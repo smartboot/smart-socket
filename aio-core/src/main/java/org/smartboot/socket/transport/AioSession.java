@@ -284,6 +284,22 @@ public class AioSession<T> {
         }
 
         //数据读取完毕
+        resetReadBuffer0(readBuffer);
+
+        //触发流控
+        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
+            serverFlowLimit = true;
+        } else {
+            continueRead();
+        }
+    }
+
+    /**
+     * reset readBuffer to continue reading
+     *
+     * @param readBuffer
+     */
+    private void resetReadBuffer0(ByteBuffer readBuffer) {
         if (readBuffer.remaining() == 0) {
             readBuffer.clear();
         } else if (readBuffer.position() > 0) {
@@ -292,13 +308,6 @@ public class AioSession<T> {
         } else {
             readBuffer.position(readBuffer.limit());
             readBuffer.limit(readBuffer.capacity());
-        }
-
-        //触发流控
-        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
-            serverFlowLimit = true;
-        } else {
-            continueRead();
         }
     }
 
