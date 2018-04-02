@@ -57,17 +57,12 @@ public class AioQuickClient<T> {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
-        try {
-            AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
-            socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-            //连接成功则构造AIOSession对象
-            session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
-            session.initSession();
-        } catch (ExecutionException | InterruptedException e) {
-            shutdown();
-            throw new IOException(e);
-        }
+    public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
+        AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
+        //连接成功则构造AIOSession对象
+        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
+        session.initSession();
     }
 
     /**
@@ -77,7 +72,7 @@ public class AioQuickClient<T> {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    public final void start() throws IOException {
+    public final void start() throws IOException, ExecutionException, InterruptedException {
         this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {

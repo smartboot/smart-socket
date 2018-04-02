@@ -289,6 +289,9 @@ public class AioSession<T> {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
             return;
         }
+        if (status == SESSION_STATUS_CLOSED) {
+            return;
+        }
 
         //数据读取完毕
         resetReadBuffer0(readBuffer);
