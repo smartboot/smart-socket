@@ -236,9 +236,6 @@ public class AioSession<T> {
         if (immediate) {
             try {
                 channel.close();
-                if (logger.isDebugEnabled()) {
-                    logger.debug("session:{} is closed:", getSessionID());
-                }
             } catch (IOException e) {
                 logger.debug("close session exception", e);
             }
@@ -274,22 +271,8 @@ public class AioSession<T> {
     void readFromChannel(boolean eof) {
         readBuffer.flip();
 
-        T dataEntry;
-        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
-            //处理消息
-            try {
-                for (Filter<T> h : ioServerConfig.getFilters()) {
-                    h.processFilter(this, dataEntry);
-                }
-                ioServerConfig.getProcessor().process(this, dataEntry);
-            } catch (Exception e) {
-                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
-                for (Filter<T> h : ioServerConfig.getFilters()) {
-                    h.processFail(this, dataEntry, e);
-                }
-            }
-
-        }
+        //decode and process message
+        process0(readBuffer, eof);
 
         if (eof || status == SESSION_STATUS_CLOSING) {
             if (readBuffer.hasRemaining()) {
@@ -316,6 +299,30 @@ public class AioSession<T> {
             serverFlowLimit = true;
         } else {
             continueRead();
+        }
+    }
+
+    /**
+     * decode and process message
+     *
+     * @param readBuffer
+     * @param eof
+     */
+    private void process0(ByteBuffer readBuffer, boolean eof) {
+        T dataEntry;
+        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
+            //处理消息
+            try {
+                for (Filter<T> h : ioServerConfig.getFilters()) {
+                    h.processFilter(this, dataEntry);
+                }
+                ioServerConfig.getProcessor().process(this, dataEntry);
+            } catch (Exception e) {
+                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
+                for (Filter<T> h : ioServerConfig.getFilters()) {
+                    h.processFail(this, dataEntry, e);
+                }
+            }
         }
     }
 
