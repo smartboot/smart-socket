@@ -154,18 +154,18 @@ public class AioSession<T> {
         ByteBuffer headBuffer = writeCacheQueue.poll();
         if (headBuffer.remaining() == totalSize) {
             writeBuffer = headBuffer;
-        } else {
-            if (writeBuffer == null || totalSize * 2 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
-                writeBuffer = newByteBuffer0(totalSize);
-            } else {
-                writeBuffer.clear().limit(totalSize);
-            }
-            writeBuffer.put(headBuffer);
-            while (writeBuffer.hasRemaining()) {
-                writeBuffer.put(writeCacheQueue.poll());
-            }
-            writeBuffer.flip();
+            return;
         }
+        if (writeBuffer == null || totalSize * 2 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
+            writeBuffer = newByteBuffer0(totalSize);
+        } else {
+            writeBuffer.clear().limit(totalSize);
+        }
+        writeBuffer.put(headBuffer);
+        while (writeBuffer.hasRemaining()) {
+            writeBuffer.put(writeCacheQueue.poll());
+        }
+        writeBuffer.flip();
     }
 
     /**
