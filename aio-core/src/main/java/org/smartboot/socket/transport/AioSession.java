@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -410,28 +409,23 @@ public class AioSession<T> {
                 return -1;
             }
             if (readBuffer.hasRemaining()) {
-                if (remainLength > 0) {
-                    remainLength--;
-                }
+                remainLength--;
                 return readBuffer.get();
             }
             readBuffer.clear();
 
-            Future<Integer> future = channel.read(readBuffer);
-            int readSize = 0;
             try {
-                readSize = future.get();
+                int readSize = channel.read(readBuffer).get();
+                readBuffer.flip();
+                if (readSize == -1) {
+                    remainLength = 0;
+                    return -1;
+                } else {
+                    return read();
+                }
             } catch (Exception e) {
                 throw new IOException(e);
             }
-            readBuffer.flip();
-            if (readSize == -1) {
-                remainLength = 0;
-                return -1;
-            } else {
-                return read();
-            }
-
         }
 
         @Override
