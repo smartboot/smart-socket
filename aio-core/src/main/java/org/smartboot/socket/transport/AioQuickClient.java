@@ -59,10 +59,14 @@ public class AioQuickClient<T> {
      */
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
-        socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
-        //连接成功则构造AIOSession对象
-        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
-        session.initSession();
+        try {
+            socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
+            //连接成功则构造AIOSession对象
+            session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
+            session.initSession();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new IOException(e.getMessage());
+        }
     }
 
     /**
