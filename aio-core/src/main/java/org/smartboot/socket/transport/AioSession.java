@@ -47,14 +47,6 @@ public class AioSession<T> {
     private static final Logger logger = LoggerFactory.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
     /**
-     * Session ID生成器
-     */
-    private static int nextId = 0;
-    /**
-     * 唯一标识
-     */
-    private final int sessionId = ++nextId;
-    /**
      * 数据read限流标志,仅服务端需要进行限流
      */
     protected Boolean serverFlowLimit;
@@ -133,7 +125,7 @@ public class AioSession<T> {
                 close();
             }
             //也许此时有新的消息通过write方法添加到writeCacheQueue中
-            else if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
+            else if (!writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
                 writeToChannel();
             }
             return;
@@ -199,9 +191,6 @@ public class AioSession<T> {
         if (isInvalid()) {
             throw new IOException("session is " + (status == SESSION_STATUS_CLOSED ? "closed" : "invalid"));
         }
-        if (buffer == null) {
-            throw new NullPointerException("buffer is null");
-        }
         if (!buffer.hasRemaining()) {
             throw new InvalidObjectException("buffer has no remaining");
         }
@@ -262,7 +251,7 @@ public class AioSession<T> {
      * 获取当前Session的唯一标识
      */
     public final String getSessionID() {
-        return "aioSession:" + sessionId + "-" + hashCode();
+        return "aioSession:" + hashCode();
     }
 
     /**
