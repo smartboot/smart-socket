@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.StateMachineEnum;
+import sun.misc.Contended;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,7 +54,9 @@ public class AioSession<T> {
      * 底层通信channel对象
      */
     protected AsynchronousSocketChannel channel;
+    @Contended
     protected ByteBuffer readBuffer;
+    @Contended
     protected ByteBuffer writeBuffer;
     /**
      * 会话当前状态
