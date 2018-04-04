@@ -124,13 +124,31 @@ public class AioSession<T> {
                 close();
             }
             //也许此时有新的消息通过write方法添加到writeCacheQueue中
-            else if (!writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
+            else if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
                 writeToChannel();
             }
             return;
         }
-
-        mergeWriteBuffer0();
+        Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
+        int totalSize = 0;
+        while (iterable.hasNext() && totalSize <= MAX_WRITE_SIZE) {
+            totalSize += iterable.next().remaining();
+        }
+        ByteBuffer headBuffer = writeCacheQueue.poll();
+        if (headBuffer.remaining() == totalSize) {
+            writeBuffer = headBuffer;
+        } else {
+            if (writeBuffer == null || totalSize * 2 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
+                writeBuffer = newByteBuffer0(totalSize);
+            } else {
+                writeBuffer.clear().limit(totalSize);
+            }
+            writeBuffer.put(headBuffer);
+            while (writeBuffer.hasRemaining()) {
+                writeBuffer.put(writeCacheQueue.poll());
+            }
+            writeBuffer.flip();
+        }
 
         //如果存在流控并符合释放条件，则触发读操作
         //一定要放在continueWrite之前
@@ -140,32 +158,6 @@ public class AioSession<T> {
         }
         continueWrite();
 
-    }
-
-    /**
-     * merge the Bytebuffer of writeCacheQueue
-     */
-    private void mergeWriteBuffer0() {
-        Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
-        int totalSize = 0;
-        while (iterable.hasNext() && totalSize <= MAX_WRITE_SIZE) {
-            totalSize += iterable.next().remaining();
-        }
-        ByteBuffer headBuffer = writeCacheQueue.poll();
-        if (headBuffer.remaining() == totalSize) {
-            writeBuffer = headBuffer;
-            return;
-        }
-        if (writeBuffer == null || totalSize * 2 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
-            writeBuffer = newByteBuffer0(totalSize);
-        } else {
-            writeBuffer.clear().limit(totalSize);
-        }
-        writeBuffer.put(headBuffer);
-        while (writeBuffer.hasRemaining()) {
-            writeBuffer.put(writeCacheQueue.poll());
-        }
-        writeBuffer.flip();
     }
 
     /**
@@ -222,7 +214,19 @@ public class AioSession<T> {
         }
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
-            close0();
+            try {
+                channel.close();
+                if (logger.isDebugEnabled()) {
+                    logger.debug("session:{} is closed:", getSessionID());
+                }
+                channel = null;
+            } catch (IOException e) {
+                logger.debug("close session exception", e);
+            }
+            for (Filter<T> filter : ioServerConfig.getFilters()) {
+                filter.closed(this);
+            }
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
         } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
             close(true);
             semaphore.release();
@@ -231,26 +235,11 @@ public class AioSession<T> {
         }
     }
 
-    private void close0() {
-        try {
-            if (channel != null) {
-                channel.close();
-                channel = null;
-            }
-        } catch (IOException e) {
-            logger.debug("close session exception", e);
-        }
-        for (Filter<T> filter : ioServerConfig.getFilters()) {
-            filter.closed(this);
-        }
-        ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-    }
-
     /**
      * 获取当前Session的唯一标识
      */
     public final String getSessionID() {
-        return "aioSession:" + hashCode();
+        return "aioSession-" + hashCode();
     }
 
     /**
@@ -266,56 +255,6 @@ public class AioSession<T> {
     void readFromChannel(boolean eof) {
         readBuffer.flip();
 
-        //decode and process message
-        process0(readBuffer, eof);
-
-        if (eof || status == SESSION_STATUS_CLOSING) {
-            if (readBuffer.hasRemaining()) {
-                logger.error("{} bytes has not decode when EOF", readBuffer.remaining());
-            }
-            close(false);
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
-            return;
-        }
-        if (status == SESSION_STATUS_CLOSED) {
-            return;
-        }
-
-        //数据读取完毕
-        resetReadBuffer0(readBuffer);
-
-        //触发流控
-        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
-            serverFlowLimit = true;
-        } else {
-            continueRead();
-        }
-    }
-
-    /**
-     * reset readBuffer to continue reading
-     *
-     * @param readBuffer
-     */
-    private void resetReadBuffer0(ByteBuffer readBuffer) {
-        if (readBuffer.remaining() == 0) {
-            readBuffer.clear();
-        } else if (readBuffer.position() > 0) {
-            // 仅当发生数据读取时调用compact,减少内存拷贝
-            readBuffer.compact();
-        } else {
-            readBuffer.position(readBuffer.limit());
-            readBuffer.limit(readBuffer.capacity());
-        }
-    }
-
-    /**
-     * decode and process message
-     *
-     * @param readBuffer
-     * @param eof
-     */
-    private void process0(ByteBuffer readBuffer, boolean eof) {
         T dataEntry;
         while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
             //处理消息
@@ -330,6 +269,34 @@ public class AioSession<T> {
                     h.processFail(this, dataEntry, e);
                 }
             }
+
+        }
+
+        if (eof || status == SESSION_STATUS_CLOSING) {
+            close(false);
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
+            return;
+        }
+        if (status == SESSION_STATUS_CLOSED) {
+            return;
+        }
+
+        //数据读取完毕
+        if (readBuffer.remaining() == 0) {
+            readBuffer.clear();
+        } else if (readBuffer.position() > 0) {
+            // 仅当发生数据读取时调用compact,减少内存拷贝
+            readBuffer.compact();
+        } else {
+            readBuffer.position(readBuffer.limit());
+            readBuffer.limit(readBuffer.capacity());
+        }
+
+        //触发流控
+        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
+            serverFlowLimit = true;
+        } else {
+            continueRead();
         }
     }
 
