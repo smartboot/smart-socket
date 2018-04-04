@@ -138,7 +138,7 @@ public class AioSession<T> {
         if (headBuffer.remaining() == totalSize) {
             writeBuffer = headBuffer;
         } else {
-            if (writeBuffer == null || totalSize * 2 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
+            if (writeBuffer == null || totalSize << 1 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
                 writeBuffer = newByteBuffer0(totalSize);
             } else {
                 writeBuffer.clear().limit(totalSize);
