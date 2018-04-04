@@ -24,6 +24,7 @@ public class HttpHeader {
     Map<String, String> headerMap = new HashMap<String, String>();
     private MethodEnum method;
     private String originalUri;
+    private byte[] versionBytes;
     private String httpVersion;
 
     public MethodEnum getMethod() {
@@ -43,11 +44,18 @@ public class HttpHeader {
     }
 
     public String getHttpVersion() {
+        if (httpVersion == null) {
+            httpVersion = new String(versionBytes);
+        }
         return httpVersion;
     }
 
     public void setHttpVersion(String httpVersion) {
         this.httpVersion = httpVersion;
+    }
+
+    void setVersionBytes(byte[] versionBytes) {
+        this.versionBytes = versionBytes;
     }
 
     public void setHeader(String name, String value) {

@@ -207,9 +207,11 @@ final class HttpProtocol implements Protocol<HttpRequest> {
      */
     private void decodeHttpVersion(HttpDecodeUnit unit) {
         ByteBuffer requestLineBuffer = unit.getHeadPartDecoder().getBuffer();
-        String httpVersion = new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - Consts.CRLF.length);
+        byte[] versionBytes = new byte[requestLineBuffer.remaining() - Consts.CRLF.length];
+        System.arraycopy(requestLineBuffer.array(), 0, versionBytes, 0, versionBytes.length);
+//        String httpVersion = new String(requestLineBuffer.array(), 0, requestLineBuffer.remaining() - Consts.CRLF.length);
 
-        unit.getHeader().setHttpVersion(httpVersion);
+        unit.getHeader().setVersionBytes(versionBytes);
 
         //识别一下一个解码阶段
         unit.getHeadPartDecoder().reset(Consts.COLON_ARRAY);
