@@ -185,6 +185,11 @@ public class AioSession<T> {
         if (!buffer.hasRemaining()) {
             throw new InvalidObjectException("buffer has no remaining");
         }
+        if (semaphore.tryAcquire()) {
+            writeBuffer = buffer;
+            continueWrite();
+            return;
+        }
         try {
             //正常读取
             writeCacheQueue.put(buffer);
