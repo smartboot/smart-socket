@@ -49,14 +49,14 @@ public class HttpBootstrap {
             }
         });
         http(processor);
-        https(processor);
+//        https(processor);
     }
 
     public static void http(HttpMessageProcessor processor) {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
         int port = NumberUtils.toInt(System.getProperty("port"), 8888);
         AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(port, new HttpProtocol(), processor);
-        server.setDirectBuffer(true);
+//        server.setDirectBuffer(true);
         server.setWriteQueueSize(1024);
 //        server.setThreadNum(8);
         server.setFilters(new Filter[]{new QuickMonitorTimer<HttpRequest>()});

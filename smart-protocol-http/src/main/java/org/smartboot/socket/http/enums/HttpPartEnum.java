@@ -18,15 +18,31 @@ public enum HttpPartEnum {
      */
     REQUEST_LINE_METHOD,
 
-    /**
-     * 请求行:Request_URL
-     */
-    REQUEST_LINE_URL,
+    SPACES_BEFORE_URI,
 
-    /**
-     * 请求行:HTTP_VERSION
-     */
-    REQUEST_LINE_VERSION,
+
+    AFTER_SLASH_IN_URI,
+
+    SCHEMA,
+
+    SCHEMA_SLASH,
+
+    SCHEMA_SLASH_SLASH,
+
+    HOST_START,
+
+    HOST_IP_LITERAL,
+
+    HOST,
+    HOST_END,
+    PORT,
+    HOST_HTTP_09,
+    CHECK_URI_HTTP_09,
+    HTTP_H,
+    HTTP_HT,
+    HTTP_HTT,
+    HTTP_HTTP,
+    HTTP_VERSION,
 
     /**
      * 请求头部
@@ -34,6 +50,8 @@ public enum HttpPartEnum {
     HEAD_LINE_KEY,
 
     HEAD_LINE_VALUE,
+
+    HEAD_LINE_VALUE_BUFFER,
 
     HEAD_END_CHECK,
     /**

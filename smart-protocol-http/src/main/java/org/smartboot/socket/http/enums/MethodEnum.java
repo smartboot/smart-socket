@@ -38,21 +38,43 @@ public enum MethodEnum {
         if (bytes == null || index < 0 || index >= bytes.length || length + index > bytes.length) {
             return null;
         }
-        for (MethodEnum methodEnum : values()) {
-            if (methodEnum.bytes.length != length) {
-                continue;
-            }
-            boolean mark = true;
-            for (int i = 0; i < methodEnum.bytes.length; i++) {
-                if (methodEnum.bytes[i] != bytes[index + i]) {
-                    mark = false;
-                    break;
+        switch (length) {
+            case 3:
+                if (isMatch(GET, bytes, index)) {
+                    return GET;
                 }
-            }
-            if (mark) {
-                return methodEnum;
-            }
+                if (isMatch(PUT, bytes, index)) {
+                    return PUT;
+                }
+                break;
+            case 4:
+                if (isMatch(POST, bytes, index)) {
+                    return POST;
+                }
+                if (isMatch(HEAD, bytes, index)) {
+                    return HEAD;
+                }
+                break;
+            case 5:
+                if (isMatch(TRACE, bytes, index)) {
+                    return TRACE;
+                }
+                break;
+            case 6:
+                if (isMatch(DELETE, bytes, index)) {
+                    return DELETE;
+                }
+                break;
+            case 7:
+                if (isMatch(OPTIONS, bytes, index)) {
+                    return OPTIONS;
+                }
+                if (isMatch(CONNECT, bytes, index)) {
+                    return CONNECT;
+                }
+                break;
         }
+
         return null;
     }
 
@@ -66,6 +88,15 @@ public enum MethodEnum {
             }
         }
         return null;
+    }
+
+    private static boolean isMatch(MethodEnum methodEnum, byte[] bytes, int index) {
+        for (int i = 0; i < methodEnum.bytes.length; i++) {
+            if (methodEnum.bytes[i] != bytes[index + i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public String getMethod() {
