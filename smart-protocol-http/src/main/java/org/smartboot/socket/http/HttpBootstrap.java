@@ -10,6 +10,7 @@ package org.smartboot.socket.http;
 
 import org.apache.commons.lang.math.NumberUtils;
 import org.smartboot.socket.Filter;
+import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.http.handle.HttpHandle;
@@ -52,12 +53,13 @@ public class HttpBootstrap {
 //        https(processor);
     }
 
-    public static void http(HttpMessageProcessor processor) {
+    public static void http(MessageProcessor processor) {
         // 定义服务器接受的消息类型以及各类消息对应的处理器
         int port = NumberUtils.toInt(System.getProperty("port"), 8888);
         AioQuickServer<HttpRequest> server = new AioQuickServer<HttpRequest>(port, new HttpProtocol(), processor);
 //        server.setDirectBuffer(true);
-        server.setWriteQueueSize(1024);
+        server.setWriteQueueSize(0);
+//        server.setReadBufferSize(10);
 //        server.setThreadNum(8);
         server.setFilters(new Filter[]{new QuickMonitorTimer<HttpRequest>()});
         try {

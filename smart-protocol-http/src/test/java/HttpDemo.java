@@ -1,5 +1,6 @@
 import org.smartboot.socket.http.HttpBootstrap;
 import org.smartboot.socket.http.HttpMessageProcessor;
+import org.smartboot.socket.http.HttpPerformanceProcessor;
 
 /**
  * @author 三刀
@@ -7,8 +8,7 @@ import org.smartboot.socket.http.HttpMessageProcessor;
  */
 public class HttpDemo {
     public static void main(String[] args) {
-        HttpMessageProcessor processor = new HttpMessageProcessor("");
-//        processor.
+        HttpPerformanceProcessor processor = new HttpPerformanceProcessor();
         HttpBootstrap.http(processor);
     }
 }

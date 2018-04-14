@@ -22,7 +22,6 @@ import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.transport.AioSession;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  * 服务器消息处理器,由服务器启动时构造
@@ -57,29 +56,21 @@ public final class HttpMessageProcessor implements MessageProcessor<HttpRequest>
         }
     }
 
-    private static String b="HTTP/1.1 200 OK\r\n" +
-            "Server:smart-socket\r\n" +
-            "Connection:keep-alive\r\n" +
-            "Host:localhost\r\n" +
-            "Content-Length:31\r\n" +
-            "Date:Wed, 11 Apr 2018 12:35:01 GMT\r\n\r\n"+
-            "Hello smart-socket http server!";
     private void processHttp11(final AioSession<HttpRequest> session, Http11Request request) throws IOException {
-//        HttpResponse httpResponse = new DefaultHttpResponse(session, request, http11HandleGroup);
-//        try {
-//            http11HandleGroup.getPreHandle().doHandle(request, httpResponse);
-//        } catch (Exception e) {
-//            LOGGER.debug("", e);
-//            httpResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-//            httpResponse.getOutputStream().write(e.fillInStackTrace().toString().getBytes());
-//        }
-//
-//        httpResponse.getOutputStream().close();
-//
-//        if (!StringUtils.equalsIgnoreCase(HttpHeaderConstant.Values.KEEPALIVE, request.getHeader(HttpHeaderConstant.Names.CONNECTION)) || httpResponse.getHttpStatus() != HttpStatus.OK) {
-//            session.close(false);
-//        }
-    session.write(ByteBuffer.wrap(b.getBytes()));
+        HttpResponse httpResponse = new DefaultHttpResponse(session, request, http11HandleGroup);
+        try {
+            http11HandleGroup.getPreHandle().doHandle(request, httpResponse);
+        } catch (Exception e) {
+            LOGGER.debug("", e);
+            httpResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+            httpResponse.getOutputStream().write(e.fillInStackTrace().toString().getBytes());
+        }
+
+        httpResponse.getOutputStream().close();
+
+        if (!StringUtils.equalsIgnoreCase(HttpHeaderConstant.Values.KEEPALIVE, request.getHeader(HttpHeaderConstant.Names.CONNECTION)) || httpResponse.getHttpStatus() != HttpStatus.OK) {
+            session.close(false);
+        }
     }
 
     public void route(String urlPattern, HttpHandle httpHandle) {

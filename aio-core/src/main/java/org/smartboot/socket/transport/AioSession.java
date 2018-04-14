@@ -88,9 +88,11 @@ public class AioSession<T> {
         this.channel = channel;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
-        this.writeCacheQueue = new ArrayBlockingQueue<>(config.getWriteQueueSize());
+        if (config.getWriteQueueSize() > 0) {
+            this.writeCacheQueue = new ArrayBlockingQueue<>(config.getWriteQueueSize());
+        }
         this.ioServerConfig = config;
-        this.serverFlowLimit = serverSession ? false : null;
+        this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 ? false : null;
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         this.readBuffer = newByteBuffer0(config.getReadBufferSize());
@@ -116,7 +118,7 @@ public class AioSession<T> {
             return;
         }
 
-        if (writeCacheQueue.isEmpty()) {
+        if (writeCacheQueue == null || writeCacheQueue.isEmpty()) {
             writeBuffer = null;
             semaphore.release();
             //此时可能是Closing或Closed状态
@@ -124,7 +126,7 @@ public class AioSession<T> {
                 close();
             }
             //也许此时有新的消息通过write方法添加到writeCacheQueue中
-            else if (writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
+            else if (writeCacheQueue != null && writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
                 writeToChannel();
             }
             return;
@@ -185,7 +187,17 @@ public class AioSession<T> {
         if (!buffer.hasRemaining()) {
             throw new InvalidObjectException("buffer has no remaining");
         }
-        if (semaphore.tryAcquire()) {
+        if (ioServerConfig.getWriteQueueSize() <= 0) {
+            try {
+                semaphore.acquire();
+            } catch (InterruptedException e) {
+                logger.error("acquire fail", e);
+                Thread.currentThread().interrupt();
+            }
+            writeBuffer = buffer;
+            continueWrite();
+            return;
+        } else if ((semaphore.tryAcquire())) {
             writeBuffer = buffer;
             continueWrite();
             return;
@@ -232,7 +244,7 @@ public class AioSession<T> {
                 filter.closed(this);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && writeCacheQueue.isEmpty() && semaphore.tryAcquire()) {
+        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && (writeCacheQueue == null || writeCacheQueue.isEmpty()) && semaphore.tryAcquire()) {
             close(true);
             semaphore.release();
         } else {
