@@ -49,7 +49,7 @@ public class P2PMultiClient {
                     AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("localhost", 8888, new P2PProtocol(messageFactory), processor);
                     client.setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
 //                            .setDirectBuffer(true)
-//                            .setWriteQueueSize(16384)
+                            .setWriteQueueSize(16384)
                     ;
                     try {
                         client.start(asynchronousChannelGroup);
