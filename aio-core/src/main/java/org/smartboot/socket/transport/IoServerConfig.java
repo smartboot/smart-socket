@@ -12,6 +12,8 @@ import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 
+import java.util.Arrays;
+
 /**
  * Quickly服务端/客户端配置信息 T:解码后生成的对象类型
  *
@@ -180,5 +182,25 @@ final class IoServerConfig<T> {
 
     public void setDirectBuffer(boolean directBuffer) {
         this.directBuffer = directBuffer;
+    }
+
+    @Override
+    public String toString() {
+        return "IoServerConfig{" +
+                "writeQueueSize=" + writeQueueSize +
+                ", readBufferSize=" + readBufferSize +
+                ", host='" + host + '\'' +
+                ", filters=" + Arrays.toString(filters) +
+                ", port=" + port +
+                ", processor=" + processor +
+                ", protocol=" + protocol +
+                ", directBuffer=" + directBuffer +
+                ", threadNum=" + threadNum +
+                ", limitRate=" + limitRate +
+                ", releaseRate=" + releaseRate +
+                ", flowLimitLine=" + flowLimitLine +
+                ", releaseLine=" + releaseLine +
+                ", bannerEnabled=" + bannerEnabled +
+                '}';
     }
 }

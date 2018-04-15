@@ -83,6 +83,7 @@ public class AioQuickServer<T> {
             throw e;
         }
         LOGGER.info("smart-socket server started on port {}", config.getPort());
+        LOGGER.info("smart-socket server config is {}", config);
     }
 
     protected void createSession(AsynchronousSocketChannel channel) {
