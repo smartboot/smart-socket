@@ -190,12 +190,13 @@ public class AioSession<T> {
         if (ioServerConfig.getWriteQueueSize() <= 0) {
             try {
                 semaphore.acquire();
+                writeBuffer = buffer;
+                continueWrite();
             } catch (InterruptedException e) {
                 logger.error("acquire fail", e);
                 Thread.currentThread().interrupt();
+                throw new IOException(e.getMessage());
             }
-            writeBuffer = buffer;
-            continueWrite();
             return;
         } else if ((semaphore.tryAcquire())) {
             writeBuffer = buffer;
