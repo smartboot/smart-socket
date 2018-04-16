@@ -1,10 +1,11 @@
-
 import org.smartboot.socket.transport.AioQuickClient;
 
 import java.io.IOException;
+import java.nio.channels.AsynchronousChannelGroup;
 import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Created by 三刀 on 2017/7/12.
@@ -40,12 +41,18 @@ public class BytesClient {
     private static void multiConnect(int connectCount) throws IOException, ExecutionException, InterruptedException {
         int count = 0;
         long beginMS = new Date().getTime();
+        AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r);
+            }
+        });
         while (count < connectCount) {
             BytesClientProcessor processor = new BytesClientProcessor();
             AioQuickClient<byte[]> aioQuickClient = new AioQuickClient<byte[]>("localhost", 8888,
                     new BytesProtocol(), processor);
             aioQuickClient.setReadBufferSize(1500);
-            aioQuickClient.start();
+            aioQuickClient.start(asynchronousChannelGroup);
             byte[] bytesToWrite = new BytesClient().buildBytesToWrite();
             processor.getSession().write(bytesToWrite);
             aioQuickClient.shutdown();
