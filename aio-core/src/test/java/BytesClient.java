@@ -47,9 +47,9 @@ public class BytesClient {
             aioQuickClient.setReadBufferSize(1500);
             aioQuickClient.start();
             byte[] bytesToWrite = new BytesClient().buildBytesToWrite();
-            processor.getSession().write(bytesToWrite);
+//            processor.getSession().write(bytesToWrite);
             aioQuickClient.shutdown();
-            Thread.sleep(10);
+//            Thread.sleep(10);
             count += 1;
         }
         long endMS = new Date().getTime();
