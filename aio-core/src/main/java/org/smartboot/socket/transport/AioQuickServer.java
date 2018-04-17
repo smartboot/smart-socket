@@ -66,8 +66,13 @@ public class AioQuickServer<T> {
                     return new Thread(r, "smart-socket:AIO-" + (++index));
                 }
             });
-            this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup).bind(new InetSocketAddress(config.getPort()), 1000);
-            serverSocketChannel.setOption(StandardSocketOptions.SO_LINGER, 0);
+            this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
+            if (config.getHost() != null) {
+                serverSocketChannel.bind(new InetSocketAddress(config.getHost(), config.getPort()), 1000);
+            } else {
+                serverSocketChannel.bind(new InetSocketAddress(config.getPort()), 1000);
+            }
+            serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR,false);
             serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
                 @Override
                 public void completed(final AsynchronousSocketChannel channel, Object attachment) {
