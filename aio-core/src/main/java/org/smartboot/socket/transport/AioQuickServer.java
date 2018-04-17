@@ -76,6 +76,11 @@ public class AioQuickServer<T> {
             serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
                 @Override
                 public void completed(final AsynchronousSocketChannel channel, Object attachment) {
+                    try {
+                        channel.setOption(StandardSocketOptions.SO_REUSEADDR,false);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     serverSocketChannel.accept(attachment, this);
                     createSession(channel);
                 }

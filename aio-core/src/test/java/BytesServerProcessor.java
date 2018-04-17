@@ -26,6 +26,6 @@ public class BytesServerProcessor implements MessageProcessor<byte[]> {
     @Override
     public void stateEvent(AioSession<byte[]> session, StateMachineEnum stateMachineEnum,
                            Throwable throwable) {
-        System.out.println(stateMachineEnum);
+//        System.out.println(stateMachineEnum);
     }
 }
