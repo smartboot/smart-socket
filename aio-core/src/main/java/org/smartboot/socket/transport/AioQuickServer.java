@@ -16,6 +16,7 @@ import org.smartboot.socket.Protocol;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -66,6 +67,7 @@ public class AioQuickServer<T> {
                 }
             });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
+            this.serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR,true);
             if (config.getHost() != null) {
                 serverSocketChannel.bind(new InetSocketAddress(config.getHost(), config.getPort()), 1000);
             } else {
