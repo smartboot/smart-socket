@@ -67,7 +67,7 @@ public class AioQuickServer<T> {
                 }
             });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
-            this.serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR,true);
+            this.serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR,false);
             if (config.getHost() != null) {
                 serverSocketChannel.bind(new InetSocketAddress(config.getHost(), config.getPort()), 1000);
             } else {
