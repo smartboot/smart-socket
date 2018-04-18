@@ -11,6 +11,7 @@ public class BytesServer {
                 new BytesServerProcessor());
 
         server.setReadBufferSize(1500);
+        server.setHost("localhost");
         try {
             server.start();
         } catch (IOException e) {

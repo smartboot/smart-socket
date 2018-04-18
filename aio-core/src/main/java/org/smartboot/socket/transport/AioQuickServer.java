@@ -16,7 +16,6 @@ import org.smartboot.socket.Protocol;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -72,15 +71,9 @@ public class AioQuickServer<T> {
             } else {
                 serverSocketChannel.bind(new InetSocketAddress(config.getPort()), 1000);
             }
-            serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR,false);
             serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
                 @Override
                 public void completed(final AsynchronousSocketChannel channel, Object attachment) {
-                    try {
-                        channel.setOption(StandardSocketOptions.SO_REUSEADDR,false);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
                     serverSocketChannel.accept(attachment, this);
                     createSession(channel);
                 }
@@ -179,6 +172,14 @@ public class AioQuickServer<T> {
      */
     public final AioQuickServer<T> setDirectBuffer(boolean directBuffer) {
         config.setDirectBuffer(directBuffer);
+        return this;
+    }
+
+    /**
+     * @param host
+     */
+    public final AioQuickServer<T> setHost(String host) {
+        config.setHost(host);
         return this;
     }
 }
