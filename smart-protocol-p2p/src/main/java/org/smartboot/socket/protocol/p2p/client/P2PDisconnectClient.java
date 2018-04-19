@@ -45,22 +45,10 @@ public class P2PDisconnectClient {
                             P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
                             client = new AioQuickClient<BaseMessage>("127.0.0.1", 8888, new P2PProtocol(messageFactory), processor);
                             client.start(asynchronousChannelGroup);
-                            long num = 0;
-                            while (num++ < 10) {
-                                DetectMessageReq request = new DetectMessageReq();
-                                request.setDetect("台州人在杭州:" + num);
-                                try {
-//                                    processor.getSession().sendWithoutResponse(request);
-                                    logger.info("", processor.getSession().sendWithResponse(request, 0));
-                                    Thread.sleep(10);
-                                } catch (Exception e) {
-                                    System.out.println(num);
-                                    e.printStackTrace();
-//                            break;
-                                }
-                            }
+
                         } catch (IOException e) {
                             e.printStackTrace();
+                            break;
                         } catch (ExecutionException e) {
                             e.printStackTrace();
                         } catch (InterruptedException e) {
@@ -73,48 +61,6 @@ public class P2PDisconnectClient {
                     }
                 }
             }).start();
-        }
-
-        for (int i = 0; i < 10; i++) {
-            new Thread("Client-Thread-" + i) {
-                @Override
-                public void run() {
-                    Properties properties = new Properties();
-                    properties.put(DetectMessageResp.class.getName(), DetectRespMessageHandler.class.getName());
-                    P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
-                    try {
-                        messageFactory.loadFromProperties(properties);
-                    } catch (ClassNotFoundException e1) {
-                        e1.printStackTrace();
-                    }
-                    P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
-                    AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("127.0.0.1", 8888, new P2PProtocol(messageFactory), processor);
-                    client.setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
-                            .setWriteQueueSize(16384);
-                    try {
-                        client.start(asynchronousChannelGroup);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    long num = 0;
-                    long start = System.currentTimeMillis();
-                    while (num++ < Integer.MAX_VALUE) {
-                        DetectMessageReq request = new DetectMessageReq();
-                        request.setDetect("台州人在杭州:" + num);
-                        try {
-                            logger.info("", processor.getSession().sendWithResponse(request, 0));
-                            Thread.sleep(10);
-                        } catch (Exception e) {
-                            System.out.println(num);
-                            e.printStackTrace();
-                        }
-                    }
-                    logger.info("安全消息结束" + (System.currentTimeMillis() - start));
-                    client.shutdown();
-                }
-
-            }.start();
         }
     }
 
