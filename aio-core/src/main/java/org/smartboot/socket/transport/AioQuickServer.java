@@ -82,7 +82,7 @@ public class AioQuickServer<T> {
 
                 @Override
                 public void failed(Throwable exc, Object attachment) {
-                    LOGGER.warn("smart-socket server accept fail", exc);
+                    LOGGER.error("smart-socket server accept fail", exc);
                 }
             });
         } catch (IOException e) {
