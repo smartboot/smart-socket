@@ -2,6 +2,7 @@
 import org.smartboot.socket.transport.AioQuickClient;
 
 import java.io.IOException;
+import java.net.StandardSocketOptions;
 import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
@@ -45,6 +46,7 @@ public class BytesClient {
             AioQuickClient<byte[]> aioQuickClient = new AioQuickClient<byte[]>("localhost", 8888,
                     new BytesProtocol(), processor);
             aioQuickClient.setReadBufferSize(1500);
+            aioQuickClient.setOption(StandardSocketOptions.SO_KEEPALIVE,true);
             aioQuickClient.start();
             byte[] bytesToWrite = new BytesClient().buildBytesToWrite();
 //            processor.getSession().write(bytesToWrite);

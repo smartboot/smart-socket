@@ -71,7 +71,7 @@ public class AioQuickServer<T> {
             //set socket options
             if (config.getSocketOptions() != null) {
                 for (Map.Entry<SocketOption<Object>, Object> entry : config.getSocketOptions().entrySet()) {
-                    this.serverSocketChannel.setOption(entry.getKey(), entry.getValue())
+                    this.serverSocketChannel.setOption(entry.getKey(), entry.getValue());
                 }
             }
             //bind host

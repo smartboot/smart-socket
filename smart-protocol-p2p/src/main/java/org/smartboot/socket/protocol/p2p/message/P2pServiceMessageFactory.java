@@ -92,9 +92,9 @@ public class P2pServiceMessageFactory {
     }
 
     // @Override
-    public void destory() {
+    public void destroy() {
         for (MessageHandler processor : processorMap.values()) {
-            processor.destory();
+            processor.destroy();
         }
         processorMap.clear();
         msgHaspMap.clear();
