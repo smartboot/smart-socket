@@ -16,10 +16,12 @@ import org.smartboot.socket.Protocol;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketOption;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -66,6 +68,13 @@ public class AioQuickServer<T> {
                 }
             });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
+            //set socket options
+            if (config.getSocketOptions() != null) {
+                for (Map.Entry<SocketOption<Object>, Object> entry : config.getSocketOptions().entrySet()) {
+                    this.serverSocketChannel.setOption(entry.getKey(), entry.getValue())
+                }
+            }
+            //bind host
             if (config.getHost() != null) {
                 serverSocketChannel.bind(new InetSocketAddress(config.getHost(), config.getPort()), 1000);
             } else {
@@ -180,6 +189,18 @@ public class AioQuickServer<T> {
      */
     public final AioQuickServer<T> setHost(String host) {
         config.setHost(host);
+        return this;
+    }
+
+    /**
+     *
+     * @param socketOption
+     * @param value
+     * @param <V>
+     * @return
+     */
+    public final <V> AioQuickServer<T> setOption(SocketOption<V> socketOption, V value) {
+        config.setOption(socketOption, value);
         return this;
     }
 }

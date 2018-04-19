@@ -28,7 +28,7 @@ public class HttpBootstrap {
     public static void main(String[] args) throws UnknownHostException {
         HttpMessageProcessor processor = new HttpMessageProcessor(System.getProperty("webapps.dir", "./"));
         processor.route("/", new HttpHandle() {
-            byte[] body = "Hello smart-socket http server!".getBytes();
+            byte[] body = "welcome to smart-socket http server!".getBytes();
 
             @Override
             public void doHandle(Http11Request request, HttpResponse response) throws IOException {

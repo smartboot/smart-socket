@@ -12,7 +12,10 @@ import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 
+import java.net.SocketOption;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Quickly服务端/客户端配置信息 T:解码后生成的对象类型
@@ -90,6 +93,11 @@ final class IoServerConfig<T> {
      * 是否启用控制台banner
      */
     private boolean bannerEnabled = true;
+
+    /**
+     * Socket 配置
+     */
+    private Map<SocketOption<Object>, Object> socketOptions;
 
     public final String getHost() {
         return host;
@@ -182,6 +190,17 @@ final class IoServerConfig<T> {
 
     public void setDirectBuffer(boolean directBuffer) {
         this.directBuffer = directBuffer;
+    }
+
+    public Map<SocketOption<Object>, Object> getSocketOptions() {
+        return socketOptions;
+    }
+
+    public void setOption(SocketOption socketOption, Object f) {
+        if (socketOptions == null) {
+            socketOptions = new HashMap<>();
+        }
+        socketOptions.put(socketOption, f);
     }
 
     @Override

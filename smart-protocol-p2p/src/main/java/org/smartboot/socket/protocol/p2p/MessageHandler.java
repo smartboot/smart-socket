@@ -14,6 +14,6 @@ public abstract class MessageHandler {
 
 	public abstract void handler(Session<BaseMessage> session, BaseMessage message);
 
-	public void destory() {
+	public void destroy() {
 	}
 }

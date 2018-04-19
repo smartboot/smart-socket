@@ -15,8 +15,10 @@ import org.smartboot.socket.Protocol;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketOption;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadFactory;
 
@@ -59,6 +61,13 @@ public class AioQuickClient<T> {
      */
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        //set socket options
+        if (config.getSocketOptions() != null) {
+            for (Map.Entry<SocketOption<Object>, Object> entry : config.getSocketOptions().entrySet()) {
+                socketChannel.setOption(entry.getKey(), entry.getValue());
+            }
+        }
+        //bind host
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
         session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
@@ -135,6 +144,18 @@ public class AioQuickClient<T> {
      */
     public final AioQuickClient<T> setDirectBuffer(boolean directBuffer) {
         config.setDirectBuffer(directBuffer);
+        return this;
+    }
+
+    /**
+     *
+     * @param socketOption
+     * @param value
+     * @param <V>
+     * @return
+     */
+    public final <V> AioQuickClient<T> setOption(SocketOption<V> socketOption, V value) {
+        config.setOption(socketOption, value);
         return this;
     }
 }
