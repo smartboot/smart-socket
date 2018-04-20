@@ -427,5 +427,10 @@ public class AioSession<T> {
         public int available() throws IOException {
             return remainLength == 0 ? 0 : readBuffer.remaining();
         }
+
+        @Override
+        public void close() throws IOException {
+            AioSession.this.inputStream=null;
+        }
     }
 }
