@@ -22,7 +22,7 @@ public class HttpProtocol implements Protocol<WinstoneRequest> {
         WinstoneRequest request = null;
         if (session.getAttachment() == null) {
             try {
-                request = new WinstoneRequest(WinstoneConstant.DEFAULT_MAXIMUM_PARAMETER_ALLOWED);
+                request = new WinstoneRequest(WinstoneConstant.DEFAULT_MAXIMUM_PARAMETER_ALLOWED,null);
                 InetSocketAddress remoteAddress = session.getRemoteAddress();
                 InetSocketAddress localAddress = session.getLocalAddress();
                 request.setScheme("http");

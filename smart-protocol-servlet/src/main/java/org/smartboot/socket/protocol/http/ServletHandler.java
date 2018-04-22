@@ -1,8 +1,10 @@
-package org.smartboot.socket.protocol.http.process;
+package org.smartboot.socket.protocol.http;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.http.HttpResponse;
+import org.smartboot.socket.http.handle.HttpHandle;
+import org.smartboot.socket.http.http11.Http11Request;
 import org.smartboot.socket.protocol.http.accesslog.AccessLogger;
 import org.smartboot.socket.protocol.http.jndi.JndiManager;
 import org.smartboot.socket.protocol.http.jndi.resources.DataSourceConfig;
@@ -11,13 +13,12 @@ import org.smartboot.socket.protocol.http.servlet.core.HostConfiguration;
 import org.smartboot.socket.protocol.http.servlet.core.HostGroup;
 import org.smartboot.socket.protocol.http.servlet.core.SimpleRequestDispatcher;
 import org.smartboot.socket.protocol.http.servlet.core.WebAppConfiguration;
+import org.smartboot.socket.protocol.http.servlet.core.WinstoneConstant;
 import org.smartboot.socket.protocol.http.servlet.core.WinstoneOutputStream;
 import org.smartboot.socket.protocol.http.servlet.core.WinstoneRequest;
 import org.smartboot.socket.protocol.http.servlet.core.WinstoneResponse;
 import org.smartboot.socket.protocol.http.util.MapConverter;
 import org.smartboot.socket.protocol.http.util.StringUtils;
-import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.StateMachineEnum;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -34,18 +35,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * 服务器消息处理器,由服务器启动时构造
- *
  * @author 三刀
+ * @version V1.0 , 2018/4/22
  */
-public final class HttpServerMessageProcessor implements MessageProcessor<WinstoneRequest> {
-    private static final Logger LOGGER = LogManager.getLogger(HttpServerMessageProcessor.class);
+public class ServletHandler extends HttpHandle {
+    private static final Logger LOGGER = LogManager.getLogger(ServletHandler.class);
     private final Map<String, String> args;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private HostGroup hostGroup;
     private JndiManager globalJndiManager = null;
 
-    public HttpServerMessageProcessor(final Map<String, String> args) {
+    public ServletHandler(final Map<String, String> args) {
         this.args = args;
         try {
             initializeJndi();
@@ -153,50 +153,15 @@ public final class HttpServerMessageProcessor implements MessageProcessor<Winsto
     }
 
     @Override
-    public void process(final AioSession<WinstoneRequest> session, final WinstoneRequest entry) {
-        //文件上传body部分的数据流需要由业务处理，又不可影响IO主线程
-
-        if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(entry.getMethod(), "POST")) {
-            executorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        process0(session, entry);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        } else {
-            process0(session, entry);
-        }
-    }
-
-    private void process0(AioSession<WinstoneRequest> session, WinstoneRequest req) {
-//        ByteBuffer buffer = ByteBuffer.wrap(("HTTP/1.1 200 OK\n" +
-//                "Server: seer/1.4.4\n" +
-//                "Content-Length: 2\n" +
-//                ("Keep-Alive".equalsIgnoreCase(entry.getHeader("Connection")) ?
-//                        "Connection: keep-alive\n" : ""
-//                ) +
-//                "\n" +
-//                "OK").getBytes());
-//        try {
-//            session.write(buffer);
-//        } catch (IOException e) {
-//            LOGGER.catching(e);
-//        }
-//        if (!"Keep-Alive".equalsIgnoreCase(entry.getHeader("Connection"))) {
-//            session.close(false);
-//        }
+    public void doHandle(Http11Request request, HttpResponse response) throws IOException {
         try {
+            WinstoneRequest req = new WinstoneRequest(WinstoneConstant.DEFAULT_MAXIMUM_PARAMETER_ALLOWED, request);
             req.setHostGroup(hostGroup);
-            WinstoneResponse rsp = new WinstoneResponse();
-            WinstoneOutputStream outputStream=new WinstoneOutputStream(null);
+            WinstoneResponse rsp = new WinstoneResponse(request,response);
+            WinstoneOutputStream outputStream = new WinstoneOutputStream(response.getOutputStream());
             outputStream.setResponse(rsp);
             rsp.setOutputStream(outputStream);
             rsp.setRequest(req);
-            rsp.setProtocol(req.getProtocol());
             HostConfiguration hostConfig = req.getHostGroup().getHostByName(req.getServerName());
 
             // Get the URI from the request, check for prefix, then
@@ -233,7 +198,6 @@ public final class HttpServerMessageProcessor implements MessageProcessor<Winsto
         } catch (ServletException e) {
             e.printStackTrace();
         }
-
     }
 
     private void processRequest(final WebAppConfiguration webAppConfig, final WinstoneRequest req, final WinstoneResponse rsp, final String path) throws IOException, ServletException {
@@ -290,10 +254,4 @@ public final class HttpServerMessageProcessor implements MessageProcessor<Winsto
             }
         }
     }
-
-    @Override
-    public void stateEvent(AioSession<WinstoneRequest> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-    }
-
-
 }

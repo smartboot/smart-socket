@@ -19,6 +19,7 @@ import org.smartboot.socket.http.utils.EmptyInputStream;
 import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.transport.AioSession;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -54,7 +55,11 @@ public class Http11ContentDecoder implements Protocol<HttpRequest> {
         if (formDecoder == null) {
             if (StringUtils.startsWith(httpRequest.getHeader().getHeader(HttpHeaderConstant.Names.CONTENT_TYPE), HttpHeaderConstant.Values.MULTIPART_FORM_DATA)) {
                 int contentLength = NumberUtils.toInt(httpRequest.getHeader().getHeader(HttpHeaderConstant.Names.CONTENT_LENGTH), -1);
-                httpRequest.setInputStream(session.getInputStream(contentLength));
+                try {
+                    httpRequest.setInputStream(session.getInputStream(contentLength));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 return httpRequest;
             } else {
                 int contentLength = NumberUtils.toInt(httpRequest.getHeader().getHeader(HttpHeaderConstant.Names.CONTENT_LENGTH), -1);

@@ -369,8 +369,8 @@ public class AioSession<T> {
      *
      * @return
      */
-    public InputStream getInputStream() {
-        return getInputStream(-1);
+    public InputStream getInputStream() throws IOException {
+        return inputStream == null ? getInputStream(-1) : inputStream;
     }
 
     /**
@@ -379,7 +379,10 @@ public class AioSession<T> {
      * @param length
      * @return
      */
-    public InputStream getInputStream(int length) {
+    public InputStream getInputStream(int length) throws IOException {
+        if (inputStream != null) {
+            throw new IOException("pre inputStream has not closed");
+        }
         if (inputStream != null) {
             return inputStream;
         }
@@ -430,7 +433,9 @@ public class AioSession<T> {
 
         @Override
         public void close() throws IOException {
-            AioSession.this.inputStream=null;
+            if (AioSession.this.inputStream == InnerInputStream.this) {
+                AioSession.this.inputStream = null;
+            }
         }
     }
 }

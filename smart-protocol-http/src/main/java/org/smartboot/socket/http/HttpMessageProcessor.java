@@ -28,7 +28,7 @@ import java.io.IOException;
  *
  * @author 三刀
  */
-public final class HttpMessageProcessor implements MessageProcessor<HttpRequest> {
+public class HttpMessageProcessor implements MessageProcessor<HttpRequest> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpMessageProcessor.class);
     private Http11HandleGroup http11HandleGroup = null;
 

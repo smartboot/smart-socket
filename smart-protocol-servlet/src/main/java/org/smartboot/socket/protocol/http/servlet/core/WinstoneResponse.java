@@ -8,6 +8,8 @@ package org.smartboot.socket.protocol.http.servlet.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.smartboot.socket.http.HttpResponse;
+import org.smartboot.socket.http.http11.Http11Request;
 import org.smartboot.socket.protocol.http.WinstoneResourceBundle;
 import org.smartboot.socket.protocol.http.util.StringUtils;
 
@@ -66,7 +68,7 @@ public class WinstoneResponse implements HttpServletResponse {
     private String explicitEncoding;
     private String implicitEncoding;
     private Locale locale;
-    private String protocol;
+    //    private String protocol;
     private String reqKeepAliveHeader;
     private Integer errorStatusCode;
 
@@ -80,11 +82,13 @@ public class WinstoneResponse implements HttpServletResponse {
      * 且必须抛出一个 IllegalStateException 异常
      */
     private boolean isInclude = false;
+    private HttpResponse response;
+    private Http11Request request;
 
     /**
      * Build a new instance of WinstoneResponse.
      */
-    public WinstoneResponse() {
+    public WinstoneResponse(Http11Request request, HttpResponse response) {
         super();
         headers = new ArrayList<String>();
         cookies = new ArrayList<Cookie>();
@@ -93,8 +97,9 @@ public class WinstoneResponse implements HttpServletResponse {
         statusCode = HttpServletResponse.SC_OK;
         locale = null; // Locale.getDefault();
         explicitEncoding = null;
-        protocol = null;
         reqKeepAliveHeader = null;
+        this.response = response;
+        this.request = request;
     }
 
     protected static String getCharsetFromContentTypeHeader(final String type, final StringBuilder remainder) {
@@ -165,7 +170,6 @@ public class WinstoneResponse implements HttpServletResponse {
         headers.clear();
         cookies.clear();
         httpOnlyCookies.clear();
-        protocol = null;
         reqKeepAliveHeader = null;
 
         statusCode = HttpServletResponse.SC_OK;
@@ -210,12 +214,9 @@ public class WinstoneResponse implements HttpServletResponse {
     }
 
     public String getProtocol() {
-        return protocol;
+        return request.getHttpVersion();
     }
 
-    public void setProtocol(final String protocol) {
-        this.protocol = protocol;
-    }
 
     public void extractRequestKeepAliveHeader(final WinstoneRequest req) {
         reqKeepAliveHeader = req.getHeader(WinstoneConstant.KEEP_ALIVE_HEADER);
@@ -422,10 +423,10 @@ public class WinstoneResponse implements HttpServletResponse {
         final String inKeepAliveHeader = reqKeepAliveHeader;
         final String outKeepAliveHeader = getHeader(WinstoneConstant.KEEP_ALIVE_HEADER);
         final boolean hasContentLength = getHeader(WinstoneConstant.CONTENT_LENGTH_HEADER) != null;
-        if (protocol.startsWith("HTTP/0")) {
+        if (request.getHttpVersion().startsWith("HTTP/0")) {
             return Boolean.TRUE;
         } else if (inKeepAliveHeader == null && outKeepAliveHeader == null) {
-            return protocol.equals("HTTP/1.0") ? Boolean.TRUE : !hasContentLength;
+            return request.getHttpVersion().equals("HTTP/1.0") ? Boolean.TRUE : !hasContentLength;
         } else if (outKeepAliveHeader != null) {
             return outKeepAliveHeader.equalsIgnoreCase(WinstoneConstant.KEEP_ALIVE_CLOSE) || !hasContentLength;
         } else if (inKeepAliveHeader != null) {

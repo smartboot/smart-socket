@@ -15,7 +15,7 @@ public enum HttpProtocole {
 			"Proxy Authentication Required"), HTTP_408("Request Time-out"), HTTP_409("Conflict"), HTTP_410("Gone"), HTTP_411("Length Required"), HTTP_412("Precondition Failed"), HTTP_413("Request Entity Too Large"), HTTP_414("Request-URI Too Large"), HTTP_415(
 			"Unsupported Media Type"), HTTP_416("Requested Range Not Satisfiable"), HTTP_417("Expectation Failed"), HTTP_418("unused"), HTTP_419("unused"), HTTP_420("unused"), HTTP_421("unused"), HTTP_422("Unprocessable Entity"), HTTP_423("Locked"), HTTP_424(
 			"Failed Dependency"), HTTP_425("No code"), HTTP_426("Upgrade Required"), HTTP_500("Internal Server Error"), HTTP_501("Method Not Implemented"), HTTP_502("Bad Gateway"), HTTP_503("Service Temporarily Unavailable"), HTTP_504(
-			"Gateway Time-out"), HTTP_505("HTTP Version Not Supported"), HTTP_506("Variant Also Negotiates"), HTTP_507("Insufficient Storage"), HTTP_508("unused"), HTTP_509("unused"), HTTP_510("Not Extended");
+			"Gateway Time-out"), HTTP_505("HTTP Version Not Supported"), HTTP_506("Variant Also Negotiates"), HTTP_507("Insufficient Storage"), HTTP_508("unused"), HTTP_509("unused"), HTTP_510("Not Extended"),HTTP_515("sandao ERROR");
 
 	private final String message;
 

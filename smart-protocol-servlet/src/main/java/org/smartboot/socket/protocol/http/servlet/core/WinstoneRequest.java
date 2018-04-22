@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.extension.decoder.StreamFrameDecoder;
+import org.smartboot.socket.http.http11.Http11Request;
 import org.smartboot.socket.protocol.http.HttpDecodePart;
 import org.smartboot.socket.protocol.http.servlet.core.authentication.AuthenticationPrincipal;
 import org.smartboot.socket.protocol.http.strategy.FormWithContentLengthStrategy;
@@ -42,7 +43,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -136,6 +136,7 @@ public class WinstoneRequest implements HttpServletRequest {
     protected AuthenticationPrincipal authenticatedUser;
     protected ServletRequestAttributeListener requestAttributeListeners[];
     protected ServletRequestListener requestListeners[];
+    private Http11Request http11Request;
     private MessageDigest md5Digester;
     /**
      * 0:消息头
@@ -157,7 +158,7 @@ public class WinstoneRequest implements HttpServletRequest {
      *
      * @throws IOException
      */
-    public WinstoneRequest(final int maxParamAllowed) throws IOException {
+    public WinstoneRequest(final int maxParamAllowed, Http11Request request) throws IOException {
         super();
         this.maxParamAllowed = maxParamAllowed < 1 ? WinstoneConstant.DEFAULT_MAXIMUM_PARAMETER_ALLOWED : maxParamAllowed;
         attributes = new HashMap<String, Object>();
@@ -174,6 +175,7 @@ public class WinstoneRequest implements HttpServletRequest {
         } catch (final NoSuchAlgorithmException err) {
             throw new WinstoneException("MD5 digester unavailable - what the ...?");
         }
+        this.http11Request = request;
     }
 
     /**
@@ -314,7 +316,7 @@ public class WinstoneRequest implements HttpServletRequest {
         StringTokenizer requestLineToken = new StringTokenizer(headerToken.nextToken(), " ");
         method = requestLineToken.nextToken();
         url = requestLineToken.nextToken();
-        requestURI=trimHostName(url);
+        requestURI = trimHostName(url);
         protocol = requestLineToken.nextToken();
 
         while (headerToken.hasMoreTokens()) {
@@ -332,7 +334,8 @@ public class WinstoneRequest implements HttpServletRequest {
         }
         delimiterFrameDecoder = null;
     }
-    private  String trimHostName(final String input) {
+
+    private String trimHostName(final String input) {
         if (input == null) {
             return null;
         } else if (input.startsWith("/")) {
@@ -351,6 +354,7 @@ public class WinstoneRequest implements HttpServletRequest {
             return hostName.substring(pathStart);
         }
     }
+
     public void setHeader(String name, String value) {
         headMap.put(name, value);
     }
@@ -571,7 +575,6 @@ public class WinstoneRequest implements HttpServletRequest {
             }
         }
     }
-
 
 
     private void parseCookieLine(final String headerValue, final List<Cookie> cookieList) {
@@ -1011,6 +1014,7 @@ public class WinstoneRequest implements HttpServletRequest {
      * Servlet 容器根据 request 对象中的信息把给定的相对路 径转换成当前 servlet 的完整路径。
      * 例如，在以‟/‟作为上下文根路径和请求路径/garden/tools.html 中，
      * 通过 ServletRequest.getRequestDispatcher("header.html") 获得的请求分派器和通过调用ServletContext.getRequestDispatcher("/garden/header.html")获得的完全一样。
+     *
      * @param path
      * @return
      */
@@ -1111,7 +1115,7 @@ public class WinstoneRequest implements HttpServletRequest {
 
     @Override
     public String getRequestURI() {
-        return requestURI;
+        return http11Request.getRequestURI();
     }
 
     public void setRequestURI(final String requestURI) {

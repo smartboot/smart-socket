@@ -125,7 +125,7 @@ public class WinstoneOutputStream extends javax.servlet.ServletOutputStream {
     public void commit() throws IOException {
         buffer.flush();
 
-        // If we haven't written the headers yet, write them out
+        // If we haven't written    the headers yet, write them out
         if (!committed) {
             owner.validateHeaders();
             committed = Boolean.TRUE;

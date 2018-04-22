@@ -8,15 +8,12 @@
 
 package org.smartboot.socket.http.http11;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.apache.commons.lang.math.NumberUtils;
 import org.smartboot.socket.http.HttpHeader;
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.http.enums.MethodEnum;
 import org.smartboot.socket.http.utils.EmptyInputStream;
-import org.smartboot.socket.http.utils.HttpHeaderConstant;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -37,6 +34,7 @@ public class Http11Request extends HttpRequest {
      * http://localhost?aa=aa  ?后面部分
      */
     private String queryString;
+
     //HTTP\HTTPS...
     private Map<String, String> paramMap = new HashMap<String, String>();
 
@@ -104,6 +102,10 @@ public class Http11Request extends HttpRequest {
 
     public void setParam(String key, String val) {
         this.paramMap.put(key, val);
+    }
+
+    public String getProtocol() {
+        return header.getHttpVersion();
     }
 
 }
