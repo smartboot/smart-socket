@@ -33,4 +33,8 @@ public class BufferUtils {
         }
         buffer.limit(limit);
     }
+
+    public static short readUnsignedByte(ByteBuffer buffer) {
+        return (short) (buffer.get() & 0xFF);
+    }
 }
