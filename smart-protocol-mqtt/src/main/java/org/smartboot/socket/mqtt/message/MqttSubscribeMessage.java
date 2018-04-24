@@ -6,7 +6,6 @@ import org.smartboot.socket.util.BufferUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -21,6 +20,11 @@ public class MqttSubscribeMessage extends MessageIdVariableHeaderMessage {
         super(mqttFixedHeader);
     }
 
+    public MqttSubscribeMessage(MqttFixedHeader mqttFixedHeader, MqttMessageIdVariableHeader mqttMessageIdVariableHeader, MqttSubscribePayload mqttSubscribePayload) {
+        super(mqttFixedHeader, mqttMessageIdVariableHeader);
+        this.mqttSubscribePayload = mqttSubscribePayload;
+    }
+
     @Override
     public void decodePlayLoad(ByteBuffer buffer) {
         final List<MqttTopicSubscription> subscribeTopics = new ArrayList<MqttTopicSubscription>();
@@ -32,38 +36,5 @@ public class MqttSubscribeMessage extends MessageIdVariableHeaderMessage {
         this.mqttSubscribePayload = new MqttSubscribePayload(subscribeTopics);
     }
 
-    final class MqttSubscribePayload {
 
-        private final List<MqttTopicSubscription> topicSubscriptions;
-
-        public MqttSubscribePayload(List<MqttTopicSubscription> topicSubscriptions) {
-            this.topicSubscriptions = Collections.unmodifiableList(topicSubscriptions);
-        }
-
-        public List<MqttTopicSubscription> topicSubscriptions() {
-            return topicSubscriptions;
-        }
-
-    }
-
-    final class MqttTopicSubscription {
-
-        private final String topicFilter;
-        private final MqttQoS qualityOfService;
-
-        public MqttTopicSubscription(String topicFilter, MqttQoS qualityOfService) {
-            this.topicFilter = topicFilter;
-            this.qualityOfService = qualityOfService;
-        }
-
-        public String topicName() {
-            return topicFilter;
-        }
-
-        public MqttQoS qualityOfService() {
-            return qualityOfService;
-        }
-
-
-    }
 }

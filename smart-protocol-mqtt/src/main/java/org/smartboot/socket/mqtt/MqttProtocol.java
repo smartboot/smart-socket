@@ -1,9 +1,12 @@
 package org.smartboot.socket.mqtt;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.mqtt.message.MqttCodecUtil;
 import org.smartboot.socket.mqtt.message.MqttMessage;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.BufferUtils;
 import org.smartboot.socket.util.DecoderException;
 
 import java.nio.ByteBuffer;
@@ -18,6 +21,7 @@ import static org.smartboot.socket.mqtt.MqttProtocol.DecoderState.READ_VARIABLE_
  * @version V1.0 , 2018/4/22
  */
 public class MqttProtocol implements Protocol<MqttMessage> {
+    private static final Logger logger = LoggerFactory.getLogger(MqttProtocol.class);
     private static final int DEFAULT_MAX_BYTES_IN_MESSAGE = 8092;
     private final int maxBytesInMessage;
 
@@ -47,7 +51,7 @@ public class MqttProtocol implements Protocol<MqttMessage> {
                         break;
                     }
                     buffer.mark();
-                    short b1 = buffer.get();
+                    short b1 = BufferUtils.readUnsignedByte(buffer);
 
                     MqttMessageType messageType = MqttMessageType.valueOf(b1 >> 4);
                     boolean dupFlag = (b1 & 0x08) == 0x08;
@@ -59,7 +63,7 @@ public class MqttProtocol implements Protocol<MqttMessage> {
                     short digit;
                     int loops = 0;
                     do {
-                        digit = buffer.get();
+                        digit = BufferUtils.readUnsignedByte(buffer);
                         remainingLength += (digit & 127) * multiplier;
                         multiplier *= 128;
                         loops++;
@@ -110,6 +114,7 @@ public class MqttProtocol implements Protocol<MqttMessage> {
 
                     // fall through
                 } catch (Exception cause) {
+                    logger.error(unit.mqttMessage.toString());
                     unit.mqttMessage = MqttMessageFactory.newInvalidMessage(cause);
                     unit.state = FINISH;
                     break;
@@ -119,6 +124,7 @@ public class MqttProtocol implements Protocol<MqttMessage> {
 
                 try {
                     unit.mqttMessage.decodePlayLoad(buffer);
+                    unit.state = FINISH;
                     break;
                 } catch (Exception cause) {
                     unit.mqttMessage = MqttMessageFactory.newInvalidMessage(cause);
@@ -141,7 +147,7 @@ public class MqttProtocol implements Protocol<MqttMessage> {
     @Override
     public ByteBuffer encode(MqttMessage msg, AioSession<MqttMessage> session) {
 
-        return null;
+        return msg.encode();
     }
 
     enum DecoderState {

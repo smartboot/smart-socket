@@ -18,7 +18,7 @@ public class MqttMessage implements VariableHeader {
      */
     public static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final char[] TOPIC_WILDCARDS = {'#', '+'};
-    protected MqttFixedHeader mqttFixedHeader;
+    protected MqttFixedHeader mqttFixedHeader = null;
 
     public MqttMessage(MqttFixedHeader mqttFixedHeader) {
         this.mqttFixedHeader = mqttFixedHeader;
@@ -50,6 +50,10 @@ public class MqttMessage implements VariableHeader {
 
     public void decodePlayLoad(ByteBuffer buffer) {
 
+    }
+
+    public ByteBuffer encode() {
+        return null;
     }
 
     protected final int decodeMsbLsb(ByteBuffer buffer) {
@@ -84,7 +88,20 @@ public class MqttMessage implements VariableHeader {
         return true;
     }
 
-    public final byte[] decodeByteArray(ByteBuffer buffer) {
+    protected final byte getFixedHeaderByte1(MqttFixedHeader header) {
+        int ret = 0;
+        ret |= header.messageType().value() << 4;
+        if (header.isDup()) {
+            ret |= 0x08;
+        }
+        ret |= header.qosLevel().value() << 1;
+        if (header.isRetain()) {
+            ret |= 0x01;
+        }
+        return (byte) ret;
+    }
+
+    protected final byte[] decodeByteArray(ByteBuffer buffer) {
         final int decodedSize = decodeMsbLsb(buffer);
         byte[] bytes = new byte[decodedSize];
         buffer.get(bytes);

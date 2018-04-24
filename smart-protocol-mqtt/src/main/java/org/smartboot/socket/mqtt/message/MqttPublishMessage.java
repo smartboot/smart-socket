@@ -18,6 +18,12 @@ public class MqttPublishMessage extends MqttMessage {
         super(mqttFixedHeader);
     }
 
+    public MqttPublishMessage(MqttFixedHeader mqttFixedHeader, MqttPublishVariableHeader mqttPublishVariableHeader, ByteBuffer payload) {
+        super(mqttFixedHeader);
+        this.mqttPublishVariableHeader = mqttPublishVariableHeader;
+        this.payload = payload;
+    }
+
     @Override
     public void decodeVariableHeader(ByteBuffer buffer) {
         final String decodedTopic = decodeString(buffer);

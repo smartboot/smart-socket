@@ -4,7 +4,6 @@ import org.smartboot.socket.mqtt.MqttFixedHeader;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -18,6 +17,11 @@ public class MqttUnsubscribeMessage extends MessageIdVariableHeaderMessage {
         super(mqttFixedHeader);
     }
 
+    public MqttUnsubscribeMessage(MqttFixedHeader mqttFixedHeader, MqttMessageIdVariableHeader mqttMessageIdVariableHeader, MqttUnsubscribePayload mqttUnsubscribePayload) {
+        super(mqttFixedHeader, mqttMessageIdVariableHeader);
+        this.mqttUnsubscribePayload = mqttUnsubscribePayload;
+    }
+
     @Override
     public void decodePlayLoad(ByteBuffer buffer) {
         final List<String> unsubscribeTopics = new ArrayList<String>();
@@ -28,18 +32,5 @@ public class MqttUnsubscribeMessage extends MessageIdVariableHeaderMessage {
         mqttUnsubscribePayload = new MqttUnsubscribePayload(unsubscribeTopics);
     }
 
-    public final class MqttUnsubscribePayload {
 
-        private final List<String> topics;
-
-        public MqttUnsubscribePayload(List<String> topics) {
-            this.topics = Collections.unmodifiableList(topics);
-        }
-
-        public List<String> topics() {
-            return topics;
-        }
-
-
-    }
 }

@@ -15,6 +15,11 @@ public class MessageIdVariableHeaderMessage extends MqttMessage {
         super(mqttFixedHeader);
     }
 
+    public MessageIdVariableHeaderMessage(MqttFixedHeader mqttFixedHeader, MqttMessageIdVariableHeader mqttMessageIdVariableHeader) {
+        super(mqttFixedHeader);
+        this.mqttMessageIdVariableHeader = mqttMessageIdVariableHeader;
+    }
+
     @Override
     public final void decodeVariableHeader(ByteBuffer buffer) {
         final int messageId = decodeMessageId(buffer);
