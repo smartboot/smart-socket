@@ -18,6 +18,7 @@ package org.smartboot.socket.mqtt.message;
 
 
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
 /**
  */
@@ -92,6 +93,6 @@ public final class MqttConnectVariableHeader {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

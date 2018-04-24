@@ -1,5 +1,7 @@
 package org.smartboot.socket.mqtt.message;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.smartboot.socket.mqtt.MqttFixedHeader;
 import org.smartboot.socket.mqtt.VariableHeader;
 import org.smartboot.socket.util.BufferUtils;
@@ -106,5 +108,10 @@ public class MqttMessage implements VariableHeader {
         byte[] bytes = new byte[decodedSize];
         buffer.get(bytes);
         return bytes;
+    }
+
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }
