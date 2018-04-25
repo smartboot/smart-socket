@@ -373,6 +373,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                         if (request != null) {
                             decodeUnit.setDecodePartEnum(HttpPartEnum.END);
                         }
+                        buffer.mark();
                         break;
                     }
                     default: {
