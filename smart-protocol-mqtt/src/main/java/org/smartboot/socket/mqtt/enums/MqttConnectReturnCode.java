@@ -12,25 +12,25 @@ public enum MqttConnectReturnCode {
     CONNECTION_REFUSED_NOT_AUTHORIZED((byte) 0x05, "客户端未被授权连接到此服务器");
 
 
-    private final byte byteValue;
+    private final byte code;
     private final String desc;
 
-    MqttConnectReturnCode(byte byteValue, String desc) {
-        this.byteValue = byteValue;
+    MqttConnectReturnCode(byte code, String desc) {
+        this.code = code;
         this.desc = desc;
     }
 
     public static MqttConnectReturnCode valueOf(byte b) {
         for (MqttConnectReturnCode v : values()) {
-            if (b == v.byteValue) {
+            if (b == v.code) {
                 return v;
             }
         }
         throw new IllegalArgumentException("unknown connect return code: " + (b & 0xFF));
     }
 
-    public byte byteValue() {
-        return byteValue;
+    public byte getCode() {
+        return code;
     }
 
     public String getDesc() {

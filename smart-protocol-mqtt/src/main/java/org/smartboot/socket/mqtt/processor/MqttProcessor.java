@@ -1,7 +1,7 @@
 package org.smartboot.socket.mqtt.processor;
 
+import org.smartboot.socket.mqtt.MqttSession;
 import org.smartboot.socket.mqtt.message.MqttMessage;
-import org.smartboot.socket.transport.AioSession;
 
 /**
  * @author 三刀
@@ -9,5 +9,5 @@ import org.smartboot.socket.transport.AioSession;
  */
 public interface MqttProcessor<T extends MqttMessage> {
 
-    void process(AioSession<T> aioSession, T t);
+    void process(MqttSession session, T t);
 }

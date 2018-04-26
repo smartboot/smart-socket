@@ -16,6 +16,7 @@ import org.smartboot.socket.transport.AioSession;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author 三刀
@@ -23,6 +24,7 @@ import java.util.Map;
  */
 public class MqttServerProcessor implements MessageProcessor<MqttMessage> {
     private Map<Class<? extends MqttMessage>, MqttProcessor> processorMap = new HashMap<>();
+    private Map<String, MqttSession> sessionMap = new ConcurrentHashMap();
 
     {
         processorMap.put(MqttPingReqMessage.class, new PingReqProcessor());
@@ -31,11 +33,12 @@ public class MqttServerProcessor implements MessageProcessor<MqttMessage> {
         processorMap.put(MqttSubscribeMessage.class, new SubscribeProcessor());
     }
 
+
     @Override
     public void process(AioSession<MqttMessage> session, MqttMessage msg) {
         MqttProcessor processor = processorMap.get(msg.getClass());
         if (processor != null) {
-            processor.process(session, msg);
+            processor.process(sessionMap.get(session.getSessionID()), msg);
         } else {
             System.out.println(msg);
         }
@@ -43,6 +46,11 @@ public class MqttServerProcessor implements MessageProcessor<MqttMessage> {
 
     @Override
     public void stateEvent(AioSession<MqttMessage> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+        switch (stateMachineEnum) {
+            case NEW_SESSION:
+                sessionMap.put(session.getSessionID(), new MqttSession(session));
+                break;
+        }
         System.out.println(stateMachineEnum);
         if (throwable != null) {
             throwable.printStackTrace();

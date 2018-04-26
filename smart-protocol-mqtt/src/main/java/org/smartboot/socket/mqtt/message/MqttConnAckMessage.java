@@ -35,7 +35,7 @@ public class MqttConnAckMessage extends MqttMessage {
         buffer.put(getFixedHeaderByte1(mqttFixedHeader));
         buffer.put((byte) 2);
         buffer.put((byte) (mqttConnAckVariableHeader.isSessionPresent() ? 0x01 : 0x00));
-        buffer.put(mqttConnAckVariableHeader.connectReturnCode().byteValue());
+        buffer.put(mqttConnAckVariableHeader.connectReturnCode().getCode());
         buffer.flip();
         return buffer;
     }

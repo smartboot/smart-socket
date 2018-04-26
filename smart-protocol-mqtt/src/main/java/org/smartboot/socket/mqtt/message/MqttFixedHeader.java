@@ -12,21 +12,27 @@ import org.smartboot.socket.mqtt.enums.MqttQoS;
 public class MqttFixedHeader {
 
     private final MqttMessageType messageType;
-    private final boolean isDup;
+    /**
+     * 重发标志
+     */
+    private final boolean dup;
     private final MqttQoS qosLevel;
-    private final boolean isRetain;
+    /**
+     * 保留标志
+     */
+    private final boolean retain;
     private final int remainingLength;
 
     public MqttFixedHeader(
             MqttMessageType messageType,
-            boolean isDup,
+            boolean dup,
             MqttQoS qosLevel,
-            boolean isRetain,
+            boolean retain,
             int remainingLength) {
         this.messageType = messageType;
-        this.isDup = isDup;
+        this.dup = dup;
         this.qosLevel = qosLevel;
-        this.isRetain = isRetain;
+        this.retain = retain;
         this.remainingLength = remainingLength;
     }
 
@@ -35,7 +41,7 @@ public class MqttFixedHeader {
     }
 
     public boolean isDup() {
-        return isDup;
+        return dup;
     }
 
     public MqttQoS qosLevel() {
@@ -43,7 +49,7 @@ public class MqttFixedHeader {
     }
 
     public boolean isRetain() {
-        return isRetain;
+        return retain;
     }
 
     public int remainingLength() {

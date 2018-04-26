@@ -1,28 +1,9 @@
-/*
- * Copyright 2014 The Netty Project
- *
- * The Netty Project licenses this file to you under the Apache License,
- * version 2.0 (the "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at:
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
-
 package org.smartboot.socket.mqtt.enums;
 
 import org.smartboot.socket.mqtt.exception.MqttUnacceptableProtocolVersionException;
 
 import java.nio.charset.Charset;
 
-/**
- * Mqtt version specific constant values used by multiple classes in mqtt-codec.
- */
 public enum MqttVersion {
     MQTT_3_1("MQIsdp", (byte) 3),
     MQTT_3_1_1("MQTT", (byte) 4);
@@ -33,18 +14,6 @@ public enum MqttVersion {
     MqttVersion(String protocolName, byte protocolLevel) {
         name = protocolName;
         level = protocolLevel;
-    }
-
-    public String protocolName() {
-        return name;
-    }
-
-    public byte[] protocolNameBytes() {
-        return name.getBytes(Charset.forName("utf8"));
-    }
-
-    public byte protocolLevel() {
-        return level;
     }
 
     public static MqttVersion fromProtocolNameAndLevel(String protocolName, byte protocolLevel) {
@@ -59,5 +28,17 @@ public enum MqttVersion {
             }
         }
         throw new MqttUnacceptableProtocolVersionException(protocolName + "is unknown protocol name");
+    }
+
+    public String protocolName() {
+        return name;
+    }
+
+    public byte[] protocolNameBytes() {
+        return name.getBytes(Charset.forName("utf8"));
+    }
+
+    public byte protocolLevel() {
+        return level;
     }
 }
