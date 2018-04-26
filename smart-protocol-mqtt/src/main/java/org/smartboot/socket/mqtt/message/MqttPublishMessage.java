@@ -1,6 +1,5 @@
 package org.smartboot.socket.mqtt.message;
 
-import org.smartboot.socket.mqtt.MqttFixedHeader;
 import org.smartboot.socket.util.DecoderException;
 
 import java.nio.ByteBuffer;

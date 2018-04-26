@@ -2,8 +2,6 @@ package org.smartboot.socket.mqtt.message;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.smartboot.socket.mqtt.MqttFixedHeader;
-import org.smartboot.socket.mqtt.VariableHeader;
 import org.smartboot.socket.util.BufferUtils;
 import org.smartboot.socket.util.DecoderException;
 
@@ -14,7 +12,7 @@ import java.nio.charset.Charset;
  * @author 三刀
  * @version V1.0 , 2018/4/22
  */
-public class MqttMessage implements VariableHeader {
+public class MqttMessage {
     /**
      * 8-bit UTF (UCS Transformation Format)
      */
@@ -45,7 +43,11 @@ public class MqttMessage implements VariableHeader {
         return mqttFixedHeader;
     }
 
-    @Override
+    /**
+     * 解码可变头部
+     *
+     * @param buffer
+     */
     public void decodeVariableHeader(ByteBuffer buffer) {
 
     }
@@ -108,6 +110,26 @@ public class MqttMessage implements VariableHeader {
         byte[] bytes = new byte[decodedSize];
         buffer.get(bytes);
         return bytes;
+    }
+
+    protected final int getVariableLengthInt(int num) {
+        int count = 0;
+        do {
+            num /= 128;
+            count++;
+        } while (num > 0);
+        return count;
+    }
+
+    protected final void writeVariableLengthInt(ByteBuffer buf, int num) {
+        do {
+            int digit = num % 128;
+            num /= 128;
+            if (num > 0) {
+                digit |= 0x80;
+            }
+            buf.put((byte) digit);
+        } while (num > 0);
     }
 
     @Override

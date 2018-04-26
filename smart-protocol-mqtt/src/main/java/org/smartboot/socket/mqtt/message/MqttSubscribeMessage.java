@@ -1,7 +1,6 @@
 package org.smartboot.socket.mqtt.message;
 
-import org.smartboot.socket.mqtt.MqttFixedHeader;
-import org.smartboot.socket.mqtt.MqttQoS;
+import org.smartboot.socket.mqtt.enums.MqttQoS;
 import org.smartboot.socket.util.BufferUtils;
 
 import java.nio.ByteBuffer;

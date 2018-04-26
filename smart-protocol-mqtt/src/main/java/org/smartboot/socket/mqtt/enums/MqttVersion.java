@@ -14,7 +14,9 @@
  * under the License.
  */
 
-package org.smartboot.socket.mqtt;
+package org.smartboot.socket.mqtt.enums;
+
+import org.smartboot.socket.mqtt.exception.MqttUnacceptableProtocolVersionException;
 
 import java.nio.charset.Charset;
 

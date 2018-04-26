@@ -1,6 +1,6 @@
 package org.smartboot.socket.mqtt.message;
 
-import org.smartboot.socket.mqtt.MqttConnectReturnCode;
+import org.smartboot.socket.mqtt.enums.MqttConnectReturnCode;
 
 /**
  * @author 三刀

@@ -15,11 +15,16 @@
  */
 package org.smartboot.socket.mqtt;
 
+import org.smartboot.socket.mqtt.enums.MqttConnectReturnCode;
+import org.smartboot.socket.mqtt.enums.MqttMessageType;
+import org.smartboot.socket.mqtt.enums.MqttQoS;
+import org.smartboot.socket.mqtt.enums.MqttVersion;
 import org.smartboot.socket.mqtt.message.MqttConnAckMessage;
 import org.smartboot.socket.mqtt.message.MqttConnAckVariableHeader;
 import org.smartboot.socket.mqtt.message.MqttConnectMessage;
 import org.smartboot.socket.mqtt.message.MqttConnectPayload;
 import org.smartboot.socket.mqtt.message.MqttConnectVariableHeader;
+import org.smartboot.socket.mqtt.message.MqttFixedHeader;
 import org.smartboot.socket.mqtt.message.MqttMessageIdVariableHeader;
 import org.smartboot.socket.mqtt.message.MqttPublishMessage;
 import org.smartboot.socket.mqtt.message.MqttPublishVariableHeader;

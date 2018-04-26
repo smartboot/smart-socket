@@ -1,8 +1,7 @@
 package org.smartboot.socket.mqtt.message;
 
-import org.smartboot.socket.mqtt.MqttFixedHeader;
-import org.smartboot.socket.mqtt.MqttIdentifierRejectedException;
-import org.smartboot.socket.mqtt.MqttVersion;
+import org.smartboot.socket.mqtt.exception.MqttIdentifierRejectedException;
+import org.smartboot.socket.mqtt.enums.MqttVersion;
 import org.smartboot.socket.util.BufferUtils;
 import org.smartboot.socket.util.DecoderException;
 

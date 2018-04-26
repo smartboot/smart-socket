@@ -1,7 +1,5 @@
 package org.smartboot.socket.mqtt.message;
 
-import org.smartboot.socket.mqtt.MqttFixedHeader;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -24,5 +22,9 @@ public class MessageIdVariableHeaderMessage extends MqttMessage {
     public final void decodeVariableHeader(ByteBuffer buffer) {
         final int messageId = decodeMessageId(buffer);
         mqttMessageIdVariableHeader = MqttMessageIdVariableHeader.from(messageId);
+    }
+
+    public void setMqttMessageIdVariableHeader(MqttMessageIdVariableHeader mqttMessageIdVariableHeader) {
+        this.mqttMessageIdVariableHeader = mqttMessageIdVariableHeader;
     }
 }

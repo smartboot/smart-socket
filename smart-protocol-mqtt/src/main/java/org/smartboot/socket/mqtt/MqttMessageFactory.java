@@ -19,11 +19,12 @@ package org.smartboot.socket.mqtt;
 import org.smartboot.socket.mqtt.message.MqttConnAckMessage;
 import org.smartboot.socket.mqtt.message.MqttConnectMessage;
 import org.smartboot.socket.mqtt.message.MqttDisconnectMessage;
+import org.smartboot.socket.mqtt.message.MqttFixedHeader;
 import org.smartboot.socket.mqtt.message.MqttInvalidMessage;
 import org.smartboot.socket.mqtt.message.MqttMessage;
 import org.smartboot.socket.mqtt.message.MqttPingReqMessage;
 import org.smartboot.socket.mqtt.message.MqttPingRespMessage;
-import org.smartboot.socket.mqtt.message.MqttPubAckMessage;
+import org.smartboot.socket.mqtt.message.MqttPubAckAndMessageIdMessage;
 import org.smartboot.socket.mqtt.message.MqttPubCompMessage;
 import org.smartboot.socket.mqtt.message.MqttPublishMessage;
 import org.smartboot.socket.mqtt.message.MqttPubrecMessage;
@@ -65,7 +66,7 @@ public final class MqttMessageFactory {
                 return new MqttPublishMessage(mqttFixedHeader);
 
             case PUBACK:
-                return new MqttPubAckMessage(mqttFixedHeader);
+                return new MqttPubAckAndMessageIdMessage(mqttFixedHeader);
             case PUBREC:
                 return new MqttPubrecMessage(mqttFixedHeader);
             case PUBREL:
@@ -76,7 +77,7 @@ public final class MqttMessageFactory {
             case PINGREQ:
                 return new MqttPingReqMessage(mqttFixedHeader);
             case PINGRESP:
-                return new MqttPingRespMessage();
+                return new MqttPingRespMessage(mqttFixedHeader);
             case DISCONNECT:
                 return new MqttDisconnectMessage(mqttFixedHeader);
 

@@ -1,7 +1,5 @@
 package org.smartboot.socket.mqtt.message;
 
-import org.smartboot.socket.mqtt.MqttFixedHeader;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;

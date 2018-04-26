@@ -17,15 +17,17 @@
 package org.smartboot.socket.mqtt.message;
 
 
-import org.smartboot.socket.mqtt.MqttFixedHeader;
-import org.smartboot.socket.mqtt.MqttQoS;
-import org.smartboot.socket.mqtt.MqttVersion;
+import org.smartboot.socket.mqtt.enums.MqttQoS;
+import org.smartboot.socket.mqtt.enums.MqttVersion;
 
 public final class MqttCodecUtil {
 
     private static final char[] TOPIC_WILDCARDS = {'#', '+'};
     private static final int MIN_CLIENT_ID_LENGTH = 1;
     private static final int MAX_CLIENT_ID_LENGTH = 23;
+
+    private MqttCodecUtil() {
+    }
 
     static boolean isValidPublishTopicName(String topicName) {
         // publish topic name must not contain any wildcard
@@ -44,7 +46,7 @@ public final class MqttCodecUtil {
     static boolean isValidClientId(MqttVersion mqttVersion, String clientId) {
         if (mqttVersion == MqttVersion.MQTT_3_1) {
             return clientId != null && clientId.length() >= MIN_CLIENT_ID_LENGTH &&
-                clientId.length() <= MAX_CLIENT_ID_LENGTH;
+                    clientId.length() <= MAX_CLIENT_ID_LENGTH;
         }
         if (mqttVersion == MqttVersion.MQTT_3_1_1) {
             // In 3.1.3.1 Client Identifier of MQTT 3.1.1 specification, The Server MAY allow ClientId’s
@@ -54,8 +56,7 @@ public final class MqttCodecUtil {
         throw new IllegalArgumentException(mqttVersion + " is unknown mqtt version");
     }
 
-
-  public   static MqttFixedHeader resetUnusedFields(MqttFixedHeader mqttFixedHeader) {
+    public static MqttFixedHeader resetUnusedFields(MqttFixedHeader mqttFixedHeader) {
         switch (mqttFixedHeader.messageType()) {
             case CONNECT:
             case CONNACK:
@@ -94,6 +95,4 @@ public final class MqttCodecUtil {
                 return mqttFixedHeader;
         }
     }
-
-    private MqttCodecUtil() { }
 }

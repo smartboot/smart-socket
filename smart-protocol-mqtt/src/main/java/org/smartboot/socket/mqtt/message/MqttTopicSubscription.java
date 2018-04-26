@@ -1,6 +1,6 @@
 package org.smartboot.socket.mqtt.message;
 
-import org.smartboot.socket.mqtt.MqttQoS;
+import org.smartboot.socket.mqtt.enums.MqttQoS;
 
 public final class MqttTopicSubscription {
 

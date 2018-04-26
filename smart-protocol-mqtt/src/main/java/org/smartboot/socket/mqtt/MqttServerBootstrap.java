@@ -10,7 +10,7 @@ import java.io.IOException;
  */
 public class MqttServerBootstrap {
     public static void main(String[] args) {
-        AioQuickServer server=new AioQuickServer(1883,new MqttProtocol(),new MqttMessageProcessor());
+        AioQuickServer server=new AioQuickServer(1883,new MqttProtocol(),new MqttServerProcessor());
         try {
             server.start();
         } catch (IOException e) {

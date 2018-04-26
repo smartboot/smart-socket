@@ -1,4 +1,4 @@
-package org.smartboot.socket.mqtt;
+package org.smartboot.socket.mqtt.enums;
 
 /**
  * @author 三刀
