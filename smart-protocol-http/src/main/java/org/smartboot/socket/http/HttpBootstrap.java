@@ -47,6 +47,7 @@ public class HttpBootstrap {
                     System.out.println(new String(buffer, 0, len));
                 }
                 response.getOutputStream().write("Success".getBytes());
+                in.close();
             }
         });
         http(processor);

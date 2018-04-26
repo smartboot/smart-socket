@@ -23,12 +23,12 @@ public interface Protocol<T> {
     /**
      * 对于从Socket流中获取到的数据采用当前Protocol的实现类协议进行解析
      *
-     * @param data
+     * @param buffer
      * @param session
      * @param eof     是否EOF
      * @return 本次解码所成功解析的消息实例集合, 返回null则表示解码未完成
      */
-    public T decode(final ByteBuffer data, AioSession<T> session, boolean eof);
+    public T decode(final ByteBuffer buffer, AioSession<T> session, boolean eof);
 
     /**
      * 将业务消息实体编码成ByteBuffer用于输出至对端。
