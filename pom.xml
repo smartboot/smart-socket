@@ -35,7 +35,6 @@
         <module>smart-protocol-p2p</module>
         <module>smart-protocol-http</module>
         <module>smart-protocol-servlet</module>
-        <module>smart-protocol-mqtt</module>
         <module>smart-socket-parent</module>
     </modules>
 </project>
