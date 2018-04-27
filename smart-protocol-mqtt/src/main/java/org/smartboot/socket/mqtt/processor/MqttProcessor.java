@@ -1,5 +1,6 @@
 package org.smartboot.socket.mqtt.processor;
 
+import org.smartboot.socket.mqtt.MqttContext;
 import org.smartboot.socket.mqtt.MqttSession;
 import org.smartboot.socket.mqtt.message.MqttMessage;
 
@@ -9,5 +10,5 @@ import org.smartboot.socket.mqtt.message.MqttMessage;
  */
 public interface MqttProcessor<T extends MqttMessage> {
 
-    void process(MqttSession session, T t);
+    void process(MqttContext context, MqttSession session, T t);
 }

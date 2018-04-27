@@ -2,6 +2,7 @@ package org.smartboot.socket.mqtt.processor.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartboot.socket.mqtt.MqttContext;
 import org.smartboot.socket.mqtt.MqttSession;
 import org.smartboot.socket.mqtt.enums.MqttMessageType;
 import org.smartboot.socket.mqtt.enums.MqttQoS;
@@ -22,7 +23,7 @@ public class PublishProcessor implements MqttProcessor<MqttPublishMessage> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishProcessor.class);
 
     @Override
-    public void process(MqttSession session, MqttPublishMessage mqttPublishMessage) {
+    public void process(MqttContext context, MqttSession session, MqttPublishMessage mqttPublishMessage) {
         LOGGER.info("receive publish message:{}", mqttPublishMessage);
         MqttPubAckAndMessageIdMessage pubAckMessage = new MqttPubAckAndMessageIdMessage(new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0));
         pubAckMessage.setMqttMessageIdVariableHeader(MqttMessageIdVariableHeader.from(12345));

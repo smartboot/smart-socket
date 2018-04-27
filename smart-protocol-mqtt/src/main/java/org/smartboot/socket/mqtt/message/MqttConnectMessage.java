@@ -1,7 +1,7 @@
 package org.smartboot.socket.mqtt.message;
 
-import org.smartboot.socket.mqtt.exception.MqttIdentifierRejectedException;
 import org.smartboot.socket.mqtt.enums.MqttVersion;
+import org.smartboot.socket.mqtt.exception.MqttIdentifierRejectedException;
 import org.smartboot.socket.util.BufferUtils;
 import org.smartboot.socket.util.DecoderException;
 
@@ -91,14 +91,14 @@ public class MqttConnectMessage extends MqttMessage {
             decodedPassword = decodeByteArray(buffer);
         }
 
-        mqttConnectPayload =
-                new MqttConnectPayload(
-                        decodedClientId,
-                        decodedWillTopic,
-                        decodedWillMessage,
-                        decodedUserName,
-                        decodedPassword);
+        mqttConnectPayload = new MqttConnectPayload(decodedClientId, decodedWillTopic, decodedWillMessage, decodedUserName, decodedPassword);
     }
 
+    public MqttConnectPayload getayload() {
+        return mqttConnectPayload;
+    }
 
+    public MqttConnectVariableHeader getVariableHeader() {
+        return mqttConnectVariableHeader;
+    }
 }

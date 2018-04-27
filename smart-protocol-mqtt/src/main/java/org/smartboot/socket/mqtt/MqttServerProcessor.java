@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MqttServerProcessor implements MessageProcessor<MqttMessage> {
     private Map<Class<? extends MqttMessage>, MqttProcessor> processorMap = new HashMap<>();
+    private MqttContext mqttContext = new MqttServerContext();
     private Map<String, MqttSession> sessionMap = new ConcurrentHashMap();
 
     {
@@ -38,7 +39,7 @@ public class MqttServerProcessor implements MessageProcessor<MqttMessage> {
     public void process(AioSession<MqttMessage> session, MqttMessage msg) {
         MqttProcessor processor = processorMap.get(msg.getClass());
         if (processor != null) {
-            processor.process(sessionMap.get(session.getSessionID()), msg);
+            processor.process(mqttContext, sessionMap.get(session.getSessionID()), msg);
         } else {
             System.out.println(msg);
         }
