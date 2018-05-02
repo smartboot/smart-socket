@@ -155,6 +155,7 @@ public class AioSession<T> {
         //如果存在流控并符合释放条件，则触发读操作
         //一定要放在continueWrite之前
         if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.RELEASE_FLOW_LIMIT, null);
             serverFlowLimit = false;
             continueRead();
         }
@@ -323,6 +324,7 @@ public class AioSession<T> {
         //触发流控
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit = true;
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.FLOW_LIMIT, null);
         } else {
             continueRead();
         }

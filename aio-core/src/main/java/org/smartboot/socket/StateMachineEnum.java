@@ -26,5 +26,11 @@ public enum StateMachineEnum {
     /**会话正在关闭中*/
     SESSION_CLOSING,
     /**会话关闭成功*/
-    SESSION_CLOSED;
+    SESSION_CLOSED,
+    /**流控,仅服务端有效*/
+    FLOW_LIMIT,
+    /**释放流控,仅服务端有效*/
+    RELEASE_FLOW_LIMIT
+    ;
+
 }
