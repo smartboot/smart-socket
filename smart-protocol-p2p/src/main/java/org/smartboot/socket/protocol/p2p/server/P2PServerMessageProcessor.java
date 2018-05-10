@@ -36,6 +36,12 @@ public final class P2PServerMessageProcessor implements MessageProcessor<BaseMes
             case NEW_SESSION:
                 session.setAttachment(new P2PSession(session));
                 break;
+            case FLOW_LIMIT:
+                System.out.println("flow limit");
+                break;
+            case RELEASE_FLOW_LIMIT:
+                System.out.println("release flow limit");
+                break;
             case INPUT_SHUTDOWN:
 //                session.close(true);
                 break;

@@ -50,6 +50,17 @@ public class AioQuickServer<T> {
         config.setProcessor(messageProcessor);
     }
 
+    /**
+     * @param host             绑定服务端Host地址
+     * @param port             绑定服务端口号
+     * @param protocol         协议编解码
+     * @param messageProcessor 消息处理器
+     */
+    public AioQuickServer(String host,int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
+        this(port,protocol,messageProcessor);
+        config.setHost(host);
+    }
+
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
             LOGGER.info(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
