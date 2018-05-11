@@ -70,6 +70,7 @@ public class Http11ContentDecoder implements Protocol<HttpRequest> {
         }
         if (formDecoder.decode(buffer)) {
             decodeBodyForm(decodeUnit);
+            decodeUnit.setFormDecoder(null);
             return httpRequest;
         } else {
             return null;
