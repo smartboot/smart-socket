@@ -32,26 +32,23 @@ import java.util.concurrent.Semaphore;
  */
 public class AioSession<T> {
     /**
-     * Session状态:正常
+     * Session状态:已关闭
      */
-    protected static final byte SESSION_STATUS_ENABLED = 0x04;
+    protected static final byte SESSION_STATUS_CLOSED = 1;
     /**
      * Session状态:关闭中
      */
-    protected static final byte SESSION_STATUS_CLOSING = SESSION_STATUS_ENABLED << 1;
+    protected static final byte SESSION_STATUS_CLOSING = 2;
     /**
-     * Session状态:已关闭
+     * Session状态:正常
      */
-    protected static final byte SESSION_STATUS_CLOSED = SESSION_STATUS_CLOSING << 1;
-
-
+    protected static final byte SESSION_STATUS_ENABLED = 3;
     private static final Logger logger = LoggerFactory.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
-
-    private static final byte NONE_LIMIT_FLAG = 0x01;
-    protected static final byte SERVER_DEFAULT_FLAG = NONE_LIMIT_FLAG << 1;
-    private static final byte SERVER_FLOW_LIMIT_FLAG = SERVER_DEFAULT_FLAG | 1;
-
+    /**
+     * 数据read限流标志,仅服务端需要进行限流
+     */
+    protected Boolean serverFlowLimit;
     /**
      * 底层通信channel对象
      */
@@ -95,25 +92,13 @@ public class AioSession<T> {
             this.writeCacheQueue = new ArrayBlockingQueue<>(config.getWriteQueueSize());
         }
         this.ioServerConfig = config;
-
-        if (serverSession && config.getWriteQueueSize() > 0) {
-            updateStatus(SERVER_DEFAULT_FLAG);
-        }
+        this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 ? false : null;
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         this.readBuffer = newByteBuffer0(config.getReadBufferSize());
         for (Filter<T> filter : config.getFilters()) {
             filter.connected(this);
         }
-    }
-
-    protected synchronized void updateStatus(int v) {
-        this.status &= ~v;
-        this.status |= v;
-    }
-
-    protected boolean isStatus(int v) {
-        return (this.status & v) == v;
     }
 
     /**
@@ -169,9 +154,9 @@ public class AioSession<T> {
 
         //如果存在流控并符合释放条件，则触发读操作
         //一定要放在continueWrite之前
-        if (isStatus(SERVER_FLOW_LIMIT_FLAG) && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
+        if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.RELEASE_FLOW_LIMIT, null);
-            updateStatus(SERVER_DEFAULT_FLAG);
+            serverFlowLimit = false;
             continueRead();
         }
         continueWrite();
@@ -198,7 +183,7 @@ public class AioSession<T> {
 
     public final void write(final ByteBuffer buffer) throws IOException {
         if (isInvalid()) {
-            throw new IOException("session is " + (isStatus(SESSION_STATUS_CLOSED) ? "closed" : "invalid"));
+            throw new IOException("session is " + (status == SESSION_STATUS_CLOSED ? "closed" : "invalid"));
         }
         if (!buffer.hasRemaining()) {
             throw new InvalidObjectException("buffer has no remaining");
@@ -242,11 +227,11 @@ public class AioSession<T> {
      */
     public void close(boolean immediate) {
         //status == SESSION_STATUS_CLOSED说明close方法被重复调用
-        if (isStatus(SESSION_STATUS_CLOSED)) {
+        if (status == SESSION_STATUS_CLOSED) {
             logger.warn("ignore, session:{} is closed:", getSessionID());
             return;
         }
-        updateStatus(immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING);
+        status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
             try {
                 channel.shutdownInput();
@@ -290,7 +275,7 @@ public class AioSession<T> {
      * 当前会话是否已失效
      */
     public final boolean isInvalid() {
-        return !isStatus(SESSION_STATUS_ENABLED);
+        return status != SESSION_STATUS_ENABLED;
     }
 
     /**
@@ -316,12 +301,12 @@ public class AioSession<T> {
 
         }
 
-        if (eof || isStatus(SESSION_STATUS_CLOSING)) {
+        if (eof || status == SESSION_STATUS_CLOSING) {
             close(false);
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
             return;
         }
-        if (isStatus(SESSION_STATUS_CLOSED)) {
+        if (status == SESSION_STATUS_CLOSED) {
             return;
         }
 
@@ -337,8 +322,8 @@ public class AioSession<T> {
         }
 
         //触发流控
-        if (isStatus(SERVER_DEFAULT_FLAG) && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
-            updateStatus(SERVER_FLOW_LIMIT_FLAG);
+        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
+            serverFlowLimit = true;
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.FLOW_LIMIT, null);
         } else {
             continueRead();
@@ -366,11 +351,19 @@ public class AioSession<T> {
     }
 
     public final InetSocketAddress getLocalAddress() throws IOException {
+        assertChannel();
         return (InetSocketAddress) channel.getLocalAddress();
     }
 
     public final InetSocketAddress getRemoteAddress() throws IOException {
+        assertChannel();
         return (InetSocketAddress) channel.getRemoteAddress();
+    }
+
+    private void assertChannel() throws IOException {
+        if (status == SESSION_STATUS_CLOSED || channel == null) {
+            throw new IOException("session is closed");
+        }
     }
 
     IoServerConfig getServerConfig() {
