@@ -169,9 +169,4 @@ public final class ArrayBlockingQueue {
             lock.unlock();
         }
     }
-
-    public boolean isEmpty() {
-        return size() == 0;
-    }
-
 }

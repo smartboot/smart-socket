@@ -116,7 +116,7 @@ public class AioSession<T> {
             return;
         }
 
-        if (writeCacheQueue == null || writeCacheQueue.isEmpty()) {
+        if (writeCacheQueue == null || writeCacheQueue.size() == 0) {
             writeBuffer = null;
             semaphore.release();
             //此时可能是Closing或Closed状态
@@ -248,7 +248,7 @@ public class AioSession<T> {
                 filter.closed(this);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && (writeCacheQueue == null || writeCacheQueue.isEmpty()) && semaphore.tryAcquire()) {
+        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && (writeCacheQueue == null || writeCacheQueue.size() == 0) && semaphore.tryAcquire()) {
             close(true);
             semaphore.release();
         } else {
