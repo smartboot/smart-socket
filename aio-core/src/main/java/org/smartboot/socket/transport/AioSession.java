@@ -140,9 +140,7 @@ public class AioSession<T> {
                 writeBuffer.clear().limit(totalSize);
             }
             writeBuffer.put(headBuffer);
-            while (writeBuffer.hasRemaining()) {
-                writeBuffer.put(writeCacheQueue.poll());
-            }
+            writeCacheQueue.pollInto(writeBuffer);
             writeBuffer.flip();
         }
 

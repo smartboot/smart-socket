@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class ArrayBlockingQueue {
+public final class ArrayBlockingQueue {
 
     /**
      * The queued items
@@ -41,7 +41,7 @@ public class ArrayBlockingQueue {
      */
     int count;
 
-    volatile int remaining;
+    int remaining;
 
     /**
      * Creates an {@code ArrayBlockingQueue} with the given (fixed)
@@ -52,14 +52,6 @@ public class ArrayBlockingQueue {
      */
     public ArrayBlockingQueue(int capacity) {
         this.items = new ByteBuffer[capacity];
-    }
-
-    /**
-     * Returns item at index i.
-     */
-    @SuppressWarnings("unchecked")
-    final ByteBuffer itemAt(int i) {
-        return items[i];
     }
 
     /**
@@ -107,12 +99,12 @@ public class ArrayBlockingQueue {
 
             int takeIndex = this.takeIndex;
             int preCount = 0;
-            int remain = itemAt(takeIndex).remaining();
+            int remain = items[takeIndex].remaining();
             do {
                 if (++takeIndex == items.length) {
                     takeIndex = 0;
                 }
-                remain += (preCount = itemAt(takeIndex).remaining());
+                remain += (preCount = items[takeIndex].remaining());
             } while (remain <= maxSize);
             return remain - preCount;
         } finally {
@@ -149,6 +141,17 @@ public class ArrayBlockingQueue {
         }
     }
 
+    public void pollInto(ByteBuffer destBuffer) {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            while (destBuffer.hasRemaining()) {
+                destBuffer.put(dequeue());
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
     // this doc comment is overridden to remove the reference to collections
     // greater in size than Integer.MAX_VALUE
 
