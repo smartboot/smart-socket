@@ -1,7 +1,6 @@
 package org.smartboot.socket.transport;
 
 import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -14,15 +13,16 @@ public class ArrayBlockingQueue {
     /**
      * Main lock guarding all access
      */
-    final ReentrantLock lock;
+    final ReentrantLock lock = new ReentrantLock(false);
+    ;
     /**
      * Condition for waiting takes
      */
-    private final Condition notEmpty;
+    private final Condition notEmpty = lock.newCondition();
     /**
      * Condition for waiting puts
      */
-    private final Condition notFull;
+    private final Condition notFull = lock.newCondition();
 
     /*
      * Concurrency control uses the classic two-condition algorithm
@@ -51,64 +51,7 @@ public class ArrayBlockingQueue {
      * @throws IllegalArgumentException if {@code capacity < 1}
      */
     public ArrayBlockingQueue(int capacity) {
-        this(capacity, false);
-    }
-
-    /**
-     * Creates an {@code ArrayBlockingQueue} with the given (fixed)
-     * capacity and the specified access policy.
-     *
-     * @param capacity the capacity of this queue
-     * @param fair     if {@code true} then queue accesses for threads blocked
-     *                 on insertion or removal, are processed in FIFO order;
-     *                 if {@code false} the access order is unspecified.
-     * @throws IllegalArgumentException if {@code capacity < 1}
-     */
-    public ArrayBlockingQueue(int capacity, boolean fair) {
-        if (capacity <= 0)
-            throw new IllegalArgumentException();
         this.items = new ByteBuffer[capacity];
-        lock = new ReentrantLock(fair);
-        notEmpty = lock.newCondition();
-        notFull = lock.newCondition();
-    }
-
-    /**
-     * Creates an {@code ArrayBlockingQueue} with the given (fixed)
-     * capacity, the specified access policy and initially containing the
-     * elements of the given collection,
-     * added in traversal order of the collection's iterator.
-     *
-     * @param capacity the capacity of this queue
-     * @param fair     if {@code true} then queue accesses for threads blocked
-     *                 on insertion or removal, are processed in FIFO order;
-     *                 if {@code false} the access order is unspecified.
-     * @param c        the collection of elements to initially contain
-     * @throws IllegalArgumentException if {@code capacity} is less than
-     *                                  {@code c.size()}, or less than 1.
-     * @throws NullPointerException     if the specified collection or any
-     *                                  of its elements are null
-     */
-    public ArrayBlockingQueue(int capacity, boolean fair,
-                              Collection<? extends ByteBuffer> c) {
-        this(capacity, fair);
-
-        final ReentrantLock lock = this.lock;
-        lock.lock(); // Lock only for visibility, not mutual exclusion
-        try {
-            int i = 0;
-            try {
-                for (ByteBuffer e : c) {
-                    items[i++] = e;
-                }
-            } catch (ArrayIndexOutOfBoundsException ex) {
-                throw new IllegalArgumentException();
-            }
-            count = i;
-            putIndex = (i == capacity) ? 0 : i;
-        } finally {
-            lock.unlock();
-        }
     }
 
     /**
