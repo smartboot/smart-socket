@@ -20,8 +20,6 @@ import java.io.InvalidObjectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.Iterator;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -67,7 +65,7 @@ public class AioSession<T> {
     /**
      * 响应消息缓存队列
      */
-    private ArrayBlockingQueue<ByteBuffer> writeCacheQueue;
+    private ArrayBlockingQueue writeCacheQueue;
     private ReadCompletionHandler readCompletionHandler;
     private WriteCompletionHandler writeCompletionHandler;
     /**
@@ -89,7 +87,7 @@ public class AioSession<T> {
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         if (config.getWriteQueueSize() > 0) {
-            this.writeCacheQueue = new ArrayBlockingQueue<>(config.getWriteQueueSize());
+            this.writeCacheQueue = new ArrayBlockingQueue(config.getWriteQueueSize());
         }
         this.ioServerConfig = config;
         this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 ? false : null;
@@ -131,11 +129,7 @@ public class AioSession<T> {
             }
             return;
         }
-        Iterator<ByteBuffer> iterable = writeCacheQueue.iterator();
-        int totalSize = 0;
-        while (iterable.hasNext() && totalSize <= MAX_WRITE_SIZE) {
-            totalSize += iterable.next().remaining();
-        }
+        int totalSize = writeCacheQueue.expectRemaining(MAX_WRITE_SIZE);
         ByteBuffer headBuffer = writeCacheQueue.poll();
         if (headBuffer.remaining() == totalSize) {
             writeBuffer = headBuffer;
