@@ -158,16 +158,13 @@ public class ArrayBlockingQueue {
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (remaining <= maxSize) {
+            if (remaining <= maxSize || count == 1) {
                 return remaining;
             }
 
             int takeIndex = this.takeIndex;
             int preCount = 0;
             int remain = itemAt(takeIndex).remaining();
-            if (count == 1) {
-                return remain;
-            }
             do {
                 if (++takeIndex == items.length) {
                     takeIndex = 0;
@@ -178,45 +175,6 @@ public class ArrayBlockingQueue {
         } finally {
             lock.unlock();
         }
-    }
-
-    /**
-     * Deletes item at array index removeIndex.
-     * Utility for remove(Object) and iterator.remove.
-     * Call only when holding lock.
-     */
-    void removeAt(final int removeIndex) {
-        // assert lock.getHoldCount() == 1;
-        // assert items[removeIndex] != null;
-        // assert removeIndex >= 0 && removeIndex < items.length;
-        final Object[] items = this.items;
-        if (removeIndex == takeIndex) {
-            // removing front item; just advance
-            items[takeIndex] = null;
-            if (++takeIndex == items.length)
-                takeIndex = 0;
-            count--;
-        } else {
-            // an "interior" remove
-
-            // slide over all others up through putIndex.
-            final int putIndex = this.putIndex;
-            for (int i = removeIndex; ; ) {
-                int next = i + 1;
-                if (next == items.length)
-                    next = 0;
-                if (next != putIndex) {
-                    items[i] = items[next];
-                    i = next;
-                } else {
-                    items[i] = null;
-                    this.putIndex = i;
-                    break;
-                }
-            }
-            count--;
-        }
-        notFull.signal();
     }
 
     /**
@@ -266,77 +224,8 @@ public class ArrayBlockingQueue {
         }
     }
 
-
-    /**
-     * Removes a single instance of the specified element from this queue,
-     * if it is present.  More formally, removes an element {@code e} such
-     * that {@code o.equals(e)}, if this queue contains one or more such
-     * elements.
-     * Returns {@code true} if this queue contained the specified element
-     * (or equivalently, if this queue changed as a result of the call).
-     * <p>
-     * <p>Removal of interior elements in circular array based queues
-     * is an intrinsically slow and disruptive operation, so should
-     * be undertaken only in exceptional circumstances, ideally
-     * only when the queue is known not to be accessible by other
-     * threads.
-     *
-     * @param o element to be removed from this queue, if present
-     * @return {@code true} if this queue changed as a result of the call
-     */
-    public boolean remove(Object o) {
-        if (o == null) return false;
-        final Object[] items = this.items;
-        final ReentrantLock lock = this.lock;
-        lock.lock();
-        try {
-            if (count > 0) {
-                final int putIndex = this.putIndex;
-                int i = takeIndex;
-                do {
-                    if (o.equals(items[i])) {
-                        removeAt(i);
-                        return true;
-                    }
-                    if (++i == items.length)
-                        i = 0;
-                } while (i != putIndex);
-            }
-            return false;
-        } finally {
-            lock.unlock();
-        }
-    }
-
     public boolean isEmpty() {
         return size() == 0;
     }
 
-    /**
-     * Atomically removes all of the elements from this queue.
-     * The queue will be empty after this call returns.
-     */
-    public void clear() {
-        final Object[] items = this.items;
-        final ReentrantLock lock = this.lock;
-        lock.lock();
-        try {
-            int k = count;
-            if (k > 0) {
-                final int putIndex = this.putIndex;
-                int i = takeIndex;
-                do {
-                    items[i] = null;
-                    if (++i == items.length)
-                        i = 0;
-                } while (i != putIndex);
-                takeIndex = putIndex;
-                count = 0;
-                for (; k > 0 && lock.hasWaiters(notFull); k--)
-                    notFull.signal();
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
 }
