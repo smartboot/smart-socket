@@ -161,9 +161,13 @@ public class ArrayBlockingQueue {
             if (remaining <= maxSize) {
                 return remaining;
             }
+
             int takeIndex = this.takeIndex;
             int preCount = 0;
             int remain = itemAt(takeIndex).remaining();
+            if (count == 1) {
+                return remain;
+            }
             do {
                 if (++takeIndex == items.length) {
                     takeIndex = 0;
