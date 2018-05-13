@@ -12,13 +12,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
-import org.smartboot.socket.extension.decoder.StreamFrameDecoder;
 import org.smartboot.socket.http.http11.Http11Request;
 import org.smartboot.socket.protocol.http.HttpDecodePart;
 import org.smartboot.socket.protocol.http.servlet.core.authentication.AuthenticationPrincipal;
 import org.smartboot.socket.protocol.http.strategy.FormWithContentLengthStrategy;
 import org.smartboot.socket.protocol.http.strategy.PostDecodeStrategy;
-import org.smartboot.socket.protocol.http.strategy.StreamWithContentLengthStrategy;
 import org.smartboot.socket.protocol.http.util.SizeRestrictedHashMap;
 import org.smartboot.socket.protocol.http.util.SizeRestrictedHashtable;
 
@@ -72,7 +70,6 @@ public class WinstoneRequest implements HttpServletRequest {
     protected static final DateFormat headerDF = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
     protected static final Random rnd;
     private static final byte[] CRLF = "\r\n\r\n".getBytes();
-    private static final String STREAM_BODY = "STREAM_BODY";
     private static final String BLOCK_BODY = "BLOCK_BODY";
     protected static Logger logger = LogManager.getLogger(WinstoneRequest.class);
     private static Map<String, PostDecodeStrategy> strategyMap = new HashMap<>();
@@ -89,7 +86,6 @@ public class WinstoneRequest implements HttpServletRequest {
     private final int maxParamAllowed;
     public DelimiterFrameDecoder delimiterFrameDecoder = new DelimiterFrameDecoder(CRLF, 128);
     public FixedLengthFrameDecoder bodyContentDecoder;
-    public StreamFrameDecoder smartHttpInputStream = new StreamFrameDecoder(1024);
     public PostDecodeStrategy postDecodeStrategy;
     protected Map<String, Object> attributes;
     protected Map<String, String[]> parameters;
@@ -150,7 +146,6 @@ public class WinstoneRequest implements HttpServletRequest {
 
     {
         strategyMap.put(BLOCK_BODY, new FormWithContentLengthStrategy());
-        strategyMap.put(STREAM_BODY, new StreamWithContentLengthStrategy());
     }
 
     /**
@@ -364,7 +359,7 @@ public class WinstoneRequest implements HttpServletRequest {
             if (getContentLength() > 0 && StringUtils.startsWith(getContentType(), "application/x-www-form-urlencoded")) {
                 postDecodeStrategy = strategyMap.get(BLOCK_BODY);
             } else {
-                postDecodeStrategy = strategyMap.get(STREAM_BODY);
+                throw new UnsupportedOperationException();
             }
         } else {
             throw new UnsupportedOperationException();
