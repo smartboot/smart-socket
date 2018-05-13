@@ -96,12 +96,9 @@ final class ArrayBlockingQueue {
             int takeIndex = this.takeIndex;
             int preCount = 0;
             int remain = items[takeIndex].remaining();
-            do {
-                if (++takeIndex == items.length) {
-                    takeIndex = 0;
-                }
-                remain += (preCount = items[takeIndex].remaining());
-            } while (remain <= maxSize);
+            while (remain <= maxSize) {
+                remain += (preCount = items[++takeIndex % items.length].remaining());
+            }
             return remain - preCount;
         } finally {
             lock.unlock();
