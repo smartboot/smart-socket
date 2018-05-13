@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public final class ArrayBlockingQueue {
+final class ArrayBlockingQueue {
 
     /**
      * The queued items
