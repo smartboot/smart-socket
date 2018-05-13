@@ -61,7 +61,6 @@ public final class ArrayBlockingQueue {
     private void enqueue(ByteBuffer x) {
         // assert lock.getHoldCount() == 1;
         // assert items[putIndex] == null;
-        final Object[] items = this.items;
         items[putIndex] = x;
         if (++putIndex == items.length)
             putIndex = 0;
@@ -77,8 +76,6 @@ public final class ArrayBlockingQueue {
     private ByteBuffer dequeue() {
         // assert lock.getHoldCount() == 1;
         // assert items[takeIndex] != null;
-        final ByteBuffer[] items = this.items;
-        @SuppressWarnings("unchecked")
         ByteBuffer x = items[takeIndex];
         items[takeIndex] = null;
         if (++takeIndex == items.length)
@@ -90,7 +87,6 @@ public final class ArrayBlockingQueue {
     }
 
     public int expectRemaining(int maxSize) {
-        final ReentrantLock lock = this.lock;
         lock.lock();
         try {
             if (remaining <= maxSize || count == 1) {
@@ -120,7 +116,6 @@ public final class ArrayBlockingQueue {
      * @throws NullPointerException {@inheritDoc}
      */
     public void put(ByteBuffer e) throws InterruptedException {
-        final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
             while (count == items.length)
@@ -132,7 +127,6 @@ public final class ArrayBlockingQueue {
     }
 
     public ByteBuffer poll() {
-        final ReentrantLock lock = this.lock;
         lock.lock();
         try {
             return (count == 0) ? null : dequeue();
@@ -142,7 +136,6 @@ public final class ArrayBlockingQueue {
     }
 
     public void pollInto(ByteBuffer destBuffer) {
-        final ReentrantLock lock = this.lock;
         lock.lock();
         try {
             while (destBuffer.hasRemaining()) {
@@ -161,7 +154,6 @@ public final class ArrayBlockingQueue {
      * @return the number of elements in this queue
      */
     public int size() {
-        final ReentrantLock lock = this.lock;
         lock.lock();
         try {
             return count;
