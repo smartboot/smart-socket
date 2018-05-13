@@ -65,7 +65,7 @@ public class AioSession<T> {
     /**
      * 响应消息缓存队列
      */
-    private ArrayBlockingQueue writeCacheQueue;
+    private FastBlockingQueue writeCacheQueue;
     private ReadCompletionHandler readCompletionHandler;
     private WriteCompletionHandler writeCompletionHandler;
     /**
@@ -87,7 +87,7 @@ public class AioSession<T> {
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         if (config.getWriteQueueSize() > 0) {
-            this.writeCacheQueue = new ArrayBlockingQueue(config.getWriteQueueSize());
+            this.writeCacheQueue = new FastBlockingQueue(config.getWriteQueueSize());
         }
         this.ioServerConfig = config;
         this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 ? false : null;

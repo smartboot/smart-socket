@@ -4,63 +4,31 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-final class ArrayBlockingQueue {
+final class FastBlockingQueue {
 
-    /**
-     * The queued items
-     */
-    final ByteBuffer[] items;
-    /**
-     * Main lock guarding all access
-     */
-    final ReentrantLock lock = new ReentrantLock(false);
-    ;
-    /**
-     * Condition for waiting takes
-     */
+
+    private final ByteBuffer[] items;
+
+    private final ReentrantLock lock = new ReentrantLock(false);
+
+
     private final Condition notEmpty = lock.newCondition();
-    /**
-     * Condition for waiting puts
-     */
+
     private final Condition notFull = lock.newCondition();
 
-    /*
-     * Concurrency control uses the classic two-condition algorithm
-     * found in any textbook.
-     */
-    /**
-     * items index for next take, poll, peek or remove
-     */
     int takeIndex;
-    /**
-     * items index for next put, offer, or add
-     */
+
     int putIndex;
-    /**
-     * Number of elements in the queue
-     */
+
     int count;
 
     int remaining;
 
-    /**
-     * Creates an {@code ArrayBlockingQueue} with the given (fixed)
-     * capacity and default access policy.
-     *
-     * @param capacity the capacity of this queue
-     * @throws IllegalArgumentException if {@code capacity < 1}
-     */
-    public ArrayBlockingQueue(int capacity) {
+    public FastBlockingQueue(int capacity) {
         this.items = new ByteBuffer[capacity];
     }
 
-    /**
-     * Inserts element at current put position, advances, and signals.
-     * Call only when holding lock.
-     */
     private void enqueue(ByteBuffer x) {
-        // assert lock.getHoldCount() == 1;
-        // assert items[putIndex] == null;
         items[putIndex] = x;
         if (++putIndex == items.length)
             putIndex = 0;
@@ -69,13 +37,8 @@ final class ArrayBlockingQueue {
         notEmpty.signal();
     }
 
-    /**
-     * Extracts element at current take position, advances, and signals.
-     * Call only when holding lock.
-     */
+
     private ByteBuffer dequeue() {
-        // assert lock.getHoldCount() == 1;
-        // assert items[takeIndex] != null;
         ByteBuffer x = items[takeIndex];
         items[takeIndex] = null;
         if (++takeIndex == items.length)
@@ -105,13 +68,7 @@ final class ArrayBlockingQueue {
         }
     }
 
-    /**
-     * Inserts the specified element at the tail of this queue, waiting
-     * for space to become available if the queue is full.
-     *
-     * @throws InterruptedException {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
-     */
+
     public void put(ByteBuffer e) throws InterruptedException {
         lock.lockInterruptibly();
         try {
@@ -142,14 +99,7 @@ final class ArrayBlockingQueue {
             lock.unlock();
         }
     }
-    // this doc comment is overridden to remove the reference to collections
-    // greater in size than Integer.MAX_VALUE
-
-    /**
-     * Returns the number of elements in this queue.
-     *
-     * @return the number of elements in this queue
-     */
+    
     public int size() {
         lock.lock();
         try {
