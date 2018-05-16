@@ -12,7 +12,18 @@ import org.smartboot.socket.transport.AioSession;
 
 /**
  * 消息过滤器
- *
+ * <p>
+ *     smart-socket设计的{@code Filter}与状态机{@link StateMachineEnum}看上去比较类似，但两者是以不同的维度对发生的事件进行Filter处理。
+ * </p>
+ * {@code Filter}以系统服务级别实时过滤如下事件：
+ * <ol>
+ * <li>connected</li>
+ * <li>closed</li>
+ * <li>processFail</li>
+ * <li>processFilter</li>
+ * <li>readFilter</li>
+ * <li>writeFilter</li>
+ *</ol>
  * @author 三刀
  * @version V1.0.0
  */
@@ -21,7 +32,7 @@ public interface Filter<T> {
     /**
      * 建立连接时触发过滤器
      *
-     * @param session
+     * @param session 新建立的连接session
      */
     void connected(AioSession<T> session);
 
@@ -35,7 +46,7 @@ public interface Filter<T> {
     /**
      * 数据读取过滤,可用于统计流量
      *
-     * @param session
+     * @param session 当前执行read的AioSession对象
      * @param readSize 本次解码读取的数据长度
      */
     public void readFilter(AioSession<T> session, int readSize);

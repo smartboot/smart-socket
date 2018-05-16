@@ -19,7 +19,7 @@ public class P2PMaxConnectClient {
         });
         int num = 0;
         try {
-            while (true) {
+            while (num<10000) {
                 final AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("127.0.0.1", 8888, null, new MessageProcessor<BaseMessage>() {
                     @Override
                     public void process(AioSession<BaseMessage> session, BaseMessage msg) {
@@ -31,6 +31,7 @@ public class P2PMaxConnectClient {
 
                     }
                 });
+                client.setWriteQueueSize(0);
                 client.start(asynchronousChannelGroup);
                 num++;
                 Thread.sleep(1);
@@ -39,6 +40,7 @@ public class P2PMaxConnectClient {
             e.printStackTrace();
             System.out.println("已连接客户端：" + num);
         }
+        System.out.println("finish");
         asynchronousChannelGroup.shutdown();
     }
 }

@@ -24,6 +24,18 @@ import java.util.concurrent.ThreadFactory;
 
 /**
  * AIO实现的客户端服务
+ * <pre>
+ *  public class IntegerClient {
+         public static void main(String[] args) throws Exception {
+             IntegerClientProcessor processor = new IntegerClientProcessor();
+             AioQuickClient<Integer> aioQuickClient = new AioQuickClient<Integer>("localhost", 8888, new IntegerProtocol(), processor);
+             aioQuickClient.start();
+             processor.getSession().write(1);
+             Thread.sleep(1000);
+             aioQuickClient.shutdown();
+         }
+     }
+ * </pre>
  *
  * @author 三刀
  * @version V1.0.0
@@ -37,7 +49,9 @@ public class AioQuickClient<T> {
      * 客户端服务配置
      */
     protected IoServerConfig<T> config = new IoServerConfig<>();
-
+    /**
+     * 网络连接的会话对象
+     */
     protected AioSession session;
 
     /**
@@ -54,6 +68,10 @@ public class AioQuickClient<T> {
     }
 
     /**
+     * 启动Client服务
+     * <p>
+     *     在与服务端建立连接期间，该方法处于阻塞状态。直至连接建立成功，或者发生异常。
+     * </p>
      * @param asynchronousChannelGroup
      * @throws IOException
      * @throws ExecutionException
