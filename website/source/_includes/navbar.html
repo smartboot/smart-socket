@@ -1,0 +1,26 @@
+<a href="#navbar" id="menu-burger" class="menu-burger">Menu
+  <span class="nav-icon"></span>
+
+  <svg x="0px" y="0px" width="54px" height="54px" viewBox="0 0 54 54">
+    <circle fill="transparent" stroke="#000000" stroke-width="1" cx="27" cy="27" r="25" stroke-dasharray="157 157" stroke-dashoffset="157"></circle>
+  </svg>
+</a>
+
+<div id="navbar" class="navbar">
+  <div class="navigation-wrapper">
+    <div class="half-block">
+      <h2>Navigation</h2>
+
+      <nav>
+        <ul class="primary-nav">
+          <li><a href="{{ '/' | prepend: site.baseurl }}">Home</a></li>
+          <li><a href="{{ '/blog' | prepend: site.baseurl }}">Blog</a></li>
+          <li><a href="{{ '/about' | prepend: site.baseurl }}">About</a></li>
+          <li><a href="{{ site.author.github }}" target="_blank"><i class="icon icon-github"></i> Github</a></li>
+          <li><a href="{{ site.author.twitter }}" target="_blank"><i class="icon icon-twitter"></i> Twitter</a></li>
+          <li><a href="{{ '/feed.xml' | prepend: site.baseurl }}" target="_blank"><i class="icon icon-feed"></i> RSS</a></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>

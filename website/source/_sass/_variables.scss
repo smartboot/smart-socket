@@ -1,0 +1,93 @@
+// Typography
+//
+$base-font-family: 'Proxima Nova', Arial, sans-serif;
+$serif-font-family: "Georgia", serif;
+$heading-font-family: $base-font-family;
+$fonts-path: '../fonts/';
+
+// Font weight
+//
+$font-weight-light: 300;
+$font-weight-normal: 500;
+$font-weight-bold: 600;
+
+// Font Sizes
+//
+$base-font-size: 1rem;
+
+// Line height
+//
+$base-line-height: 1.5;
+$heading-line-height: 1.2;
+
+// Other Sizes
+//
+$base-border-radius: 3px;
+$base-spacing: 2em;
+$small-spacing: $base-spacing / 2;
+$mini-spacing: $base-spacing / 4;
+$base-z-index: 0;
+
+// Colors
+//
+$primary-color: #3cc76a;
+$white-color: #fff;
+$black-color: #000;
+$blue-color: #477dca;
+$dark-gray-color: lighten($black-color, 25%);
+$medium-gray-color: lighten($dark-gray-color, 20%);
+$light-gray-color: lighten($medium-gray-color, 20%);
+$lighter-gray-color: lighten($light-gray-color, 20%);
+
+// Font Colors
+//
+$base-font-color: $medium-gray-color;
+$action-color: $primary-color;
+
+// Border
+//
+$base-border-color: lighten($lighter-gray-color, 5%);
+$base-border: 1px solid $base-border-color;
+
+// Background Colors
+//
+$base-background-color: $white-color;
+$secondary-background-color: tint($base-border-color, 75%);
+
+// Forms
+//
+$form-box-shadow: inset 0 1px 3px rgba(#000, 0.06);
+$form-box-shadow-focus: $form-box-shadow, 0 0 5px adjust-color($action-color, $lightness: -5%, $alpha: -0.3);
+
+// Animations
+//
+$animation-duration: .5s;
+$base-duration: 150ms;
+$base-timing: ease;
+
+// Grid system
+//
+$max-feature: max-width;
+$min-feature: min-width;
+$default-feature: $max-feature;
+// phone and phone max width
+$phone-width: 320px;
+$phone-large-width: 480px;
+$min-phone: $min-feature $phone-width;
+$max-phone: $max-feature ($phone-width + 1);
+$min-phone-large: $min-feature $phone-large-width;
+$max-phone-large: $max-feature ($phone-large-width + 1);
+// tablet and phone max width
+$tablet-width: 768px;
+$tablet-large-width: 1024px;
+$min-tablet: $min-feature $tablet-width;
+$max-tablet: $max-feature ($tablet-width + 1);
+$min-tablet-large: $min-feature $tablet-large-width;
+$max-tablet-large: $max-feature ($tablet-large-width + 1);
+// desktop and phone max width
+$desktop-width: 1224px;
+$desktop-large-width: 1824px;
+$min-desktop: $min-feature $desktop-width;
+$max-desktop: $max-feature ($desktop-width + 1);
+$min-desktop-large: $min-feature $desktop-large-width;
+$max-desktop-large: $max-feature ($desktop-large-width + 1);

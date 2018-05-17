@@ -1,0 +1,69 @@
+body.home-intro {
+  width: 100%;
+  display: table;
+
+  .intro {
+    display: flex;
+    height: 100%;
+  }
+}
+
+.intro {
+  vertical-align: middle;
+  position: relative;
+  padding: 0 $base-spacing;
+  text-align: center;
+  color: $lighter-gray-color;
+  background: darken($primary-color, 6%);
+  overflow: hidden;
+}
+
+.intro-in {
+  z-index: 2;
+  position: relative;
+  text-align: center;
+  display: inline-block;
+  max-width: $desktop-width;
+  margin: auto;
+  padding: 4em 2em;
+
+  @include media($min-tablet) {
+    padding: 6em 0;
+  }
+
+  @include media($min-tablet-large) {
+    padding: 9em 0;
+  }
+}
+
+.intro-title,
+.post-header .post-title {
+  font-size: 2.6rem;
+  margin: 0 0 20px;
+  color: $white-color;
+  font-weight: $font-weight-light;
+
+  @include media($min-tablet) {
+    font-size: 3rem;
+  }
+
+  @include media($min-tablet-large) {
+    font-size: 3.6rem;
+  }
+
+  @include media($min-desktop-large) {
+    font-size: 4rem;
+  }
+}
+
+.intro-subtitle {
+  margin-bottom: $small-spacing;
+  font-size: 1.2em;
+  font-family: $serif-font-family;
+  font-weight: $font-weight-normal;
+  font-style: italic;
+
+  @include media($min-tablet-large) {
+    font-size: 1.6rem;
+  }
+}

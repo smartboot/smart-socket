@@ -1,0 +1,15 @@
+---
+layout: compress
+---
+<!DOCTYPE html>
+<html>
+
+  {% include head.html %}
+
+  <body{% if page.body_class %} class="{{ page.body_class }}{% endif %}">
+
+    {{ content }}
+
+    {% include scripts.html %}
+  </body>
+</html><!-- by nandomoreira.me -->

@@ -1,0 +1,232 @@
+
+.menu-burger {
+  position: fixed;
+  z-index: 30;
+  right: 5%;
+  top: 20px;
+  height: 54px;
+  width: 54px;
+  background-color: $primary-color;
+  border-radius: 50%;
+
+  /* image replacement */
+  overflow: hidden;
+  text-indent: 100%;
+  white-space: nowrap;
+
+  @include transition(transform $animation-duration - .2s, background-color $animation-duration - .2s);
+
+  .nav-icon {
+    /* icon created in CSS */
+    position: absolute;
+    @include center; // mixin inside partials > _mixins.scss
+    width: 22px;
+    height: 2px;
+    background-color: $white-color;
+
+    &::before, &:after {
+      /* upper and lower lines of the menu icon */
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      background-color: inherit;
+
+      /* Force Hardware Acceleration in WebKit */
+      @include transform(translateZ(0));
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+
+      @include transition(transform $animation-duration - .2s, width $animation-duration - .2s, top .3s);
+    }
+
+    &::before {
+      @include transform-origin(right top);
+      @include transform(translateY(-6px));
+    }
+
+    &::after {
+      @include transform-origin(right bottom);
+      @include transform(translateY(6px));
+    }
+
+  }
+
+  .no-touch &:hover .nav-icon::after {
+    top: 2px;
+  }
+
+  .no-touch &:hover .nav-icon::before {
+    top: -2px;
+  }
+
+  svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  circle {
+    /* circle border animation */
+    @include transition(stroke-dashoffset $animation-duration - .3s 0s);
+  }
+
+  .navigation-is-open & {
+    /* rotate trigger when navigation becomes visible */
+    @include transform(rotate(180deg));
+
+    .nav-icon::after,
+    .nav-icon::before {
+      /* animate arrow --> from hamburger to arrow */
+      width: 50%;
+      @include transition(transform $animation-duration - .2s, width $animation-duration - .2s);
+    }
+
+    .nav-icon::before {
+      @include transform(rotate(45deg));
+    }
+
+    .nav-icon::after {
+      @include transform(rotate(-45deg));
+    }
+
+    .no-touch &:hover .nav-icon::after,
+    .no-touch &:hover .nav-icon::before {
+      top: 0;
+    }
+
+    circle {
+      stroke-dashoffset: 0;
+      @include transition(stroke-dashoffset $animation-duration - .3s .3s);
+    }
+  }
+
+  @include media($min-desktop) {
+    top: 40px;
+  }
+}
+
+.navbar {
+  position: fixed;
+  z-index: 10;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  text-align: center;
+  visibility: hidden;
+  background-color: tint($black-color, 5%);
+  @include transition(visibility 0s $animation-duration);
+
+  .navigation-wrapper {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 40px 5%;
+
+    @include transform(translateZ(0));
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+
+    @include transform(translateY(-50%));
+    @include transition(transform $animation-duration);
+    @include transition-timing-function(cubic-bezier(.86,.01,.77,.78));
+  }
+
+  .navigation-is-open & {
+    visibility: visible;
+    @include transition(visibility 0s 0s);
+
+    .navigation-wrapper {
+      @include transform(translateY(0));
+      @include transition(transform $animation-duration - .2s);
+      @include transition-timing-function(cubic-bezier(.82,.01,.77,.78));
+    }
+  }
+
+  h2 {
+    position: relative;
+    margin-bottom: 1.7em;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: darken($primary-color, 5%);
+    text-transform: uppercase;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      margin-left: -30px;
+      bottom: -20px;
+      height: 1px;
+      width: 60px;
+      background-color: currentColor;
+    }
+  }
+
+  .primary-nav {
+    margin-top: 60px;
+
+    li {
+      margin: 1.6em 0;
+    }
+
+    a {
+      font-size: 1.4rem;
+      text-decoration: none;
+      color: rgba($white-color, .5);
+      font-weight: $font-weight-light;
+      display: inline-block;
+
+      &.selected {
+        color: $white-color;
+      }
+
+      .no-touch &:hover {
+        color: $white-color;
+      }
+    }
+  }
+
+  @include media($min-desktop) {
+    .navigation-wrapper {
+      padding: 62px 20%;
+      @include clearfix;
+    }
+
+    .primary-nav {
+      margin-top: 0;
+    }
+
+    h2 {
+      font-size: 1.6rem;
+      margin-bottom: 5.6em;
+    }
+
+    .primary-nav {
+      li {
+        margin: 2em 0;
+      }
+
+      a {
+        font-size: 2rem;
+      }
+    }
+  }
+}
+
+body:not(.navigation-is-open) {
+  .navbar {
+    .navigation-wrapper {
+      overflow: hidden;
+    }
+  }
+}
+
+body.navigation-is-open {
+  .menu-burger {
+    background-color: $black-color;
+  }
+}

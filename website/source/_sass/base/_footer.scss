@@ -1,0 +1,45 @@
+
+.site-footer {
+  @extend %clearfix;
+  padding: $base-spacing 0;
+  text-align: center;
+
+  .container {
+    padding-top: $base-spacing;
+    border-top: $base-border;
+  }
+
+  p {
+    margin-bottom: 0;
+    color: $medium-gray-color;
+    float: left;
+  }
+
+  .social {
+    float: right;
+  }
+}
+
+.social {
+  li {
+    display: inline-block;
+    margin-left: 5px;
+  }
+
+  a {
+    @include transition(opacity .15s ease-in-out);
+    color: $medium-gray-color;
+    text-decoration: none;
+    opacity: .5;
+
+    &:hover,
+    &:focus,
+    &:active {
+      opacity: 1;
+    }
+  }
+
+  .icon {
+    font-size: 1.2rem;
+  }
+}
