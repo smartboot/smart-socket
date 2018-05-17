@@ -1,6 +1,6 @@
 # Site settings
-title: A blog about lorem ipsum dolor sit amet
-description: A blog about lorem ipsum dolor sit amet
+title: smart-socket
+description: A High Performance Java AIO framework.
 baseurl: "/smart-socket" # the subpath of your site, e.g. /blog
 url: "https://smartboot.github.io" # the base hostname & protocol for your site e.g. http://willianjusten.com.br
 
