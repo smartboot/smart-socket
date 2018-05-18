@@ -91,15 +91,15 @@ public class AioQuickServer<T> {
             } else {
                 serverSocketChannel.bind(new InetSocketAddress(config.getPort()), 1000);
             }
-            serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Object>() {
+            serverSocketChannel.accept(serverSocketChannel, new CompletionHandler<AsynchronousSocketChannel, AsynchronousServerSocketChannel>() {
                 @Override
-                public void completed(final AsynchronousSocketChannel channel, Object attachment) {
-                    serverSocketChannel.accept(attachment, this);
+                public void completed(final AsynchronousSocketChannel channel, AsynchronousServerSocketChannel serverSocketChannel) {
+                    serverSocketChannel.accept(serverSocketChannel, this);
                     createSession(channel);
                 }
 
                 @Override
-                public void failed(Throwable exc, Object attachment) {
+                public void failed(Throwable exc, AsynchronousServerSocketChannel serverSocketChannel) {
                     LOGGER.error("smart-socket server accept fail", exc);
                 }
             });
