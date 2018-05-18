@@ -65,7 +65,7 @@ public class P2PMultiClient {
                         request.setDetect("台州人在杭州:" + num);
                         try {
                             processor.getSession().sendWithoutResponse(request);
-//                            logger.info(processor.getSession().sendWithResponse(request, 0));
+//                            logger.info(processor.getSession().sendWithResponse(request, 0).toString());
                         } catch (Exception e) {
                             System.out.println(num);
                             e.printStackTrace();

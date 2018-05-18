@@ -28,13 +28,34 @@ final class FastBlockingQueue {
         this.items = new ByteBuffer[capacity];
     }
 
+    private void enqueue(ByteBuffer x) {
+        items[putIndex] = x;
+        if (++putIndex == items.length)
+            putIndex = 0;
+        count++;
+        remaining += x.remaining();
+        notEmpty.signal();
+    }
+
+
+    private ByteBuffer dequeue() {
+        ByteBuffer x = items[takeIndex];
+        items[takeIndex] = null;
+        if (++takeIndex == items.length)
+            takeIndex = 0;
+        count--;
+        remaining -= x.remaining();
+        notFull.signal();
+        return x;
+    }
+
     public int expectRemaining(int maxSize) {
         lock.lock();
         try {
             if (remaining <= maxSize || count == 1) {
                 return remaining;
             }
-            final ByteBuffer[] items = this.items;
+
             int takeIndex = this.takeIndex;
             int preCount = 0;
             int remain = items[takeIndex].remaining();
@@ -51,17 +72,9 @@ final class FastBlockingQueue {
     public void put(ByteBuffer e) throws InterruptedException {
         lock.lockInterruptibly();
         try {
-            final ByteBuffer[] items = this.items;
-            while (count == items.length) {
+            while (count == items.length)
                 notFull.await();
-            }
-
-            items[putIndex] = e;
-            if (++putIndex == items.length)
-                putIndex = 0;
-            count++;
-            remaining += e.remaining();
-            notEmpty.signal();
+            enqueue(e);
         } finally {
             lock.unlock();
         }
@@ -70,18 +83,7 @@ final class FastBlockingQueue {
     public ByteBuffer poll() {
         lock.lock();
         try {
-            if (count == 0) {
-                return null;
-            }
-            final ByteBuffer[] items = this.items;
-            ByteBuffer x = items[takeIndex];
-            items[takeIndex] = null;
-            if (++takeIndex == items.length)
-                takeIndex = 0;
-            count--;
-            remaining -= x.remaining();
-            notFull.signal();
-            return x;
+            return (count == 0) ? null : dequeue();
         } finally {
             lock.unlock();
         }
@@ -90,23 +92,9 @@ final class FastBlockingQueue {
     public void pollInto(ByteBuffer destBuffer) {
         lock.lock();
         try {
-            final ByteBuffer[] items = this.items;
-            int takeIndex = this.takeIndex;
-            int count = this.count;
-            int remaining = this.remaining;
             while (destBuffer.hasRemaining()) {
-                ByteBuffer x = items[takeIndex];
-                destBuffer.put(x);
-                items[takeIndex] = null;
-                if (++takeIndex == items.length)
-                    takeIndex = 0;
-                count--;
-                remaining -= x.remaining();
+                destBuffer.put(dequeue());
             }
-            this.takeIndex = takeIndex;
-            this.count = count;
-            this.remaining = remaining;
-            notFull.signal();
         } finally {
             lock.unlock();
         }
