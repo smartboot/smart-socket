@@ -12,8 +12,6 @@ package org.smartboot.socket.transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Filter;
-import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
 
 import java.io.IOException;
@@ -113,7 +111,6 @@ public class AioSession<T> {
      * <p>需要调用控制同步</p>
      */
     void writeToChannel() {
-        final FastBlockingQueue writeCacheQueue = this.writeCacheQueue;
         if (writeBuffer != null && writeBuffer.hasRemaining()) {
             continueWrite();
             return;
@@ -277,24 +274,19 @@ public class AioSession<T> {
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
     void readFromChannel(boolean eof) {
-        final ByteBuffer readBuffer = this.readBuffer;
-        final Protocol<T> protocol = ioServerConfig.getProtocol();
-        final MessageProcessor<T> processor = ioServerConfig.getProcessor();
-        final Filter<T>[] filters = ioServerConfig.getFilters();
-
         readBuffer.flip();
 
         T dataEntry;
-        while ((dataEntry = protocol.decode(readBuffer, this, eof)) != null) {
+        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
             //处理消息
             try {
-                for (Filter<T> h : filters) {
+                for (Filter<T> h : ioServerConfig.getFilters()) {
                     h.processFilter(this, dataEntry);
                 }
-                processor.process(this, dataEntry);
+                ioServerConfig.getProcessor().process(this, dataEntry);
             } catch (Exception e) {
-                processor.stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
-                for (Filter<T> h : filters) {
+                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
+                for (Filter<T> h : ioServerConfig.getFilters()) {
                     h.processFail(this, dataEntry, e);
                 }
             }
@@ -303,7 +295,7 @@ public class AioSession<T> {
 
         if (eof || status == SESSION_STATUS_CLOSING) {
             close(false);
-            processor.stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
             return;
         }
         if (status == SESSION_STATUS_CLOSED) {
@@ -324,7 +316,7 @@ public class AioSession<T> {
         //触发流控
         if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
             serverFlowLimit = true;
-            processor.stateEvent(this, StateMachineEnum.FLOW_LIMIT, null);
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.FLOW_LIMIT, null);
         } else {
             continueRead();
         }
