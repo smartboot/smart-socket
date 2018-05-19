@@ -84,6 +84,7 @@ gulp.task('watch', function() {
   gulp.watch('src/fonts/**/*.{tff,woff,woff2}', ['fonts']);
   gulp.watch('src/img/**/*.{jpg,png,gif}', ['imagemin']);
   gulp.watch(['*html', '_includes/*html', '_layouts/*.html'], ['jekyll-rebuild']);
+  gulp.watch('_posts/*.md', ['jekyll-rebuild']);
 });
 
 gulp.task('default', ['js', 'sass', 'fonts', 'browser-sync', 'watch']);
