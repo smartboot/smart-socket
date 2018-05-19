@@ -38,23 +38,30 @@ import java.util.concurrent.ThreadFactory;
  * </pre>
  *
  * @author 三刀
+ * @see
  * @version V1.0.0
  */
 public class AioQuickClient<T> {
     /**
-     * IO事件处理线程组
+     * IO事件处理线程组。
+     * <p>
+     * 作为客户端，该AsynchronousChannelGroup只需保证2个长度的线程池大小即可满足通信读写所需。
+     * </p>
      */
-    protected AsynchronousChannelGroup asynchronousChannelGroup;
+    private AsynchronousChannelGroup asynchronousChannelGroup;
     /**
      * 客户端服务配置
+     * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
      */
     protected IoServerConfig<T> config = new IoServerConfig<>();
     /**
      * 网络连接的会话对象
+     * @see AioSession
      */
     protected AioSession session;
 
     /**
+     * 当前构造方法设置了启动Aio客户端的必要参数，基本实现开箱即用。
      * @param host             远程服务器地址
      * @param port             远程服务器端口号
      * @param protocol         协议编解码
@@ -72,7 +79,10 @@ public class AioQuickClient<T> {
      * <p>
      *     在与服务端建立连接期间，该方法处于阻塞状态。直至连接建立成功，或者发生异常。
      * </p>
-     * @param asynchronousChannelGroup
+     * <p>
+     *     该start方法支持外部指定AsynchronousChannelGroup，实现多个客户端共享一组线程池资源，有效提升资源利用率。
+     * </p>
+     * @param asynchronousChannelGroup IO事件处理线程组
      * @throws IOException
      * @throws ExecutionException
      * @throws InterruptedException
@@ -111,6 +121,9 @@ public class AioQuickClient<T> {
 
     /**
      * 停止客户端服务
+     * <p>
+     *     调用该方法会触发AioSession的close方法，并且如果当前客户端若是通过执行AioSession.start()方法构建的，同时会触发asynchronousChannelGroup的shutdown动作。
+     * </p>
      */
     public final void shutdown() {
         if (session != null) {
@@ -127,7 +140,7 @@ public class AioQuickClient<T> {
     /**
      * 设置消息过滤器,执行顺序以数组中的顺序为准
      *
-     * @param filters
+     * @param filters 过滤器数组
      */
     public final AioQuickClient<T> setFilters(Filter<T>[] filters) {
         this.config.setFilters(filters);
@@ -138,7 +151,7 @@ public class AioQuickClient<T> {
     /**
      * 设置读缓存区大小
      *
-     * @param size
+     * @param size 单位：byte
      */
     public final AioQuickClient<T> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
@@ -146,9 +159,9 @@ public class AioQuickClient<T> {
     }
 
     /**
-     * 设置输出队列缓冲区长度
+     * 设置输出队列缓冲区长度。输出缓冲区的内存大小取决于size个ByteBuffer的大小总和。
      *
-     * @param size
+     * @param size 缓冲区数组长度
      */
     public final AioQuickClient<T> setWriteQueueSize(int size) {
         this.config.setWriteQueueSize(size);
@@ -156,9 +169,9 @@ public class AioQuickClient<T> {
     }
 
     /**
-     * 是否启用DirectByteBuffer
+     * 是否启用DirectByteBuffer（作用范围仅限读写缓冲区）
      *
-     * @param directBuffer
+     * @param directBuffer true:启用，false:禁用
      */
     public final AioQuickClient<T> setDirectBuffer(boolean directBuffer) {
         config.setDirectBuffer(directBuffer);
@@ -166,10 +179,17 @@ public class AioQuickClient<T> {
     }
 
     /**
-     *
-     * @param socketOption
-     * @param value
-     * @param <V>
+     * 设置Socket的TCP参数配置
+     * <p>
+     *     AIO客户端的有效可选范围为：<br/>
+     *     1. StandardSocketOptions.SO_SNDBUF<br/>
+     *     2. StandardSocketOptions.SO_RCVBUF<br/>
+     *     3. StandardSocketOptions.SO_KEEPALIVE<br/>
+     *     4. StandardSocketOptions.SO_REUSEADDR<br/>
+     *     5. StandardSocketOptions.TCP_NODELAY
+     * </p>
+     * @param socketOption  配置项
+     * @param value         配置值
      * @return
      */
     public final <V> AioQuickClient<T> setOption(SocketOption<V> socketOption, V value) {
