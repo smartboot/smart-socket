@@ -44,17 +44,29 @@ public class AioSession<T> {
     private static final Logger logger = LoggerFactory.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
     /**
-     * 数据read限流标志,仅服务端需要进行限流
+     * 数据read限流标志
+     * <p>仅服务端需要进行限流；true:限流, false:不限流</p>
+     * <p>客户端模式下该值为null</p>
      */
     protected Boolean serverFlowLimit;
     /**
      * 底层通信channel对象
      */
     protected AsynchronousSocketChannel channel;
+    /**
+     * 读缓冲
+     * <p>大小取决于AioQuickClient/AioQuickServer设置的setReadBufferSize</p>
+     */
     protected ByteBuffer readBuffer;
+    /**
+     * 写缓冲
+     */
     protected ByteBuffer writeBuffer;
     /**
      * 会话当前状态
+     * @see AioSession#SESSION_STATUS_CLOSED
+     * @see AioSession#SESSION_STATUS_CLOSING
+     * @see AioSession#SESSION_STATUS_ENABLED
      */
     protected byte status = SESSION_STATUS_ENABLED;
     /**
@@ -64,6 +76,7 @@ public class AioSession<T> {
 
     /**
      * 响应消息缓存队列
+     * <p>长度取决于AioQuickClient/AioQuickServer设置的setWriteQueueSize</p>
      */
     private FastBlockingQueue writeCacheQueue;
     private ReadCompletionHandler readCompletionHandler;
@@ -173,6 +186,20 @@ public class AioSession<T> {
         channel.write(buffer, this, writeCompletionHandler);
     }
 
+    /**
+     * 将数据buffer输出至网络对端
+     * <p>
+     *     若当前无待输出的数据，则立即输出buffer.
+     * </p>
+     * <p>
+     *     若当前存在待数据数据，切无可用缓冲队列(writeCacheQueue)，则阻塞。
+     * </p>
+     * <p>
+     *     若当前存在待输出数据，切缓冲队列存在可用空间，则将buffer存入writeCacheQueue。
+     * </p>
+     * @param buffer
+     * @throws IOException
+     */
     public final void write(final ByteBuffer buffer) throws IOException {
         if (isInvalid()) {
             throw new IOException("session is " + (status == SESSION_STATUS_CLOSED ? "closed" : "invalid"));
@@ -208,12 +235,16 @@ public class AioSession<T> {
         }
     }
 
+    /**
+     * 强制关闭当前AIOSession
+     * <p>若此时还存留待输出的数据，则会导致该部分数据丢失</p>
+     */
     public final void close() {
         close(true);
     }
 
     /**
-     * * 是否立即关闭会话
+     * 是否立即关闭会话
      *
      * @param immediate true:立即关闭,false:响应消息发送完后关闭
      */
@@ -330,23 +361,47 @@ public class AioSession<T> {
         writeToChannel0(writeBuffer);
     }
 
+    /**
+     * 获取附件对象
+     * @return
+     */
     public final Object getAttachment() {
         return attachment;
     }
 
+    /**
+     * 存放附件，支持任意类型
+     * @param attachment
+     */
     public final void setAttachment(Object attachment) {
         this.attachment = attachment;
     }
 
+    /**
+     * 输出消息
+     * <p>必须实现{@link org.smartboot.socket.Protocol#encode(Object, AioSession)}</p>方法
+     * @param t 待输出消息必须为当前服务指定的泛型
+     * @throws IOException
+     */
     public final void write(T t) throws IOException {
         write(ioServerConfig.getProtocol().encode(t, this));
     }
 
+    /**
+     * @see AsynchronousSocketChannel#getLocalAddress()
+     * @return
+     * @throws IOException
+     */
     public final InetSocketAddress getLocalAddress() throws IOException {
         assertChannel();
         return (InetSocketAddress) channel.getLocalAddress();
     }
 
+    /**
+     * @see AsynchronousSocketChannel#getRemoteAddress()
+     * @return
+     * @throws IOException
+     */
     public final InetSocketAddress getRemoteAddress() throws IOException {
         assertChannel();
         return (InetSocketAddress) channel.getRemoteAddress();

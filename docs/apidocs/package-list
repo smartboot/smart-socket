@@ -1,6 +1,2 @@
 org.smartboot.socket
-org.smartboot.socket.extension.decoder
-org.smartboot.socket.extension.ssl
-org.smartboot.socket.extension.timer
 org.smartboot.socket.transport
-org.smartboot.socket.util
