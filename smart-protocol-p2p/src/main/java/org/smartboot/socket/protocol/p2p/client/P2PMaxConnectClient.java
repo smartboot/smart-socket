@@ -34,7 +34,7 @@ public class P2PMaxConnectClient {
                 client.setWriteQueueSize(0);
                 client.start(asynchronousChannelGroup);
                 num++;
-                Thread.sleep(1);
+                Thread.sleep(0,50);
             }
         } catch (Exception e) {
             e.printStackTrace();
