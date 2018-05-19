@@ -32,14 +32,25 @@ import java.util.concurrent.ThreadFactory;
  */
 public class AioQuickServer<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AioQuickServer.class);
-    protected AsynchronousServerSocketChannel serverSocketChannel = null;
-    protected AsynchronousChannelGroup asynchronousChannelGroup;
+    private AsynchronousServerSocketChannel serverSocketChannel = null;
+    private AsynchronousChannelGroup asynchronousChannelGroup;
+    /**
+     * Server端服务配置
+     * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
+     */
     protected IoServerConfig<T> config = new IoServerConfig<>();
 
+    /**
+     * 读回调事件处理
+     */
     protected ReadCompletionHandler<T> aioReadCompletionHandler = new ReadCompletionHandler<>();
+    /**
+     * 写回调事件处理
+     */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
     /**
+     * 设置服务端启动必要参数配置
      * @param port             绑定服务端口号
      * @param protocol         协议编解码
      * @param messageProcessor 消息处理器
@@ -51,6 +62,7 @@ public class AioQuickServer<T> {
     }
 
     /**
+     *
      * @param host             绑定服务端Host地址
      * @param port             绑定服务端口号
      * @param protocol         协议编解码
@@ -61,6 +73,10 @@ public class AioQuickServer<T> {
         config.setHost(host);
     }
 
+    /**
+     * 启动Server端的AIO服务
+     * @throws IOException
+     */
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
             LOGGER.info(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
@@ -68,6 +84,10 @@ public class AioQuickServer<T> {
         start0();
     }
 
+    /**
+     * 内部启动逻辑
+     * @throws IOException
+     */
     protected final void start0() throws IOException {
         try {
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
@@ -111,12 +131,19 @@ public class AioQuickServer<T> {
         LOGGER.info("smart-socket server config is {}", config);
     }
 
+    /**
+     * 为每个新建立的连接创建AIOSession对象
+     * @param channel
+     */
     protected void createSession(AsynchronousSocketChannel channel) {
         //连接成功则构造AIOSession对象
         AioSession session = new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
         session.initSession();
     }
 
+    /**
+     * 停止服务端
+     */
     public final void shutdown() {
         try {
             if (serverSocketChannel != null) {
@@ -136,7 +163,7 @@ public class AioQuickServer<T> {
     /**
      * 设置处理线程数量
      *
-     * @param num
+     * @param num 线程数
      */
     public final AioQuickServer<T> setThreadNum(int num) {
         this.config.setThreadNum(num);
@@ -147,7 +174,7 @@ public class AioQuickServer<T> {
     /**
      * 设置消息过滤器,执行顺序以数组中的顺序为准
      *
-     * @param filters
+     * @param filters 过滤器数组
      */
     public final AioQuickServer<T> setFilters(Filter<T>... filters) {
         this.config.setFilters(filters);
@@ -158,7 +185,7 @@ public class AioQuickServer<T> {
     /**
      * 设置输出队列缓冲区长度
      *
-     * @param size
+     * @param size 缓存队列长度
      */
     public final AioQuickServer<T> setWriteQueueSize(int size) {
         this.config.setWriteQueueSize(size);
@@ -168,7 +195,7 @@ public class AioQuickServer<T> {
     /**
      * 设置读缓存区大小
      *
-     * @param size
+     * @param size 单位：byte
      */
     public final AioQuickServer<T> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
@@ -178,7 +205,7 @@ public class AioQuickServer<T> {
     /**
      * 是否启用控制台Banner打印
      *
-     * @param bannerEnabled
+     * @param bannerEnabled true:启用，false:禁用
      */
     public final AioQuickServer<T> setBannerEnabled(boolean bannerEnabled) {
         config.setBannerEnabled(bannerEnabled);
@@ -188,7 +215,7 @@ public class AioQuickServer<T> {
     /**
      * 是否启用DirectByteBuffer
      *
-     * @param directBuffer
+     * @param directBuffer true:启用，false:禁用
      */
     public final AioQuickServer<T> setDirectBuffer(boolean directBuffer) {
         config.setDirectBuffer(directBuffer);
@@ -196,7 +223,7 @@ public class AioQuickServer<T> {
     }
 
     /**
-     * @param host
+     * @param host 绑定本机host
      */
     public final AioQuickServer<T> setHost(String host) {
         config.setHost(host);
@@ -204,10 +231,14 @@ public class AioQuickServer<T> {
     }
 
     /**
-     *
-     * @param socketOption
-     * @param value
-     * @param <V>
+     * 设置Socket的TCP参数配置
+     * <p>
+     *     AIO客户端的有效可选范围为：<br/>
+     *     2. StandardSocketOptions.SO_RCVBUF<br/>
+     *     4. StandardSocketOptions.SO_REUSEADDR<br/>
+     * </p>
+     * @param socketOption  配置项
+     * @param value         配置值
      * @return
      */
     public final <V> AioQuickServer<T> setOption(SocketOption<V> socketOption, V value) {
