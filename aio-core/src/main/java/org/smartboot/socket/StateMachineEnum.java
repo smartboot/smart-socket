@@ -9,6 +9,7 @@
 package org.smartboot.socket;
 
 /**
+ * 列举了当前smart-socket所关注的各类状态枚举
  * @author 三刀
  * @version V1.0.0
  */

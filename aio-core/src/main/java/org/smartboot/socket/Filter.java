@@ -39,7 +39,7 @@ public interface Filter<T> {
     /**
      * 网络断链
      *
-     * @param session
+     * @param session 当前以关闭的session
      */
     void closed(AioSession<T> session);
 
@@ -55,7 +55,7 @@ public interface Filter<T> {
     /**
      * 消息处理前置预处理
      *
-     * @param session
+     * @param session 当前执行消息处理的session对象
      * @param msg     编解码后的消息实体
      */
     public void processFilter(AioSession<T> session, T msg);
@@ -64,7 +64,7 @@ public interface Filter<T> {
     /**
      * 消息接受失败处理
      *
-     * @param session
+     * @param session   消息处理异常的session对象
      * @param msg     编解码后的消息实体
      * @param e       本次处理异常对象
      */

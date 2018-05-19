@@ -31,6 +31,8 @@ public interface MessageProcessor<T> {
     /**
      * 状态机事件,当枚举事件发生时由框架触发该方法
      *
+     * <p>{@link Filter}属于通信级别的过滤器，而状态机更侧重于应用级别的过滤器。相较于Filter更加轻量灵活</p>
+     *
      * @param session
      * @param stateMachineEnum 状态枚举
      * @param throwable        异常对象，如果存在的话
