@@ -192,10 +192,10 @@ public class AioSession<T> {
      *     若当前无待输出的数据，则立即输出buffer.
      * </p>
      * <p>
-     *     若当前存在待数据数据，切无可用缓冲队列(writeCacheQueue)，则阻塞。
+     *     若当前存在待数据数据，且无可用缓冲队列(writeCacheQueue)，则阻塞。
      * </p>
      * <p>
-     *     若当前存在待输出数据，切缓冲队列存在可用空间，则将buffer存入writeCacheQueue。
+     *     若当前存在待输出数据，且缓冲队列存在可用空间，则将buffer存入writeCacheQueue。
      * </p>
      * @param buffer
      * @throws IOException
