@@ -38,7 +38,7 @@ public class P2PServer {
         server.setThreadNum(16)
 //                .setWriteQueueSize(16384)
 //                .setDirectBuffer(true)
-                .setReadBufferSize(1)
+                .setReadBufferSize(70)
                 .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()});
         try {
             server.start();
