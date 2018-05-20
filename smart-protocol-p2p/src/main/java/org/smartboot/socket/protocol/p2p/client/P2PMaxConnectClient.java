@@ -9,6 +9,9 @@ import org.smartboot.socket.transport.AioSession;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.util.concurrent.ThreadFactory;
 
+/**
+ * https://blog.csdn.net/wujunokay/article/details/46695065
+ */
 public class P2PMaxConnectClient {
     public static void main(String[] args) throws Exception {
         AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
@@ -20,7 +23,7 @@ public class P2PMaxConnectClient {
         int num = 0;
         try {
             while (num<10000) {
-                final AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("127.0.0.1", 8888, null, new MessageProcessor<BaseMessage>() {
+                final AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("118.25.26.239", 8888, null, new MessageProcessor<BaseMessage>() {
                     @Override
                     public void process(AioSession<BaseMessage> session, BaseMessage msg) {
 
@@ -35,6 +38,7 @@ public class P2PMaxConnectClient {
                 client.setReadBufferSize(1);
                 client.start(asynchronousChannelGroup);
                 num++;
+                System.out.println(num);
                 Thread.sleep(0,50);
             }
         } catch (Exception e) {
