@@ -22,7 +22,7 @@ public class P2PMaxConnectClient {
         });
         int num = 0;
         try {
-            while (num<10000) {
+            while (true) {
                 final AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("118.25.26.239", 8888, null, new MessageProcessor<BaseMessage>() {
                     @Override
                     public void process(AioSession<BaseMessage> session, BaseMessage msg) {
@@ -38,7 +38,6 @@ public class P2PMaxConnectClient {
                 client.setReadBufferSize(1);
                 client.start(asynchronousChannelGroup);
                 num++;
-                System.out.println(num);
                 Thread.sleep(0,50);
             }
         } catch (Exception e) {
