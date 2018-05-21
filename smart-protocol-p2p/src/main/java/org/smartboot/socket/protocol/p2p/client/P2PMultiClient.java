@@ -52,7 +52,7 @@ public class P2PMultiClient {
                             .setWriteQueueSize(16384)
                     ;
                     try {
-                        client.start();
+                        client.start(asynchronousChannelGroup);
 //                        Thread.sleep(4000);
                     } catch (Exception e) {
                         e.printStackTrace();
