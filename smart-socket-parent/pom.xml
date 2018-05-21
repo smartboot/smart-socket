@@ -135,7 +135,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
+                    <links>https://docs.oracle.com/javase/7/docs/api/</links>
                     <aggregate>true</aggregate>
+                    <show>public</show>
                     <additionalparam>-Xdoclint:none</additionalparam>
                 </configuration>
                 <executions>
