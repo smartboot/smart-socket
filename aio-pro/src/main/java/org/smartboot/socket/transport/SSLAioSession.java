@@ -64,7 +64,7 @@ public class SSLAioSession<T> extends AioSession<T> {
     }
 
 
-    public void initSession() {
+    void initSession() {
         this.sslEngine = handshakeModel.getSslEngine();
         this.netWriteBuffer = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
         this.netWriteBuffer.flip();

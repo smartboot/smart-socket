@@ -25,21 +25,30 @@ import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * AIO服务端
+ * AIO服务端。
+ *
+ * <h2>示例：</h2>
+ * <p>
+ * <pre>
+ *public class IntegerServer {
+ *     public static void main(String[] args) throws IOException {
+ *         AioQuickServer<Integer> server = new AioQuickServer<Integer>(8888, new IntegerProtocol(), new IntegerServerProcessor());
+ *         server.start();
+ *     }
+ * }
+ * </pre>
+ * </p>
  *
  * @author 三刀
  * @version V1.0.0
  */
 public class AioQuickServer<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AioQuickServer.class);
-    private AsynchronousServerSocketChannel serverSocketChannel = null;
-    private AsynchronousChannelGroup asynchronousChannelGroup;
     /**
-     * Server端服务配置
+     * Server端服务配置。
      * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
      */
     protected IoServerConfig<T> config = new IoServerConfig<>();
-
     /**
      * 读回调事件处理
      */
@@ -48,9 +57,12 @@ public class AioQuickServer<T> {
      * 写回调事件处理
      */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
+    private AsynchronousServerSocketChannel serverSocketChannel = null;
+    private AsynchronousChannelGroup asynchronousChannelGroup;
 
     /**
      * 设置服务端启动必要参数配置
+     *
      * @param port             绑定服务端口号
      * @param protocol         协议编解码
      * @param messageProcessor 消息处理器
@@ -62,19 +74,19 @@ public class AioQuickServer<T> {
     }
 
     /**
-     *
      * @param host             绑定服务端Host地址
      * @param port             绑定服务端口号
      * @param protocol         协议编解码
      * @param messageProcessor 消息处理器
      */
-    public AioQuickServer(String host,int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
-        this(port,protocol,messageProcessor);
+    public AioQuickServer(String host, int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
+        this(port, protocol, messageProcessor);
         config.setHost(host);
     }
 
     /**
      * 启动Server端的AIO服务
+     *
      * @throws IOException
      */
     public void start() throws IOException {
@@ -86,6 +98,7 @@ public class AioQuickServer<T> {
 
     /**
      * 内部启动逻辑
+     *
      * @throws IOException
      */
     protected final void start0() throws IOException {
@@ -133,6 +146,7 @@ public class AioQuickServer<T> {
 
     /**
      * 为每个新建立的连接创建AIOSession对象
+     *
      * @param channel
      */
     protected void createSession(AsynchronousSocketChannel channel) {
@@ -231,14 +245,15 @@ public class AioQuickServer<T> {
     }
 
     /**
-     * 设置Socket的TCP参数配置
+     * 设置Socket的TCP参数配置。
      * <p>
-     *     AIO客户端的有效可选范围为：<br/>
-     *     2. StandardSocketOptions.SO_RCVBUF<br/>
-     *     4. StandardSocketOptions.SO_REUSEADDR<br/>
+     * AIO客户端的有效可选范围为：<br/>
+     * 2. StandardSocketOptions.SO_RCVBUF<br/>
+     * 4. StandardSocketOptions.SO_REUSEADDR<br/>
      * </p>
-     * @param socketOption  配置项
-     * @param value         配置值
+     *
+     * @param socketOption 配置项
+     * @param value        配置值
      * @return
      */
     public final <V> AioQuickServer<T> setOption(SocketOption<V> socketOption, V value) {

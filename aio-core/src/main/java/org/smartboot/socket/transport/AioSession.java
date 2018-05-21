@@ -23,7 +23,29 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Semaphore;
 
 /**
- * AIO传输层会话
+ * AIO传输层会话。
+ *
+ * <p>
+ * AioSession为smart-socket最核心的类，封装{@link AsynchronousSocketChannel} API接口，简化IO操作。
+ * </p>
+ * <p>
+ * 其中开放给用户使用的接口为：
+ * <ol>
+ * <li>{@link AioSession#close()}</li>
+ * <li>{@link AioSession#close(boolean)}</li>
+ * <li>{@link AioSession#getAttachment()} </li>
+ * <li>{@link AioSession#getInputStream()} </li>
+ * <li>{@link AioSession#getInputStream(int)} </li>
+ * <li>{@link AioSession#getLocalAddress()} </li>
+ * <li>{@link AioSession#getRemoteAddress()} </li>
+ * <li>{@link AioSession#getSessionID()} </li>
+ * <li>{@link AioSession#isInvalid()} </li>
+ * <li>{@link AioSession#setAttachment(Object)}  </li>
+ * <li>{@link AioSession#write(ByteBuffer)} </li>
+ * <li>{@link AioSession#write(Object)}   </li>
+ * </ol>
+ *
+ * </p>
  *
  * @author 三刀
  * @version V1.0.0
@@ -44,7 +66,7 @@ public class AioSession<T> {
     private static final Logger logger = LoggerFactory.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
     /**
-     * 数据read限流标志
+     * 数据read限流标志。
      * <p>仅服务端需要进行限流；true:限流, false:不限流</p>
      * <p>客户端模式下该值为null</p>
      */
@@ -54,7 +76,7 @@ public class AioSession<T> {
      */
     protected AsynchronousSocketChannel channel;
     /**
-     * 读缓冲
+     * 读缓冲。
      * <p>大小取决于AioQuickClient/AioQuickServer设置的setReadBufferSize</p>
      */
     protected ByteBuffer readBuffer;
@@ -64,6 +86,7 @@ public class AioSession<T> {
     protected ByteBuffer writeBuffer;
     /**
      * 会话当前状态
+     *
      * @see AioSession#SESSION_STATUS_CLOSED
      * @see AioSession#SESSION_STATUS_CLOSING
      * @see AioSession#SESSION_STATUS_ENABLED
@@ -75,7 +98,7 @@ public class AioSession<T> {
     private Object attachment;
 
     /**
-     * 响应消息缓存队列
+     * 响应消息缓存队列。
      * <p>长度取决于AioQuickClient/AioQuickServer设置的setWriteQueueSize</p>
      */
     private FastBlockingQueue writeCacheQueue;
@@ -115,7 +138,7 @@ public class AioSession<T> {
     /**
      * 初始化AioSession
      */
-    public void initSession() {
+    void initSession() {
         continueRead();
     }
 
@@ -169,7 +192,7 @@ public class AioSession<T> {
     }
 
     /**
-     * 触发通道的读操作
+     * 内部方法：触发通道的读操作
      *
      * @param buffer
      */
@@ -178,25 +201,25 @@ public class AioSession<T> {
     }
 
     /**
-     * 触发通道的写操作
+     * 内部方法：触发通道的写操作
      *
-     * @param buffer
      */
     protected final void writeToChannel0(ByteBuffer buffer) {
         channel.write(buffer, this, writeCompletionHandler);
     }
 
     /**
-     * 将数据buffer输出至网络对端
+     * 将数据buffer输出至网络对端。
      * <p>
-     *     若当前无待输出的数据，则立即输出buffer.
+     * 若当前无待输出的数据，则立即输出buffer.
      * </p>
      * <p>
-     *     若当前存在待数据数据，且无可用缓冲队列(writeCacheQueue)，则阻塞。
+     * 若当前存在待数据数据，且无可用缓冲队列(writeCacheQueue)，则阻塞。
      * </p>
      * <p>
-     *     若当前存在待输出数据，且缓冲队列存在可用空间，则将buffer存入writeCacheQueue。
+     * 若当前存在待输出数据，且缓冲队列存在可用空间，则将buffer存入writeCacheQueue。
      * </p>
+     *
      * @param buffer
      * @throws IOException
      */
@@ -236,7 +259,7 @@ public class AioSession<T> {
     }
 
     /**
-     * 强制关闭当前AIOSession
+     * 强制关闭当前AIOSession。
      * <p>若此时还存留待输出的数据，则会导致该部分数据丢失</p>
      */
     public final void close() {
@@ -363,6 +386,7 @@ public class AioSession<T> {
 
     /**
      * 获取附件对象
+     *
      * @return
      */
     public final Object getAttachment() {
@@ -371,15 +395,16 @@ public class AioSession<T> {
 
     /**
      * 存放附件，支持任意类型
-     * @param attachment
+     *
      */
     public final void setAttachment(Object attachment) {
         this.attachment = attachment;
     }
 
     /**
-     * 输出消息
+     * 输出消息。
      * <p>必须实现{@link org.smartboot.socket.Protocol#encode(Object, AioSession)}</p>方法
+     *
      * @param t 待输出消息必须为当前服务指定的泛型
      * @throws IOException
      */
@@ -389,8 +414,6 @@ public class AioSession<T> {
 
     /**
      * @see AsynchronousSocketChannel#getLocalAddress()
-     * @return
-     * @throws IOException
      */
     public final InetSocketAddress getLocalAddress() throws IOException {
         assertChannel();
@@ -399,8 +422,6 @@ public class AioSession<T> {
 
     /**
      * @see AsynchronousSocketChannel#getRemoteAddress()
-     * @return
-     * @throws IOException
      */
     public final InetSocketAddress getRemoteAddress() throws IOException {
         assertChannel();
@@ -423,8 +444,6 @@ public class AioSession<T> {
 
     /**
      * 获得数据输入流对象
-     *
-     * @return
      */
     public InputStream getInputStream() throws IOException {
         return inputStream == null ? getInputStream(-1) : inputStream;
@@ -433,8 +452,7 @@ public class AioSession<T> {
     /**
      * 获取已知长度的InputStream
      *
-     * @param length
-     * @return
+     * @param length InputStream长度
      */
     public InputStream getInputStream(int length) throws IOException {
         if (inputStream != null) {
