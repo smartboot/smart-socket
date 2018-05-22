@@ -3,7 +3,7 @@ smart-socket is a AIO client server framework which enables quick and easy devel
 ## Features
 - Better throughput, lower latency
 - Less resource consumptions
-- less code amount
+- less code 
 
 
 
@@ -15,7 +15,7 @@ The smart-socket jar file is available from [Maven Central](http://mvnrepository
 <dependency>
     <groupId>org.smartboot.socket</groupId>
     <artifactId>aio-core</artifactId>
-    <version>1.2.0</version>
+    <version>1.3.10</version>
 </dependency>
 ```
 
