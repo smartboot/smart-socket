@@ -6,24 +6,24 @@ package org.smartboot.socket.util;
  */
 public class DecoderException extends RuntimeException {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	public DecoderException() {
-	}
+    public DecoderException() {
+    }
 
-	public DecoderException(String message) {
-		super(message);
-	}
+    public DecoderException(String message) {
+        super(message);
+    }
 
-	public DecoderException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public DecoderException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-	public DecoderException(Throwable cause) {
-		super(cause);
-	}
+    public DecoderException(Throwable cause) {
+        super(cause);
+    }
 
-	public DecoderException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
-	}
+    public DecoderException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }
