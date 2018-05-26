@@ -59,7 +59,7 @@ public class AioSSLQuickServer<T> extends AioQuickServer<T> {
     @Override
     protected void createSession(AsynchronousSocketChannel channel) {
         //连接成功则构造AIOSession对象
-        AioSession session = new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, sslService);
+        AioSession<T> session = new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, sslService);
         session.initSession();
     }
 

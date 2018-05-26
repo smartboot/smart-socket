@@ -102,8 +102,8 @@ public class AioSession<T> {
      * <p>长度取决于AioQuickClient/AioQuickServer设置的setWriteQueueSize</p>
      */
     private FastBlockingQueue writeCacheQueue;
-    private ReadCompletionHandler readCompletionHandler;
-    private WriteCompletionHandler writeCompletionHandler;
+    private ReadCompletionHandler<T> readCompletionHandler;
+    private WriteCompletionHandler<T> writeCompletionHandler;
     /**
      * 输出信号量
      */
@@ -118,7 +118,7 @@ public class AioSession<T> {
      * @param writeCompletionHandler
      * @param serverSession          是否服务端Session
      */
-    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, boolean serverSession) {
+    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, boolean serverSession) {
         this.channel = channel;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
@@ -434,7 +434,7 @@ public class AioSession<T> {
         }
     }
 
-    IoServerConfig getServerConfig() {
+    IoServerConfig<T> getServerConfig() {
         return this.ioServerConfig;
     }
 

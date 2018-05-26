@@ -57,7 +57,7 @@ public class AioQuickClient<T> {
      *
      * @see AioSession
      */
-    protected AioSession session;
+    protected AioSession<T> session;
     /**
      * IO事件处理线程组。
      * <p>
@@ -104,7 +104,7 @@ public class AioQuickClient<T> {
         //bind host
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
-        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), false);
+        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), false);
         session.initSession();
     }
 

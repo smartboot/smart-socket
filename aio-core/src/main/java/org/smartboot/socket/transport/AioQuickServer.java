@@ -151,7 +151,7 @@ public class AioQuickServer<T> {
      */
     protected void createSession(AsynchronousSocketChannel channel) {
         //连接成功则构造AIOSession对象
-        AioSession session = new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
+        AioSession<T> session = new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
         session.initSession();
     }
 
@@ -190,7 +190,8 @@ public class AioQuickServer<T> {
      *
      * @param filters 过滤器数组
      */
-    public final AioQuickServer<T> setFilters(Filter<T>... filters) {
+    @SafeVarargs
+	public final AioQuickServer<T> setFilters(Filter<T> ...filters) {
         this.config.setFilters(filters);
         return this;
     }

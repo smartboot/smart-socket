@@ -28,7 +28,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
         // 接收到的消息进行预处理
-        for (Filter h : aioSession.getServerConfig().getFilters()) {
+        for (Filter<T> h : aioSession.getServerConfig().getFilters()) {
             h.readFilter(aioSession, result);
         }
         aioSession.readFromChannel(result == -1);
