@@ -39,7 +39,7 @@
             <version>2.11.0</version>
         </dependency>
         <dependency>
-            <groupId>org.smartboot.socket</groupId>
+            <groupId>org.smartboot.ioc</groupId>
             <artifactId>smart-ioc</artifactId>
             <version>1.0.0</version>
         </dependency>
