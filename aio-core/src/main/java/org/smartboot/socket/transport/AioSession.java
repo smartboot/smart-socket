@@ -389,15 +389,14 @@ public class AioSession<T> {
      *
      * @return
      */
-    public final Object getAttachment() {
-        return attachment;
+    public final <T> T getAttachment() {
+        return (T) attachment;
     }
 
     /**
      * 存放附件，支持任意类型
-     *
      */
-    public final void setAttachment(Object attachment) {
+    public final <T> void setAttachment(T attachment) {
         this.attachment = attachment;
     }
 

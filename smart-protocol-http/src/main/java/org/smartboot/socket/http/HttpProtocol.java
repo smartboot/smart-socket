@@ -411,7 +411,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
             decodeUnit.setHeadPartDecoder(new DelimiterFrameDecoder(Consts.SP_ARRAY, READ_BUFFER));
             session.setAttachment(decodeUnit);
         } else {
-            decodeUnit = (HttpDecodeUnit) session.getAttachment();
+            decodeUnit = session.getAttachment();
         }
         if (decodeUnit.getDecodePartEnum() == HttpPartEnum.END) {
             HttpHeader httpHeader = decodeUnit.getHeader();

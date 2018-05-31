@@ -6,7 +6,9 @@ import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
 
-/**s
+/**
+ * s
+ *
  * @author 三刀
  * @version V1.0 , 2018/4/24
  */
@@ -20,7 +22,7 @@ public class FixedLengthProtocol implements Protocol<String> {
         }
         FixedLengthFrameDecoder fixedLengthFrameDecoder;
         if (session.getAttachment() != null) {
-            fixedLengthFrameDecoder = (FixedLengthFrameDecoder) session.getAttachment();
+            fixedLengthFrameDecoder = session.getAttachment();
         } else {
             int length = readBuffer.getInt();//获得消息体长度
             fixedLengthFrameDecoder = new FixedLengthFrameDecoder(length);//构建指定长度的临时缓冲区

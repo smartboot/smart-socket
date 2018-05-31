@@ -22,7 +22,7 @@ public class HttpProtocol implements Protocol<WinstoneRequest> {
         WinstoneRequest request = null;
         if (session.getAttachment() == null) {
             try {
-                request = new WinstoneRequest(WinstoneConstant.DEFAULT_MAXIMUM_PARAMETER_ALLOWED,null);
+                request = new WinstoneRequest(WinstoneConstant.DEFAULT_MAXIMUM_PARAMETER_ALLOWED, null);
                 InetSocketAddress remoteAddress = session.getRemoteAddress();
                 InetSocketAddress localAddress = session.getLocalAddress();
                 request.setScheme("http");
@@ -41,7 +41,7 @@ public class HttpProtocol implements Protocol<WinstoneRequest> {
             }
             session.setAttachment(request);
         } else {
-            request = (WinstoneRequest) session.getAttachment();
+            request = session.getAttachment();
         }
         boolean returnEntity = false;//是否返回HttpEntity
         switch (request.getDecodePart()) {

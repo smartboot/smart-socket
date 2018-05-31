@@ -22,7 +22,7 @@ public class DelimiterProtocol implements Protocol<String> {
             delimiterFrameDecoder = new DelimiterFrameDecoder(DELIMITER_BYTES, 64);
             session.setAttachment(delimiterFrameDecoder);//缓存解码器已应对半包情况
         } else {
-            delimiterFrameDecoder = (DelimiterFrameDecoder) session.getAttachment();
+            delimiterFrameDecoder = session.getAttachment();
         }
 
         //未解析到DELIMITER_BYTES则返回null

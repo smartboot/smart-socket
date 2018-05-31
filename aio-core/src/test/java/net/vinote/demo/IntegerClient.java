@@ -13,6 +13,5 @@ public class IntegerClient {
         processor.getSession().write(1);
         Thread.sleep(1000);
         aioQuickClient.shutdown();
-
     }
 }
