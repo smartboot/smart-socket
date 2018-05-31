@@ -238,14 +238,6 @@ public class AioQuickServer<T> {
     }
 
     /**
-     * @param host 绑定本机host
-     */
-    public final AioQuickServer<T> setHost(String host) {
-        config.setHost(host);
-        return this;
-    }
-
-    /**
      * 设置Socket的TCP参数配置。
      * <p>
      * AIO客户端的有效可选范围为：<br/>
