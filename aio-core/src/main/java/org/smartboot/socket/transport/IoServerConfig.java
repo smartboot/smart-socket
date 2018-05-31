@@ -74,7 +74,7 @@ final class IoServerConfig<T> {
     /**
      * 服务器处理线程数
      */
-    private int threadNum = Runtime.getRuntime().availableProcessors();
+    private int threadNum = Runtime.getRuntime().availableProcessors() + 1;
 
     private float limitRate = 0.9f;
 
