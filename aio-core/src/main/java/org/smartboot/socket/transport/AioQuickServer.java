@@ -30,7 +30,7 @@ import java.util.concurrent.ThreadFactory;
  * <h2>示例：</h2>
  * <p>
  * <pre>
- *public class IntegerServer {
+ * public class IntegerServer {
  *     public static void main(String[] args) throws IOException {
  *         AioQuickServer<Integer> server = new AioQuickServer<Integer>(8888, new IntegerProtocol(), new IntegerServerProcessor());
  *         server.start();
@@ -191,7 +191,7 @@ public class AioQuickServer<T> {
      * @param filters 过滤器数组
      */
     @SafeVarargs
-	public final AioQuickServer<T> setFilters(Filter<T> ...filters) {
+    public final AioQuickServer<T> setFilters(Filter<T>... filters) {
         this.config.setFilters(filters);
         return this;
     }
@@ -251,6 +251,24 @@ public class AioQuickServer<T> {
      */
     public final <V> AioQuickServer<T> setOption(SocketOption<V> socketOption, V value) {
         config.setOption(socketOption, value);
+        return this;
+    }
+
+    /**
+     * 是否启用流控，默认：true。
+     * <p>
+     * 流控功能是服务端的这一种自我保护机制，用户可根据如下场景描述决定是否启用该功能。
+     * <ol>
+     * <li>场景一：客户端pull模式，客户端发送请求消息以获取服务端的响应，若客户端接收能力不足会导致服务端出现消息积压，建议启用流控功能。</li>
+     * <li>场景二：服务端push模式，服务端主动推送消息至客户端，此类场景下若触发流控会导致服务端无法接收客户端的消息，建议关闭流控功能。</li>
+     * </ol>
+     * </p>
+     *
+     * @param flowControlEnabled 是否启用流控
+     * @return
+     */
+    public final AioQuickServer<T> setFlowControlEnabled(boolean flowControlEnabled) {
+        config.setFlowControlEnabled(flowControlEnabled);
         return this;
     }
 }

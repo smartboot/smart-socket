@@ -95,6 +95,11 @@ final class IoServerConfig<T> {
     private boolean bannerEnabled = true;
 
     /**
+     * 是否启用流控功能
+     */
+    private boolean flowControlEnabled = true;
+
+    /**
      * Socket 配置
      */
     private Map<SocketOption<Object>, Object> socketOptions;
@@ -203,6 +208,14 @@ final class IoServerConfig<T> {
         socketOptions.put(socketOption, f);
     }
 
+    public boolean isFlowControlEnabled() {
+        return flowControlEnabled;
+    }
+
+    public void setFlowControlEnabled(boolean flowControlEnabled) {
+        this.flowControlEnabled = flowControlEnabled;
+    }
+
     @Override
     public String toString() {
         return "IoServerConfig{" +
@@ -220,6 +233,8 @@ final class IoServerConfig<T> {
                 ", flowLimitLine=" + flowLimitLine +
                 ", releaseLine=" + releaseLine +
                 ", bannerEnabled=" + bannerEnabled +
+                ", flowControlEnabled=" + flowControlEnabled +
+                ", socketOptions=" + socketOptions +
                 '}';
     }
 }

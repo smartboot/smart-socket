@@ -126,7 +126,7 @@ public class AioSession<T> {
             this.writeCacheQueue = new FastBlockingQueue(config.getWriteQueueSize());
         }
         this.ioServerConfig = config;
-        this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 ? false : null;
+        this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 && config.isFlowControlEnabled() ? false : null;
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         this.readBuffer = newByteBuffer0(config.getReadBufferSize());
@@ -202,7 +202,6 @@ public class AioSession<T> {
 
     /**
      * 内部方法：触发通道的写操作
-     *
      */
     protected final void writeToChannel0(ByteBuffer buffer) {
         channel.write(buffer, this, writeCompletionHandler);
