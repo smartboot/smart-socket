@@ -30,8 +30,9 @@ final class FastBlockingQueue {
 
     private void enqueue(ByteBuffer x) {
         items[putIndex] = x;
-        if (++putIndex == items.length)
+        if (++putIndex == items.length) {
             putIndex = 0;
+        }
         count++;
         remaining += x.remaining();
         notEmpty.signal();
@@ -41,8 +42,9 @@ final class FastBlockingQueue {
     private ByteBuffer dequeue() {
         ByteBuffer x = items[takeIndex];
         items[takeIndex] = null;
-        if (++takeIndex == items.length)
+        if (++takeIndex == items.length) {
             takeIndex = 0;
+        }
         count--;
         remaining -= x.remaining();
         notFull.signal();
@@ -72,8 +74,9 @@ final class FastBlockingQueue {
     public void put(ByteBuffer e) throws InterruptedException {
         lock.lockInterruptibly();
         try {
-            while (count == items.length)
+            while (count == items.length) {
                 notFull.await();
+            }
             enqueue(e);
         } finally {
             lock.unlock();
