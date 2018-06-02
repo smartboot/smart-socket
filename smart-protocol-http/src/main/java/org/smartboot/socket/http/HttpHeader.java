@@ -8,6 +8,8 @@
 
 package org.smartboot.socket.http;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.smartboot.socket.http.enums.MethodEnum;
 
 import java.util.HashMap;
@@ -117,5 +119,9 @@ public class HttpHeader {
         val = new String(b);
         headerMap.put(key, val);
         return val;
+    }
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 }

@@ -22,6 +22,8 @@ import org.smartboot.socket.http.utils.HttpHeaderConstant;
 import org.smartboot.socket.http.websocket.DataFraming;
 import org.smartboot.socket.http.websocket.WebsocketDecoder;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.AttachKey;
+import org.smartboot.socket.util.Attachment;
 import org.smartboot.socket.util.BufferUtils;
 
 import java.nio.ByteBuffer;
@@ -34,6 +36,12 @@ final class HttpProtocol implements Protocol<HttpRequest> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpProtocol.class);
     private static final int READ_BUFFER = 128;
+    private static final AttachKey<HttpHeader> HTTP_HEADER_ATTACH_KEY = AttachKey.valueOf("httpHeader");
+    private static final AttachKey<HttpPartEnum> HTTP_PART_ENUM_ATTACH_KEY = AttachKey.valueOf("httpPartEnum");
+    private static final AttachKey<DelimiterFrameDecoder> DELIMITER_FRAME_DECODER_ATTACH_KEY = AttachKey.valueOf("httpHeaderDecoder");
+    private static final AttachKey<String> HEAD_KEY_NAME = AttachKey.valueOf("headKeyName");
+    private static final AttachKey<Protocol<HttpRequest>> CONTENT_DECODER = AttachKey.valueOf("contentDecoder");
+    private static final AttachKey<HttpRequest> ENTITY = AttachKey.valueOf("entity");
     private WebsocketDecoder websocketDecoder = new WebsocketDecoder();
     private Http11ContentDecoder http11ContentDecoder = new Http11ContentDecoder();
 
@@ -46,22 +54,23 @@ final class HttpProtocol implements Protocol<HttpRequest> {
 
     @Override
     public HttpRequest decode(ByteBuffer buffer, AioSession<HttpRequest> session, boolean eof) {
-
-        HttpDecodeUnit decodeUnit = getHttpDecodeUnit(session, buffer);
-        HttpPartEnum startPart = decodeUnit.getDecodePartEnum();
+        Attachment attachment = getHttpDecodeUnit(session);
+        HttpPartEnum startPart = attachment.get(HTTP_PART_ENUM_ATTACH_KEY);
+        HttpPartEnum currentPart = startPart;
+        HttpHeader httpHeader = attachment.get(HTTP_HEADER_ATTACH_KEY);
         buffer.mark();
         try {
-            while (buffer.hasRemaining() && decodeUnit.getDecodePartEnum() != HttpPartEnum.END) {
-                switch (decodeUnit.getDecodePartEnum()) {
+            while (buffer.hasRemaining() && currentPart != HttpPartEnum.END) {
+                switch (currentPart) {
                     //解析请求行
                     case REQUEST_LINE_METHOD: {
                         byte b = buffer.get();
                         if (b == Consts.SP) {
                             int p = buffer.position() - 1;
                             buffer.reset();
-                            decodeUnit.getHeader().setMethod(MethodEnum.getByMethod(buffer.array(), buffer.position(), p - buffer.position()));
+                            attachment.get(HTTP_HEADER_ATTACH_KEY).setMethod(MethodEnum.getByMethod(buffer.array(), buffer.position(), p - buffer.position()));
                             buffer.position(p + 1);
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.SPACES_BEFORE_URI);
+                            currentPart = HttpPartEnum.SPACES_BEFORE_URI;
                         }
                         break;
                     }
@@ -71,12 +80,12 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                             buffer.position(buffer.position() - 1);//回滚1位
                             buffer.mark();
                             if (b == '/') {
-                                decodeUnit.setDecodePartEnum(HttpPartEnum.AFTER_SLASH_IN_URI);
+                                currentPart = HttpPartEnum.AFTER_SLASH_IN_URI;
                                 break;
                             }
                             byte c = (byte) (b | 0x20);
                             if (c >= 'a' && c <= 'z') {
-                                decodeUnit.setDecodePartEnum(HttpPartEnum.SCHEMA);
+                                currentPart = HttpPartEnum.SCHEMA;
                             } else {
                                 throw new RuntimeException("decode error");
                             }
@@ -95,9 +104,9 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                                 buffer.reset();
                                 byte[] b_schema = new byte[p - buffer.position()];
                                 buffer.get(b_schema);
-                                decodeUnit.getHeader().setB_schema(b_schema);
+                                httpHeader.setB_schema(b_schema);
                                 buffer.get();//读取":"
-                                decodeUnit.setDecodePartEnum(HttpPartEnum.SCHEMA_SLASH);
+                                currentPart = HttpPartEnum.SCHEMA_SLASH;
                                 break;
                             default:
                                 throw new RuntimeException("decode error");
@@ -106,7 +115,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                     }
                     case SCHEMA_SLASH: {
                         if (buffer.get() == '/') {
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.SCHEMA_SLASH_SLASH);
+                            currentPart = HttpPartEnum.SCHEMA_SLASH_SLASH;
                         } else {
                             throw new RuntimeException("decode error");
                         }
@@ -114,7 +123,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                     }
                     case SCHEMA_SLASH_SLASH: {
                         if (buffer.get() == '/') {
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.HOST_START);
+                            currentPart = HttpPartEnum.HOST_START;
                         } else {
                             throw new RuntimeException("decode error");
                         }
@@ -124,7 +133,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                         if (buffer.get(buffer.position()) == '[') {
                             throw new RuntimeException("查看nginx源码");
                         } else {
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.HOST);
+                            currentPart = HttpPartEnum.HOST;
                         }
                         break;
                     }
@@ -143,17 +152,17 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                         buffer.reset();
                         byte[] b_host = new byte[p - buffer.position()];
                         buffer.get(b_host);
-                        decodeUnit.getHeader().setB_host(b_host);
+                        httpHeader.setB_host(b_host);
 
                         byte b = buffer.get();
                         buffer.mark();
                         switch (b) {
                             case ':': {
-                                decodeUnit.setDecodePartEnum(HttpPartEnum.PORT);
+                                currentPart = HttpPartEnum.PORT;
                                 break;
                             }
                             case '/': {
-                                decodeUnit.setDecodePartEnum(HttpPartEnum.AFTER_SLASH_IN_URI);
+                                currentPart = HttpPartEnum.AFTER_SLASH_IN_URI;
                                 break;
                             }
                             case ' ': {
@@ -180,11 +189,11 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                                 buffer.reset();
                                 byte[] b_port = new byte[p - buffer.position()];
                                 buffer.get(b_port);
-                                decodeUnit.getHeader().setB_port(b_port);
+                                httpHeader.setB_port(b_port);
 
                                 buffer.get();
                                 buffer.mark();
-                                decodeUnit.setDecodePartEnum(HttpPartEnum.AFTER_SLASH_IN_URI);
+                                currentPart = HttpPartEnum.AFTER_SLASH_IN_URI;
                                 break;
                             }
                             case ' ': {
@@ -192,12 +201,12 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                                 buffer.reset();
                                 byte[] b_port = new byte[p - buffer.position()];
                                 buffer.get(b_port);
-                                decodeUnit.getHeader().setB_port(b_port);
+                                httpHeader.setB_port(b_port);
 
                                 buffer.get();
                                 buffer.mark();
                                 System.out.println("set uri /");
-                                decodeUnit.setDecodePartEnum(HttpPartEnum.HOST_HTTP_09);
+                                currentPart = HttpPartEnum.HOST_HTTP_09;
                                 break;
                             }
                             default:
@@ -212,9 +221,9 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                             buffer.reset();
                             byte[] b_uri = new byte[p - buffer.position()];
                             buffer.get(b_uri);
-                            decodeUnit.getHeader().setB_uri(b_uri);
+                            httpHeader.setB_uri(b_uri);
                             buffer.mark();
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.CHECK_URI_HTTP_09);
+                            currentPart = HttpPartEnum.CHECK_URI_HTTP_09;
                         }
                         break;
                     }
@@ -227,7 +236,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                             }
                             case 'H': {
                                 buffer.mark();
-                                decodeUnit.setDecodePartEnum(HttpPartEnum.HTTP_H);
+                                currentPart = HttpPartEnum.HTTP_H;
                                 break;
                             }
                             default:
@@ -238,7 +247,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                     case HTTP_H: {
                         if (buffer.get() == 'T') {
                             buffer.mark();
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.HTTP_HT);
+                            currentPart = HttpPartEnum.HTTP_HT;
                         } else {
                             throw new RuntimeException("");
                         }
@@ -247,7 +256,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                     case HTTP_HT: {
                         if (buffer.get() == 'T') {
                             buffer.mark();
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.HTTP_HTT);
+                            currentPart = HttpPartEnum.HTTP_HTT;
                         } else {
                             throw new RuntimeException("");
                         }
@@ -256,7 +265,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                     case HTTP_HTT: {
                         if (buffer.get() == 'P') {
                             buffer.mark();
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.HTTP_HTTP);
+                            currentPart = HttpPartEnum.HTTP_HTTP;
                         } else {
                             throw new RuntimeException("");
                         }
@@ -265,7 +274,7 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                     case HTTP_HTTP: {
                         if (buffer.get() == '/') {
                             buffer.mark();
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.HTTP_VERSION);
+                            currentPart = HttpPartEnum.HTTP_VERSION;
                         } else {
                             throw new RuntimeException("");
                         }
@@ -278,11 +287,11 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                             buffer.reset();
                             byte[] b_version = new byte[p - buffer.position()];
                             buffer.get(b_version);
-                            decodeUnit.getHeader().setB_http_version(b_version);
+                            httpHeader.setB_http_version(b_version);
                             buffer.get();
                             buffer.get();
                             buffer.mark();
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.HEAD_LINE_KEY);
+                            currentPart = HttpPartEnum.HEAD_LINE_KEY;
                         }
                         break;
                     }
@@ -293,11 +302,11 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                             if (b == ' ' || b == ':') {
                                 int p = buffer.position() - 1;
                                 buffer.reset();
-                                decodeUnit.setHeaderKey(new String(buffer.array(), buffer.position(), p - buffer.position()));
+                                attachment.put(HEAD_KEY_NAME, new String(buffer.array(), buffer.position(), p - buffer.position()));
                                 buffer.position(p);
                                 buffer.get();
                                 buffer.mark();
-                                decodeUnit.setDecodePartEnum(HttpPartEnum.HEAD_LINE_VALUE);
+                                currentPart = HttpPartEnum.HEAD_LINE_VALUE;
                                 break;
                             }
                         }
@@ -311,10 +320,10 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                             if (b == Consts.LF) {
                                 int p = buffer.position() - 2;
                                 buffer.reset();
-                                decodeUnit.getHeader().setHeader(decodeUnit.getHeaderKey(), new String(buffer.array(), buffer.position(), p - buffer.position()).trim());
+                                httpHeader.setHeader(attachment.get(HEAD_KEY_NAME), new String(buffer.array(), buffer.position(), p - buffer.position()).trim());
                                 buffer.position(p + 2);
                                 buffer.mark();
-                                decodeUnit.setDecodePartEnum(HttpPartEnum.HEAD_END_CHECK);
+                                currentPart = HttpPartEnum.HEAD_END_CHECK;
                                 has = true;
                                 break;
                             }
@@ -322,20 +331,20 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                         if (!has) {
                             buffer.reset();
                             buffer.mark();
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.HEAD_LINE_VALUE_BUFFER);
-                            decodeUnit.getHeadPartDecoder().reset(Consts.CRLF);
+                            currentPart = HttpPartEnum.HEAD_LINE_VALUE_BUFFER;
+                            attachment.get(DELIMITER_FRAME_DECODER_ATTACH_KEY).reset(Consts.CRLF);
                         }
                         break;
 
                     }
                     case HEAD_LINE_VALUE_BUFFER: {
-                        if (decodeUnit.getHeadPartDecoder().decode(buffer)) {
+                        if (attachment.get(DELIMITER_FRAME_DECODER_ATTACH_KEY).decode(buffer)) {
                             buffer.mark();
-                            ByteBuffer headLineBuffer = decodeUnit.getHeadPartDecoder().getBuffer();
+                            ByteBuffer headLineBuffer = attachment.get(DELIMITER_FRAME_DECODER_ATTACH_KEY).getBuffer();
                             BufferUtils.trim(headLineBuffer);
-                            decodeUnit.getHeader().setHeader(decodeUnit.getHeaderKey(), new String(headLineBuffer.array(), headLineBuffer.position(), headLineBuffer.remaining()));
+                            httpHeader.setHeader(attachment.get(HEAD_KEY_NAME), new String(headLineBuffer.array(), headLineBuffer.position(), headLineBuffer.remaining()));
                             //检验Header解码是否结束
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.HEAD_END_CHECK);
+                            currentPart = HttpPartEnum.HEAD_END_CHECK;
                         } else {
                             buffer.mark();
                             break;
@@ -348,30 +357,29 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                         //非/r/n视为普通header行
                         if (buffer.get(buffer.position()) != Consts.CR || buffer.get(buffer.position() + 1) != Consts.LF) {
                             //识别一下一个解码阶段
-                            decodeUnit.getHeadPartDecoder().reset(Consts.COLON_ARRAY);
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.HEAD_LINE_KEY);
+                            attachment.get(DELIMITER_FRAME_DECODER_ATTACH_KEY).reset(Consts.COLON_ARRAY);
+                            currentPart = HttpPartEnum.HEAD_LINE_KEY;
                             break;
                         }
                         buffer.position(buffer.position() + Consts.CRLF.length);
-                        HttpHeader httpHeader = decodeUnit.getHeader();
                         //Websocket消息
                         if (StringUtils.equals(httpHeader.getHeader(HttpHeaderConstant.Names.CONNECTION), HttpHeaderConstant.Values.UPGRADE)
                                 && StringUtils.equals(httpHeader.getHeader(HttpHeaderConstant.Names.UPGRADE), HttpHeaderConstant.Values.WEBSOCKET)) {
-                            decodeUnit.setContentDecoder(websocketDecoder);
+                            attachment.put(CONTENT_DECODER, websocketDecoder);
                             DataFraming dataFraming = new DataFraming(httpHeader);
-                            decodeUnit.setEntity(dataFraming);
+                            attachment.put(ENTITY, dataFraming);
                         }
                         //Http1.1协议
                         else {
-                            decodeUnit.setContentDecoder(http11ContentDecoder);
+                            attachment.put(CONTENT_DECODER, http11ContentDecoder);
                             Http11Request request = new Http11Request(httpHeader);
-                            decodeUnit.setEntity(request);
+                            attachment.put(ENTITY, request);
                         }
-                        decodeUnit.setDecodePartEnum(HttpPartEnum.CONTENT);
+                        currentPart = HttpPartEnum.CONTENT;
                     case CONTENT: {
-                        HttpRequest request = decodeUnit.getContentDecoder().decode(buffer, session, eof);
+                        HttpRequest request = attachment.get(CONTENT_DECODER).decode(buffer, session, eof);
                         if (request != null) {
-                            decodeUnit.setDecodePartEnum(HttpPartEnum.END);
+                            currentPart = HttpPartEnum.END;
                         }
                         buffer.mark();
                         break;
@@ -381,15 +389,17 @@ final class HttpProtocol implements Protocol<HttpRequest> {
                     }
                 }
             }
-            if (decodeUnit.getDecodePartEnum() == HttpPartEnum.END) {
-                return decodeUnit.getEntity();
+            if (currentPart == HttpPartEnum.END) {
+                return attachment.get(ENTITY);
             } else {
                 return null;
             }
         } finally {
             //本轮操作未能完成一部分的解码，则还原现场
-            if (startPart == decodeUnit.getDecodePartEnum()) {
+            if (startPart == currentPart) {
                 buffer.reset();
+            } else {
+                attachment.put(HTTP_PART_ENUM_ATTACH_KEY, currentPart);
             }
         }
     }
@@ -398,32 +408,30 @@ final class HttpProtocol implements Protocol<HttpRequest> {
      * 获得解码对象模型
      *
      * @param session
-     * @param buffer
      * @return
      */
-    private HttpDecodeUnit getHttpDecodeUnit(AioSession<HttpRequest> session, ByteBuffer buffer) {
-        HttpDecodeUnit decodeUnit = null;
+    private Attachment getHttpDecodeUnit(AioSession<HttpRequest> session) {
+        Attachment attachment = null;
         if (session.getAttachment() == null) {
-            decodeUnit = new HttpDecodeUnit();
-            decodeUnit.setHeader(new HttpHeader());
-//            decodeUnit.entity = new HttpRequest(session);
-            decodeUnit.setDecodePartEnum(HttpPartEnum.REQUEST_LINE_METHOD);
-            decodeUnit.setHeadPartDecoder(new DelimiterFrameDecoder(Consts.SP_ARRAY, READ_BUFFER));
-            session.setAttachment(decodeUnit);
+            attachment = new Attachment();
+            session.setAttachment(attachment);
+            attachment.put(HTTP_HEADER_ATTACH_KEY, new HttpHeader());
+            attachment.put(HTTP_PART_ENUM_ATTACH_KEY, HttpPartEnum.REQUEST_LINE_METHOD);
+            attachment.put(DELIMITER_FRAME_DECODER_ATTACH_KEY, new DelimiterFrameDecoder(Consts.SP_ARRAY, READ_BUFFER));
         } else {
-            decodeUnit = session.getAttachment();
+            attachment = session.getAttachment();
         }
-        if (decodeUnit.getDecodePartEnum() == HttpPartEnum.END) {
-            HttpHeader httpHeader = decodeUnit.getHeader();
+        if (attachment.get(HTTP_PART_ENUM_ATTACH_KEY) == HttpPartEnum.END) {
+            HttpHeader httpHeader = attachment.get(HTTP_HEADER_ATTACH_KEY);
             httpHeader.setHttpVersion(null);
             httpHeader.setMethod(null);
             httpHeader.setOriginalUri(null);
             httpHeader.headerMap.clear();
             httpHeader.b_headerMap.clear();
-            decodeUnit.setDecodePartEnum(HttpPartEnum.REQUEST_LINE_METHOD);
-            decodeUnit.getHeadPartDecoder().reset(Consts.SP_ARRAY);
+            attachment.put(HTTP_PART_ENUM_ATTACH_KEY, HttpPartEnum.REQUEST_LINE_METHOD);
+            attachment.get(DELIMITER_FRAME_DECODER_ATTACH_KEY).reset(Consts.SP_ARRAY);
         }
-        return decodeUnit;
+        return attachment;
     }
 
     @Override

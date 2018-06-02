@@ -9,10 +9,10 @@
 package org.smartboot.socket.http.websocket;
 
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
-import org.smartboot.socket.http.HttpDecodeUnit;
 import org.smartboot.socket.http.HttpRequest;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.AttachKey;
+import org.smartboot.socket.util.Attachment;
 
 import java.nio.ByteBuffer;
 
@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
  * @version V1.0 , 2018/2/11
  */
 public class WebsocketDecoder implements Protocol<HttpRequest> {
+    private static final AttachKey<DataFraming> ENTITY = AttachKey.valueOf("entity");
 
     private void unmask(DataFraming framing, ByteBuffer payLoadBuffer) {
         int i = payLoadBuffer.position();
@@ -40,11 +41,11 @@ public class WebsocketDecoder implements Protocol<HttpRequest> {
 
     @Override
     public HttpRequest decode(ByteBuffer buffer, AioSession<HttpRequest> session, boolean eof) {
-        HttpDecodeUnit decodeUnit =  session.getAttachment();
-        if (decodeUnit == null) {
+        Attachment attachment = session.getAttachment();
+        if (attachment == null) {
             throw new RuntimeException("decodeUnit is null");
         }
-        DataFraming dataFraming = (DataFraming) decodeUnit.getEntity();
+        DataFraming dataFraming = attachment.get(ENTITY);
         while (buffer.hasRemaining()) {
             switch (dataFraming.getState()) {
                 case READING_FIRST: {
