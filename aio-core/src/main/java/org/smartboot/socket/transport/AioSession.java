@@ -21,7 +21,6 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 /**
  * AIO传输层会话。
@@ -84,9 +83,7 @@ public class AioSession<T> {
     /**
      * 写缓冲
      */
-//    protected ByteBuffer writeBuffer;
-
-    protected BufferArray writeBuffer;
+    protected ByteBuffer writeBuffer;
     /**
      * 会话当前状态
      *
@@ -104,7 +101,7 @@ public class AioSession<T> {
      * 响应消息缓存队列。
      * <p>长度取决于AioQuickClient/AioQuickServer设置的setWriteQueueSize</p>
      */
-    private QuickBlockingQueue writeCacheQueue;
+    private FastBlockingQueue writeCacheQueue;
     private ReadCompletionHandler<T> readCompletionHandler;
     private WriteCompletionHandler<T> writeCompletionHandler;
     /**
@@ -126,7 +123,7 @@ public class AioSession<T> {
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         if (config.getWriteQueueSize() > 0) {
-            this.writeCacheQueue = new QuickBlockingQueue(config.getWriteQueueSize());
+            this.writeCacheQueue = new FastBlockingQueue(config.getWriteQueueSize());
         }
         this.ioServerConfig = config;
         this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 && config.isFlowControlEnabled() ? false : null;
@@ -149,8 +146,8 @@ public class AioSession<T> {
      * 触发AIO的写操作,
      * <p>需要调用控制同步</p>
      */
-    void writeToChannel(long writeSize) {
-        if (writeBuffer != null && writeBuffer.writeSize(writeSize) > 0) {
+    void writeToChannel() {
+        if (writeBuffer != null && writeBuffer.hasRemaining()) {
             continueWrite();
             return;
         }
@@ -164,13 +161,26 @@ public class AioSession<T> {
             }
             //也许此时有新的消息通过write方法添加到writeCacheQueue中
             else if (writeCacheQueue != null && writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
-                writeToChannel(0);
+                writeToChannel();
             }
             return;
         }
-        writeBuffer = writeCacheQueue.expectRemaining(MAX_WRITE_SIZE);
+        int totalSize = writeCacheQueue.expectRemaining(MAX_WRITE_SIZE);
+        ByteBuffer headBuffer = writeCacheQueue.poll();
+        if (headBuffer.remaining() == totalSize) {
+            writeBuffer = headBuffer;
+        } else {
+            if (writeBuffer == null || totalSize << 1 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
+                writeBuffer = allocateReadBuffer(totalSize);
+            } else {
+                writeBuffer.clear().limit(totalSize);
+            }
+            writeBuffer.put(headBuffer);
+            writeCacheQueue.pollInto(writeBuffer);
+            writeBuffer.flip();
+        }
 
-//如果存在流控并符合释放条件，则触发读操作
+        //如果存在流控并符合释放条件，则触发读操作
         //一定要放在continueWrite之前
         if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.RELEASE_FLOW_LIMIT, null);
@@ -194,13 +204,7 @@ public class AioSession<T> {
      * 内部方法：触发通道的写操作
      */
     protected final void writeToChannel0(ByteBuffer buffer) {
-//        channel.write(buffer, this, writeCompletionHandler);
-        throw new UnsupportedOperationException();
-    }
-
-    protected final void writeToChannel0(BufferArray buffer) {
-        ByteBuffer[] byteBuffers = buffer.getBuffers();
-        channel.write(byteBuffers, 0, byteBuffers.length, 0, TimeUnit.MICROSECONDS, this, writeCompletionHandler);
+        channel.write(buffer, this, writeCompletionHandler);
     }
 
     /**
@@ -228,7 +232,7 @@ public class AioSession<T> {
         if (ioServerConfig.getWriteQueueSize() <= 0) {
             try {
                 semaphore.acquire();
-                writeBuffer = new BufferArray(buffer.remaining(), buffer);
+                writeBuffer = buffer;
                 continueWrite();
             } catch (InterruptedException e) {
                 logger.error("acquire fail", e);
@@ -237,7 +241,7 @@ public class AioSession<T> {
             }
             return;
         } else if ((semaphore.tryAcquire())) {
-            writeBuffer = new BufferArray(buffer.remaining(), buffer);
+            writeBuffer = buffer;
             continueWrite();
             return;
         }
@@ -249,7 +253,7 @@ public class AioSession<T> {
             Thread.currentThread().interrupt();
         }
         if (semaphore.tryAcquire()) {
-            writeToChannel(0);
+            writeToChannel();
         }
     }
 
@@ -297,7 +301,7 @@ public class AioSession<T> {
                 filter.closed(this);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-        } else if ((writeBuffer == null || writeBuffer.getRemainLength() == 0) && (writeCacheQueue == null || writeCacheQueue.size() == 0) && semaphore.tryAcquire()) {
+        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && (writeCacheQueue == null || writeCacheQueue.size() == 0) && semaphore.tryAcquire()) {
             close(true);
             semaphore.release();
         } else {

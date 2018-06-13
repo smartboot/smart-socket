@@ -80,6 +80,6 @@ public interface Filter<T> {
      * @param session   本次执行write回调的AIOSession对象
      * @param writeSize 本次输出的数据长度
      */
-    void writeFilter(AioSession<T> session, long writeSize);
+    void writeFilter(AioSession<T> session, int writeSize);
 
 }

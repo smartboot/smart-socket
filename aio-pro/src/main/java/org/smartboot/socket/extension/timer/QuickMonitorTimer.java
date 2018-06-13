@@ -107,7 +107,7 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
     }
 
     @Override
-    public void writeFilter(AioSession<T> session, long readSize) {
+    public void writeFilter(AioSession<T> session, int readSize) {
         outFlow.addAndGet(readSize);
     }
 
