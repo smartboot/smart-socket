@@ -21,16 +21,16 @@ import java.nio.channels.CompletionHandler;
  * @author 三刀
  * @version V1.0.0
  */
-class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
+class WriteCompletionHandler<T> implements CompletionHandler<Long, AioSession<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteCompletionHandler.class);
 
     @Override
-    public void completed(final Integer result, final AioSession<T> aioSession) {
+    public void completed(final Long result, final AioSession<T> aioSession) {
         // 接收到的消息进行预处理
         for (Filter<T> h : aioSession.getServerConfig().getFilters()) {
             h.writeFilter(aioSession, result);
         }
-        aioSession.writeToChannel();
+        aioSession.writeToChannel(result);
     }
 
     @Override
