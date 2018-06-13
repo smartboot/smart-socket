@@ -54,14 +54,13 @@ public class SSLAioSession<T> extends AioSession<T> {
     }
 
     @Override
-    void writeToChannel(long writeSize) {
+    void writeToChannel() {
         checkInitialized();
         if (netWriteBuffer != null && netWriteBuffer.hasRemaining()) {
             writeToChannel0(netWriteBuffer);
             return;
         }
-        //todo 不准确
-        super.writeToChannel(writeSize);
+        super.writeToChannel();
     }
 
 
@@ -125,7 +124,7 @@ public class SSLAioSession<T> extends AioSession<T> {
     private void doWrap() {
         try {
             netWriteBuffer.compact();
-            SSLEngineResult result = sslEngine.wrap(writeBuffer.getBuffers(), netWriteBuffer);
+            SSLEngineResult result = sslEngine.wrap(writeBuffer, netWriteBuffer);
             while (result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
@@ -143,7 +142,7 @@ public class SSLAioSession<T> extends AioSession<T> {
                     default:
                         logger.error("doWrap Result:" + result.getStatus());
                 }
-                result = sslEngine.wrap(writeBuffer.getBuffers(), netWriteBuffer);
+                result = sslEngine.wrap(writeBuffer, netWriteBuffer);
             }
             netWriteBuffer.flip();
         } catch (SSLException e) {
