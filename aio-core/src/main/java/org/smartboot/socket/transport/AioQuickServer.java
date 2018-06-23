@@ -23,6 +23,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * AIO服务端。
@@ -167,9 +168,17 @@ public class AioQuickServer<T> {
         } catch (IOException e) {
             LOGGER.warn(e.getMessage(), e);
         }
-        if (asynchronousChannelGroup != null) {
-            asynchronousChannelGroup.shutdown();
-            asynchronousChannelGroup = null;
+        if (!asynchronousChannelGroup.isTerminated()) {
+            try {
+                asynchronousChannelGroup.shutdownNow();
+            } catch (IOException e) {
+                LOGGER.error("shutdown exception", e);
+            }
+        }
+        try {
+            asynchronousChannelGroup.awaitTermination(3, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.error("shutdown exception", e);
         }
     }
 
