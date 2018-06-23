@@ -445,7 +445,7 @@ public class AioSession<T> {
      * @param size
      * @return
      */
-    public ByteBuffer allocateReadBuffer(int size) {
+    private ByteBuffer allocateReadBuffer(int size) {
         return ioServerConfig.isDirectBuffer() ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
