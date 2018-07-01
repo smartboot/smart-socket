@@ -34,5 +34,6 @@
     <modules>
         <module>smart-protocol-p2p</module>
         <module>smart-socket-parent</module>
+        <module>example</module>
     </modules>
 </project>
