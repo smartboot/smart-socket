@@ -30,7 +30,7 @@ smart-socket发布了两种类型的包供大家选用：
    
  
  
-[开发手册](http://smartsocket.mydoc.io/)（很抱歉个人开源项目，文档更新会有点滞后）
+[开发手册](https://smartboot.gitee.io/docs/smart-socket/)（很抱歉个人开源项目，文档更新会有点滞后）
 
 ## 工程结构
 1. aio-core		
