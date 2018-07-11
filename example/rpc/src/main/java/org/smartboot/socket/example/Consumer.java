@@ -7,6 +7,8 @@ import org.smartboot.socket.transport.AioQuickClient;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author 三刀
@@ -21,8 +23,18 @@ public class Consumer {
         consumer.start();
 
         DemoApi demoApi = rpcConsumerProcessor.getObject(DemoApi.class);
-        System.out.println(demoApi.test("smart-socket"));
-        System.out.println(demoApi.sum(1, 2));
+        ExecutorService pool= Executors.newCachedThreadPool();
+        pool.execute(()->{
+            System.out.println(demoApi.test("smart-socket"));
+        });
+        pool.execute(()->{
+            System.out.println(demoApi.test("smart-socket2"));
+        });
+        pool.execute(()->{
+            System.out.println(demoApi.sum(1, 2));
+        });
+
+
     }
 
 }

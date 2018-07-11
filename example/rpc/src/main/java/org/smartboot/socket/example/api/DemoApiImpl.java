@@ -7,6 +7,11 @@ package org.smartboot.socket.example.api;
 public class DemoApiImpl implements DemoApi {
     @Override
     public String test(String name) {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return "hello " + name;
     }
 

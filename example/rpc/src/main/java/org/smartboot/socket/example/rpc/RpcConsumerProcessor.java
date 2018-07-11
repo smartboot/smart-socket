@@ -1,5 +1,6 @@
 package org.smartboot.socket.example.rpc;
 
+import com.sun.xml.internal.ws.util.CompletedFuture;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -20,7 +21,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.SocketTimeoutException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author 三刀
@@ -28,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcConsumerProcessor.class);
-    private Map<String, Object> synchRespMap = new ConcurrentHashMap<>();
+    private Map<String, CompletableFuture<RpcResponse>> synchRespMap = new ConcurrentHashMap<>();
     private Map<Class, Object> objectMap = new ConcurrentHashMap<>();
     private AioSession<byte[]> aioSession;
 
@@ -39,15 +43,7 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
         try {
             objectInput = new ObjectInputStream(new ByteArrayInputStream(msg));
             RpcResponse resp = (RpcResponse) objectInput.readObject();
-            Object reqMsg = synchRespMap.get(resp.getUuid());
-            if (reqMsg != null) {
-                synchronized (reqMsg) {
-                    if (synchRespMap.containsKey(resp.getUuid())) {
-                        synchRespMap.put(resp.getUuid(), resp);
-                        reqMsg.notifyAll();
-                    }
-                }
-            }
+            synchRespMap.get(resp.getUuid()).complete(resp);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -98,7 +94,8 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
 
 
     private final RpcResponse sendRpcRequest(RpcRequest request) throws Exception {
-        synchRespMap.put(request.getUuid(), request);
+        CompletableFuture<RpcResponse> rpcResponseCompletableFuture=new CompletableFuture<>();
+        synchRespMap.put(request.getUuid(),rpcResponseCompletableFuture);
 
         //输出消息
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -106,28 +103,12 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
         objectOutput.writeObject(request);
         aioSession.write(byteArrayOutputStream.toByteArray());
 
-        if (synchRespMap.containsKey(request.getUuid()) && synchRespMap.get(request.getUuid()) == request) {
-            synchronized (request) {
-                if (synchRespMap.containsKey(request.getUuid()) && synchRespMap.get(request.getUuid()) == request) {
-                    try {
-                        request.wait();
-                    } catch (InterruptedException e) {
-                        LOGGER.warn("", e);
-                    }
-                }
-            }
+        try {
+            RpcResponse resp=rpcResponseCompletableFuture.get(3, TimeUnit.SECONDS);
+            return resp;
+        } catch (Exception e) {
+            throw new SocketTimeoutException("Message is timeout!");
         }
-        Object resp = null;
-        synchronized (request) {
-            resp = synchRespMap.remove(request.getUuid());
-        }
-        if (resp == null || resp == request) {
-            throw new SocketTimeoutException("Message is timeout!" + resp);
-        }
-        if (resp instanceof RpcResponse) {
-            return (RpcResponse) resp;
-        }
-        throw new RuntimeException("invalid response " + resp);
     }
 
     @Override
@@ -137,6 +118,28 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
                 this.aioSession = session;
                 break;
         }
+    }
+
+    public static void main(String[]args){
+        CompletableFuture<Integer> completableFuture=new CompletableFuture<>();
+        new Thread(()->{
+            try {
+                System.out.println(completableFuture.get());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+        new Thread(()->{
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            completableFuture.complete(null);
+        }).start();
     }
 
 }
