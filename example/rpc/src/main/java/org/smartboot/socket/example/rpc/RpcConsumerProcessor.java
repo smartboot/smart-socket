@@ -1,6 +1,5 @@
 package org.smartboot.socket.example.rpc;
 
-import com.sun.xml.internal.ws.util.CompletedFuture;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -36,6 +35,27 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
     private Map<Class, Object> objectMap = new ConcurrentHashMap<>();
     private AioSession<byte[]> aioSession;
 
+    public static void main(String[] args) {
+        CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
+        new Thread(() -> {
+            try {
+                System.out.println(completableFuture.get());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            completableFuture.complete(null);
+        }).start();
+    }
 
     @Override
     public void process(AioSession<byte[]> session, byte[] msg) {
@@ -64,38 +84,33 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
             return (T) obj;
         }
         obj = (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{remoteInterface},
-                new InvocationHandler() {
-
-                    @Override
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        RpcRequest req = new RpcRequest();
-                        req.setInterfaceClass(remoteInterface.getName());
-                        req.setMethod(method.getName());
-                        Class<?>[] types = method.getParameterTypes();
-                        if (!ArrayUtils.isEmpty(types)) {
-                            String[] paramClass = new String[types.length];
-                            for (int i = 0; i < types.length; i++) {
-                                paramClass[i] = types[i].getName();
-                            }
-                            req.setParamClassList(paramClass);
+                (proxy, method, args) -> {
+                    RpcRequest req = new RpcRequest();
+                    req.setInterfaceClass(remoteInterface.getName());
+                    req.setMethod(method.getName());
+                    Class<?>[] types = method.getParameterTypes();
+                    if (!ArrayUtils.isEmpty(types)) {
+                        String[] paramClass = new String[types.length];
+                        for (int i = 0; i < types.length; i++) {
+                            paramClass[i] = types[i].getName();
                         }
-                        req.setParams(args);
-
-                        RpcResponse rmiResp = sendRpcRequest(req);
-                        if (StringUtils.isNotBlank(rmiResp.getException())) {
-                            throw new RuntimeException(rmiResp.getException());
-                        }
-                        return rmiResp.getReturnObject();
+                        req.setParamClassList(paramClass);
                     }
+                    req.setParams(args);
+
+                    RpcResponse rmiResp = sendRpcRequest(req);
+                    if (StringUtils.isNotBlank(rmiResp.getException())) {
+                        throw new RuntimeException(rmiResp.getException());
+                    }
+                    return rmiResp.getReturnObject();
                 });
         objectMap.put(remoteInterface, obj);
         return (T) obj;
     }
 
-
     private final RpcResponse sendRpcRequest(RpcRequest request) throws Exception {
-        CompletableFuture<RpcResponse> rpcResponseCompletableFuture=new CompletableFuture<>();
-        synchRespMap.put(request.getUuid(),rpcResponseCompletableFuture);
+        CompletableFuture<RpcResponse> rpcResponseCompletableFuture = new CompletableFuture<>();
+        synchRespMap.put(request.getUuid(), rpcResponseCompletableFuture);
 
         //输出消息
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -104,7 +119,7 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
         aioSession.write(byteArrayOutputStream.toByteArray());
 
         try {
-            RpcResponse resp=rpcResponseCompletableFuture.get(3, TimeUnit.SECONDS);
+            RpcResponse resp = rpcResponseCompletableFuture.get(3, TimeUnit.SECONDS);
             return resp;
         } catch (Exception e) {
             throw new SocketTimeoutException("Message is timeout!");
@@ -118,28 +133,6 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
                 this.aioSession = session;
                 break;
         }
-    }
-
-    public static void main(String[]args){
-        CompletableFuture<Integer> completableFuture=new CompletableFuture<>();
-        new Thread(()->{
-            try {
-                System.out.println(completableFuture.get());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-        }).start();
-
-        new Thread(()->{
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            completableFuture.complete(null);
-        }).start();
     }
 
 }
