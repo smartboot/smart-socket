@@ -9,38 +9,30 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 3. 性能爆表，充分压榨CPU、带宽
 4. 资源占用极低，IO线程0感知
 5. 自带流控、缓存压缩、流量/消息量监控等黑科技
-6. 文档齐全
+6. 文档齐全《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》
 
 ### Maven
 smart-socket发布了两种类型的包供大家选用：
 
 1. aio-core，针对Socket的初级用户提供的开发包，仅提供基本的AIO通讯服务。
-		
-		<dependency>
-		    <groupId>org.smartboot.socket</groupId>
-		    <artifactId>aio-core</artifactId>
-		    <version>1.3.12</version>
-		</dependency>
+
+	```xml
+	<dependency>
+	    <groupId>org.smartboot.socket</groupId>
+	    <artifactId>aio-core</artifactId>
+	    <version>1.3.12</version>
+	</dependency>
+	```	
 
 2. aio-pro，面向资深用户提供的进阶版，不仅包含了aio-core的所有功能，还提供了TLS/SSL通讯功能，并提供一些用于辅助编解码的工具类。
 
-	    <dependency>
-	        <groupId>org.smartboot.socket</groupId>
-	        <artifactId>aio-pro</artifactId>
-	        <version>1.3.12</version>
-	    </dependency>
-   
- 
- 
-[开发手册](https://smartboot.gitee.io/docs/smart-socket/)（很抱歉个人开源项目，文档更新会有点滞后）
-
-## 工程结构
-1. aio-core		
-smart-socket的核心代码
-2. smart-protocol-http		
-简单实现Http协议编解码，目前的实现并不规范，仅合适ab测试
-3. smart-protocol-p2p	
-实现了私有协议P2P，性能测试也是基于该协议进行的
+	```xml
+	<dependency>
+	    <groupId>org.smartboot.socket</groupId>
+	    <artifactId>aio-pro</artifactId>
+	    <version>1.3.12</version>
+	</dependency>
+	```
 
 ## 性能测试报告
 
