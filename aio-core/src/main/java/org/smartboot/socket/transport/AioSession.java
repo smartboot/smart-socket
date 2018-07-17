@@ -274,6 +274,7 @@ public class AioSession<T> {
         //status == SESSION_STATUS_CLOSED说明close方法被重复调用
         if (status == SESSION_STATUS_CLOSED) {
             logger.warn("ignore, session:{} is closed:", getSessionID());
+            semaphore.release();
             return;
         }
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
@@ -302,8 +303,11 @@ public class AioSession<T> {
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
         } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && (writeCacheQueue == null || writeCacheQueue.size() == 0) && semaphore.tryAcquire()) {
-            close(true);
-            semaphore.release();
+            try {
+                close(true);
+            }finally {
+                semaphore.release();
+            }
         } else {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
         }
