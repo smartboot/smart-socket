@@ -298,16 +298,16 @@ public class AioSession<T> {
             } catch (IOException e) {
                 logger.debug("close session exception", e);
             }
-            for (Filter<T> filter : ioServerConfig.getFilters()) {
-                filter.closed(this);
-            }
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && (writeCacheQueue == null || writeCacheQueue.size() == 0) && semaphore.tryAcquire()) {
             try {
-                close(true);
-            }finally {
+                for (Filter<T> filter : ioServerConfig.getFilters()) {
+                    filter.closed(this);
+                }
+                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
+            } finally {
                 semaphore.release();
             }
+        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && (writeCacheQueue == null || writeCacheQueue.size() == 0) && semaphore.tryAcquire()) {
+            close(true);
         } else {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
         }
