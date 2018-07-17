@@ -270,7 +270,7 @@ public class AioSession<T> {
      *
      * @param immediate true:立即关闭,false:响应消息发送完后关闭
      */
-    public void close(boolean immediate) {
+    public synchronized void close(boolean immediate) {
         //status == SESSION_STATUS_CLOSED说明close方法被重复调用
         if (status == SESSION_STATUS_CLOSED) {
             logger.warn("ignore, session:{} is closed:", getSessionID());
