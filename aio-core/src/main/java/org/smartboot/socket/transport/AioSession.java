@@ -122,9 +122,7 @@ public class AioSession<T> {
         this.channel = channel;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
-        if (config.getWriteQueueSize() > 0) {
-            this.writeCacheQueue = new FastBlockingQueue(config.getWriteQueueSize());
-        }
+        this.writeCacheQueue = config.getWriteQueueSize() > 0 ? new FastBlockingQueue(config.getWriteQueueSize()) : null;
         this.ioServerConfig = config;
         this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 && config.isFlowControlEnabled() ? false : null;
         //触发状态机
@@ -291,10 +289,6 @@ public class AioSession<T> {
             }
             try {
                 channel.close();
-                if (logger.isDebugEnabled()) {
-                    logger.debug("session:{} is closed:", getSessionID());
-                }
-                channel = null;
             } catch (IOException e) {
                 logger.debug("close session exception", e);
             }
