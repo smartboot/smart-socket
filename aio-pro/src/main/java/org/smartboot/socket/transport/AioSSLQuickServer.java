@@ -47,6 +47,7 @@ public class AioSSLQuickServer<T> extends AioQuickServer<T> {
         out.println(" :: smart-socket (tls/ssl) ::\t(" + IoServerConfig.VERSION + ")");
     }
 
+    @Override
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
             printBanner(System.out);

@@ -76,6 +76,7 @@ public class DelimiterFrameDecoder implements SmartDecoder {
         return finishRead;
     }
 
+    @Override
     public ByteBuffer getBuffer() {
         if (position == 0) {
             return bufferList.get(position);
