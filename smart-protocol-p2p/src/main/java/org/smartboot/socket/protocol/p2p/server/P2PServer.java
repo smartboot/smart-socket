@@ -39,7 +39,7 @@ public class P2PServer {
                 .setWriteQueueSize(16384)
 //                .setDirectBuffer(true)
 //                .setReadBufferSize(70)
-                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()});
+                ;
         try {
             server.start();
         } catch (IOException e) {

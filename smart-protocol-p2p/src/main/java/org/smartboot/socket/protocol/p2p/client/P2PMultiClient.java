@@ -2,8 +2,6 @@ package org.smartboot.socket.protocol.p2p.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.Filter;
-import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.protocol.p2p.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
@@ -47,7 +45,7 @@ public class P2PMultiClient {
 //                            .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
 //                            .setWriteQueueSize(16384);
                     AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("localhost", 8888, new P2PProtocol(messageFactory), processor);
-                    client.setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
+                    client.setFilters(processor)
 //                            .setDirectBuffer(true)
                             .setWriteQueueSize(16384)
                     ;

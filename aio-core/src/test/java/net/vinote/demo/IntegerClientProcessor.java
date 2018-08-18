@@ -1,8 +1,8 @@
 package net.vinote.demo;
 
 import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.transport.AioSession;
 
 /**
  * @author 三刀

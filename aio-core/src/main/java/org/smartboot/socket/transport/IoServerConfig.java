@@ -13,7 +13,6 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 
 import java.net.SocketOption;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +24,7 @@ import java.util.Map;
  */
 final class IoServerConfig<T> {
 
-    public static final String BANNER = "                               _                           _             _   \n" +
+    public static final String BANNER = "\n                               _                           _             _   \n" +
             "                              ( )_                        ( )           ( )_ \n" +
             "  ___   ___ ___     _ _  _ __ | ,_)     ___    _      ___ | |/')    __  | ,_)\n" +
             "/',__)/' _ ` _ `\\ /'_` )( '__)| |     /',__) /'_`\\  /'___)| , <   /'__`\\| |  \n" +
@@ -52,7 +51,7 @@ final class IoServerConfig<T> {
     /**
      * 服务器消息拦截器
      */
-    private Filter<T>[] filters = new Filter[0];
+    private Filter<T> filter;
 
     /**
      * 服务器端口号
@@ -129,14 +128,12 @@ final class IoServerConfig<T> {
     }
 
 
-    public final Filter<T>[] getFilters() {
-        return filters;
+    public Filter<T> getFilter() {
+        return filter;
     }
 
-    public final void setFilters(Filter<T>[] filters) {
-        if (filters != null) {
-            this.filters = filters;
-        }
+    public void setFilter(Filter<T> filter) {
+        this.filter = filter;
     }
 
     public Protocol<T> getProtocol() {
@@ -153,6 +150,9 @@ final class IoServerConfig<T> {
 
     public final void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
+        if (processor instanceof Filter) {
+            setFilter((Filter<T>) processor);
+        }
     }
 
     public int getWriteQueueSize() {
@@ -222,7 +222,7 @@ final class IoServerConfig<T> {
                 "writeQueueSize=" + writeQueueSize +
                 ", readBufferSize=" + readBufferSize +
                 ", host='" + host + '\'' +
-                ", filters=" + Arrays.toString(filters) +
+                ", filter=" + filter +
                 ", port=" + port +
                 ", processor=" + processor +
                 ", protocol=" + protocol +

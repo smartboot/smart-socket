@@ -28,7 +28,7 @@ import java.util.concurrent.ThreadFactory;
  *
  *
  * <h2>示例：</h2>
- *<p>
+ * <p>
  * <pre>
  * public class IntegerClient {
  *      public static void main(String[] args) throws Exception {
@@ -112,7 +112,7 @@ public class AioQuickClient<T> {
      * 启动客户端。
      *
      * <p>
-     *  本方法会构建线程数为2的{@code asynchronousChannelGroup}，并通过调用{@link AioQuickClient#start(AsynchronousChannelGroup)}启动服务。
+     * 本方法会构建线程数为2的{@code asynchronousChannelGroup}，并通过调用{@link AioQuickClient#start(AsynchronousChannelGroup)}启动服务。
      * </p>
      *
      * @see AioQuickClient#start(AsynchronousChannelGroup)
@@ -146,12 +146,12 @@ public class AioQuickClient<T> {
 
 
     /**
-     * 设置消息过滤器,执行顺序以数组中的顺序为准
+     * 设置消息过滤器
      *
-     * @param filters 过滤器数组
+     * @param filter 过滤器数
      */
-    public final AioQuickClient<T> setFilters(Filter<T>[] filters) {
-        this.config.setFilters(filters);
+    public final AioQuickClient<T> setFilters(Filter<T> filter) {
+        this.config.setFilter(filter);
         return this;
     }
 

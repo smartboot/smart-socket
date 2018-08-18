@@ -1,15 +1,15 @@
 package org.smartboot.socket.protocol.p2p.client;
 
+import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.extension.timer.QuickMonitorTimer;
+import org.smartboot.socket.protocol.p2p.MessageHandler;
 import org.smartboot.socket.protocol.p2p.P2PSession;
 import org.smartboot.socket.protocol.p2p.Session;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
-import org.smartboot.socket.protocol.p2p.MessageHandler;
-import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.StateMachineEnum;
 
-public class P2PClientMessageProcessor implements MessageProcessor<BaseMessage> {
+public class P2PClientMessageProcessor extends QuickMonitorTimer<BaseMessage> {
     private P2pServiceMessageFactory serviceMessageFactory;
 
     private Session<BaseMessage> session;
@@ -19,7 +19,7 @@ public class P2PClientMessageProcessor implements MessageProcessor<BaseMessage> 
     }
 
     @Override
-    public void process(AioSession<BaseMessage> ioSession, BaseMessage msg) {
+    public void process0(AioSession<BaseMessage> ioSession, BaseMessage msg) {
         if (session.notifySyncMessage(msg)) {
             return;
         }
@@ -28,7 +28,7 @@ public class P2PClientMessageProcessor implements MessageProcessor<BaseMessage> 
     }
 
     @Override
-    public void stateEvent(AioSession<BaseMessage> ioSession, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent0(AioSession<BaseMessage> ioSession, StateMachineEnum stateMachineEnum, Throwable throwable) {
         switch (stateMachineEnum) {
             case NEW_SESSION:
                 session = new P2PSession(ioSession);

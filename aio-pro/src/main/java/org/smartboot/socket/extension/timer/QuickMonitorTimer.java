@@ -11,6 +11,8 @@ package org.smartboot.socket.extension.timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.Filter;
+import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 
 import java.util.concurrent.TimeUnit;
@@ -24,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author 三刀
  * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
  */
-public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
+public abstract class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T>, MessageProcessor<T> {
     private static final Logger logger = LoggerFactory.getLogger(QuickMonitorTimer.class);
     /**
      * 当前周期内消息 流量监控
@@ -76,21 +78,6 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
         return TimeUnit.MINUTES.toMillis(1);
     }
 
-    @Override
-    public void processFilter(AioSession<T> session, T d) {
-        processMsgNum.incrementAndGet();
-        totleProcessMsgNum.incrementAndGet();
-    }
-
-    @Override
-    public void connected(AioSession<T> session) {
-        newConnect.incrementAndGet();
-    }
-
-    @Override
-    public void closed(AioSession<T> session) {
-        disConnect.incrementAndGet();
-    }
 
     @Override
     public void readFilter(AioSession<T> session, int readSize) {
@@ -102,13 +89,8 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
     }
 
     @Override
-    public void processFail(AioSession<T> session, T d, Throwable e) {
-        processFailNum.incrementAndGet();
-    }
-
-    @Override
-    public void writeFilter(AioSession<T> session, int readSize) {
-        outFlow.addAndGet(readSize);
+    public void writeFilter(AioSession<T> session, int writeSize) {
+        outFlow.addAndGet(writeSize);
     }
 
 
@@ -131,4 +113,30 @@ public class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T> {
                 + "\r\n总连接次数:\t" + totalConnect.addAndGet(connectCount));
     }
 
+    @Override
+    public final void process(AioSession<T> session, T msg) {
+        processMsgNum.incrementAndGet();
+        totleProcessMsgNum.incrementAndGet();
+        process0(session, msg);
+    }
+
+    public abstract void process0(AioSession<T> session, T msg);
+
+    @Override
+    public final void stateEvent(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+        switch (stateMachineEnum) {
+            case NEW_SESSION:
+                newConnect.incrementAndGet();
+                break;
+            case PROCESS_EXCEPTION:
+                processFailNum.incrementAndGet();
+                break;
+            case SESSION_CLOSED:
+                disConnect.incrementAndGet();
+                break;
+        }
+        stateEvent0(session, stateMachineEnum, throwable);
+    }
+
+    public abstract void stateEvent0(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable);
 }

@@ -1,7 +1,7 @@
 package org.smartboot.socket.protocol.p2p.server;
 
-import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.extension.timer.QuickMonitorTimer;
 import org.smartboot.socket.protocol.p2p.MessageHandler;
 import org.smartboot.socket.protocol.p2p.P2PSession;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
@@ -13,7 +13,7 @@ import org.smartboot.socket.transport.AioSession;
  *
  * @author 三刀
  */
-public final class P2PServerMessageProcessor implements MessageProcessor<BaseMessage> {
+public final class P2PServerMessageProcessor extends QuickMonitorTimer<BaseMessage> {
     private P2pServiceMessageFactory serviceMessageFactory;
 
     public P2PServerMessageProcessor(P2pServiceMessageFactory serviceMessageFactory) {
@@ -21,7 +21,7 @@ public final class P2PServerMessageProcessor implements MessageProcessor<BaseMes
     }
 
     @Override
-    public void process(AioSession<BaseMessage> ioSession, BaseMessage entry) {
+    public void process0(AioSession<BaseMessage> ioSession, BaseMessage entry) {
         P2PSession session = ioSession.getAttachment();
         if (session.notifySyncMessage(entry)) {
             return;
@@ -31,7 +31,7 @@ public final class P2PServerMessageProcessor implements MessageProcessor<BaseMes
     }
 
     @Override
-    public void stateEvent(AioSession<BaseMessage> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent0(AioSession<BaseMessage> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         switch (stateMachineEnum) {
             case NEW_SESSION:
                 session.setAttachment(new P2PSession(session));

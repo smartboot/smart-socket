@@ -195,13 +195,12 @@ public class AioQuickServer<T> {
 
 
     /**
-     * 设置消息过滤器,执行顺序以数组中的顺序为准
+     * 设置消息过滤器
      *
-     * @param filters 过滤器数组
+     * @param filter 过滤器数组
      */
-    @SafeVarargs
-    public final AioQuickServer<T> setFilters(Filter<T>... filters) {
-        this.config.setFilters(filters);
+    public final AioQuickServer<T> setFilter(Filter<T> filter) {
+        this.config.setFilter(filter);
         return this;
     }
 
