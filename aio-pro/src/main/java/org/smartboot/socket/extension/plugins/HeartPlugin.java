@@ -1,7 +1,6 @@
 package org.smartboot.socket.extension.plugins;
 
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.extension.processor.Plugin;
 import org.smartboot.socket.transport.AioSession;
 
 /**

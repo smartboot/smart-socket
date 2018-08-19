@@ -1,4 +1,4 @@
-package org.smartboot.socket.extension.processor;
+package org.smartboot.socket.extension.plugins;
 
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.StateMachineEnum;

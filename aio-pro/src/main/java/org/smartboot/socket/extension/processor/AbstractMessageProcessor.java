@@ -3,6 +3,7 @@ package org.smartboot.socket.extension.processor;
 import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.extension.plugins.Plugin;
 import org.smartboot.socket.transport.AioSession;
 
 import java.util.ArrayList;

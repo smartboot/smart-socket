@@ -3,7 +3,6 @@ package org.smartboot.socket.extension.plugins;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.extension.processor.Plugin;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.QuickTimerTask;
 
