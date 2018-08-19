@@ -3,38 +3,71 @@ package org.smartboot.socket.extension.plugins;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
 /**
  * 心跳插件
  *
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public class HeartPlugin<T> implements Plugin<T> {
-    @Override
-    public boolean preProcess(AioSession<T> session, T t) {
+public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
+    private static Timer timer = new Timer("HeartMonitor Timer", true);
+    private Map<AioSession<T>, Long> sessionMap = new HashMap<>();
+    private int timeout;
 
+    public HeartPlugin(int timeout) {
+        this.timeout = timeout;
+    }
+
+    @Override
+    public final boolean preProcess(AioSession<T> session, T t) {
+        sessionMap.put(session, System.currentTimeMillis() + 1);
+        //是否心跳响应消息
+        if (isHeartResponse(session, t)) {
+            //延长心跳监测时间
+            return false;
+        }
         return true;
     }
 
     @Override
-    public void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
-        switch (stateMachineEnum){
+    public final void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
+        switch (stateMachineEnum) {
             case NEW_SESSION:
+                sessionMap.put(session, System.currentTimeMillis() + timeout);
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+
+                    }
+                }, timeout);
                 //注册心跳监测
                 break;
             case SESSION_CLOSED:
                 //移除心跳监测
+                sessionMap.remove(session);
                 break;
         }
     }
 
-    @Override
-    public void readFilter(AioSession<T> session, int readSize) {
+    /**
+     * 自定义心跳消息并发送
+     *
+     * @param session
+     */
+    public abstract void sendHeartRequest(AioSession<T> session) throws IOException;
 
-    }
-
-    @Override
-    public void writeFilter(AioSession<T> session, int writeSize) {
-
-    }
+    /**
+     * 判断当前收到的消息是否为心跳响应消息
+     *
+     * @param session
+     * @param msg
+     * @return
+     */
+    public abstract boolean isHeartResponse(AioSession<T> session, T msg);
 }
