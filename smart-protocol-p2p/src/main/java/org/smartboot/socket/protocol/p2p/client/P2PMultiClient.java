@@ -2,6 +2,7 @@ package org.smartboot.socket.protocol.p2p.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.protocol.p2p.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
@@ -38,6 +39,7 @@ public class P2PMultiClient {
                         e1.printStackTrace();
                     }
                     P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
+                    processor.addPlugin(new MonitorPlugin());
 //                    AioSSLQuickClient<BaseMessage> client = new AioSSLQuickClient<BaseMessage>("127.0.0.1", 9222, new P2PProtocol(messageFactory), processor);
 //                    client.setKeyStore("client.jks", "storepass")
 //                            .setTrust("trustedCerts.jks", "storepass")

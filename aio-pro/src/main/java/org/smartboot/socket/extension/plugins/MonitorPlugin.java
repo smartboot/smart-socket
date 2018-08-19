@@ -1,34 +1,22 @@
-/*
- * Copyright (c) 2017, org.smartboot. All rights reserved.
- * project name: smart-socket
- * file name: QuickMonitorTimer.java
- * Date: 2017-11-25
- * Author: sandao
- */
-
-package org.smartboot.socket.extension.timer;
+package org.smartboot.socket.extension.plugins;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.Filter;
-import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.extension.processor.Plugin;
 import org.smartboot.socket.util.QuickTimerTask;
+import org.smartboot.socket.transport.AioSession;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 服务器监测定时器
- * <p>统计一分钟内接收到的数据流量，接受消息数，处理消息数，处理失败消息数</p>
- *
  * @author 三刀
- * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
+ * @version V1.0 , 2018/8/19
  */
-public abstract class MonitorMessageProcessor<T> extends QuickTimerTask implements Filter<T>, MessageProcessor<T> {
-    private static final Logger logger = LoggerFactory.getLogger(MonitorMessageProcessor.class);
+public class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> {
+    private static final Logger logger = LoggerFactory.getLogger(MonitorPlugin.class);
     /**
      * 当前周期内消息 流量监控
      */
@@ -79,21 +67,33 @@ public abstract class MonitorMessageProcessor<T> extends QuickTimerTask implemen
         return TimeUnit.MINUTES.toMillis(1);
     }
 
+    @Override
+    public boolean preProcess(AioSession<T> session, T t) {
+        processMsgNum.incrementAndGet();
+        totleProcessMsgNum.incrementAndGet();
+        return true;
+    }
 
     @Override
-    public void readFilter(AioSession<T> session, int readSize) {
-        //出现result为0,说明代码存在问题
-        if (readSize == 0) {
-            logger.error("readSize is 0");
+    public void doException(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
+        switch (stateMachineEnum) {
+            case PROCESS_EXCEPTION:
+                processFailNum.incrementAndGet();
+                break;
         }
-        inFlow.addAndGet(readSize);
     }
 
     @Override
-    public void writeFilter(AioSession<T> session, int writeSize) {
-        outFlow.addAndGet(writeSize);
+    public void doState(StateMachineEnum stateMachineEnum, AioSession<T> session) {
+        switch (stateMachineEnum) {
+            case NEW_SESSION:
+                newConnect.incrementAndGet();
+                break;
+            case SESSION_CLOSED:
+                disConnect.incrementAndGet();
+                break;
+        }
     }
-
 
     @Override
     public void run() {
@@ -115,29 +115,16 @@ public abstract class MonitorMessageProcessor<T> extends QuickTimerTask implemen
     }
 
     @Override
-    public final void process(AioSession<T> session, T msg) {
-        processMsgNum.incrementAndGet();
-        totleProcessMsgNum.incrementAndGet();
-        process0(session, msg);
+    public void readFilter(AioSession<T> session, int readSize) {
+        //出现result为0,说明代码存在问题
+        if (readSize == 0) {
+            logger.error("readSize is 0");
+        }
+        inFlow.addAndGet(readSize);
     }
-
-    public abstract void process0(AioSession<T> session, T msg);
 
     @Override
-    public final void stateEvent(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-        switch (stateMachineEnum) {
-            case NEW_SESSION:
-                newConnect.incrementAndGet();
-                break;
-            case PROCESS_EXCEPTION:
-                processFailNum.incrementAndGet();
-                break;
-            case SESSION_CLOSED:
-                disConnect.incrementAndGet();
-                break;
-        }
-        stateEvent0(session, stateMachineEnum, throwable);
+    public void writeFilter(AioSession<T> session, int writeSize) {
+        outFlow.addAndGet(writeSize);
     }
-
-    public abstract void stateEvent0(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable);
 }

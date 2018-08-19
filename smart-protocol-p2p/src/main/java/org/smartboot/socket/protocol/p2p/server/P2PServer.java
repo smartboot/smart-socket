@@ -1,5 +1,6 @@
 package org.smartboot.socket.protocol.p2p.server;
 
+import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.protocol.p2p.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
@@ -31,13 +32,14 @@ public class P2PServer {
 //                .setWriteQueueSize(16384)
 //                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()});
 
-
-        AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>(8888, new P2PProtocol(messageFactory), new P2PServerMessageProcessor(messageFactory));
+        P2PServerMessageProcessor processor = new P2PServerMessageProcessor(messageFactory);
+        processor.addPlugin(new MonitorPlugin());
+        AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>(8888, new P2PProtocol(messageFactory), processor);
         server.setThreadNum(16)
                 .setWriteQueueSize(16384)
 //                .setDirectBuffer(true)
 //                .setReadBufferSize(70)
-                ;
+        ;
         try {
             server.start();
         } catch (IOException e) {

@@ -12,7 +12,7 @@ import java.util.List;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public abstract class PluginMessageProcessor<T> implements MessageProcessor<T>, Filter<T> {
+public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>, Filter<T> {
 
     private List<Plugin<T>> plugins = new ArrayList<>();
 
@@ -43,7 +43,7 @@ public abstract class PluginMessageProcessor<T> implements MessageProcessor<T>, 
         }
     }
 
-    abstract void process0(AioSession<T> session, T msg);
+    public abstract void process0(AioSession<T> session, T msg);
 
     @Override
     public final void stateEvent(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
@@ -72,6 +72,6 @@ public abstract class PluginMessageProcessor<T> implements MessageProcessor<T>, 
     public abstract void stateEvent0(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable);
 
     public void addPlugin(Plugin plugin) {
-
+        this.plugins.add(plugin);
     }
 }
