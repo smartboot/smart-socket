@@ -66,7 +66,7 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
                 }
                 break;
         }
-
+        stateEvent0(session, stateMachineEnum, throwable);
     }
 
     public abstract void stateEvent0(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable);

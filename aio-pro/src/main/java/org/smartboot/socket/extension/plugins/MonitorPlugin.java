@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.extension.processor.Plugin;
-import org.smartboot.socket.util.QuickTimerTask;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.QuickTimerTask;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> {
+public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> {
     private static final Logger logger = LoggerFactory.getLogger(MonitorPlugin.class);
     /**
      * 当前周期内消息 流量监控
