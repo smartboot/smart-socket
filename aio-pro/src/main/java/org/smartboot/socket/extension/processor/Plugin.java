@@ -23,8 +23,6 @@ public interface Plugin<T> extends Filter<T> {
      * @param session
      * @param throwable
      */
-    void doException(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable);
-
-    void doState(StateMachineEnum stateMachineEnum, AioSession<T> session);
+    void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable);
 
 }

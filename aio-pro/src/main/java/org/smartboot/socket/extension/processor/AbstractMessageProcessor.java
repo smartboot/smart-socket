@@ -47,24 +47,8 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
 
     @Override
     public final void stateEvent(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-        switch (stateMachineEnum) {
-            case PROCESS_EXCEPTION:
-            case INPUT_EXCEPTION:
-            case OUTPUT_EXCEPTION:
-                for (Plugin<T> plugin : plugins) {
-                    plugin.doException(stateMachineEnum, session, throwable);
-                }
-                break;
-            case NEW_SESSION:
-            case SESSION_CLOSING:
-            case SESSION_CLOSED:
-            case FLOW_LIMIT:
-            case RELEASE_FLOW_LIMIT:
-            case INPUT_SHUTDOWN:
-                for (Plugin<T> plugin : plugins) {
-                    plugin.doState(stateMachineEnum, session);
-                }
-                break;
+        for (Plugin<T> plugin : plugins) {
+            plugin.stateEvent(stateMachineEnum, session, throwable);
         }
         stateEvent0(session, stateMachineEnum, throwable);
     }

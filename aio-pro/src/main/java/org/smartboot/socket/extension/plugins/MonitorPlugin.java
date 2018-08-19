@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 服务器运行状态监控插件
+ *
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
@@ -76,17 +77,11 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
     }
 
     @Override
-    public void doException(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
+    public void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
         switch (stateMachineEnum) {
             case PROCESS_EXCEPTION:
                 processFailNum.incrementAndGet();
                 break;
-        }
-    }
-
-    @Override
-    public void doState(StateMachineEnum stateMachineEnum, AioSession<T> session) {
-        switch (stateMachineEnum) {
             case NEW_SESSION:
                 newConnect.incrementAndGet();
                 break;
