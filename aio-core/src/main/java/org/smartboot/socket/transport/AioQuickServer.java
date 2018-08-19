@@ -10,7 +10,6 @@ package org.smartboot.socket.transport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 
@@ -190,17 +189,6 @@ public class AioQuickServer<T> {
      */
     public final AioQuickServer<T> setThreadNum(int num) {
         this.config.setThreadNum(num);
-        return this;
-    }
-
-
-    /**
-     * 设置消息过滤器
-     *
-     * @param filter 过滤器数组
-     */
-    public final AioQuickServer<T> setFilter(Filter<T> filter) {
-        this.config.setFilter(filter);
         return this;
     }
 

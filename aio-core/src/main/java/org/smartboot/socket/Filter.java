@@ -33,19 +33,6 @@ import org.smartboot.socket.transport.AioSession;
  */
 public interface Filter<T> {
 
-    /**
-     * 建立连接时触发过滤器
-     *
-     * @param session 新建立的连接session
-     */
-//    void connected(AioSession<T> session);
-
-    /**
-     * 网络断链
-     *
-     * @param session 当前以关闭的session
-     */
-//    void closed(AioSession<T> session);
 
     /**
      * 数据读取过滤,可用于统计流量
@@ -54,25 +41,6 @@ public interface Filter<T> {
      * @param readSize 本次解码读取的数据长度
      */
     void readFilter(AioSession<T> session, int readSize);
-
-
-    /**
-     * 消息处理前置预处理
-     *
-     * @param session 当前执行消息处理的session对象
-     * @param msg     编解码后的消息实体
-     */
-//    void processFilter(AioSession<T> session, T msg);
-
-
-    /**
-     * 消息接受失败处理
-     *
-     * @param session 消息处理异常的session对象
-     * @param msg     编解码后的消息实体
-     * @param e       本次处理异常对象
-     */
-//    void processFail(AioSession<T> session, T msg, Throwable e);
 
     /**
      * 数据输出过滤,可用于统计流量

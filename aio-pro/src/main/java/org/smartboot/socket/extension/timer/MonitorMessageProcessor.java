@@ -26,8 +26,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author 三刀
  * @version QuickMonitorTimer.java, v 0.1 2015年3月18日 下午11:25:21 Seer Exp.
  */
-public abstract class QuickMonitorTimer<T> extends QuickTimerTask implements Filter<T>, MessageProcessor<T> {
-    private static final Logger logger = LoggerFactory.getLogger(QuickMonitorTimer.class);
+public abstract class MonitorMessageProcessor<T> extends QuickTimerTask implements Filter<T>, MessageProcessor<T> {
+    private static final Logger logger = LoggerFactory.getLogger(MonitorMessageProcessor.class);
     /**
      * 当前周期内消息 流量监控
      */

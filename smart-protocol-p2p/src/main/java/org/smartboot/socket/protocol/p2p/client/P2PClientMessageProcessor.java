@@ -1,7 +1,7 @@
 package org.smartboot.socket.protocol.p2p.client;
 
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.extension.timer.QuickMonitorTimer;
+import org.smartboot.socket.extension.timer.MonitorMessageProcessor;
 import org.smartboot.socket.protocol.p2p.MessageHandler;
 import org.smartboot.socket.protocol.p2p.P2PSession;
 import org.smartboot.socket.protocol.p2p.Session;
@@ -9,7 +9,7 @@ import org.smartboot.socket.protocol.p2p.message.BaseMessage;
 import org.smartboot.socket.protocol.p2p.message.P2pServiceMessageFactory;
 import org.smartboot.socket.transport.AioSession;
 
-public class P2PClientMessageProcessor extends QuickMonitorTimer<BaseMessage> {
+public class P2PClientMessageProcessor extends MonitorMessageProcessor<BaseMessage> {
     private P2pServiceMessageFactory serviceMessageFactory;
 
     private Session<BaseMessage> session;

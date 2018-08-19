@@ -132,9 +132,6 @@ final class IoServerConfig<T> {
         return filter;
     }
 
-    public void setFilter(Filter<T> filter) {
-        this.filter = filter;
-    }
 
     public Protocol<T> getProtocol() {
         return protocol;
@@ -151,7 +148,7 @@ final class IoServerConfig<T> {
     public final void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
         if (processor instanceof Filter) {
-            setFilter((Filter<T>) processor);
+            this.filter = (Filter<T>) processor;
         }
     }
 

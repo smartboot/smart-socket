@@ -9,7 +9,6 @@
 
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 
@@ -142,17 +141,6 @@ public class AioQuickClient<T> {
         if (asynchronousChannelGroup != null) {
             asynchronousChannelGroup.shutdown();
         }
-    }
-
-
-    /**
-     * 设置消息过滤器
-     *
-     * @param filter 过滤器数
-     */
-    public final AioQuickClient<T> setFilters(Filter<T> filter) {
-        this.config.setFilter(filter);
-        return this;
     }
 
 

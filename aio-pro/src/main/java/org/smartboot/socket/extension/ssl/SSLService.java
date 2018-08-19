@@ -39,7 +39,7 @@ import java.security.cert.X509Certificate;
  */
 public class SSLService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SSLAioSession.class);
+    private static final Logger logger = LoggerFactory.getLogger(SSLService.class);
 
     private SSLContext sslContext;
 
