@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * 服务器运行状态监控插件
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
