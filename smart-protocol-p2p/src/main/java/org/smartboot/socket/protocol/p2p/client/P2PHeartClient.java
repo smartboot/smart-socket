@@ -6,8 +6,6 @@ import org.smartboot.socket.extension.plugins.HeartPlugin;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.protocol.p2p.P2PProtocol;
 import org.smartboot.socket.protocol.p2p.message.BaseMessage;
-import org.smartboot.socket.protocol.p2p.message.DetectMessageReq;
-import org.smartboot.socket.protocol.p2p.message.DetectMessageResp;
 import org.smartboot.socket.protocol.p2p.message.HeartMessageReq;
 import org.smartboot.socket.protocol.p2p.message.HeartMessageRsp;
 import org.smartboot.socket.protocol.p2p.message.MessageType;
@@ -22,7 +20,6 @@ import java.util.concurrent.ThreadFactory;
 
 public class P2PHeartClient {
     public static void main(String[] args) throws Exception {
-//        System.setProperty("javax.net.debug", "ssl");
         final AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -36,80 +33,37 @@ public class P2PHeartClient {
                 @Override
                 public void run() {
                     Properties properties = new Properties();
-                    properties.put(DetectMessageResp.class.getName(), DetectRespMessageHandler.class.getName());
-                    properties.put(HeartMessageReq.class.getName(),"");
-                    properties.put(HeartMessageRsp.class.getName(),"");
+                    properties.put(HeartMessageReq.class.getName(), "");
+                    properties.put(HeartMessageRsp.class.getName(), "");
                     P2pServiceMessageFactory messageFactory = new P2pServiceMessageFactory();
                     try {
                         messageFactory.loadFromProperties(properties);
                     } catch (ClassNotFoundException e1) {
-                        // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
                     P2PClientMessageProcessor processor = new P2PClientMessageProcessor(messageFactory);
                     processor.addPlugin(new MonitorPlugin());
-                    processor.addPlugin(new HeartPlugin<BaseMessage>(5000) {
+                    processor.addPlugin(new HeartPlugin<BaseMessage>(-1) {
                         @Override
                         public void sendHeartRequest(AioSession<BaseMessage> session) throws IOException {
-//                            System.out.println("session:" + session + "发送心跳消息");
-//                            session.write(new HeartMessageReq());
+
                         }
 
                         @Override
-                        public boolean isHeartResponse(AioSession<BaseMessage> session, BaseMessage msg) {
-                            return msg.getMessageType() == MessageType.HEART_MESSAGE_RSP;
-                        }
-
-                        @Override
-                        public boolean isHeartRequest(AioSession<BaseMessage> session, BaseMessage msg) {
-
-                            if (msg.getMessageType() != MessageType.HEART_MESSAGE_REQ) {
-                                return false;
+                        public boolean isHeartMessage(AioSession<BaseMessage> session, BaseMessage msg) {
+                            if (msg.getMessageType() == MessageType.HEART_MESSAGE_RSP || msg.getMessageType() == MessageType.HEART_MESSAGE_REQ) {
+                                System.out.println("收到心跳消息");
+                                return true;
                             }
-                            System.out.println("收到心跳请求消息:" + msg);
-//                            try {
-//                                session.write(new HeartMessageRsp());
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            }
-                            return true;
+                            return false;
                         }
                     });
-//                    AioSSLQuickClient<BaseMessage> client = new AioSSLQuickClient<BaseMessage>("127.0.0.1", 9222, new P2PProtocol(messageFactory), processor);
-//                    client.setKeyStore("client.jks", "storepass")
-//                            .setTrust("trustedCerts.jks", "storepass")
-//                            .setKeyPassword("keypass")
-//                            .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
-//                            .setWriteQueueSize(16384);
                     AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("localhost", 8888, new P2PProtocol(messageFactory), processor);
-                    client
-//                            .setDirectBuffer(true)
-                            .setWriteQueueSize(16384)
-                    ;
                     try {
                         client.start(asynchronousChannelGroup);
-//                        Thread.sleep(4000);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-
-                    long num = 0;
-                    long start = System.currentTimeMillis();
-                    while (num++ < Integer.MAX_VALUE) {
-                        DetectMessageReq request = new DetectMessageReq();
-                        request.setDetect("台州人在杭州:" + num);
-                        try {
-//                            processor.getSession().sendWithoutResponse(request);
-//                            logger.info(processor.getSession().sendWithResponse(request, 0).toString());
-                            Thread.sleep(6000);
-                        } catch (Exception e) {
-                            System.out.println(num);
-                            e.printStackTrace();
-                            break;
-                        }
-                    }
-                    logger.info("安全消息结束" + (System.currentTimeMillis() - start));
-                    client.shutdown();
                 }
 
             }.start();

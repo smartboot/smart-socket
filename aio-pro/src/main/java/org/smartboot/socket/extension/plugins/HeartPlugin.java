@@ -31,7 +31,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
     public final boolean preProcess(AioSession<T> session, T t) {
         sessionMap.put(session, System.currentTimeMillis());
         //是否心跳响应消息
-        if (isHeartResponse(session, t) || isHeartRequest(session, t)) {
+        if (isHeartMessage(session, t)) {
             //延长心跳监测时间
             return false;
         }
@@ -61,17 +61,20 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
     public abstract void sendHeartRequest(AioSession<T> session) throws IOException;
 
     /**
-     * 判断当前收到的消息是否为心跳响应消息
+     * 判断当前收到的消息是否为心跳消息。
+     * 心跳请求消息与响应消息可能相同，也可能不同，因实际场景而异，故接口定义不做区分。
      *
      * @param session
      * @param msg
      * @return
      */
-    public abstract boolean isHeartResponse(AioSession<T> session, T msg);
-
-    public abstract boolean isHeartRequest(AioSession<T> session, T msg);
+    public abstract boolean isHeartMessage(AioSession<T> session, T msg);
 
     private void registerHeart(final AioSession<T> session, final int timeout) {
+        if (timeout <= 0) {
+            LOGGER.info("sesssion:{} 因心跳超时时间为:{},终止启动心跳监测任务", session, timeout);
+            return;
+        }
         LOGGER.info("session:{}注册心跳任务,超时时间:{}", session, timeout);
         timer.schedule(new TimerTask() {
             @Override

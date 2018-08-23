@@ -22,8 +22,8 @@ public class P2PServer {
         Properties properties = new Properties();
 //		properties.put(HeartMessageReq.class.getName(), HeartMessageProcessor.class.getName());
         properties.put(DetectMessageReq.class.getName(), DetectMessageHandler.class.getName());
-        properties.put(HeartMessageReq.class.getName(),"");
-        properties.put(HeartMessageRsp.class.getName(),"");
+        properties.put(HeartMessageReq.class.getName(), "");
+        properties.put(HeartMessageRsp.class.getName(), "");
 //		properties.put(RemoteInterfaceMessageReq.class.getName(), RemoteServiceMessageProcessor.class.getName());
 //		properties.put(LoginAuthReq.class.getName(), LoginAuthProcessor.class.getName());
 //		properties.put(SecureSocketMessageReq.class.getName(), SecureSocketProcessor.class.getName());
@@ -40,7 +40,9 @@ public class P2PServer {
 //                .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()});
 
         P2PServerMessageProcessor processor = new P2PServerMessageProcessor(messageFactory);
+        //注册服务监控插件
         processor.addPlugin(new MonitorPlugin());
+        //注册心跳插件
         processor.addPlugin(new HeartPlugin<BaseMessage>(5000) {
             @Override
             public void sendHeartRequest(AioSession<BaseMessage> session) throws IOException {
@@ -49,21 +51,21 @@ public class P2PServer {
             }
 
             @Override
-            public boolean isHeartResponse(AioSession<BaseMessage> session, BaseMessage msg) {
-                return msg.getMessageType() == MessageType.HEART_MESSAGE_RSP;
-            }
-
-            @Override
-            public boolean isHeartRequest(AioSession<BaseMessage> session, BaseMessage msg) {
-
-                if (msg.getMessageType() != MessageType.HEART_MESSAGE_REQ) {
+            public boolean isHeartMessage(AioSession<BaseMessage> session, BaseMessage msg) {
+                //收到非心跳消息
+                if (msg.getMessageType() != MessageType.HEART_MESSAGE_REQ
+                        && msg.getMessageType() != MessageType.HEART_MESSAGE_RSP) {
                     return false;
                 }
-                System.out.println("收到心跳请求消息:" + msg);
-                try {
-                    session.write(new HeartMessageRsp());
-                } catch (IOException e) {
-                    e.printStackTrace();
+
+                if (msg.getMessageType() == MessageType.HEART_MESSAGE_REQ) {
+                    System.out.println("收到心跳请求消息:" + msg + ",发送心跳响应消息");
+                    try {
+                        //发送心跳响应消息
+                        session.write(new HeartMessageRsp());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
                 return true;
             }
