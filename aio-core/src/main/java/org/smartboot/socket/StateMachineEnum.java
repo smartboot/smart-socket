@@ -33,6 +33,7 @@ public enum StateMachineEnum {
      * <li>当前AioSession处理完读操作后检测到自身正处于{@link StateMachineEnum#SESSION_CLOSING}状态</li>
      * </ol>
      * </p>
+     * <b>未来该状态机可能会废除，并转移至NetMonitor</b>
      */
     INPUT_SHUTDOWN,
     /**
@@ -44,11 +45,13 @@ public enum StateMachineEnum {
      * 读操作异常。
      *
      * <p>在底层服务执行read操作期间因发生异常情况出发了{@link java.nio.channels.CompletionHandler#failed(Throwable, Object)}。</p>
+     * <b>未来该状态机可能会废除，并转移至NetMonitor</b>
      */
     INPUT_EXCEPTION,
     /**
      * 写操作异常。
      * <p>在底层服务执行write操作期间因发生异常情况出发了{@link java.nio.channels.CompletionHandler#failed(Throwable, Object)}。</p>
+     * <b>未来该状态机可能会废除，并转移至NetMonitor</b>
      */
     OUTPUT_EXCEPTION,
     /**
@@ -67,12 +70,14 @@ public enum StateMachineEnum {
      * 流控,仅服务端有效。
      *
      * <p>服务端启用了输出缓存队列，且消息积压达到一定阈值时触发流控。</p>
+     * <b>未来该状态机可能会废除，并转移至NetMonitor</b>
      */
     FLOW_LIMIT,
     /**
      * 释放流控,仅服务端有效。
      *
      * <p>处于流控状态下的服务端，当输出队列积压量下降到安全阈值后，释放流控状态。</p>
+     * <b>未来该状态机可能会废除，并转移至NetMonitor</b>
      */
     RELEASE_FLOW_LIMIT;
 
