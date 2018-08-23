@@ -1,7 +1,7 @@
 package org.smartboot.socket.extension.processor;
 
-import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.extension.plugins.Plugin;
 import org.smartboot.socket.transport.AioSession;
@@ -18,14 +18,14 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
     private List<Plugin<T>> plugins = new ArrayList<>();
 
     @Override
-    public void readMonitor(AioSession<T> session, int readSize) {
+    public final void readMonitor(AioSession<T> session, int readSize) {
         for (Plugin<T> plugin : plugins) {
             plugin.readMonitor(session, readSize);
         }
     }
 
     @Override
-    public void writeMonitor(AioSession<T> session, int writeSize) {
+    public final void writeMonitor(AioSession<T> session, int writeSize) {
         for (Plugin<T> plugin : plugins) {
             plugin.writeMonitor(session, writeSize);
         }
@@ -56,7 +56,7 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
 
     public abstract void stateEvent0(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable);
 
-    public void addPlugin(Plugin plugin) {
+    public final void addPlugin(Plugin plugin) {
         this.plugins.add(plugin);
     }
 }
