@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author 三刀
  * @version V1.0 , 2018/8/9
  */
-public abstract class GroupMessageProcessor<T> implements MessageProcessor<T>, GroupIo<T> {
+abstract class GroupMessageProcessor<T> implements MessageProcessor<T>, GroupIo<T> {
 
     private Map<String, GroupUnit> sessionGroup = new ConcurrentHashMap<>();
 
