@@ -43,33 +43,33 @@ public class P2PServer {
         //注册服务监控插件
         processor.addPlugin(new MonitorPlugin());
         //注册心跳插件
-        processor.addPlugin(new HeartPlugin<BaseMessage>(-1) {
-            @Override
-            public void sendHeartRequest(AioSession<BaseMessage> session) throws IOException {
-                System.out.println("session:" + session + "发送心跳消息");
-                session.write(new HeartMessageReq());
-            }
-
-            @Override
-            public boolean isHeartMessage(AioSession<BaseMessage> session, BaseMessage msg) {
-                //收到非心跳消息
-                if (msg.getMessageType() != MessageType.HEART_MESSAGE_REQ
-                        && msg.getMessageType() != MessageType.HEART_MESSAGE_RSP) {
-                    return false;
-                }
-
-                if (msg.getMessageType() == MessageType.HEART_MESSAGE_REQ) {
-                    System.out.println("收到心跳请求消息:" + msg + ",发送心跳响应消息");
-                    try {
-                        //发送心跳响应消息
-                        session.write(new HeartMessageRsp());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                return true;
-            }
-        });
+//        processor.addPlugin(new HeartPlugin<BaseMessage>(-1) {
+//            @Override
+//            public void sendHeartRequest(AioSession<BaseMessage> session) throws IOException {
+//                System.out.println("session:" + session + "发送心跳消息");
+//                session.write(new HeartMessageReq());
+//            }
+//
+//            @Override
+//            public boolean isHeartMessage(AioSession<BaseMessage> session, BaseMessage msg) {
+//                //收到非心跳消息
+//                if (msg.getMessageType() != MessageType.HEART_MESSAGE_REQ
+//                        && msg.getMessageType() != MessageType.HEART_MESSAGE_RSP) {
+//                    return false;
+//                }
+//
+//                if (msg.getMessageType() == MessageType.HEART_MESSAGE_REQ) {
+//                    System.out.println("收到心跳请求消息:" + msg + ",发送心跳响应消息");
+//                    try {
+//                        //发送心跳响应消息
+//                        session.write(new HeartMessageRsp());
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//                return true;
+//            }
+//        });
         AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>(8888, new P2PProtocol(messageFactory), processor);
         server.setThreadNum(16)
                 .setWriteQueueSize(16384)
