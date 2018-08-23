@@ -43,7 +43,7 @@ public class P2PServer {
         //注册服务监控插件
         processor.addPlugin(new MonitorPlugin());
         //注册心跳插件
-        processor.addPlugin(new HeartPlugin<BaseMessage>(5000) {
+        processor.addPlugin(new HeartPlugin<BaseMessage>(-1) {
             @Override
             public void sendHeartRequest(AioSession<BaseMessage> session) throws IOException {
                 System.out.println("session:" + session + "发送心跳消息");
