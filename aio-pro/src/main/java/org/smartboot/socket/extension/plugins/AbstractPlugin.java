@@ -19,12 +19,12 @@ public abstract class AbstractPlugin<T> implements Plugin<T> {
     }
 
     @Override
-    public void readFilter(AioSession<T> session, int readSize) {
+    public void readMonitor(AioSession<T> session, int readSize) {
 
     }
 
     @Override
-    public void writeFilter(AioSession<T> session, int writeSize) {
+    public void writeMonitor(AioSession<T> session, int writeSize) {
 
     }
 }

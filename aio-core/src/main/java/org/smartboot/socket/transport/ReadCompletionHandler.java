@@ -10,7 +10,7 @@ package org.smartboot.socket.transport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.Filter;
+import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 
 import java.io.IOException;
@@ -28,9 +28,9 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
         // 接收到的消息进行预处理
-        Filter<T> filter = aioSession.getServerConfig().getFilter();
-        if (filter != null) {
-            filter.readFilter(aioSession, result);
+        NetMonitor<T> monitor = aioSession.getServerConfig().getMonitor();
+        if (monitor != null) {
+            monitor.readMonitor(aioSession, result);
         }
         aioSession.readFromChannel(result == -1);
     }

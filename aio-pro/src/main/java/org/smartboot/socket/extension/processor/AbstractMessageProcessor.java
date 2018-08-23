@@ -1,6 +1,6 @@
 package org.smartboot.socket.extension.processor;
 
-import org.smartboot.socket.Filter;
+import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.extension.plugins.Plugin;
@@ -13,21 +13,21 @@ import java.util.List;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>, Filter<T> {
+public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>, NetMonitor<T> {
 
     private List<Plugin<T>> plugins = new ArrayList<>();
 
     @Override
-    public void readFilter(AioSession<T> session, int readSize) {
+    public void readMonitor(AioSession<T> session, int readSize) {
         for (Plugin<T> plugin : plugins) {
-            plugin.readFilter(session, readSize);
+            plugin.readMonitor(session, readSize);
         }
     }
 
     @Override
-    public void writeFilter(AioSession<T> session, int writeSize) {
+    public void writeMonitor(AioSession<T> session, int writeSize) {
         for (Plugin<T> plugin : plugins) {
-            plugin.writeFilter(session, writeSize);
+            plugin.writeMonitor(session, writeSize);
         }
     }
 

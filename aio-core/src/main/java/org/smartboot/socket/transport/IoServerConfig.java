@@ -8,8 +8,8 @@
 
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.Filter;
 import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 
 import java.net.SocketOption;
@@ -51,7 +51,7 @@ final class IoServerConfig<T> {
     /**
      * 服务器消息拦截器
      */
-    private Filter<T> filter;
+    private NetMonitor<T> monitor;
 
     /**
      * 服务器端口号
@@ -128,8 +128,8 @@ final class IoServerConfig<T> {
     }
 
 
-    public Filter<T> getFilter() {
-        return filter;
+    public NetMonitor<T> getMonitor() {
+        return monitor;
     }
 
 
@@ -147,8 +147,8 @@ final class IoServerConfig<T> {
 
     public final void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
-        if (processor instanceof Filter) {
-            this.filter = (Filter<T>) processor;
+        if (processor instanceof NetMonitor) {
+            this.monitor = (NetMonitor<T>) processor;
         }
     }
 
@@ -219,7 +219,7 @@ final class IoServerConfig<T> {
                 "writeQueueSize=" + writeQueueSize +
                 ", readBufferSize=" + readBufferSize +
                 ", host='" + host + '\'' +
-                ", filter=" + filter +
+                ", monitor=" + monitor +
                 ", port=" + port +
                 ", processor=" + processor +
                 ", protocol=" + protocol +

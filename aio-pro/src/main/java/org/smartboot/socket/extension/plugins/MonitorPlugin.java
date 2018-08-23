@@ -110,7 +110,7 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
     }
 
     @Override
-    public void readFilter(AioSession<T> session, int readSize) {
+    public void readMonitor(AioSession<T> session, int readSize) {
         //出现result为0,说明代码存在问题
         if (readSize == 0) {
             logger.error("readSize is 0");
@@ -119,7 +119,7 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
     }
 
     @Override
-    public void writeFilter(AioSession<T> session, int writeSize) {
+    public void writeMonitor(AioSession<T> session, int writeSize) {
         outFlow.addAndGet(writeSize);
     }
 }

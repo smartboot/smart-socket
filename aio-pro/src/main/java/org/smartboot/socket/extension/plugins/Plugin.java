@@ -1,6 +1,6 @@
 package org.smartboot.socket.extension.plugins;
 
-import org.smartboot.socket.Filter;
+import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 
@@ -8,7 +8,7 @@ import org.smartboot.socket.transport.AioSession;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public interface Plugin<T> extends Filter<T> {
+public interface Plugin<T> extends NetMonitor<T> {
 
     /**
      * @param session

@@ -65,7 +65,6 @@ public interface MessageProcessor<T> {
     /**
      * 状态机事件,当枚举事件发生时由框架触发该方法
      *
-     * <p>{@link Filter}属于通信级别的过滤器，监控全局系统服务状态；而状态机更侧重于应用级别的过滤器，相较于Filter更加轻量灵活。</p>
      *
      * @param session          本次触发状态机的AioSession对象
      * @param stateMachineEnum 状态枚举
