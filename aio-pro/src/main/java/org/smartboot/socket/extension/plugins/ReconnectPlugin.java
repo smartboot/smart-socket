@@ -12,7 +12,7 @@ import java.nio.channels.AsynchronousChannelGroup;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public class ReconnectPlugin<T> extends AbstractPlugin<T> {
+class ReconnectPlugin<T> extends AbstractPlugin<T> {
 
     private AioQuickClient<T> client;
 
