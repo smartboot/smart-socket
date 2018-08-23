@@ -1,5 +1,7 @@
 package org.smartboot.socket.extension.plugins;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 
@@ -16,6 +18,7 @@ import java.util.TimerTask;
  * @version V1.0 , 2018/8/19
  */
 public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HeartPlugin.class);
     private static Timer timer = new Timer("HeartMonitor Timer", true);
     private Map<AioSession<T>, Long> sessionMap = new HashMap<>();
     private int timeout;
@@ -26,9 +29,9 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
 
     @Override
     public final boolean preProcess(AioSession<T> session, T t) {
-        sessionMap.put(session, System.currentTimeMillis() + 1);
+        sessionMap.put(session, System.currentTimeMillis());
         //是否心跳响应消息
-        if (isHeartResponse(session, t)) {
+        if (isHeartResponse(session, t) || isHeartRequest(session, t)) {
             //延长心跳监测时间
             return false;
         }
@@ -39,13 +42,8 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
     public final void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
         switch (stateMachineEnum) {
             case NEW_SESSION:
-                sessionMap.put(session, System.currentTimeMillis() + timeout);
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-
-                    }
-                }, timeout);
+                sessionMap.put(session, System.currentTimeMillis());
+                registerHeart(session, timeout);
                 //注册心跳监测
                 break;
             case SESSION_CLOSED:
@@ -70,4 +68,34 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
      * @return
      */
     public abstract boolean isHeartResponse(AioSession<T> session, T msg);
+
+    public abstract boolean isHeartRequest(AioSession<T> session, T msg);
+
+    private void registerHeart(final AioSession<T> session, final int timeout) {
+        LOGGER.info("session:{}注册心跳任务,超时时间:{}", session, timeout);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (session.isInvalid()) {
+                    sessionMap.remove(session);
+                    LOGGER.info("session:{} 已失效，移除心跳任务", session);
+                    return;
+                }
+                Long lastTime = sessionMap.get(session);
+                if (lastTime == null) {
+                    LOGGER.warn("session:{} timeout is null", session);
+                    lastTime = System.currentTimeMillis();
+                    sessionMap.put(session, lastTime);
+                }
+                if (System.currentTimeMillis() - lastTime > timeout) {
+                    try {
+                        sendHeartRequest(session);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                registerHeart(session, timeout);
+            }
+        }, timeout);
+    }
 }
