@@ -127,9 +127,6 @@ public class AioSession<T> {
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         this.readBuffer = allocateReadBuffer(config.getReadBufferSize());
-//        for (Filter<T> filter : config.getFilters()) {
-//            filter.connected(this);
-//        }
     }
 
     /**
@@ -292,9 +289,6 @@ public class AioSession<T> {
                 logger.debug("close session exception", e);
             }
             try {
-//                for (Filter<T> filter : ioServerConfig.getFilters()) {
-//                    filter.closed(this);
-//                }
                 ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
             } finally {
                 semaphore.release();
@@ -330,15 +324,9 @@ public class AioSession<T> {
         while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
             //处理消息
             try {
-//                for (Filter<T> h : ioServerConfig.getFilters()) {
-//                    h.processFilter(this, dataEntry);
-//                }
                 ioServerConfig.getProcessor().process(this, dataEntry);
             } catch (Exception e) {
                 ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
-//                for (Filter<T> h : ioServerConfig.getFilters()) {
-//                    h.processFail(this, dataEntry, e);
-//                }
             }
 
         }

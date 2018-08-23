@@ -44,7 +44,6 @@ public class P2PMultiClient {
 //                    client.setKeyStore("client.jks", "storepass")
 //                            .setTrust("trustedCerts.jks", "storepass")
 //                            .setKeyPassword("keypass")
-//                            .setFilters(new Filter[]{new QuickMonitorTimer<BaseMessage>()})
 //                            .setWriteQueueSize(16384);
                     AioQuickClient<BaseMessage> client = new AioQuickClient<BaseMessage>("localhost", 8888, new P2PProtocol(messageFactory), processor);
                     client
