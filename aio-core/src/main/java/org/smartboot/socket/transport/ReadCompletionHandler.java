@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 
-import java.io.IOException;
 import java.nio.channels.CompletionHandler;
 
 /**
@@ -37,15 +36,6 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
 
     @Override
     public void failed(Throwable exc, AioSession<T> aioSession) {
-        if (exc instanceof IOException) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("session:{} will be closed,msg:{}", aioSession.getSessionID(), exc.getMessage());
-            }
-        } else {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("smart-socket read fail:", exc);
-            }
-        }
 
         try {
             aioSession.getServerConfig().getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);

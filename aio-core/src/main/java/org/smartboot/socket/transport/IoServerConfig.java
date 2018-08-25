@@ -24,7 +24,8 @@ import java.util.Map;
  */
 final class IoServerConfig<T> {
 
-    public static final String BANNER = "\n                               _                           _             _   \n" +
+    public static final String BANNER = "\n" +
+            "                               _                           _             _   \n" +
             "                              ( )_                        ( )           ( )_ \n" +
             "  ___   ___ ___     _ _  _ __ | ,_)     ___    _      ___ | |/')    __  | ,_)\n" +
             "/',__)/' _ ` _ `\\ /'_` )( '__)| |     /',__) /'_`\\  /'___)| , <   /'__`\\| |  \n" +
