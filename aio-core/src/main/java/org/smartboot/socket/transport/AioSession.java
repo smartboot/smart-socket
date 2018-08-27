@@ -126,7 +126,7 @@ public class AioSession<T> {
         this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 && config.isFlowControlEnabled() ? false : null;
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
-        this.readBuffer = allocateReadBuffer(config.getReadBufferSize());
+        this.readBuffer = Util.getTemporaryDirectBuffer(config.getReadBufferSize());
     }
 
     /**
@@ -147,6 +147,9 @@ public class AioSession<T> {
         }
 
         if (writeCacheQueue == null || writeCacheQueue.size() == 0) {
+            if (writeBuffer != null && writeBuffer.isDirect()) {
+                Util.offerFirstTemporaryDirectBuffer(writeBuffer);
+            }
             writeBuffer = null;
             semaphore.release();
             //此时可能是Closing或Closed状态
@@ -165,7 +168,10 @@ public class AioSession<T> {
             writeBuffer = headBuffer;
         } else {
             if (writeBuffer == null || totalSize << 1 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
-                writeBuffer = allocateReadBuffer(totalSize);
+                if (writeBuffer != null && writeBuffer.isDirect()) {
+                    Util.offerFirstTemporaryDirectBuffer(writeBuffer);
+                }
+                writeBuffer = Util.getTemporaryDirectBuffer(totalSize);
             } else {
                 writeBuffer.clear().limit(totalSize);
             }
@@ -292,6 +298,10 @@ public class AioSession<T> {
                 ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
             } finally {
                 semaphore.release();
+            }
+            Util.offerFirstTemporaryDirectBuffer(readBuffer);
+            if (writeBuffer != null && writeBuffer.isDirect()) {
+                Util.offerFirstTemporaryDirectBuffer(writeBuffer);
             }
         } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && (writeCacheQueue == null || writeCacheQueue.size() == 0) && semaphore.tryAcquire()) {
             close(true);
