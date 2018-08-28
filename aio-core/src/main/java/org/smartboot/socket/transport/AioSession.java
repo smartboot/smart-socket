@@ -167,7 +167,7 @@ public class AioSession<T> {
         if (headBuffer.remaining() == totalSize) {
             writeBuffer = headBuffer;
         } else {
-            if (writeBuffer == null || totalSize << 1 <= writeBuffer.capacity() || totalSize > writeBuffer.capacity()) {
+            if (writeBuffer == null || totalSize > writeBuffer.capacity()) {
                 if (writeBuffer != null && writeBuffer.isDirect()) {
                     Util.offerFirstTemporaryDirectBuffer(writeBuffer);
                 }
