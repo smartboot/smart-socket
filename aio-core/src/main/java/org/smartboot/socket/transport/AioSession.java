@@ -432,19 +432,6 @@ public class AioSession<T> {
     }
 
     /**
-     * 申请新ReadBuffer。
-     * <p>
-     * 重新申请readBuffer前请保证老的数据都正确处理
-     * </p>
-     *
-     * @param size
-     * @return
-     */
-    private ByteBuffer allocateReadBuffer(int size) {
-        return ioServerConfig.isDirectBuffer() ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
-    }
-
-    /**
      * 获得数据输入流对象
      */
     public InputStream getInputStream() throws IOException {

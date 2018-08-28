@@ -165,16 +165,6 @@ public class AioQuickClient<T> {
     }
 
     /**
-     * 是否启用DirectByteBuffer（作用范围仅限读写缓冲区）
-     *
-     * @param directBuffer true:启用，false:禁用
-     */
-    public final AioQuickClient<T> setDirectBuffer(boolean directBuffer) {
-        config.setDirectBuffer(directBuffer);
-        return this;
-    }
-
-    /**
      * 设置Socket的TCP参数配置
      * <p>
      * AIO客户端的有效可选范围为：<br/>

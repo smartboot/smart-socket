@@ -69,8 +69,6 @@ final class IoServerConfig<T> {
      */
     private Protocol<T> protocol;
 
-    private boolean directBuffer;
-
     /**
      * 服务器处理线程数
      */
@@ -187,14 +185,6 @@ final class IoServerConfig<T> {
         this.bannerEnabled = bannerEnabled;
     }
 
-    public boolean isDirectBuffer() {
-        return directBuffer;
-    }
-
-    public void setDirectBuffer(boolean directBuffer) {
-        this.directBuffer = directBuffer;
-    }
-
     public Map<SocketOption<Object>, Object> getSocketOptions() {
         return socketOptions;
     }
@@ -224,7 +214,6 @@ final class IoServerConfig<T> {
                 ", port=" + port +
                 ", processor=" + processor +
                 ", protocol=" + protocol +
-                ", directBuffer=" + directBuffer +
                 ", threadNum=" + threadNum +
                 ", limitRate=" + limitRate +
                 ", releaseRate=" + releaseRate +
