@@ -1,19 +1,10 @@
 package org.smartboot.socket.transport;
 
-import sun.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
 
-import java.io.FileDescriptor;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
 
 class Util {
     private static final int TEMP_BUF_POOL_SIZE;
@@ -98,6 +89,13 @@ class Util {
         ((DirectBuffer) var0).cleaner().clean();
     }
 
+    public static void main(String[] args) {
+        int i = 0;
+        while (i++ < Integer.MAX_VALUE) {
+            Util.getTemporaryDirectBuffer(1024);
+        }
+    }
+
     private static class BufferCache {
         private ByteBuffer[] buffers;
         private int count;
@@ -164,19 +162,6 @@ class Util {
             }
         }
 
-        boolean offerLast(ByteBuffer var1) {
-            assert !Util.isBufferTooLarge(var1);
-
-            if (this.count >= Util.TEMP_BUF_POOL_SIZE) {
-                return false;
-            } else {
-                int var2 = (this.start + this.count) % Util.TEMP_BUF_POOL_SIZE;
-                this.buffers[var2] = var1;
-                ++this.count;
-                return true;
-            }
-        }
-
         boolean isEmpty() {
             return this.count == 0;
         }
@@ -189,13 +174,6 @@ class Util {
             this.start = this.next(this.start);
             --this.count;
             return var1;
-        }
-    }
-
-    public static void main(String[] args) {
-        int i=0;
-        while(i++<Integer.MAX_VALUE){
-            Util.getTemporaryDirectBuffer(1024);
         }
     }
 }
