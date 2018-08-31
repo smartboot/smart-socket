@@ -6,22 +6,22 @@ import java.nio.ByteBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-class Util {
+public class DirectBufferUtil {
     private static final int TEMP_BUF_POOL_SIZE;
     private static final long MAX_CACHED_BUFFER_SIZE;
-    private static ThreadLocal<Util.BufferCache> bufferCache;
+    private static ThreadLocal<DirectBufferUtil.BufferCache> bufferCache;
 
     static {
         TEMP_BUF_POOL_SIZE = 1024;//iovMax();
         MAX_CACHED_BUFFER_SIZE = getMaxCachedBufferSize();
-        bufferCache = new ThreadLocal<Util.BufferCache>() {
-            protected Util.BufferCache initialValue() {
-                return new Util.BufferCache();
+        bufferCache = new ThreadLocal<DirectBufferUtil.BufferCache>() {
+            protected DirectBufferUtil.BufferCache initialValue() {
+                return new DirectBufferUtil.BufferCache();
             }
         };
     }
 
-    public Util() {
+    private DirectBufferUtil() {
     }
 
     private static long getMaxCachedBufferSize() {
@@ -56,7 +56,7 @@ class Util {
         if (isBufferTooLarge(var0)) {
             return ByteBuffer.allocateDirect(var0);
         } else {
-            Util.BufferCache var1 = (Util.BufferCache) bufferCache.get();
+            DirectBufferUtil.BufferCache var1 = (DirectBufferUtil.BufferCache) bufferCache.get();
             ByteBuffer var2 = var1.get(var0);
             if (var2 != null) {
                 return var2;
@@ -77,7 +77,7 @@ class Util {
         } else {
             assert var0 != null;
 
-            Util.BufferCache var1 = (Util.BufferCache) bufferCache.get();
+            DirectBufferUtil.BufferCache var1 = (DirectBufferUtil.BufferCache) bufferCache.get();
             if (!var1.offerFirst(var0)) {
                 free(var0);
             }
@@ -92,7 +92,7 @@ class Util {
     public static void main(String[] args) {
         int i = 0;
         while (i++ < Integer.MAX_VALUE) {
-            Util.getTemporaryDirectBuffer(1024);
+            DirectBufferUtil.getTemporaryDirectBuffer(1024);
         }
     }
 
@@ -102,15 +102,15 @@ class Util {
         private int start;
 
         BufferCache() {
-            this.buffers = new ByteBuffer[Util.TEMP_BUF_POOL_SIZE];
+            this.buffers = new ByteBuffer[DirectBufferUtil.TEMP_BUF_POOL_SIZE];
         }
 
         private int next(int var1) {
-            return (var1 + 1) % Util.TEMP_BUF_POOL_SIZE;
+            return (var1 + 1) % DirectBufferUtil.TEMP_BUF_POOL_SIZE;
         }
 
         ByteBuffer get(int var1) {
-            assert !Util.isBufferTooLarge(var1);
+            assert !DirectBufferUtil.isBufferTooLarge(var1);
 
             if (this.count == 0) {
                 return null;
@@ -150,12 +150,12 @@ class Util {
         }
 
         boolean offerFirst(ByteBuffer var1) {
-            assert !Util.isBufferTooLarge(var1);
+            assert !DirectBufferUtil.isBufferTooLarge(var1);
 
-            if (this.count >= Util.TEMP_BUF_POOL_SIZE) {
+            if (this.count >= DirectBufferUtil.TEMP_BUF_POOL_SIZE) {
                 return false;
             } else {
-                this.start = (this.start + Util.TEMP_BUF_POOL_SIZE - 1) % Util.TEMP_BUF_POOL_SIZE;
+                this.start = (this.start + DirectBufferUtil.TEMP_BUF_POOL_SIZE - 1) % DirectBufferUtil.TEMP_BUF_POOL_SIZE;
                 this.buffers[this.start] = var1;
                 ++this.count;
                 return true;

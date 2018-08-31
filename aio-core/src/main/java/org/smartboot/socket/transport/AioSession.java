@@ -126,7 +126,7 @@ public class AioSession<T> {
         this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 && config.isFlowControlEnabled() ? false : null;
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
-        this.readBuffer = Util.getTemporaryDirectBuffer(config.getReadBufferSize());
+        this.readBuffer = DirectBufferUtil.getTemporaryDirectBuffer(config.getReadBufferSize());
     }
 
     /**
@@ -148,7 +148,7 @@ public class AioSession<T> {
 
         if (writeCacheQueue == null || writeCacheQueue.size() == 0) {
             if (writeBuffer != null && writeBuffer.isDirect()) {
-                Util.offerFirstTemporaryDirectBuffer(writeBuffer);
+                DirectBufferUtil.offerFirstTemporaryDirectBuffer(writeBuffer);
             }
             writeBuffer = null;
             semaphore.release();
@@ -169,9 +169,9 @@ public class AioSession<T> {
         } else {
             if (writeBuffer == null || totalSize > writeBuffer.capacity()) {
                 if (writeBuffer != null && writeBuffer.isDirect()) {
-                    Util.offerFirstTemporaryDirectBuffer(writeBuffer);
+                    DirectBufferUtil.offerFirstTemporaryDirectBuffer(writeBuffer);
                 }
-                writeBuffer = Util.getTemporaryDirectBuffer(totalSize);
+                writeBuffer = DirectBufferUtil.getTemporaryDirectBuffer(totalSize);
             } else {
                 writeBuffer.clear().limit(totalSize);
             }
@@ -299,9 +299,9 @@ public class AioSession<T> {
             } finally {
                 semaphore.release();
             }
-            Util.offerFirstTemporaryDirectBuffer(readBuffer);
+            DirectBufferUtil.offerFirstTemporaryDirectBuffer(readBuffer);
             if (writeBuffer != null && writeBuffer.isDirect()) {
-                Util.offerFirstTemporaryDirectBuffer(writeBuffer);
+                DirectBufferUtil.offerFirstTemporaryDirectBuffer(writeBuffer);
             }
         } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && (writeCacheQueue == null || writeCacheQueue.size() == 0) && semaphore.tryAcquire()) {
             close(true);
