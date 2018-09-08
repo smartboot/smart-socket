@@ -32,6 +32,9 @@ public final class P2PServerMessageProcessor extends AbstractMessageProcessor<Ba
 
     @Override
     public void stateEvent0(AioSession<BaseMessage> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+        if(throwable!=null){
+            throwable.printStackTrace();
+        }
         switch (stateMachineEnum) {
             case NEW_SESSION:
                 session.setAttachment(new P2PSession(session));

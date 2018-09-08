@@ -71,13 +71,14 @@ final class FastBlockingQueue {
     }
 
 
-    public void put(ByteBuffer e) throws InterruptedException {
+    public int put(ByteBuffer e) throws InterruptedException {
         lock.lockInterruptibly();
         try {
             while (count == items.length) {
                 notFull.await();
             }
             enqueue(e);
+            return count;
         } finally {
             lock.unlock();
         }

@@ -48,7 +48,7 @@ public class AioQuickServer<T> {
      * Server端服务配置。
      * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
      */
-    protected IoServerConfig<T> config = new IoServerConfig<>();
+    protected IoServerConfig<T> config = new IoServerConfig<>(true);
     /**
      * 读回调事件处理
      */
@@ -237,24 +237,6 @@ public class AioQuickServer<T> {
      */
     public final <V> AioQuickServer<T> setOption(SocketOption<V> socketOption, V value) {
         config.setOption(socketOption, value);
-        return this;
-    }
-
-    /**
-     * 是否启用流控，默认：true。
-     * <p>
-     * 流控功能是服务端的这一种自我保护机制，用户可根据如下场景描述决定是否启用该功能。
-     * <ol>
-     * <li>场景一：客户端pull模式，客户端发送请求消息以获取服务端的响应，若客户端接收能力不足会导致服务端出现消息积压，建议启用流控功能。</li>
-     * <li>场景二：服务端push模式，服务端主动推送消息至客户端，此类场景下若触发流控会导致服务端无法接收客户端的消息，建议关闭流控功能。</li>
-     * </ol>
-     * </p>
-     *
-     * @param flowControlEnabled 是否启用流控
-     * @return
-     */
-    public final AioQuickServer<T> setFlowControlEnabled(boolean flowControlEnabled) {
-        config.setFlowControlEnabled(flowControlEnabled);
         return this;
     }
 }

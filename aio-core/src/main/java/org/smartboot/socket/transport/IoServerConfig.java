@@ -13,7 +13,9 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 
 import java.net.SocketOption;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,6 +35,13 @@ final class IoServerConfig<T> {
             "(____/(_) (_) (_)`\\__,_)(_)   `\\__)   (____/`\\___/'`\\____)(_) (_)`\\____)`\\__)";
 
     public static final String VERSION = "v1.3.17";
+    private final boolean server;
+    ThreadLocal<List<T>> DATA_CACHE_THREAD_LOCAL = new ThreadLocal<List<T>>() {
+        @Override
+        protected List<T> initialValue() {
+            return new ArrayList<>(4);
+        }
+    };
     /**
      * 消息队列缓存大小
      */
@@ -92,15 +101,15 @@ final class IoServerConfig<T> {
      */
     private boolean bannerEnabled = true;
 
-    /**
-     * 是否启用流控功能
-     */
-    private boolean flowControlEnabled = true;
 
     /**
      * Socket 配置
      */
     private Map<SocketOption<Object>, Object> socketOptions;
+
+    public IoServerConfig(boolean server) {
+        this.server = server;
+    }
 
     public final String getHost() {
         return host;
@@ -196,12 +205,8 @@ final class IoServerConfig<T> {
         socketOptions.put(socketOption, f);
     }
 
-    public boolean isFlowControlEnabled() {
-        return flowControlEnabled;
-    }
-
-    public void setFlowControlEnabled(boolean flowControlEnabled) {
-        this.flowControlEnabled = flowControlEnabled;
+    public boolean isServer() {
+        return server;
     }
 
     @Override
@@ -220,7 +225,6 @@ final class IoServerConfig<T> {
                 ", flowLimitLine=" + flowLimitLine +
                 ", releaseLine=" + releaseLine +
                 ", bannerEnabled=" + bannerEnabled +
-                ", flowControlEnabled=" + flowControlEnabled +
                 ", socketOptions=" + socketOptions +
                 '}';
     }

@@ -19,6 +19,7 @@ import java.io.InvalidObjectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -64,12 +65,7 @@ public class AioSession<T> {
     protected static final byte SESSION_STATUS_ENABLED = 3;
     private static final Logger logger = LoggerFactory.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
-    /**
-     * 数据read限流标志。
-     * <p>仅服务端需要进行限流；true:限流, false:不限流</p>
-     * <p>客户端模式下该值为null</p>
-     */
-    protected Boolean serverFlowLimit;
+
     /**
      * 底层通信channel对象
      */
@@ -91,11 +87,15 @@ public class AioSession<T> {
      * @see AioSession#SESSION_STATUS_ENABLED
      */
     protected byte status = SESSION_STATUS_ENABLED;
+    Semaphore readSemaphore = new Semaphore(1);
     /**
      * 附件对象
      */
     private Object attachment;
-
+    /**
+     * 是否流控,客户端写流控，服务端读流控
+     */
+    private boolean flowControl;
     /**
      * 响应消息缓存队列。
      * <p>长度取决于AioQuickClient/AioQuickServer设置的setWriteQueueSize</p>
@@ -123,7 +123,6 @@ public class AioSession<T> {
         this.writeCompletionHandler = writeCompletionHandler;
         this.writeCacheQueue = config.getWriteQueueSize() > 0 ? new FastBlockingQueue(config.getWriteQueueSize()) : null;
         this.ioServerConfig = config;
-        this.serverFlowLimit = serverSession && config.getWriteQueueSize() > 0 && config.isFlowControlEnabled() ? false : null;
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         this.readBuffer = DirectBufferUtil.getTemporaryDirectBuffer(config.getReadBufferSize());
@@ -133,6 +132,7 @@ public class AioSession<T> {
      * 初始化AioSession
      */
     void initSession() {
+        readSemaphore.tryAcquire();
         continueRead();
     }
 
@@ -182,10 +182,10 @@ public class AioSession<T> {
 
         //如果存在流控并符合释放条件，则触发读操作
         //一定要放在continueWrite之前
-        if (serverFlowLimit != null && serverFlowLimit && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
+        if (flowControl && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.RELEASE_FLOW_LIMIT, null);
-            serverFlowLimit = false;
-            continueRead();
+            flowControl = false;
+            readFromChannel(false);
         }
         continueWrite();
 
@@ -247,7 +247,10 @@ public class AioSession<T> {
         }
         try {
             //正常读取
-            writeCacheQueue.put(buffer);
+            int size = writeCacheQueue.put(buffer);
+            if (size >= ioServerConfig.getFlowLimitLine() && ioServerConfig.isServer()) {
+                flowControl = true;
+            }
         } catch (InterruptedException e) {
             logger.error("put buffer into cache fail", e);
             Thread.currentThread().interrupt();
@@ -328,17 +331,16 @@ public class AioSession<T> {
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
     void readFromChannel(boolean eof) {
+        //处于流控状态
+        if (flowControl || !readSemaphore.tryAcquire()) {
+            return;
+        }
         readBuffer.flip();
 
+        final List<T> dataList = ioServerConfig.DATA_CACHE_THREAD_LOCAL.get();
         T dataEntry;
         while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
-            //处理消息
-            try {
-                ioServerConfig.getProcessor().process(this, dataEntry);
-            } catch (Exception e) {
-                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
-            }
-
+            dataList.add(dataEntry);
         }
 
         if (eof || status == SESSION_STATUS_CLOSING) {
@@ -361,13 +363,17 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
 
-        //触发流控
-        if (serverFlowLimit != null && writeCacheQueue.size() > ioServerConfig.getFlowLimitLine()) {
-            serverFlowLimit = true;
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.FLOW_LIMIT, null);
-        } else {
-            continueRead();
+        continueRead();
+
+        for (T t : dataList) {
+            //处理消息
+            try {
+                ioServerConfig.getProcessor().process(this, t);
+            } catch (Exception e) {
+                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
+            }
         }
+        dataList.clear();
     }
 
     protected void continueRead() {

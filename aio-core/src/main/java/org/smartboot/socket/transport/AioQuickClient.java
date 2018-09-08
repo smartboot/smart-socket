@@ -50,7 +50,7 @@ public class AioQuickClient<T> {
      * 客户端服务配置。
      * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
      */
-    protected IoServerConfig<T> config = new IoServerConfig<>();
+    protected IoServerConfig<T> config = new IoServerConfig<>(false);
     /**
      * 网络连接的会话对象
      *

@@ -70,7 +70,7 @@ public class SSLAioSession<T> extends AioSession<T> {
         this.netWriteBuffer = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
         this.netWriteBuffer.flip();
         this.netReadBuffer = ByteBuffer.allocate(readBuffer.capacity());
-        this.serverFlowLimit = sslEngine.getUseClientMode() ? null : false;//服务端设置流控标志
+//        this.serverFlowLimit = sslEngine.getUseClientMode() ? null : false;//服务端设置流控标志
         this.handshakeModel.setHandshakeCallback(new HandshakeCallback() {
             @Override
             public void callback() {
@@ -79,6 +79,7 @@ public class SSLAioSession<T> extends AioSession<T> {
                     SSLAioSession.this.notifyAll();
                 }
                 sslService = null;//释放内存
+                SSLAioSession.this.readSemaphore.tryAcquire();
                 continueRead();
             }
         });
