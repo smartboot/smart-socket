@@ -13,9 +13,7 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 
 import java.net.SocketOption;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,12 +34,6 @@ final class IoServerConfig<T> {
 
     public static final String VERSION = "v1.3.17";
     private final boolean server;
-    ThreadLocal<List<T>> DATA_CACHE_THREAD_LOCAL = new ThreadLocal<List<T>>() {
-        @Override
-        protected List<T> initialValue() {
-            return new ArrayList<>(4);
-        }
-    };
     /**
      * 消息队列缓存大小
      */

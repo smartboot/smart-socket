@@ -337,10 +337,14 @@ public class AioSession<T> {
         }
         readBuffer.flip();
 
-        final List<T> dataList = ioServerConfig.DATA_CACHE_THREAD_LOCAL.get();
         T dataEntry;
         while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
-            dataList.add(dataEntry);
+            //处理消息
+            try {
+                ioServerConfig.getProcessor().process(this, dataEntry);
+            } catch (Exception e) {
+                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
+            }
         }
 
         if (eof || status == SESSION_STATUS_CLOSING) {
@@ -362,18 +366,7 @@ public class AioSession<T> {
             readBuffer.position(readBuffer.limit());
             readBuffer.limit(readBuffer.capacity());
         }
-
         continueRead();
-
-        for (T t : dataList) {
-            //处理消息
-            try {
-                ioServerConfig.getProcessor().process(this, t);
-            } catch (Exception e) {
-                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
-            }
-        }
-        dataList.clear();
     }
 
     protected void continueRead() {
