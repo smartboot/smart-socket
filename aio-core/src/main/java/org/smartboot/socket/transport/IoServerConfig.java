@@ -13,7 +13,9 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 
 import java.net.SocketOption;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,66 +36,59 @@ final class IoServerConfig<T> {
 
     public static final String VERSION = "v1.3.17";
     private final boolean server;
+    ThreadLocal<List<T>> MSG_LIST_THREAD_LOCAL = new ThreadLocal<List<T>>() {
+        @Override
+        protected List<T> initialValue() {
+            return new ArrayList<>(4);
+        }
+    };
     /**
      * 消息队列缓存大小
      */
     private int writeQueueSize = 0;
-
     /**
      * 消息体缓存大小,字节
      */
     private int readBufferSize = 512;
-
     /**
      * 远程服务器IP
      */
     private String host;
-
-
     /**
      * 服务器消息拦截器
      */
     private NetMonitor<T> monitor;
-
     /**
      * 服务器端口号
      */
     private int port = 8888;
-
     /**
      * 消息处理器
      */
     private MessageProcessor<T> processor;
-
     /**
      * 协议编解码
      */
     private Protocol<T> protocol;
-
+    private boolean faster;
     /**
      * 服务器处理线程数
      */
     private int threadNum = Runtime.getRuntime().availableProcessors() + 1;
-
     private float limitRate = 0.9f;
-
     private float releaseRate = 0.6f;
     /**
      * 流控指标线
      */
     private int flowLimitLine = (int) (writeQueueSize * limitRate);
-
     /**
      * 释放流控指标线
      */
     private int releaseLine = (int) (writeQueueSize * releaseRate);
-
     /**
      * 是否启用控制台banner
      */
     private boolean bannerEnabled = true;
-
-
     /**
      * Socket 配置
      */
@@ -101,6 +96,14 @@ final class IoServerConfig<T> {
 
     public IoServerConfig(boolean server) {
         this.server = server;
+    }
+
+    public boolean isFaster() {
+        return faster;
+    }
+
+    public void setFaster(boolean faster) {
+        this.faster = faster;
     }
 
     public final String getHost() {

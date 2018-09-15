@@ -335,6 +335,56 @@ public class AioSession<T> {
         if (flowControl || !readSemaphore.tryAcquire()) {
             return;
         }
+        if (ioServerConfig.isFaster()) {
+            List<T> msgList = ioServerConfig.MSG_LIST_THREAD_LOCAL.get();
+            try {
+                fasterRead(eof, msgList);
+            } finally {
+                msgList.clear();
+            }
+        } else {
+            normalRead(eof);
+        }
+    }
+
+    private void fasterRead(boolean eof, List<T> msgList) {
+        readBuffer.flip();
+
+        T dataEntry;
+        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
+            msgList.add(dataEntry);
+        }
+
+
+        if (!eof && status == SESSION_STATUS_ENABLED) {
+            //数据读取完毕
+            if (readBuffer.remaining() == 0) {
+                readBuffer.clear();
+            } else if (readBuffer.position() > 0) {
+                // 仅当发生数据读取时调用compact,减少内存拷贝
+                readBuffer.compact();
+            } else {
+                readBuffer.position(readBuffer.limit());
+                readBuffer.limit(readBuffer.capacity());
+            }
+            continueRead();
+        }
+
+        for (T t : msgList) {
+            //处理消息
+            try {
+                ioServerConfig.getProcessor().process(this, t);
+            } catch (Exception e) {
+                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
+            }
+        }
+        if (eof || status == SESSION_STATUS_CLOSING) {
+            close(false);
+            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
+        }
+    }
+
+    private void normalRead(boolean eof) {
         readBuffer.flip();
 
         T dataEntry;
@@ -434,6 +484,9 @@ public class AioSession<T> {
      * 获得数据输入流对象
      */
     public InputStream getInputStream() throws IOException {
+        if (ioServerConfig.isFaster()) {
+            throw new UnsupportedOperationException("getInputStream unsupport in faster model");
+        }
         return inputStream == null ? getInputStream(-1) : inputStream;
     }
 

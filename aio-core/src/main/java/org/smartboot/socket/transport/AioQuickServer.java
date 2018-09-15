@@ -239,4 +239,9 @@ public class AioQuickServer<T> {
         config.setOption(socketOption, value);
         return this;
     }
+
+    public final AioQuickServer<T> setFaster(boolean faster) {
+        config.setFaster(faster);
+        return this;
+    }
 }
