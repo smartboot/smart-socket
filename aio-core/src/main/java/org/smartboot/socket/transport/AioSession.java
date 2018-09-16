@@ -358,15 +358,7 @@ public class AioSession<T> {
 
         if (!eof && status == SESSION_STATUS_ENABLED) {
             //数据读取完毕
-            if (readBuffer.remaining() == 0) {
-                readBuffer.clear();
-            } else if (readBuffer.position() > 0) {
-                // 仅当发生数据读取时调用compact,减少内存拷贝
-                readBuffer.compact();
-            } else {
-                readBuffer.position(readBuffer.limit());
-                readBuffer.limit(readBuffer.capacity());
-            }
+            compactReadBuffer(readBuffer);
             continueRead();
         }
 
@@ -381,6 +373,18 @@ public class AioSession<T> {
         if (eof || status == SESSION_STATUS_CLOSING) {
             close(false);
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
+        }
+    }
+
+    private void compactReadBuffer(ByteBuffer readBuffer) {
+        if (readBuffer.remaining() == 0) {
+            readBuffer.clear();
+        } else if (readBuffer.position() > 0) {
+            // 仅当发生数据读取时调用compact,减少内存拷贝
+            readBuffer.compact();
+        } else {
+            readBuffer.position(readBuffer.limit());
+            readBuffer.limit(readBuffer.capacity());
         }
     }
 
@@ -407,15 +411,7 @@ public class AioSession<T> {
         }
 
         //数据读取完毕
-        if (readBuffer.remaining() == 0) {
-            readBuffer.clear();
-        } else if (readBuffer.position() > 0) {
-            // 仅当发生数据读取时调用compact,减少内存拷贝
-            readBuffer.compact();
-        } else {
-            readBuffer.position(readBuffer.limit());
-            readBuffer.limit(readBuffer.capacity());
-        }
+        compactReadBuffer(readBuffer);
         continueRead();
     }
 
