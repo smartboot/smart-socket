@@ -481,7 +481,13 @@ public class AioSession<T> {
     }
 
     /**
-     * 获得数据输入流对象
+     * 获得数据输入流对象。
+     * <p>
+     *     faster模式下调用该方法会触发UnsupportedOperationException异常。
+     * </p>
+     * <p>
+     *     MessageProcessor采用异步处理消息的方式时，调用该方法可能会出现异常。
+     * </p>
      */
     public InputStream getInputStream() throws IOException {
         if (ioServerConfig.isFaster()) {

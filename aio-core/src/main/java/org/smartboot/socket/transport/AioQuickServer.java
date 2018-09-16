@@ -240,6 +240,12 @@ public class AioQuickServer<T> {
         return this;
     }
 
+    /**
+     * 是否启用faster模式。
+     * 启动faster模式更好的协调IO、CPU使用，理论上性能更佳，但是在faster模式下不再支持AioSession.getInputStream操作。
+     * @param faster
+     * @return
+     */
     public final AioQuickServer<T> setFaster(boolean faster) {
         config.setFaster(faster);
         return this;
