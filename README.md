@@ -20,7 +20,7 @@ smart-socket发布了两种类型的包供大家选用：
 	<dependency>
 	    <groupId>org.smartboot.socket</groupId>
 	    <artifactId>aio-core</artifactId>
-	    <version>1.3.17</version>
+	    <version>1.3.18</version>
 	</dependency>
 	```	
 
@@ -30,7 +30,7 @@ smart-socket发布了两种类型的包供大家选用：
 	<dependency>
 	    <groupId>org.smartboot.socket</groupId>
 	    <artifactId>aio-pro</artifactId>
-	    <version>1.3.17</version>
+	    <version>1.3.18</version>
 	</dependency>
 	```
 

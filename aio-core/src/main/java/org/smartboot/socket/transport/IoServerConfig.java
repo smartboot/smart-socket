@@ -34,7 +34,7 @@ final class IoServerConfig<T> {
             "\\__, \\| ( ) ( ) |( (_| || |   | |_    \\__, \\( (_) )( (___ | |\\`\\ (  ___/| |_ \n" +
             "(____/(_) (_) (_)`\\__,_)(_)   `\\__)   (____/`\\___/'`\\____)(_) (_)`\\____)`\\__)";
 
-    public static final String VERSION = "v1.3.17";
+    public static final String VERSION = "v1.3.18";
     private final boolean server;
     ThreadLocal<List<T>> MSG_LIST_THREAD_LOCAL = new ThreadLocal<List<T>>() {
         @Override
@@ -214,6 +214,7 @@ final class IoServerConfig<T> {
                 ", port=" + port +
                 ", processor=" + processor +
                 ", protocol=" + protocol +
+                ", faster=" + faster +
                 ", threadNum=" + threadNum +
                 ", limitRate=" + limitRate +
                 ", releaseRate=" + releaseRate +

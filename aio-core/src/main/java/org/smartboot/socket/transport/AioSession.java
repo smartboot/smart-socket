@@ -250,6 +250,7 @@ public class AioSession<T> {
             int size = writeCacheQueue.put(buffer);
             if (size >= ioServerConfig.getFlowLimitLine() && ioServerConfig.isServer()) {
                 flowControl = true;
+                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.FLOW_LIMIT, null);
             }
         } catch (InterruptedException e) {
             logger.error("put buffer into cache fail", e);
