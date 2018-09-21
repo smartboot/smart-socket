@@ -14,7 +14,7 @@ public class StringProtocol implements Protocol<String> {
     private static final int INT_LENGTH = 4;
 
     @Override
-    public String decode(ByteBuffer readBuffer, AioSession<String> session, boolean eof) {
+    public String decode(ByteBuffer readBuffer, AioSession<String> session) {
         //识别消息长度
         if (readBuffer.remaining() < INT_LENGTH) {
             return null;

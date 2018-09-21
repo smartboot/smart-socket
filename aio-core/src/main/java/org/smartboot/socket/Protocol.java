@@ -58,10 +58,9 @@ public interface Protocol<T> {
      *
      * @param readBuffer 待处理的读buffer
      * @param session    本次需要解码的session
-     * @param eof        是否EOF
      * @return 本次解码成功后封装的业务消息对象, 返回null则表示解码未完成
      */
-    T decode(final ByteBuffer readBuffer, AioSession<T> session, boolean eof);
+    T decode(final ByteBuffer readBuffer, AioSession<T> session);
 
     /**
      * 将业务消息实体编码成ByteBuffer用于输出至对端。

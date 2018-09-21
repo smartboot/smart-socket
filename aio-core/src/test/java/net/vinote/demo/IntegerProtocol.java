@@ -13,7 +13,7 @@ public class IntegerProtocol implements Protocol<Integer> {
     private static final int INT_LENGTH = 4;
 
     @Override
-    public Integer decode(ByteBuffer data, AioSession<Integer> session, boolean eof) {
+    public Integer decode(ByteBuffer data, AioSession<Integer> session) {
         if (data.remaining() < INT_LENGTH)
             return null;
         return data.getInt();

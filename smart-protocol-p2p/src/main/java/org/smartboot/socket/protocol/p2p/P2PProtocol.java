@@ -30,7 +30,7 @@ public final class P2PProtocol implements Protocol<BaseMessage> {
     }
 
     @Override
-    public BaseMessage decode(ByteBuffer buffer, AioSession<BaseMessage> session, boolean eof) {
+    public BaseMessage decode(ByteBuffer buffer, AioSession<BaseMessage> session) {
         // 未读取到数据则直接返回
         if (buffer == null || buffer.remaining() < MESSAGE_SIGN_LENGTH) {
             return null;

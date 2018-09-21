@@ -338,7 +338,7 @@ public class AioSession<T> {
         readBuffer.flip();
 
         T dataEntry;
-        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
+        while (readBuffer.hasRemaining() && (dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this)) != null) {
             //处理消息
             try {
                 ioServerConfig.getProcessor().process(this, dataEntry);

@@ -16,7 +16,7 @@ public class DelimiterProtocol implements Protocol<String> {
     private static final byte[] DELIMITER_BYTES = new byte[]{'\r', '\n'};
 
     @Override
-    public String decode(ByteBuffer buffer, AioSession<String> session, boolean eof) {
+    public String decode(ByteBuffer buffer, AioSession<String> session) {
         DelimiterFrameDecoder delimiterFrameDecoder;
         if (session.getAttachment() == null) {//构造指定结束符的临时缓冲区
             delimiterFrameDecoder = new DelimiterFrameDecoder(DELIMITER_BYTES, 64);
