@@ -13,9 +13,7 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 
 import java.net.SocketOption;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,12 +34,6 @@ final class IoServerConfig<T> {
 
     public static final String VERSION = "v1.3.18";
     private final boolean server;
-    ThreadLocal<List<T>> MSG_LIST_THREAD_LOCAL = new ThreadLocal<List<T>>() {
-        @Override
-        protected List<T> initialValue() {
-            return new ArrayList<>(4);
-        }
-    };
     /**
      * 消息队列缓存大小
      */
@@ -70,7 +62,6 @@ final class IoServerConfig<T> {
      * 协议编解码
      */
     private Protocol<T> protocol;
-    private boolean faster;
     /**
      * 服务器处理线程数
      */
@@ -96,14 +87,6 @@ final class IoServerConfig<T> {
 
     public IoServerConfig(boolean server) {
         this.server = server;
-    }
-
-    public boolean isFaster() {
-        return faster;
-    }
-
-    public void setFaster(boolean faster) {
-        this.faster = faster;
     }
 
     public final String getHost() {
@@ -214,7 +197,6 @@ final class IoServerConfig<T> {
                 ", port=" + port +
                 ", processor=" + processor +
                 ", protocol=" + protocol +
-                ", faster=" + faster +
                 ", threadNum=" + threadNum +
                 ", limitRate=" + limitRate +
                 ", releaseRate=" + releaseRate +

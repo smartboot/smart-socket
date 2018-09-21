@@ -19,7 +19,6 @@ import java.io.InvalidObjectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.List;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -336,60 +335,6 @@ public class AioSession<T> {
         if (flowControl || !readSemaphore.tryAcquire()) {
             return;
         }
-        if (ioServerConfig.isFaster()) {
-            List<T> msgList = ioServerConfig.MSG_LIST_THREAD_LOCAL.get();
-            try {
-                fasterRead(eof, msgList);
-            } finally {
-                msgList.clear();
-            }
-        } else {
-            normalRead(eof);
-        }
-    }
-
-    private void fasterRead(boolean eof, List<T> msgList) {
-        readBuffer.flip();
-
-        T dataEntry;
-        while ((dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this, eof)) != null) {
-            msgList.add(dataEntry);
-        }
-
-
-        if (!eof && status == SESSION_STATUS_ENABLED) {
-            //数据读取完毕
-            compactReadBuffer(readBuffer);
-            continueRead();
-        }
-
-        for (T t : msgList) {
-            //处理消息
-            try {
-                ioServerConfig.getProcessor().process(this, t);
-            } catch (Exception e) {
-                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
-            }
-        }
-        if (eof || status == SESSION_STATUS_CLOSING) {
-            close(false);
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
-        }
-    }
-
-    private void compactReadBuffer(ByteBuffer readBuffer) {
-        if (readBuffer.remaining() == 0) {
-            readBuffer.clear();
-        } else if (readBuffer.position() > 0) {
-            // 仅当发生数据读取时调用compact,减少内存拷贝
-            readBuffer.compact();
-        } else {
-            readBuffer.position(readBuffer.limit());
-            readBuffer.limit(readBuffer.capacity());
-        }
-    }
-
-    private void normalRead(boolean eof) {
         readBuffer.flip();
 
         T dataEntry;
@@ -412,9 +357,18 @@ public class AioSession<T> {
         }
 
         //数据读取完毕
-        compactReadBuffer(readBuffer);
+        if (readBuffer.remaining() == 0) {
+            readBuffer.clear();
+        } else if (readBuffer.position() > 0) {
+            // 仅当发生数据读取时调用compact,减少内存拷贝
+            readBuffer.compact();
+        } else {
+            readBuffer.position(readBuffer.limit());
+            readBuffer.limit(readBuffer.capacity());
+        }
         continueRead();
     }
+
 
     protected void continueRead() {
         readFromChannel0(readBuffer);
@@ -480,16 +434,13 @@ public class AioSession<T> {
     /**
      * 获得数据输入流对象。
      * <p>
-     *     faster模式下调用该方法会触发UnsupportedOperationException异常。
+     * faster模式下调用该方法会触发UnsupportedOperationException异常。
      * </p>
      * <p>
-     *     MessageProcessor采用异步处理消息的方式时，调用该方法可能会出现异常。
+     * MessageProcessor采用异步处理消息的方式时，调用该方法可能会出现异常。
      * </p>
      */
     public InputStream getInputStream() throws IOException {
-        if (ioServerConfig.isFaster()) {
-            throw new UnsupportedOperationException("getInputStream unsupport in faster model");
-        }
         return inputStream == null ? getInputStream(-1) : inputStream;
     }
 

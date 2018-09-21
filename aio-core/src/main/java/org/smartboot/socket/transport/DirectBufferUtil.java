@@ -89,12 +89,12 @@ public class DirectBufferUtil {
         ((DirectBuffer) var0).cleaner().clean();
     }
 
-    public static void main(String[] args) {
-        int i = 0;
-        while (i++ < Integer.MAX_VALUE) {
-            DirectBufferUtil.getTemporaryDirectBuffer(1024);
-        }
-    }
+//    public static void main(String[] args) {
+//        int i = 0;
+//        while (i++ < Integer.MAX_VALUE) {
+//            DirectBufferUtil.getTemporaryDirectBuffer(1024);
+//        }
+//    }
 
     private static class BufferCache {
         private ByteBuffer[] buffers;
