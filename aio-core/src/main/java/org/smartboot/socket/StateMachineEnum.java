@@ -10,6 +10,8 @@ package org.smartboot.socket;
 
 import org.smartboot.socket.transport.AioSession;
 
+import java.nio.ByteBuffer;
+
 /**
  * 列举了当前smart-socket所关注的各类状态枚举。
  *
@@ -41,6 +43,12 @@ public enum StateMachineEnum {
      * <p>执行{@link MessageProcessor#process(AioSession, Object)}期间发生用户未捕获的异常。</p>
      */
     PROCESS_EXCEPTION,
+
+    /**
+     * 协议解码异常。
+     * <p>执行{@link Protocol#decode(ByteBuffer, AioSession)}期间发生未捕获的异常。</p>
+     */
+    DECODE_EXCEPTION,
     /**
      * 读操作异常。
      *
