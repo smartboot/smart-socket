@@ -26,13 +26,17 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
 
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
-        // 接收到的消息进行预处理
-        NetMonitor<T> monitor = aioSession.getServerConfig().getMonitor();
-        if (monitor != null) {
-            monitor.readMonitor(aioSession, result);
+        try {
+            // 接收到的消息进行预处理
+            NetMonitor<T> monitor = aioSession.getServerConfig().getMonitor();
+            if (monitor != null) {
+                monitor.readMonitor(aioSession, result);
+            }
+            aioSession.readSemaphore.release();
+            aioSession.readFromChannel(result == -1);
+        } catch (Exception e) {
+            failed(e, aioSession);
         }
-        aioSession.readSemaphore.release();
-        aioSession.readFromChannel(result == -1);
     }
 
     @Override

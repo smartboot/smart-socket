@@ -71,7 +71,8 @@ public class P2PServer {
 //            }
 //        });
         AioQuickServer<BaseMessage> server = new AioQuickServer<BaseMessage>(8888, new P2PProtocol(messageFactory), processor);
-        server.setThreadNum(16)
+        server
+//                .setThreadNum(16)
                 .setWriteQueueSize(16384)
 //                .setDirectBuffer(true)
 //                .setReadBufferSize(70)
