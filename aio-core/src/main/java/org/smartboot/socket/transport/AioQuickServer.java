@@ -57,6 +57,8 @@ public class AioQuickServer<T> {
      * 写回调事件处理
      */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
+    private Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction;
+
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
 
@@ -93,7 +95,12 @@ public class AioQuickServer<T> {
         if (config.isBannerEnabled()) {
             LOGGER.info(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
         }
-        start0();
+        start0(new Function<AsynchronousSocketChannel, AioSession<T>>() {
+            @Override
+            public AioSession<T> apply(AsynchronousSocketChannel channel) {
+                return new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
+            }
+        });
     }
 
     /**
@@ -101,8 +108,9 @@ public class AioQuickServer<T> {
      *
      * @throws IOException
      */
-    protected final void start0() throws IOException {
+    protected final void start0(Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction) throws IOException {
         try {
+            this.aioSessionFunction = aioSessionFunction;
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
                 byte index = 0;
 
@@ -124,6 +132,7 @@ public class AioQuickServer<T> {
             } else {
                 serverSocketChannel.bind(new InetSocketAddress(config.getPort()), 1000);
             }
+
             serverSocketChannel.accept(serverSocketChannel, new CompletionHandler<AsynchronousSocketChannel, AsynchronousServerSocketChannel>() {
                 @Override
                 public void completed(final AsynchronousSocketChannel channel, AsynchronousServerSocketChannel serverSocketChannel) {
@@ -149,14 +158,34 @@ public class AioQuickServer<T> {
      *
      * @param channel
      */
-    protected void createSession(AsynchronousSocketChannel channel) {
+    private void createSession(AsynchronousSocketChannel channel) {
         //连接成功则构造AIOSession对象
-        AioSession<T> session = new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
+        AioSession<T> session = null;
         try {
+            session = aioSessionFunction.apply(channel);
             session.initSession();
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
-            session.close();
+        } catch (Exception e1) {
+            LOGGER.debug(e1.getMessage(), e1);
+            if (session == null) {
+                try {
+                    channel.shutdownInput();
+                } catch (IOException e) {
+                    LOGGER.debug(e.getMessage(), e);
+                }
+                try {
+                    channel.shutdownOutput();
+                } catch (IOException e) {
+                    LOGGER.debug(e.getMessage(), e);
+                }
+                try {
+                    channel.close();
+                } catch (IOException e) {
+                    LOGGER.debug("close channel exception", e);
+                }
+            } else {
+                session.close();
+            }
+
         }
     }
 

@@ -54,14 +54,12 @@ public class AioSSLQuickServer<T> extends AioQuickServer<T> {
         }
         //启动SSL服务
         sslService = new SSLService(sslConfig);
-        start0();
-    }
-
-    @Override
-    protected void createSession(AsynchronousSocketChannel channel) {
-        //连接成功则构造AIOSession对象
-        AioSession<T> session = new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, sslService);
-        session.initSession();
+        start0(new Function<AsynchronousSocketChannel, AioSession<T>>() {
+            @Override
+            public AioSession<T> apply(AsynchronousSocketChannel channel) {
+                return new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, sslService);
+            }
+        });
     }
 
     public AioSSLQuickServer<T> setKeyStore(String keyStoreFile, String keystorePassword) {
