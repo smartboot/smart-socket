@@ -94,7 +94,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
                     try {
                         sendHeartRequest(session);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        LOGGER.error("heart exception", e);
                     }
                 }
                 registerHeart(session, timeout);

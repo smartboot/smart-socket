@@ -152,7 +152,12 @@ public class AioQuickServer<T> {
     protected void createSession(AsynchronousSocketChannel channel) {
         //连接成功则构造AIOSession对象
         AioSession<T> session = new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
-        session.initSession();
+        try {
+            session.initSession();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            session.close();
+        }
     }
 
     /**
