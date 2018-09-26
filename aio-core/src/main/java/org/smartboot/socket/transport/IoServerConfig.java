@@ -15,6 +15,8 @@ import org.smartboot.socket.Protocol;
 import java.net.SocketOption;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Quickly服务端/客户端配置信息 T:解码后生成的对象类型
@@ -32,7 +34,7 @@ final class IoServerConfig<T> {
             "\\__, \\| ( ) ( ) |( (_| || |   | |_    \\__, \\( (_) )( (___ | |\\`\\ (  ___/| |_ \n" +
             "(____/(_) (_) (_)`\\__,_)(_)   `\\__)   (____/`\\___/'`\\____)(_) (_)`\\____)`\\__)";
 
-    public static final String VERSION = "v1.3.20";
+    public static final String VERSION = "v1.3.21";
     private final boolean server;
     /**
      * 消息队列缓存大小
@@ -68,6 +70,13 @@ final class IoServerConfig<T> {
     private int threadNum = Runtime.getRuntime().availableProcessors() + 1;
     private float limitRate = 0.9f;
     private float releaseRate = 0.6f;
+
+    /**
+     * 是否采用均衡的IO运行模型
+     */
+    private boolean fairIO = false;
+
+    private ExecutorService fairIoExecutor;
     /**
      * 流控指标线
      */
@@ -185,6 +194,17 @@ final class IoServerConfig<T> {
 
     public boolean isServer() {
         return server;
+    }
+
+    public void setFairIO(boolean fairIO) {
+        this.fairIO = fairIO;
+        if (fairIO && fairIoExecutor == null) {
+            fairIoExecutor=Executors.newFixedThreadPool(1);
+        }
+    }
+
+    public ExecutorService getFairIoExecutor() {
+        return fairIoExecutor;
     }
 
     @Override

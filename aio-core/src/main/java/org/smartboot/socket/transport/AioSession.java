@@ -19,6 +19,7 @@ import java.io.InvalidObjectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -64,7 +65,6 @@ public class AioSession<T> {
     protected static final byte SESSION_STATUS_ENABLED = 3;
     private static final Logger logger = LoggerFactory.getLogger(AioSession.class);
     private static final int MAX_WRITE_SIZE = 256 * 1024;
-
     /**
      * 底层通信channel对象
      */
@@ -87,6 +87,7 @@ public class AioSession<T> {
      */
     protected byte status = SESSION_STATUS_ENABLED;
     Semaphore readSemaphore = new Semaphore(1);
+    private ExecutorService ioExecutor = null;
     /**
      * 附件对象
      */
@@ -108,6 +109,8 @@ public class AioSession<T> {
     private Semaphore semaphore = new Semaphore(1);
     private IoServerConfig<T> ioServerConfig;
     private InputStream inputStream;
+    private ReadRunnable readRunnable = new ReadRunnable();
+    private WriteRunnable writeRunnable = new WriteRunnable();
 
     /**
      * @param channel
@@ -121,6 +124,7 @@ public class AioSession<T> {
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.writeCacheQueue = config.getWriteQueueSize() > 0 ? new FastBlockingQueue(config.getWriteQueueSize()) : null;
+        this.ioExecutor = config.getFairIoExecutor();
         this.ioServerConfig = config;
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
@@ -195,15 +199,25 @@ public class AioSession<T> {
      *
      * @param buffer
      */
-    protected final void readFromChannel0(ByteBuffer buffer) {
-        channel.read(buffer, this, readCompletionHandler);
+    protected final void readFromChannel0(final ByteBuffer buffer) {
+        readRunnable.buffer = buffer;
+        if (ioExecutor != null) {
+            ioExecutor.execute(readRunnable);
+        } else {
+            readRunnable.run();
+        }
     }
 
     /**
      * 内部方法：触发通道的写操作
      */
-    protected final void writeToChannel0(ByteBuffer buffer) {
-        channel.write(buffer, this, writeCompletionHandler);
+    protected final void writeToChannel0(final ByteBuffer buffer) {
+        writeRunnable.buffer = buffer;
+        if (ioExecutor != null) {
+            ioExecutor.execute(writeRunnable);
+        } else {
+            writeRunnable.run();
+        }
     }
 
     /**
@@ -380,7 +394,6 @@ public class AioSession<T> {
         continueRead();
     }
 
-
     protected void continueRead() {
         readFromChannel0(readBuffer);
     }
@@ -473,6 +486,24 @@ public class AioSession<T> {
             }
         }
         return inputStream;
+    }
+
+    private class ReadRunnable implements Runnable {
+        private ByteBuffer buffer;
+
+        @Override
+        public void run() {
+            channel.read(buffer, AioSession.this, AioSession.this.readCompletionHandler);
+        }
+    }
+
+    private class WriteRunnable implements Runnable {
+        private ByteBuffer buffer;
+
+        @Override
+        public void run() {
+            channel.write(buffer, AioSession.this, AioSession.this.writeCompletionHandler);
+        }
     }
 
     private class InnerInputStream extends InputStream {

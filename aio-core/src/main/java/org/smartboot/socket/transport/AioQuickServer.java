@@ -273,4 +273,9 @@ public class AioQuickServer<T> {
         config.setOption(socketOption, value);
         return this;
     }
+
+    public final AioQuickServer<T> setFairIO(boolean fair) {
+        config.setFairIO(fair);
+        return this;
+    }
 }
