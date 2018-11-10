@@ -1,6 +1,7 @@
 package com.smartboot.socket.decoder;
 
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.buffer.ByteBuf;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
 import org.smartboot.socket.transport.AioSession;
 
@@ -38,11 +39,11 @@ public class DelimiterProtocol implements Protocol<String> {
     }
 
     @Override
-    public ByteBuffer encode(String msg, AioSession<String> session) {
+    public ByteBuf encode(String msg, AioSession<String> session) {
         byte[] bytes = msg.getBytes();
         ByteBuffer buffer = ByteBuffer.allocate(bytes.length + DELIMITER_BYTES.length);
         buffer.put(bytes).put(DELIMITER_BYTES);
         buffer.flip();
-        return buffer;
+        return null;
     }
 }

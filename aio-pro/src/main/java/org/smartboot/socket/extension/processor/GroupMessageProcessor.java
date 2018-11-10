@@ -54,11 +54,11 @@ abstract class GroupMessageProcessor<T> implements MessageProcessor<T>, GroupIo<
     }
 
     @Override
-    public void writeToGroup(String group, T t) {
+    public void writeToGroup(String group, byte[] t) {
         GroupUnit groupUnit = sessionGroup.get(group);
         for(AioSession<T> aioSession:groupUnit.groupList){
             try {
-                aioSession.write(t);
+                aioSession.getOutputStream().write(t);
             } catch (IOException e) {
                 e.printStackTrace();
             }

@@ -37,7 +37,7 @@ public final class P2PProtocol implements Protocol<BaseMessage> {
         }
         int magicNum = buffer.getInt(buffer.position() + 0);
         if (magicNum != HeadMessage.MAGIC_NUMBER) {
-            byte[] bytes=new byte[buffer.remaining()];
+            byte[] bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
             throw new DecodeException("Invalid Magic Number: 0x" + Integer.toHexString(magicNum) + "position:" + buffer.position() + " ,byteBuffer:"
                     + StringUtils.toHexString(bytes));

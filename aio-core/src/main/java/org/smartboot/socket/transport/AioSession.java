@@ -12,13 +12,16 @@ package org.smartboot.socket.transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.buffer.ByteBuf;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InvalidObjectException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -40,7 +43,7 @@ import java.util.concurrent.Semaphore;
  * <li>{@link AioSession#getSessionID()} </li>
  * <li>{@link AioSession#isInvalid()} </li>
  * <li>{@link AioSession#setAttachment(Object)}  </li>
- * <li>{@link AioSession#write(ByteBuffer)} </li>
+ * <li>{@link AioSession#write(ByteBuf)} </li>
  * <li>{@link AioSession#write(Object)}   </li>
  * </ol>
  *
@@ -73,11 +76,11 @@ public class AioSession<T> {
      * 读缓冲。
      * <p>大小取决于AioQuickClient/AioQuickServer设置的setReadBufferSize</p>
      */
-    protected ByteBuffer readBuffer;
+    protected ByteBuf readBuffer;
     /**
      * 写缓冲
      */
-    protected ByteBuffer writeBuffer;
+    protected ByteBuf writeBuffer;
     /**
      * 会话当前状态
      *
@@ -87,6 +90,7 @@ public class AioSession<T> {
      */
     protected byte status = SESSION_STATUS_ENABLED;
     Semaphore readSemaphore = new Semaphore(1);
+    private BufferPage bufferPage;
     /**
      * 附件对象
      */
@@ -99,7 +103,6 @@ public class AioSession<T> {
      * 响应消息缓存队列。
      * <p>长度取决于AioQuickClient/AioQuickServer设置的setWriteQueueSize</p>
      */
-    private FastBlockingQueue writeCacheQueue;
     private ReadCompletionHandler<T> readCompletionHandler;
     private WriteCompletionHandler<T> writeCompletionHandler;
     /**
@@ -108,23 +111,25 @@ public class AioSession<T> {
     private Semaphore semaphore = new Semaphore(1);
     private IoServerConfig<T> ioServerConfig;
     private InputStream inputStream;
+    private BufferOutputStream outputStream;
 
     /**
      * @param channel
      * @param config
      * @param readCompletionHandler
      * @param writeCompletionHandler
-     * @param serverSession          是否服务端Session
+     * @param bufferPage             是否服务端Session
      */
-    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, boolean serverSession) {
+    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, BufferPage bufferPage) {
         this.channel = channel;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
-        this.writeCacheQueue = config.getWriteQueueSize() > 0 ? new FastBlockingQueue(config.getWriteQueueSize()) : null;
         this.ioServerConfig = config;
+        this.bufferPage = bufferPage;
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
-        this.readBuffer = DirectBufferUtil.getTemporaryDirectBuffer(config.getReadBufferSize());
+        this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
+        outputStream = new BufferOutputStream();
     }
 
     /**
@@ -140,53 +145,40 @@ public class AioSession<T> {
      * <p>需要调用控制同步</p>
      */
     void writeToChannel() {
-        if (writeBuffer != null && writeBuffer.hasRemaining()) {
+        if (writeBuffer != null && writeBuffer.buffer().hasRemaining()) {
             continueWrite();
             return;
         }
-
-        if (writeCacheQueue == null || writeCacheQueue.size() == 0) {
-            if (writeBuffer != null && writeBuffer.isDirect()) {
-                DirectBufferUtil.offerFirstTemporaryDirectBuffer(writeBuffer);
-            }
-            writeBuffer = null;
+        if (writeBuffer != null) {
+            writeBuffer.release();
+        }
+        writeBuffer = null;
+        if (outputStream.bufList.isEmpty()) {
             semaphore.release();
             //此时可能是Closing或Closed状态
             if (isInvalid()) {
                 close();
             }
             //也许此时有新的消息通过write方法添加到writeCacheQueue中
-            else if (writeCacheQueue != null && writeCacheQueue.size() > 0 && semaphore.tryAcquire()) {
-                writeToChannel();
+            else if (!outputStream.bufList.isEmpty()) {
+                outputStream.flush();
             }
             return;
-        }
-        int totalSize = writeCacheQueue.expectRemaining(MAX_WRITE_SIZE);
-        ByteBuffer headBuffer = writeCacheQueue.poll();
-        if (headBuffer.remaining() == totalSize) {
-            writeBuffer = headBuffer;
-        } else {
-            if (writeBuffer == null || totalSize > writeBuffer.capacity()) {
-                if (writeBuffer != null && writeBuffer.isDirect()) {
-                    DirectBufferUtil.offerFirstTemporaryDirectBuffer(writeBuffer);
-                }
-                writeBuffer = DirectBufferUtil.getTemporaryDirectBuffer(totalSize);
-            } else {
-                writeBuffer.clear().limit(totalSize);
-            }
-            writeBuffer.put(headBuffer);
-            writeCacheQueue.pollInto(writeBuffer);
-            writeBuffer.flip();
         }
 
         //如果存在流控并符合释放条件，则触发读操作
         //一定要放在continueWrite之前
-        if (flowControl && writeCacheQueue.size() < ioServerConfig.getReleaseLine()) {
+
+        if (flowControl && outputStream.bufList.size() < ioServerConfig.getReleaseLine()) {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.RELEASE_FLOW_LIMIT, null);
             flowControl = false;
             readFromChannel(false);
         }
+
+
+        AioSession.this.writeBuffer = outputStream.bufList.poll();
         continueWrite();
+
 
     }
 
@@ -206,6 +198,12 @@ public class AioSession<T> {
         channel.write(buffer, this, writeCompletionHandler);
     }
 
+    public final OutputStream getOutputStream() {
+        return outputStream;
+    }
+
+    ;
+
     /**
      * 将数据buffer输出至网络对端。
      * <p>
@@ -221,44 +219,44 @@ public class AioSession<T> {
      * @param buffer
      * @throws IOException
      */
-    public final void write(final ByteBuffer buffer) throws IOException {
-        if (isInvalid()) {
-            throw new IOException("session is " + (status == SESSION_STATUS_CLOSED ? "closed" : "invalid"));
-        }
-        if (!buffer.hasRemaining()) {
-            throw new InvalidObjectException("buffer has no remaining");
-        }
-        if (ioServerConfig.getWriteQueueSize() <= 0) {
-            try {
-                semaphore.acquire();
-                writeBuffer = buffer;
-                continueWrite();
-            } catch (InterruptedException e) {
-                logger.error("acquire fail", e);
-                Thread.currentThread().interrupt();
-                throw new IOException(e.getMessage());
-            }
-            return;
-        } else if ((semaphore.tryAcquire())) {
-            writeBuffer = buffer;
-            continueWrite();
-            return;
-        }
-        try {
-            //正常读取
-            int size = writeCacheQueue.put(buffer);
-            if (size >= ioServerConfig.getFlowLimitLine() && ioServerConfig.isServer()) {
-                flowControl = true;
-                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.FLOW_LIMIT, null);
-            }
-        } catch (InterruptedException e) {
-            logger.error("put buffer into cache fail", e);
-            Thread.currentThread().interrupt();
-        }
-        if (semaphore.tryAcquire()) {
-            writeToChannel();
-        }
-    }
+//    public final void write(final ByteBuf buffer) throws IOException {
+//        if (isInvalid()) {
+//            throw new IOException("session is " + (status == SESSION_STATUS_CLOSED ? "closed" : "invalid"));
+//        }
+//        if (!buffer.buffer().hasRemaining()) {
+//            throw new InvalidObjectException("buffer has no remaining");
+//        }
+//        if (ioServerConfig.getWriteQueueSize() <= 0) {
+//            try {
+//                semaphore.acquire();
+//                writeBuffer = buffer;
+//                continueWrite();
+//            } catch (InterruptedException e) {
+//                logger.error("acquire fail", e);
+//                Thread.currentThread().interrupt();
+//                throw new IOException(e.getMessage());
+//            }
+//            return;
+//        } else if ((semaphore.tryAcquire())) {
+//            writeBuffer = buffer;
+//            continueWrite();
+//            return;
+//        }
+//        try {
+//            //正常读取
+//            writeCacheQueue.put(buffer);
+//            if (writeCacheQueue.size() >= ioServerConfig.getFlowLimitLine() && ioServerConfig.isServer()) {
+//                flowControl = true;
+//                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.FLOW_LIMIT, null);
+//            }
+//        } catch (InterruptedException e) {
+//            logger.error("put buffer into cache fail", e);
+//            Thread.currentThread().interrupt();
+//        }
+//        if (semaphore.tryAcquire()) {
+//            writeToChannel();
+//        }
+//    }
 
     /**
      * 强制关闭当前AIOSession。
@@ -302,14 +300,21 @@ public class AioSession<T> {
             } finally {
                 semaphore.release();
             }
-            DirectBufferUtil.offerFirstTemporaryDirectBuffer(readBuffer);
-            if (writeBuffer != null && writeBuffer.isDirect()) {
-                DirectBufferUtil.offerFirstTemporaryDirectBuffer(writeBuffer);
-            }
-        } else if ((writeBuffer == null || !writeBuffer.hasRemaining()) && (writeCacheQueue == null || writeCacheQueue.size() == 0) && semaphore.tryAcquire()) {
+            readBuffer.release();
+            readBuffer = null;
+//            if (writeBuffer != null) {
+//                writeBuffer.release();
+//                writeBuffer = null;
+//            }
+//            outputStream.close();
+
+        } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && outputStream.bufList.isEmpty() && outputStream.writeBuf == null && semaphore.tryAcquire()) {
             close(true);
         } else {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
+            if (outputStream.writeBuf != null) {
+                outputStream.flush();
+            }
         }
     }
 
@@ -335,10 +340,11 @@ public class AioSession<T> {
         if (flowControl || !readSemaphore.tryAcquire()) {
             return;
         }
+        ByteBuffer readBuffer = this.readBuffer.buffer();
         readBuffer.flip();
 
 
-        while (readBuffer.hasRemaining()) {
+        while (readBuffer.hasRemaining() && !isInvalid()) {
             T dataEntry = null;
             try {
                 dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this);
@@ -357,6 +363,7 @@ public class AioSession<T> {
                 ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
         }
+        outputStream.flush();
 
         if (eof || status == SESSION_STATUS_CLOSING) {
             close(false);
@@ -382,11 +389,11 @@ public class AioSession<T> {
 
 
     protected void continueRead() {
-        readFromChannel0(readBuffer);
+        readFromChannel0(readBuffer.buffer());
     }
 
     protected void continueWrite() {
-        writeToChannel0(writeBuffer);
+        writeToChannel0(writeBuffer.buffer());
     }
 
     /**
@@ -405,16 +412,16 @@ public class AioSession<T> {
         this.attachment = attachment;
     }
 
-    /**
-     * 输出消息。
-     * <p>必须实现{@link org.smartboot.socket.Protocol#encode(Object, AioSession)}</p>方法
-     *
-     * @param t 待输出消息必须为当前服务指定的泛型
-     * @throws IOException
-     */
-    public final void write(T t) throws IOException {
-        write(ioServerConfig.getProtocol().encode(t, this));
-    }
+//    /**
+//     * 输出消息。
+//     * <p>必须实现{@link org.smartboot.socket.Protocol#encode(Object, AioSession)}</p>方法
+//     *
+//     * @param t 待输出消息必须为当前服务指定的泛型
+//     * @throws IOException
+//     */
+//    public final void write(T t) throws IOException {
+//        getOutputStream().write(ioServerConfig.getProtocol().encode(t, this));
+//    }
 
     /**
      * @see AsynchronousSocketChannel#getLocalAddress()
@@ -436,6 +443,10 @@ public class AioSession<T> {
         if (status == SESSION_STATUS_CLOSED || channel == null) {
             throw new IOException("session is closed");
         }
+    }
+
+    public ByteBuf allocateBuf(int size) {
+        return bufferPage.allocate(size);
     }
 
     IoServerConfig<T> getServerConfig() {
@@ -475,6 +486,86 @@ public class AioSession<T> {
         return inputStream;
     }
 
+    /**
+     * @author 三刀
+     * @version V1.0 , 2018/11/8
+     */
+    private class BufferOutputStream extends OutputStream {
+        private LinkedBlockingQueue<ByteBuf> bufList = new LinkedBlockingQueue<>();
+        private ByteBuf writeBuf;
+        private BufferPage bufferPage = AioSession.this.bufferPage;
+
+        @Override
+        public void write(int b) throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+//            System.out.println("1");
+            if (b == null) {
+                throw new NullPointerException();
+            } else if ((off < 0) || (off > b.length) || (len < 0) ||
+                    ((off + len) > b.length) || ((off + len) < 0)) {
+                throw new IndexOutOfBoundsException();
+            } else if (len == 0) {
+                return;
+            }
+            if (writeBuf == null) {
+                writeBuf = bufferPage.allocate(1024);
+            }
+            ByteBuffer writeBuffer = writeBuf.buffer();
+            do {
+                int minSize = Math.min(writeBuffer.remaining(), len - off);
+                writeBuffer.put(b, off, minSize);
+                off += minSize;
+                if (!writeBuffer.hasRemaining()) {
+                    writeBuffer.flip();
+                    flush();
+                    if (off < len) {
+                        writeBuf = bufferPage.allocate(1024);
+                    } else {
+                        writeBuf = null;
+                    }
+                }
+            } while (off < len);
+        }
+
+
+        @Override
+        public void flush() {
+            if (writeBuf != null && writeBuf.buffer().position() > 0) {
+                writeBuf.buffer().flip();
+                bufList.add(writeBuf);
+                writeBuf = null;
+            }
+
+            if (!AioSession.this.semaphore.tryAcquire()) {
+                return;
+            }
+            ByteBuf byteBuf = bufList.poll();
+            if (byteBuf == null) {
+                AioSession.this.semaphore.release();
+            } else {
+                AioSession.this.writeBuffer = byteBuf;
+                continueWrite();
+            }
+        }
+
+        @Override
+        public void close() {
+            ByteBuf byteBuf = null;
+            while ((byteBuf = bufList.poll()) != null) {
+                byteBuf.release();
+            }
+            bufList = null;
+            if (writeBuf != null) {
+                writeBuf.release();
+                writeBuf = null;
+            }
+        }
+    }
+
     private class InnerInputStream extends InputStream {
         private int remainLength;
 
@@ -487,6 +578,7 @@ public class AioSession<T> {
             if (remainLength == 0) {
                 return -1;
             }
+            ByteBuffer readBuffer = AioSession.this.readBuffer.buffer();
             if (readBuffer.hasRemaining()) {
                 remainLength--;
                 return readBuffer.get();
@@ -509,7 +601,7 @@ public class AioSession<T> {
 
         @Override
         public int available() throws IOException {
-            return remainLength == 0 ? 0 : readBuffer.remaining();
+            return remainLength == 0 ? 0 : readBuffer.buffer().remaining();
         }
 
         @Override

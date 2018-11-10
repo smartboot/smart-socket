@@ -1,6 +1,7 @@
-package net.vinote.demo;
+package org.smartboot.socket.test;
 
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.buffer.ByteBuf;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
@@ -20,10 +21,11 @@ public class IntegerProtocol implements Protocol<Integer> {
     }
 
     @Override
-    public ByteBuffer encode(Integer s, AioSession<Integer> session) {
-        ByteBuffer b = ByteBuffer.allocate(INT_LENGTH);
+    public ByteBuf encode(Integer s, AioSession<Integer> session) {
+        ByteBuf byteBuf=session.allocateBuf(INT_LENGTH);
+        ByteBuffer b = byteBuf.buffer();
         b.putInt(s);
         b.flip();
-        return b;
+        return byteBuf;
     }
 }

@@ -12,7 +12,7 @@ public class DirectBufferUtil {
     private static ThreadLocal<DirectBufferUtil.BufferCache> bufferCache;
 
     static {
-        TEMP_BUF_POOL_SIZE = 1024;//iovMax();
+        TEMP_BUF_POOL_SIZE = 1024*256;//iovMax();
         MAX_CACHED_BUFFER_SIZE = getMaxCachedBufferSize();
         bufferCache = new ThreadLocal<DirectBufferUtil.BufferCache>() {
             protected DirectBufferUtil.BufferCache initialValue() {
@@ -72,6 +72,9 @@ public class DirectBufferUtil {
     }
 
     static void offerFirstTemporaryDirectBuffer(ByteBuffer var0) {
+        if (var0 == null || !var0.isDirect()) {
+            return;
+        }
         if (isBufferTooLarge(var0)) {
             free(var0);
         } else {
@@ -89,12 +92,11 @@ public class DirectBufferUtil {
         ((DirectBuffer) var0).cleaner().clean();
     }
 
-//    public static void main(String[] args) {
-//        int i = 0;
-//        while (i++ < Integer.MAX_VALUE) {
-//            DirectBufferUtil.getTemporaryDirectBuffer(1024);
-//        }
-//    }
+    public static void main(String[] args) {
+        int i = 0;
+        ByteBuffer b = DirectBufferUtil.getTemporaryDirectBuffer(1024);
+        DirectBufferUtil.free(b);
+    }
 
     private static class BufferCache {
         private ByteBuffer[] buffers;

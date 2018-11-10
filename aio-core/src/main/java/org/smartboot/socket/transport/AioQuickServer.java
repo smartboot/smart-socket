@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.buffer.BufferPool;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -57,8 +58,8 @@ public class AioQuickServer<T> {
      * 写回调事件处理
      */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
+    protected BufferPool bufferPool = new BufferPool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors(), true);
     private Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction;
-
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
 
@@ -98,7 +99,7 @@ public class AioQuickServer<T> {
         start0(new Function<AsynchronousSocketChannel, AioSession<T>>() {
             @Override
             public AioSession<T> apply(AsynchronousSocketChannel channel) {
-                return new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, true);
+                return new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.getBufferPage());
             }
         });
     }

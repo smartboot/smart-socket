@@ -37,5 +37,5 @@ public interface GroupIo<T> {
      * @param group
      * @param t
      */
-    void writeToGroup(String group, T t);
+    void writeToGroup(String group, byte[] t);
 }

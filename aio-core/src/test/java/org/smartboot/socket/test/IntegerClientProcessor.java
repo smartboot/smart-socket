@@ -1,4 +1,4 @@
-package net.vinote.demo;
+package org.smartboot.socket.test;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;

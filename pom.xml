@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
-        <version>1.3.22</version>
+        <version>1.4.0-SNAPSHOT</version>
     </parent>
     <properties>
         <commons.lang.version>2.6</commons.lang.version>
@@ -32,7 +32,6 @@
     </dependencyManagement>
 
     <modules>
-        <module>smart-protocol-p2p</module>
         <module>smart-socket-parent</module>
         <module>example</module>
     </modules>

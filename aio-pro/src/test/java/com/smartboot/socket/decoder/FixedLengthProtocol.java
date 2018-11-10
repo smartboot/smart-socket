@@ -1,6 +1,7 @@
 package com.smartboot.socket.decoder;
 
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.buffer.ByteBuf;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.transport.AioSession;
 
@@ -41,12 +42,12 @@ public class FixedLengthProtocol implements Protocol<String> {
     }
 
     @Override
-    public ByteBuffer encode(String msg, AioSession<String> session) {
+    public ByteBuf encode(String msg, AioSession<String> session) {
         byte[] bytes = msg.getBytes();
         ByteBuffer buffer = ByteBuffer.allocate(INT_BYTES + bytes.length);
         buffer.putInt(bytes.length);//消息头
         buffer.put(bytes);//消息体
         buffer.flip();
-        return buffer;
+        return null;
     }
 }

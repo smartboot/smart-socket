@@ -10,6 +10,8 @@ package org.smartboot.socket.transport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.buffer.BufferPool;
 import org.smartboot.socket.extension.ssl.HandshakeCallback;
 import org.smartboot.socket.extension.ssl.HandshakeModel;
 import org.smartboot.socket.extension.ssl.SSLService;
@@ -47,8 +49,8 @@ public class SSLAioSession<T> extends AioSession<T> {
      * @param aioWriteCompletionHandler
      * @param sslService                是否服务端Session
      */
-    SSLAioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> aioReadCompletionHandler, WriteCompletionHandler<T> aioWriteCompletionHandler, SSLService sslService) {
-        super(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, false);
+    SSLAioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> aioReadCompletionHandler, WriteCompletionHandler<T> aioWriteCompletionHandler, SSLService sslService, BufferPage bufferPage) {
+        super(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPage);
         this.handshakeModel = sslService.createSSLEngine(channel);
         this.sslService = sslService;
     }
@@ -69,7 +71,7 @@ public class SSLAioSession<T> extends AioSession<T> {
         this.sslEngine = handshakeModel.getSslEngine();
         this.netWriteBuffer = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
         this.netWriteBuffer.flip();
-        this.netReadBuffer = ByteBuffer.allocate(readBuffer.capacity());
+        this.netReadBuffer = ByteBuffer.allocate(readBuffer.buffer().capacity());
 //        this.serverFlowLimit = sslEngine.getUseClientMode() ? null : false;//服务端设置流控标志
         this.handshakeModel.setHandshakeCallback(new HandshakeCallback() {
             @Override
@@ -126,7 +128,7 @@ public class SSLAioSession<T> extends AioSession<T> {
     private void doWrap() {
         try {
             netWriteBuffer.compact();
-            SSLEngineResult result = sslEngine.wrap(writeBuffer, netWriteBuffer);
+            SSLEngineResult result = sslEngine.wrap(writeBuffer.buffer(), netWriteBuffer);
             while (result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
@@ -144,7 +146,7 @@ public class SSLAioSession<T> extends AioSession<T> {
                     default:
                         logger.error("doWrap Result:" + result.getStatus());
                 }
-                result = sslEngine.wrap(writeBuffer, netWriteBuffer);
+                result = sslEngine.wrap(writeBuffer.buffer(), netWriteBuffer);
             }
             netWriteBuffer.flip();
         } catch (SSLException e) {
@@ -155,7 +157,7 @@ public class SSLAioSession<T> extends AioSession<T> {
     private void doUnWrap() {
         try {
             netReadBuffer.flip();
-
+            ByteBuffer readBuffer = super.readBuffer.buffer();
             SSLEngineResult result = sslEngine.unwrap(netReadBuffer, readBuffer);
             while (result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {

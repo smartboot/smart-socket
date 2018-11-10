@@ -8,6 +8,7 @@
 
 package org.smartboot.socket;
 
+import org.smartboot.socket.buffer.ByteBuf;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
@@ -70,5 +71,5 @@ public interface Protocol<T> {
      * @param session 当前执行encode的AIOSession对象
      * @return 将业务消息编码成ByteBuffer
      */
-    ByteBuffer encode(T msg, AioSession<T> session);
+    ByteBuf encode(T msg, AioSession<T> session);
 }

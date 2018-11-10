@@ -11,6 +11,7 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.buffer.BufferPool;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -57,6 +58,7 @@ public class AioQuickClient<T> {
      * @see AioSession
      */
     protected AioSession<T> session;
+    protected BufferPool bufferPool = new BufferPool(1024 * 256, 1, true);
     /**
      * IO事件处理线程组。
      * <p>
@@ -103,7 +105,7 @@ public class AioQuickClient<T> {
         //bind host
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
-        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), false);
+        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool.getBufferPage());
         session.initSession();
     }
 

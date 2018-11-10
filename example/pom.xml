@@ -11,6 +11,7 @@
     <version>1.0.0</version>
     <modules>
         <module>rpc</module>
+        <module>smart-protocol-p2p</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 
