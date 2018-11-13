@@ -3,18 +3,36 @@ package org.smartboot.socket.buffer;
 import java.nio.ByteBuffer;
 
 /**
+ * 虚拟ByteBuffer缓冲区
+ *
  * @author 三刀
  * @version V1.0 , 2018/10/31
  */
-public class ByteBuf {
+public final class VirtualBuffer {
 
-    BufferPage bufferPage;
+    /**
+     * 当前虚拟buffer的归属内存页
+     */
+    final BufferPage bufferPage;
+    /**
+     * 通过ByteBuffer.slice()隐射出来的虚拟ByteBuffer
+     *
+     * @see ByteBuffer#slice()
+     */
     private ByteBuffer buffer;
+    private boolean clean = false;
+    private int update = 0;
+    /**
+     * 当前虚拟buffer映射的实际buffer.position
+     */
     private int parentPosition;
 
+    /**
+     * 当前虚拟buffer映射的实际buffer.limit
+     */
     private int parentLimit;
 
-    ByteBuf(BufferPage bufferPage, ByteBuffer buffer, int parentPosition, int parentLimit) {
+    VirtualBuffer(BufferPage bufferPage, ByteBuffer buffer, int parentPosition, int parentLimit) {
         this.bufferPage = bufferPage;
         this.buffer = buffer;
         this.parentPosition = parentPosition;
@@ -38,23 +56,41 @@ public class ByteBuf {
     }
 
     public ByteBuffer buffer() {
+//        if (clean) {
+//            throw new RuntimeException("cleaned");
+//        }
         return buffer;
     }
 
     void buffer(ByteBuffer buffer) {
         this.buffer = buffer;
+        clean = false;
+        update++;
     }
 
-    public void release() {
-        if (bufferPage != null) {
-            bufferPage.release(this);
+    public synchronized void clean() {
+        if (clean) {
+            System.err.println("buffer has cleaned");
+            return;
         }
+        clean = true;
+        if (bufferPage != null) {
+            bufferPage.addUnusedBuffer(this);
+        }else{
+            System.err.println("buffer has aaa");
+        }
+
     }
+
+//    @Override
+//    protected void finalize() throws Throwable {
+//        clean();
+//    }
 
     @Override
     public String toString() {
         return "ByteBuf{" +
-                "bufferPage=" + bufferPage +
+//                "bufferPage=" + bufferPage +
                 ", buffer=" + buffer +
                 ", parentPosition=" + parentPosition +
                 ", parentLimit=" + parentLimit +

@@ -8,7 +8,6 @@
 
 package org.smartboot.socket;
 
-import org.smartboot.socket.buffer.ByteBuf;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
@@ -62,14 +61,4 @@ public interface Protocol<T> {
      * @return 本次解码成功后封装的业务消息对象, 返回null则表示解码未完成
      */
     T decode(final ByteBuffer readBuffer, AioSession<T> session);
-
-    /**
-     * 将业务消息实体编码成ByteBuffer用于输出至对端。
-     * <b>且勿在encode中直接调用session.write,编码后的byteBuffer需交由smart-socket框架本身来输出</b>
-     *
-     * @param msg     待编码的业务消息
-     * @param session 当前执行encode的AIOSession对象
-     * @return 将业务消息编码成ByteBuffer
-     */
-    ByteBuf encode(T msg, AioSession<T> session);
 }

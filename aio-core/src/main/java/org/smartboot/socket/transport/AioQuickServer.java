@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.buffer.BufferPool;
+import org.smartboot.socket.buffer.BufferPagePool;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -49,7 +49,7 @@ public class AioQuickServer<T> {
      * Server端服务配置。
      * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
      */
-    protected IoServerConfig<T> config = new IoServerConfig<>(true);
+    protected IoServerConfig<T> config = new IoServerConfig<>();
     /**
      * 读回调事件处理
      */
@@ -58,7 +58,7 @@ public class AioQuickServer<T> {
      * 写回调事件处理
      */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
-    protected BufferPool bufferPool = new BufferPool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors(), true);
+    protected BufferPagePool bufferPool;
     private Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
@@ -99,7 +99,7 @@ public class AioQuickServer<T> {
         start0(new Function<AsynchronousSocketChannel, AioSession<T>>() {
             @Override
             public AioSession<T> apply(AsynchronousSocketChannel channel) {
-                return new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.getBufferPage());
+                return new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool);
             }
         });
     }
@@ -111,6 +111,7 @@ public class AioQuickServer<T> {
      */
     protected final void start0(Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction) throws IOException {
         try {
+            this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), config.getThreadNum(), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
                 byte index = 0;
@@ -227,16 +228,6 @@ public class AioQuickServer<T> {
         return this;
     }
 
-
-    /**
-     * 设置输出队列缓冲区长度
-     *
-     * @param size 缓存队列长度
-     */
-    public final AioQuickServer<T> setWriteQueueSize(int size) {
-        this.config.setWriteQueueSize(size);
-        return this;
-    }
 
     /**
      * 设置读缓存区大小

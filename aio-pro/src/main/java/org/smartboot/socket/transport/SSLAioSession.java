@@ -11,7 +11,8 @@ package org.smartboot.socket.transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
-import org.smartboot.socket.buffer.BufferPool;
+import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.extension.ssl.HandshakeCallback;
 import org.smartboot.socket.extension.ssl.HandshakeModel;
 import org.smartboot.socket.extension.ssl.SSLService;
@@ -49,7 +50,7 @@ public class SSLAioSession<T> extends AioSession<T> {
      * @param aioWriteCompletionHandler
      * @param sslService                是否服务端Session
      */
-    SSLAioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> aioReadCompletionHandler, WriteCompletionHandler<T> aioWriteCompletionHandler, SSLService sslService, BufferPage bufferPage) {
+    SSLAioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> aioReadCompletionHandler, WriteCompletionHandler<T> aioWriteCompletionHandler, SSLService sslService, BufferPagePool bufferPage) {
         super(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPage);
         this.handshakeModel = sslService.createSSLEngine(channel);
         this.sslService = sslService;
@@ -81,7 +82,6 @@ public class SSLAioSession<T> extends AioSession<T> {
                     SSLAioSession.this.notifyAll();
                 }
                 sslService = null;//释放内存
-                SSLAioSession.this.readSemaphore.tryAcquire();
                 continueRead();
             }
         });
@@ -120,12 +120,12 @@ public class SSLAioSession<T> extends AioSession<T> {
     }
 
     @Override
-    protected void continueWrite() {
-        doWrap();
+    protected void continueWrite(VirtualBuffer writeBuffer) {
+        doWrap(writeBuffer);
         writeToChannel0(netWriteBuffer);
     }
 
-    private void doWrap() {
+    private void doWrap(VirtualBuffer writeBuffer) {
         try {
             netWriteBuffer.compact();
             SSLEngineResult result = sslEngine.wrap(writeBuffer.buffer(), netWriteBuffer);

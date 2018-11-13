@@ -33,11 +33,6 @@ final class IoServerConfig<T> {
             "(____/(_) (_) (_)`\\__,_)(_)   `\\__)   (____/`\\___/'`\\____)(_) (_)`\\____)`\\__)";
 
     public static final String VERSION = "v1.4.0-SNAPSHOT";
-    private final boolean server;
-    /**
-     * 消息队列缓存大小
-     */
-    private int writeQueueSize = 0;
     /**
      * 消息体缓存大小,字节
      */
@@ -66,16 +61,7 @@ final class IoServerConfig<T> {
      * 服务器处理线程数
      */
     private int threadNum = Runtime.getRuntime().availableProcessors() + 1;
-    private float limitRate = 0.9f;
-    private float releaseRate = 0.6f;
-    /**
-     * 流控指标线
-     */
-    private int flowLimitLine = (int) (writeQueueSize * limitRate);
-    /**
-     * 释放流控指标线
-     */
-    private int releaseLine = (int) (writeQueueSize * releaseRate);
+
     /**
      * 是否启用控制台banner
      */
@@ -85,8 +71,23 @@ final class IoServerConfig<T> {
      */
     private Map<SocketOption<Object>, Object> socketOptions;
 
-    public IoServerConfig(boolean server) {
-        this.server = server;
+    static int getIntProperty(String property, int defaultVal) {
+        String valString = System.getProperty(property);
+        if (valString != null) {
+            try {
+                return Integer.parseInt(valString);
+            } catch (NumberFormatException e) {
+            }
+        }
+        return defaultVal;
+    }
+
+    static boolean getBoolProperty(String property, boolean defaultVal) {
+        String valString = System.getProperty(property);
+        if (valString != null) {
+            return Boolean.parseBoolean(valString);
+        }
+        return defaultVal;
     }
 
     public final String getHost() {
@@ -113,11 +114,9 @@ final class IoServerConfig<T> {
         this.threadNum = threadNum;
     }
 
-
     public NetMonitor<T> getMonitor() {
         return monitor;
     }
-
 
     public Protocol<T> getProtocol() {
         return protocol;
@@ -138,30 +137,12 @@ final class IoServerConfig<T> {
         }
     }
 
-    public int getWriteQueueSize() {
-        return writeQueueSize;
-    }
-
-    public void setWriteQueueSize(int writeQueueSize) {
-        this.writeQueueSize = writeQueueSize;
-        flowLimitLine = (int) (writeQueueSize * limitRate);
-        releaseLine = (int) (writeQueueSize * releaseRate);
-    }
-
     public int getReadBufferSize() {
         return readBufferSize;
     }
 
     public void setReadBufferSize(int readBufferSize) {
         this.readBufferSize = readBufferSize;
-    }
-
-    int getFlowLimitLine() {
-        return flowLimitLine;
-    }
-
-    int getReleaseLine() {
-        return releaseLine;
     }
 
     public boolean isBannerEnabled() {
@@ -183,14 +164,9 @@ final class IoServerConfig<T> {
         socketOptions.put(socketOption, f);
     }
 
-    public boolean isServer() {
-        return server;
-    }
-
     @Override
     public String toString() {
         return "IoServerConfig{" +
-                "writeQueueSize=" + writeQueueSize +
                 ", readBufferSize=" + readBufferSize +
                 ", host='" + host + '\'' +
                 ", monitor=" + monitor +
@@ -198,12 +174,18 @@ final class IoServerConfig<T> {
                 ", processor=" + processor +
                 ", protocol=" + protocol +
                 ", threadNum=" + threadNum +
-                ", limitRate=" + limitRate +
-                ", releaseRate=" + releaseRate +
-                ", flowLimitLine=" + flowLimitLine +
-                ", releaseLine=" + releaseLine +
                 ", bannerEnabled=" + bannerEnabled +
                 ", socketOptions=" + socketOptions +
                 '}';
+    }
+
+    /**
+     * smart-socket服务配置
+     */
+    interface Property {
+        String PROJECT_NAME = "smart-socket";
+        String SESSION_WRITE_CHUNK_SIZE = PROJECT_NAME + ".session.writeChunkSize";
+        String SERVER_PAGE_SIZE = PROJECT_NAME + ".server.pageSize";
+        String SERVER_PAGE_IS_DIRECT = PROJECT_NAME + ".server.page.isDirect";
     }
 }

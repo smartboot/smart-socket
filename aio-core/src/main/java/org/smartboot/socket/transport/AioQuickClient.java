@@ -11,7 +11,7 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.buffer.BufferPool;
+import org.smartboot.socket.buffer.BufferPagePool;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -51,14 +51,14 @@ public class AioQuickClient<T> {
      * 客户端服务配置。
      * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
      */
-    protected IoServerConfig<T> config = new IoServerConfig<>(false);
+    protected IoServerConfig<T> config = new IoServerConfig<>();
     /**
      * 网络连接的会话对象
      *
      * @see AioSession
      */
     protected AioSession<T> session;
-    protected BufferPool bufferPool = new BufferPool(1024 * 256, 1, true);
+    protected BufferPagePool bufferPool = new BufferPagePool(1024 * 256, 1, true);
     /**
      * IO事件处理线程组。
      * <p>
@@ -105,7 +105,7 @@ public class AioQuickClient<T> {
         //bind host
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
-        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool.getBufferPage());
+        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool);
         session.initSession();
     }
 
@@ -153,16 +153,6 @@ public class AioQuickClient<T> {
      */
     public final AioQuickClient<T> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
-        return this;
-    }
-
-    /**
-     * 设置输出队列缓冲区长度。输出缓冲区的内存大小取决于size个ByteBuffer的大小总和。
-     *
-     * @param size 缓冲区数组长度
-     */
-    public final AioQuickClient<T> setWriteQueueSize(int size) {
-        this.config.setWriteQueueSize(size);
         return this;
     }
 

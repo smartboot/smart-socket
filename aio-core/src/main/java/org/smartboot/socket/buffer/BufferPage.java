@@ -8,77 +8,124 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * ByteBuffer内存页
+ *
  * @author 三刀
  * @version V1.0 , 2018/10/31
  */
-public class BufferPage {
+public final class BufferPage {
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferPage.class);
-    public List<ByteBuf> freeList;
-    private LinkedBlockingQueue<ByteBuf> releaseList = new LinkedBlockingQueue<>();
-    private BufferPool bufferPool;
+    /**
+     * 当前空闲的虚拟Buffer
+     */
+    private List<VirtualBuffer> freeList;
+    /**
+     * 当前内存页的归属池对象
+     */
+    private BufferPagePool bufferPool;
     private ByteBuffer buffer;
 
-    BufferPage(BufferPool bufferPool, int size, boolean direct) {
+    /**
+     * 待回收的缓存
+     */
+    private LinkedBlockingQueue<VirtualBuffer> unUsedList = new LinkedBlockingQueue<>();
+
+    private AtomicInteger atomicInteger = new AtomicInteger();
+
+    /**
+     * @param bufferPool 当前
+     * @param size
+     * @param direct
+     */
+    BufferPage(BufferPagePool bufferPool, int size, boolean direct) {
         this.bufferPool = bufferPool;
-        this.buffer = allocate(size, direct);
+        this.buffer = allocate0(size, direct);
         freeList = new LinkedList<>();
-        freeList.add(new ByteBuf(this, buffer, buffer.position(), buffer.limit()));
+        freeList.add(new VirtualBuffer(this, buffer, buffer.position(), buffer.limit()));
+//        new Thread() {
+//            @Override
+//            public void run() {
+//                while (true) {
+//
+//                    try {
+//                        System.out.println("Free " + atomicInteger.get() + " " + unUsedList.size() + " " + freeList);
+//                        System.out.println("unUsed " + unUsedList);
+//                        Thread.sleep(5000);
+//                        System.gc();
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//        }.start();
     }
 
-    private ByteBuffer allocate(int size, boolean direct) {
+    /**
+     * 申请物理内存页空间
+     *
+     * @param size
+     * @param direct
+     * @return
+     */
+    private ByteBuffer allocate0(int size, boolean direct) {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
-    public synchronized ByteBuf allocate(final int size) {
+    public VirtualBuffer allocate(final int size) {
         try {
-//            if (freeList.isEmpty()) {
-//                ByteBuf releaseBuf = null;
-//                while ((releaseBuf = releaseList.poll()) != null) {
-//                    release0(releaseBuf);
-//                }
-//            }
+            if (freeList.isEmpty()) {
+                clean();
+            }
             if (freeList.isEmpty()) {
                 LOGGER.warn("bufferPage has been used up");
-                return new ByteBuf(null, allocate(size, false), 0, 0);
+                return new VirtualBuffer(null, allocate0(size, false), 0, 0);
             }
-            ByteBuf bufferChunk = null;
-            Iterator<ByteBuf> iterator = freeList.iterator();
-            while (iterator.hasNext()) {
-                ByteBuf freeChunk = iterator.next();
+
+
+            int again = 2;
+            while (again-- > 0) {
+                Iterator<VirtualBuffer> iterator = freeList.iterator();
+                VirtualBuffer bufferChunk = null;
+                while (iterator.hasNext()) {
+                    VirtualBuffer freeChunk = iterator.next();
 //                check(freeChunk);
-                final int remaing = freeChunk.getParentLimit() - freeChunk.getParentPosition();
-                if (remaing < size) {
-                    continue;
-                }
-                if (remaing == size) {
-                    iterator.remove();
-                    bufferChunk = freeChunk;
-                } else {
-                    buffer.limit(freeChunk.getParentPosition() + size);
-                    buffer.position(freeChunk.getParentPosition());
-                    bufferChunk = new ByteBuf(this, buffer.slice(), buffer.position(), buffer.limit());
-                    freeChunk.setParentPosition(buffer.limit());
-                    buffer.limit(freeChunk.getParentLimit());
-                    buffer.position(freeChunk.getParentPosition());
-                    freeChunk.buffer(buffer.slice());
+                    final int remaing = freeChunk.getParentLimit() - freeChunk.getParentPosition();
+                    if (remaing < size) {
+                        continue;
+                    }
+                    if (remaing == size) {
+                        iterator.remove();
+                        bufferChunk = freeChunk;
+                    } else {
+                        buffer.limit(freeChunk.getParentPosition() + size);
+                        buffer.position(freeChunk.getParentPosition());
+                        bufferChunk = new VirtualBuffer(this, buffer.slice(), buffer.position(), buffer.limit());
+                        freeChunk.setParentPosition(buffer.limit());
+                        buffer.limit(freeChunk.getParentLimit());
+                        buffer.position(freeChunk.getParentPosition());
+                        freeChunk.buffer(buffer.slice());
 //                    check(freeChunk);
-                }
-//            usedList.add(bufferChunk);
-                if (bufferChunk.buffer().remaining() != size) {
-                    LOGGER.error(bufferChunk.buffer().remaining() + "aaaa" + size);
-                }
+                    }
+                    if (bufferChunk.buffer().remaining() != size) {
+                        LOGGER.error(bufferChunk.buffer().remaining() + "aaaa" + size);
+                        throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
+                    }
 //                check(bufferChunk);
 //                check(freeChunk);
-                return bufferChunk;
+                    atomicInteger.incrementAndGet();
+                    return bufferChunk;
+                }
+                clean();
             }
 //            ByteBuf releaseBuf = null;
 //            while ((releaseBuf = releaseList.poll()) != null) {
 //                release0(releaseBuf);
 //            }
-            LOGGER.warn("bufferPage has no available space");
-            return new ByteBuf(null, allocate(size, false), 0, 0);
+            LOGGER.warn("bufferPage has no available space: " + size);
+            return new VirtualBuffer(null, allocate0(size, false), 0, 0);
         } finally {
 //            for (ByteBuf byteBuf : freeList) {
 //                check(byteBuf);
@@ -86,31 +133,42 @@ public class BufferPage {
         }
     }
 
-    void release0(ByteBuf releaseChunk) {
-        if (releaseChunk != null && releaseChunk.bufferPage == this) {
-            releaseList.add(releaseChunk);
+    void addUnusedBuffer(VirtualBuffer virtualBuffer) {
+        if (virtualBuffer == null) {
+            return;
+        }
+        if (virtualBuffer.bufferPage != this) {
+            throw new IllegalArgumentException();
+        }
+        atomicInteger.decrementAndGet();
+        unUsedList.add(virtualBuffer);
+//        LOGGER.info("回收成功:{}", virtualBuffer.hashCode() + "" + virtualBuffer);
+
+    }
+
+    public void clean() {
+        VirtualBuffer buffer = null;
+        while ((buffer = unUsedList.poll()) != null) {
+            clean(buffer);
         }
     }
 
-    synchronized void release(ByteBuf releaseChunk) {
+    private void clean(VirtualBuffer cleanBuffer) {
         try {
-            if (releaseChunk == null || releaseChunk.bufferPage != this) {
-                return;
-            }
-            releaseChunk.buffer().clear();
+            cleanBuffer.buffer().clear();
             if (freeList.isEmpty()) {
-                freeList.add(releaseChunk);
+                freeList.add(cleanBuffer);
 //                check(releaseChunk);
                 return;
             }
             int index = 0;
-            Iterator<ByteBuf> iterator = freeList.iterator();
+            Iterator<VirtualBuffer> iterator = freeList.iterator();
             while (iterator.hasNext()) {
-                ByteBuf freeChunk = iterator.next();
+                VirtualBuffer freeChunk = iterator.next();
 //                check(freeChunk);
                 //releaseChunk在freeChunk之前并且形成连续块
-                if (freeChunk.getParentPosition() == releaseChunk.getParentLimit()) {
-                    freeChunk.setParentPosition(releaseChunk.getParentPosition());
+                if (freeChunk.getParentPosition() == cleanBuffer.getParentLimit()) {
+                    freeChunk.setParentPosition(cleanBuffer.getParentPosition());
                     buffer.limit(freeChunk.getParentLimit());
                     buffer.position(freeChunk.getParentPosition());
                     freeChunk.buffer(buffer.slice());
@@ -118,11 +176,11 @@ public class BufferPage {
                     return;
                 }
                 //releaseChunkfreeChunk之后并形成连续块
-                if (freeChunk.getParentLimit() == releaseChunk.getParentPosition()) {
-                    freeChunk.setParentLimit(releaseChunk.getParentLimit());
+                if (freeChunk.getParentLimit() == cleanBuffer.getParentPosition()) {
+                    freeChunk.setParentLimit(cleanBuffer.getParentLimit());
                     //判断后一个是否连续
                     if (iterator.hasNext()) {
-                        ByteBuf next = iterator.next();
+                        VirtualBuffer next = iterator.next();
                         if (next.getParentPosition() == freeChunk.getParentLimit()) {
                             freeChunk.setParentLimit(next.getParentLimit());
                             iterator.remove();
@@ -134,17 +192,20 @@ public class BufferPage {
                     buffer.position(freeChunk.getParentPosition());
                     freeChunk.buffer(buffer.slice());
 //                    check(freeChunk);
+
                     return;
                 }
-                if (freeChunk.getParentPosition() > releaseChunk.getParentLimit()) {
-                    freeList.add(index, releaseChunk);
+                if (freeChunk.getParentPosition() > cleanBuffer.getParentLimit()) {
+                    cleanBuffer.buffer(cleanBuffer.buffer());
+                    freeList.add(index, cleanBuffer);
 //                    check(releaseChunk);
                     return;
                 }
                 index++;
             }
 //            check(releaseChunk);
-            freeList.add(releaseChunk);
+            cleanBuffer.buffer(cleanBuffer.buffer());
+            freeList.add(cleanBuffer);
         } finally {
 //            for (ByteBuf b : freeList) {
 //                check(b);
@@ -152,20 +213,13 @@ public class BufferPage {
         }
     }
 
-//    void check(ByteBuf byteBuf) {
-//        if (byteBuf.buffer().remaining() != (byteBuf.getParentLimit() - byteBuf.getParentPosition())) {
-//            throw new RuntimeException(byteBuf.toString());
-//        }
-//    }
-
-//    void clear() {
-//        buffer.clear();
-//        freeList.clear();
-//        freeList.add(new ByteBuf(this, buffer, buffer.position(), buffer.limit()));
-//    }
-
-    BufferPool getBufferPool() {
-        return bufferPool;
+    @Override
+    public String toString() {
+        return "BufferPage{" +
+                "freeList=" + freeList +
+                ", buffer=" + buffer +
+                ", unUsedList=" + unUsedList +
+                '}';
     }
 
     boolean hasFree() {
