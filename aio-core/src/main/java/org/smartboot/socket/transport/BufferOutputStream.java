@@ -106,6 +106,7 @@ class BufferOutputStream extends OutputStream {
         if (closed) {
             throw new IOException("OutputStream has closed");
         }
+        flush();
         closed = true;
 
         if (bufList != null) {

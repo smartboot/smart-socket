@@ -46,7 +46,7 @@ public final class AioSSLQuickClient<T> extends AioQuickClient<T> {
      * @throws InterruptedException
      */
     @Override
-    public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
+    public AioSession<T> start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         //启动SSL服务
         sslConfig.setClientMode(true);
         sslService = new SSLService(sslConfig);
@@ -55,6 +55,7 @@ public final class AioSSLQuickClient<T> extends AioQuickClient<T> {
         //连接成功则构造AIOSession对象
         session = new SSLAioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), sslService, bufferPool);
         session.initSession();
+        return session;
     }
 
 

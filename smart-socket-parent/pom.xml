@@ -15,14 +15,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.smartboot.socket</groupId>
     <artifactId>smart-socket-parent</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.4.0</version>
 
     <packaging>pom</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.25</slf4j.version>
-        <aio.version>1.4.0-SNAPSHOT</aio.version>
+        <aio.version>1.4.0</aio.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -44,18 +44,18 @@
                 <version>${slf4j.version}</version>
             </dependency>
             <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>5.3.1</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
-                <version>1.7.21</version>
-                <scope>test</scope>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.junit.jupiter</groupId>-->
+                <!--<artifactId>junit-jupiter-api</artifactId>-->
+                <!--<version>5.3.1</version>-->
+                <!--<scope>test</scope>-->
+            <!--</dependency>-->
+            <!--<dependency>-->
+                <!--<groupId>org.slf4j</groupId>-->
+                <!--<artifactId>slf4j-simple</artifactId>-->
+                <!--<version>1.7.21</version>-->
+                <!--<scope>test</scope>-->
+            <!--</dependency>-->
         </dependencies>
     </dependencyManagement>
 

@@ -120,8 +120,7 @@ public class AioSession<T> {
         this.writeCompletionHandler = writeCompletionHandler;
         this.ioServerConfig = config;
 //        this.bufferPage = bufferPage;
-        //触发状态机
-        config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
+
         this.readBuffer = bufferPagePool.allocateBufferPage().allocate(config.getReadBufferSize());
         outputStream = new BufferOutputStream(bufferPagePool, new Function<BlockingQueue<VirtualBuffer>, Void>() {
             @Override
@@ -138,6 +137,8 @@ public class AioSession<T> {
                 return null;
             }
         });
+        //触发状态机
+        config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
 
     /**
