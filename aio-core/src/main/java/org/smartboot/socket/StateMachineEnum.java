@@ -74,19 +74,4 @@ public enum StateMachineEnum {
      * <p>AioSession关闭成功</p>
      */
     SESSION_CLOSED,
-    /**
-     * 流控,仅服务端有效。
-     *
-     * <p>服务端启用了输出缓存队列，且消息积压达到一定阈值时触发流控。</p>
-     * <b>未来该状态机可能会废除，并转移至NetMonitor</b>
-     */
-    FLOW_LIMIT,
-    /**
-     * 释放流控,仅服务端有效。
-     *
-     * <p>处于流控状态下的服务端，当输出队列积压量下降到安全阈值后，释放流控状态。</p>
-     * <b>未来该状态机可能会废除，并转移至NetMonitor</b>
-     */
-    RELEASE_FLOW_LIMIT;
-
 }

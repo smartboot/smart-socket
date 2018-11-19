@@ -278,7 +278,6 @@ public class AioSession<T> {
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
     void readFromChannel(boolean eof) {
-        this.bufferPagePool.allocateBufferPage().clean();//内存池回收
         final ByteBuffer readBuffer = this.readBuffer.buffer();
         readBuffer.flip();
         while (readBuffer.hasRemaining() && !isInvalid()) {
@@ -325,6 +324,7 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
         continueRead();
+        this.bufferPagePool.allocateBufferPage().clean();//内存池回收
     }
 
 
