@@ -90,7 +90,7 @@ public class AioSession<T> {
     /**
      * 输出信号量
      */
-    Semaphore semaphore = new Semaphore(1);
+    private Semaphore semaphore = new Semaphore(1);
     private BufferPagePool bufferPagePool;
     /**
      * 附件对象
@@ -299,12 +299,10 @@ public class AioSession<T> {
                 ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
         }
-        outputStream.flush();
+
 
         if (eof || status == SESSION_STATUS_CLOSING) {
-//            logger.info(eof + " " + status);
-//            this.readBuffer.clean();
-//            this.readBuffer = null;
+            outputStream.flush();
             close(false);
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
             return;
@@ -324,6 +322,7 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
         continueRead();
+        outputStream.flush();
         this.bufferPagePool.allocateBufferPage().clean();//内存池回收
     }
 
@@ -333,9 +332,6 @@ public class AioSession<T> {
     }
 
     protected void continueWrite(VirtualBuffer writeBuffer) {
-//        byte[] data = new byte[writeBuffer.buffer().remaining()];
-//        writeBuffer.buffer().get(data, 0, data.length);
-//        logger.info("continueWrite: " + new String(data));
         writeToChannel0(writeBuffer.buffer());
     }
 

@@ -21,7 +21,6 @@ public final class VirtualBuffer {
      */
     private ByteBuffer buffer;
     private boolean clean = false;
-    private int update = 0;
     /**
      * 当前虚拟buffer映射的实际buffer.position
      */
@@ -65,7 +64,6 @@ public final class VirtualBuffer {
     void buffer(ByteBuffer buffer) {
         this.buffer = buffer;
         clean = false;
-        update++;
     }
 
     public synchronized void clean() {
@@ -76,7 +74,7 @@ public final class VirtualBuffer {
         clean = true;
         if (bufferPage != null) {
             bufferPage.addUnusedBuffer(this);
-        }else{
+        } else {
             System.err.println("buffer has aaa");
         }
 
