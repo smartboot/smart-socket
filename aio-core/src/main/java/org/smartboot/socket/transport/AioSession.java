@@ -223,7 +223,9 @@ public class AioSession<T> {
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
             try {
-                outputStream.close();
+                if (!outputStream.isClosed()) {
+                    outputStream.close();
+                }
                 outputStream = null;
             } catch (IOException e) {
                 e.printStackTrace();

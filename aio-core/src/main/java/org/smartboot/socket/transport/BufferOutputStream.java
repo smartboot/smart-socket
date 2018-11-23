@@ -30,22 +30,28 @@ class BufferOutputStream extends OutputStream {
     private boolean closed = false;
     private Function<? super BlockingQueue<VirtualBuffer>, Void> function;
 
-    public BufferOutputStream(BufferPagePool bufferPagePool, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction) {
+    BufferOutputStream(BufferPagePool bufferPagePool, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction) {
         this.bufferPagePool = bufferPagePool;
         this.function = flushFunction;
     }
 
+    /**
+     * 禁用该方法
+     *
+     * @param b
+     * @throws IOException
+     */
     @Override
+    @Deprecated
     public void write(int b) throws IOException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public synchronized void write(byte[] b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         if (closed) {
             throw new IOException("OutputStream has closed");
         }
-//            System.out.println("1");
         if (b == null) {
             throw new NullPointerException();
         } else if ((off < 0) || (off > b.length) || (len < 0) ||
@@ -54,42 +60,34 @@ class BufferOutputStream extends OutputStream {
         } else if (len == 0) {
             return;
         }
-        if (writeInBuf == null) {
-            writeInBuf = bufferPagePool.allocateBufferPage().allocate(WRITE_CHUNK_SIZE);
-//            LOGGER.info("OutputStream:{} 申请writeInBuf:{}",this.hashCode(),writeInBuf.hashCode()+""+writeInBuf);
-        }
+
 
         do {
+            if (writeInBuf == null) {
+                writeInBuf = bufferPagePool.allocateBufferPage().allocate(WRITE_CHUNK_SIZE);
+            }
             ByteBuffer writeBuffer = writeInBuf.buffer();
             int minSize = Math.min(writeBuffer.remaining(), len - off);
             if (minSize == 0 || closed) {
-//                LOGGER.info("OutputStream:{} 回收writeInBuf:{}",this.hashCode(),writeBuffer.hashCode()+""+writeBuffer);
                 writeInBuf.clean();
                 throw new IOException("writeBuffer.remaining:" + writeBuffer.remaining() + " closed:" + closed);
             }
             writeBuffer.put(b, off, minSize);
             off += minSize;
-            if (!writeBuffer.hasRemaining()) {
-                writeBuffer.flip();
-                bufList.add(writeInBuf);
-                writeInBuf = null;
-                function.apply(bufList);
-                if (off < len) {
-                    writeInBuf = bufferPagePool.allocateBufferPage().allocate(WRITE_CHUNK_SIZE);
-//                    LOGGER.info("OutputStream:{} 申请writeInBuf:{}",this.hashCode(),writeInBuf);
-                    if (closed) {
-                        LOGGER.info("closed");
-//                        LOGGER.info("OutputStream:{} 回收writeInBuf:{}",this.hashCode(),writeBuffer.hashCode()+""+writeBuffer);
-                        writeInBuf.clean();
-                    }
-                }
+            if (writeBuffer.hasRemaining()) {
+                continue;
             }
+            //缓冲区已满
+            writeBuffer.flip();
+            bufList.add(writeInBuf);
+            writeInBuf = null;
+            function.apply(bufList);
         } while (off < len);
     }
 
 
     @Override
-    public synchronized void flush() {
+    public void flush() {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
@@ -102,7 +100,7 @@ class BufferOutputStream extends OutputStream {
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public void close() throws IOException {
         if (closed) {
             throw new IOException("OutputStream has closed");
         }
@@ -112,19 +110,20 @@ class BufferOutputStream extends OutputStream {
         if (bufList != null) {
             VirtualBuffer byteBuf = null;
             while ((byteBuf = bufList.poll()) != null) {
-//                LOGGER.info("clean" + byteBuf);
-//                LOGGER.info("OutputStream:{} 回收writeInBuf:{}",this.hashCode(),byteBuf.hashCode()+""+byteBuf);
                 byteBuf.clean();
             }
         }
         if (writeInBuf != null) {
-//            LOGGER.info("OutputStream:{} 回收writeInBuf:{}",this.hashCode(),writeInBuf.hashCode()+""+writeInBuf);
             writeInBuf.clean();
             LOGGER.info("clean" + writeInBuf);
         }
     }
 
-    public synchronized boolean hasData() {
+    public boolean isClosed() {
+        return closed;
+    }
+
+    public boolean hasData() {
         return bufList.size() > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0);
     }
 }
