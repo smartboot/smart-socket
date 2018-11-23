@@ -56,7 +56,6 @@ public final class BufferPage {
             clean();
         }
         if (freeList.isEmpty()) {
-//            LOGGER.warn("bufferPage has been used up");
             return new VirtualBuffer(null, allocate0(size, false), 0, 0);
         }
 
