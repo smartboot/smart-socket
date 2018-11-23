@@ -301,10 +301,12 @@ public class AioSession<T> {
                 ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
         }
+        if (!outputStream.isClosed()) {
+            outputStream.flush();
+        }
 
 
         if (eof || status == SESSION_STATUS_CLOSING) {
-            outputStream.flush();
             close(false);
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
             return;
@@ -324,7 +326,6 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
         continueRead();
-        outputStream.flush();
         this.bufferPagePool.allocateBufferPage().clean();//内存池回收
     }
 
