@@ -71,9 +71,6 @@ public final class VirtualBuffer {
         clean = true;
         if (bufferPage != null) {
             bufferPage.addUnusedBuffer(this);
-        } else {
-            System.err.println("buffer has aaa");
         }
-
     }
 }

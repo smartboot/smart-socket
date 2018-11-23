@@ -33,9 +33,11 @@ public final class BufferPage {
      * @param direct
      */
     BufferPage(int size, boolean direct) {
-        this.buffer = allocate0(size, direct);
         freeList = new LinkedList<>();
-        freeList.add(new VirtualBuffer(this, buffer, buffer.position(), buffer.limit()));
+        if (size > 0) {
+            this.buffer = allocate0(size, direct);
+            freeList.add(new VirtualBuffer(this, buffer, buffer.position(), buffer.limit()));
+        }
     }
 
     /**
@@ -54,7 +56,7 @@ public final class BufferPage {
             clean();
         }
         if (freeList.isEmpty()) {
-            LOGGER.warn("bufferPage has been used up");
+//            LOGGER.warn("bufferPage has been used up");
             return new VirtualBuffer(null, allocate0(size, false), 0, 0);
         }
 
