@@ -58,7 +58,7 @@ public class AioQuickClient<T> {
      * @see AioSession
      */
     protected AioSession<T> session;
-    protected BufferPagePool bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.CLIENT_PAGE_SIZE, 1024 * 256), true);
+    protected BufferPagePool bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.CLIENT_PAGE_SIZE, 1024 * 256),1, true);
     /**
      * IO事件处理线程组。
      * <p>
@@ -105,7 +105,7 @@ public class AioQuickClient<T> {
         //bind host
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
-        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool);
+        session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool.allocateBufferPage());
         session.initSession();
         return session;
     }

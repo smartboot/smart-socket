@@ -57,7 +57,7 @@ public class AioSSLQuickServer<T> extends AioQuickServer<T> {
         start0(new Function<AsynchronousSocketChannel, AioSession<T>>() {
             @Override
             public AioSession<T> apply(AsynchronousSocketChannel channel) {
-                return new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, sslService, bufferPool);
+                return new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, sslService, bufferPool.allocateBufferPage());
             }
         });
     }

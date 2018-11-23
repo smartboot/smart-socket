@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -116,7 +117,11 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         ObjectOutput objectOutput = new ObjectOutputStream(byteArrayOutputStream);
         objectOutput.writeObject(request);
-        aioSession.write(byteArrayOutputStream.toByteArray());
+        byte[] data=byteArrayOutputStream.toByteArray();
+        aioSession.getOutputStream().writeInt(data.length+4);
+        aioSession.getOutputStream().write(data);
+        aioSession.getOutputStream().flush();
+//        aioSession.write(byteArrayOutputStream.toByteArray());
 
         try {
             RpcResponse resp = rpcResponseCompletableFuture.get(3, TimeUnit.SECONDS);

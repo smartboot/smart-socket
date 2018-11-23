@@ -50,7 +50,7 @@ public class SSLAioSession<T> extends AioSession<T> {
      * @param aioWriteCompletionHandler
      * @param sslService                是否服务端Session
      */
-    SSLAioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> aioReadCompletionHandler, WriteCompletionHandler<T> aioWriteCompletionHandler, SSLService sslService, BufferPagePool bufferPage) {
+    SSLAioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> aioReadCompletionHandler, WriteCompletionHandler<T> aioWriteCompletionHandler, SSLService sslService, BufferPage bufferPage) {
         super(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPage);
         this.handshakeModel = sslService.createSSLEngine(channel);
         this.sslService = sslService;

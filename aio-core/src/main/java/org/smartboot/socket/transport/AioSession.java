@@ -12,12 +12,11 @@ package org.smartboot.socket.transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -91,7 +90,7 @@ public class AioSession<T> {
      * 输出信号量
      */
     private Semaphore semaphore = new Semaphore(1);
-    private BufferPagePool bufferPagePool;
+    private BufferPage bufferPage;
     /**
      * 附件对象
      */
@@ -111,18 +110,18 @@ public class AioSession<T> {
      * @param config
      * @param readCompletionHandler
      * @param writeCompletionHandler
-     * @param bufferPagePool         是否服务端Session
+     * @param bufferPage             是否服务端Session
      */
-    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, BufferPagePool bufferPagePool) {
+    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, BufferPage bufferPage) {
         this.channel = channel;
-        this.bufferPagePool = bufferPagePool;
+        this.bufferPage = bufferPage;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.ioServerConfig = config;
 //        this.bufferPage = bufferPage;
 
-        this.readBuffer = bufferPagePool.allocateBufferPage().allocate(config.getReadBufferSize());
-        outputStream = new BufferOutputStream(bufferPagePool, new Function<BlockingQueue<VirtualBuffer>, Void>() {
+        this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
+        outputStream = new BufferOutputStream(bufferPage, new Function<BlockingQueue<VirtualBuffer>, Void>() {
             @Override
             public Void apply(BlockingQueue<VirtualBuffer> var) {
                 if (!semaphore.tryAcquire()) {
@@ -167,6 +166,7 @@ public class AioSession<T> {
             return;
         }
         semaphore.release();
+//        bufferPage.clean();
         //此时可能是Closing或Closed状态
         if (isInvalid()) {
             close();
@@ -196,7 +196,7 @@ public class AioSession<T> {
         channel.write(buffer, this, writeCompletionHandler);
     }
 
-    public final OutputStream getOutputStream() {
+    public final BufferOutputStream getOutputStream() {
         return outputStream;
     }
 
@@ -253,7 +253,7 @@ public class AioSession<T> {
                 logger.debug("close session exception", e);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-            bufferPagePool.allocateBufferPage().clean();
+            bufferPage.clean();
         } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && !outputStream.hasData()) {
             close(true);
         } else {
@@ -326,7 +326,7 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
         continueRead();
-        this.bufferPagePool.allocateBufferPage().clean();//内存池回收
+        bufferPage.clean();//内存池回收
     }
 
 

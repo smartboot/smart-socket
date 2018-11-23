@@ -73,4 +73,14 @@ public final class VirtualBuffer {
             bufferPage.addUnusedBuffer(this);
         }
     }
+
+    @Override
+    public String toString() {
+        return "VirtualBuffer{" +
+                "buffer=" + buffer +
+                ", clean=" + clean +
+                ", parentPosition=" + parentPosition +
+                ", parentLimit=" + parentLimit +
+                '}';
+    }
 }

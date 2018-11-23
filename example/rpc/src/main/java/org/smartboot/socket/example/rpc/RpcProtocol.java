@@ -27,13 +27,4 @@ public class RpcProtocol implements Protocol<byte[]> {
         readBuffer.get(data);
         return data;
     }
-
-    @Override
-    public ByteBuffer encode(byte[] msg, AioSession<byte[]> session) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(msg.length + INTEGER_BYTES);
-        byteBuffer.putInt(byteBuffer.capacity());
-        byteBuffer.put(msg);
-        byteBuffer.flip();
-        return byteBuffer;
-    }
 }

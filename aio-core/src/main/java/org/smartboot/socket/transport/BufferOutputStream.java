@@ -2,7 +2,7 @@ package org.smartboot.socket.transport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;
@@ -18,7 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @version V1.0 , 2018/11/8
  */
 
-class BufferOutputStream extends OutputStream {
+public class BufferOutputStream extends OutputStream {
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferOutputStream.class);
     /**
      * 输出缓存块大小
@@ -26,29 +26,39 @@ class BufferOutputStream extends OutputStream {
     private static final int WRITE_CHUNK_SIZE = IoServerConfig.getIntProperty(IoServerConfig.Property.SESSION_WRITE_CHUNK_SIZE, 1024);
     LinkedBlockingQueue<VirtualBuffer> bufList = new LinkedBlockingQueue<>();
     private VirtualBuffer writeInBuf;
-    private BufferPagePool bufferPagePool;
+    private BufferPage bufferPage;
     private boolean closed = false;
     private Function<? super BlockingQueue<VirtualBuffer>, Void> function;
 
-    BufferOutputStream(BufferPagePool bufferPagePool, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction) {
-        this.bufferPagePool = bufferPagePool;
+    BufferOutputStream(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction) {
+        this.bufferPage = bufferPage;
         this.function = flushFunction;
     }
 
-    /**
-     * 禁用该方法
-     *
-     * @param b
-     * @throws IOException
-     */
     @Override
-    @Deprecated
-    public void write(int b) throws IOException {
-        throw new UnsupportedOperationException();
+    public synchronized void write(int b) {
+        if (writeInBuf == null) {
+            writeInBuf = bufferPage.allocate(WRITE_CHUNK_SIZE);
+        }
+        writeInBuf.buffer().put((byte) b);
+        if (writeInBuf.buffer().hasRemaining()) {
+            return;
+        }
+        writeInBuf.buffer().flip();
+        bufList.add(writeInBuf);
+        writeInBuf = null;
+        function.apply(bufList);
+    }
+
+    public synchronized void writeInt(int v) {
+        write((v >>> 24) & 0xFF);
+        write((v >>> 16) & 0xFF);
+        write((v >>> 8) & 0xFF);
+        write((v >>> 0) & 0xFF);
     }
 
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
+    public synchronized void write(byte[] b, int off, int len) throws IOException {
         if (closed) {
             throw new IOException("OutputStream has closed");
         }
@@ -64,7 +74,7 @@ class BufferOutputStream extends OutputStream {
 
         do {
             if (writeInBuf == null) {
-                writeInBuf = bufferPagePool.allocateBufferPage().allocate(WRITE_CHUNK_SIZE);
+                writeInBuf = bufferPage.allocate(WRITE_CHUNK_SIZE);
             }
             ByteBuffer writeBuffer = writeInBuf.buffer();
             int minSize = Math.min(writeBuffer.remaining(), len - off);
@@ -87,7 +97,7 @@ class BufferOutputStream extends OutputStream {
 
 
     @Override
-    public void flush() {
+    public synchronized void flush() {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
@@ -100,7 +110,7 @@ class BufferOutputStream extends OutputStream {
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         if (closed) {
             throw new IOException("OutputStream has closed");
         }
@@ -119,11 +129,11 @@ class BufferOutputStream extends OutputStream {
         }
     }
 
-    public boolean isClosed() {
+    public synchronized boolean isClosed() {
         return closed;
     }
 
-    public boolean hasData() {
+    public synchronized boolean hasData() {
         return bufList.size() > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0);
     }
 }

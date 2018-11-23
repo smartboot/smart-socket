@@ -51,11 +51,12 @@ public final class BufferPage {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
-    public VirtualBuffer allocate(final int size) {
+    public synchronized VirtualBuffer allocate(final int size) {
         if (freeList.isEmpty()) {
             clean();
         }
         if (freeList.isEmpty()) {
+            LOGGER.warn("freeList is empty " + size);
             return new VirtualBuffer(null, allocate0(size, false), 0, 0);
         }
 
@@ -90,7 +91,7 @@ public final class BufferPage {
             }
             clean();
         }
-        LOGGER.warn("bufferPage has no available space: " + size);
+//        LOGGER.warn("bufferPage has no available space: " + size);
         return new VirtualBuffer(null, allocate0(size, false), 0, 0);
     }
 
@@ -104,14 +105,14 @@ public final class BufferPage {
         unUsedList.add(virtualBuffer);
     }
 
-    public void clean() {
+    public  void clean() {
         VirtualBuffer buffer = null;
         while ((buffer = unUsedList.poll()) != null) {
             clean(buffer);
         }
     }
 
-    private void clean(VirtualBuffer cleanBuffer) {
+    private synchronized void clean(VirtualBuffer cleanBuffer) {
         cleanBuffer.buffer().clear();
         if (freeList.isEmpty()) {
             freeList.add(cleanBuffer);
@@ -156,5 +157,14 @@ public final class BufferPage {
         }
         cleanBuffer.buffer(cleanBuffer.buffer());
         freeList.add(cleanBuffer);
+    }
+
+    @Override
+    public String toString() {
+        return "BufferPage{" +
+                "freeList=" + freeList +
+                ", buffer=" + buffer +
+                ", unUsedList=" + unUsedList +
+                '}';
     }
 }
