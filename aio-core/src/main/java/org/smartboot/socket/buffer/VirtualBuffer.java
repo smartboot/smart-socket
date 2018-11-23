@@ -55,9 +55,6 @@ public final class VirtualBuffer {
     }
 
     public ByteBuffer buffer() {
-//        if (clean) {
-//            throw new RuntimeException("cleaned");
-//        }
         return buffer;
     }
 
@@ -78,20 +75,5 @@ public final class VirtualBuffer {
             System.err.println("buffer has aaa");
         }
 
-    }
-
-//    @Override
-//    protected void finalize() throws Throwable {
-//        clean();
-//    }
-
-    @Override
-    public String toString() {
-        return "ByteBuf{" +
-//                "bufferPage=" + bufferPage +
-                ", buffer=" + buffer +
-                ", parentPosition=" + parentPosition +
-                ", parentLimit=" + parentLimit +
-                '}';
     }
 }
