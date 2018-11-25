@@ -50,11 +50,12 @@ public class StringClient {
 
             @Override
             public void stateEvent(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-
+                if(throwable!=null){
+                    throwable.printStackTrace();
+                }
             }
         });
         AioSession<String> session = client.start();
-        Thread.sleep(5000);
         BufferOutputStream outputStream = session.getOutputStream();
 
         int i = 1;

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>smart-socket-parent</artifactId>
         <groupId>org.smartboot.socket</groupId>
-        <version>1.4.0.1119-beta</version>
+        <version>1.4.0.1125-beta</version>
     </parent>
     <packaging>pom</packaging>
     <version>1.0.0</version>

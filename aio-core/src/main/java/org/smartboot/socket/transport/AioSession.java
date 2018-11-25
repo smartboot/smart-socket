@@ -161,12 +161,15 @@ public class AioSession<T> {
             writeBuffer.clean();
         }
         writeBuffer = outputStream.bufList.poll();
+
         if (writeBuffer != null) {
+//            if (writeBuffer.buffer().limit() < writeBuffer.buffer().capacity()) {
+//                logger.info(writeBuffer.buffer().toString() + " " + outputStream.bufList.size());
+//            }
             continueWrite(writeBuffer);
             return;
         }
         semaphore.release();
-//        bufferPage.clean();
         //此时可能是Closing或Closed状态
         if (isInvalid()) {
             close();
@@ -175,8 +178,14 @@ public class AioSession<T> {
         //也许此时有新的消息通过write方法添加到writeCacheQueue中
         if (!outputStream.bufList.isEmpty() && semaphore.tryAcquire()) {
             writeBuffer = outputStream.bufList.poll();
-            continueWrite(writeBuffer);
+            if(status==SESSION_STATUS_ENABLED) {
+                continueWrite(writeBuffer);
+            }else{
+                logger.error("null");
+                semaphore.release();
+            }
         }
+        bufferPage.clean();
     }
 
 
@@ -301,7 +310,7 @@ public class AioSession<T> {
                 ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
         }
-        if (!outputStream.isClosed()) {
+        if (!outputStream.isClosed() && semaphore.availablePermits() > 0) {
             outputStream.flush();
         }
 

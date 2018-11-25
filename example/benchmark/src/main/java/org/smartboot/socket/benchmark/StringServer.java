@@ -37,7 +37,9 @@ public class StringServer {
 
             @Override
             public void stateEvent0(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-
+                if (throwable != null) {
+                    throwable.printStackTrace();
+                }
             }
         };
         processor.addPlugin(new MonitorPlugin());
