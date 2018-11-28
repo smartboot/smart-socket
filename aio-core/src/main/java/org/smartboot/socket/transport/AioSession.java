@@ -11,6 +11,7 @@ package org.smartboot.socket.transport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
@@ -157,34 +158,22 @@ public class AioSession<T> {
             return;
         }
         if (writeBuffer != null) {
-//            logger.info("AioSession:{} 回收writeInBuf:{}", this.hashCode(), writeBuffer.hashCode() + "" + writeBuffer);
             writeBuffer.clean();
         }
         writeBuffer = outputStream.bufList.poll();
 
         if (writeBuffer != null) {
-//            if (writeBuffer.buffer().limit() < writeBuffer.buffer().capacity()) {
-//                logger.info(writeBuffer.buffer().toString() + " " + outputStream.bufList.size());
-//            }
             continueWrite(writeBuffer);
             return;
         }
         semaphore.release();
         //此时可能是Closing或Closed状态
-        if (isInvalid()) {
+        if (status != SESSION_STATUS_ENABLED) {
             close();
             return;
         }
         //也许此时有新的消息通过write方法添加到writeCacheQueue中
-        if (!outputStream.bufList.isEmpty() && semaphore.tryAcquire()) {
-            writeBuffer = outputStream.bufList.poll();
-            if(status==SESSION_STATUS_ENABLED) {
-                continueWrite(writeBuffer);
-            }else{
-                logger.error("null");
-                semaphore.release();
-            }
-        }
+        outputStream.flush();
         bufferPage.clean();
     }
 
@@ -285,18 +274,20 @@ public class AioSession<T> {
         return status != SESSION_STATUS_ENABLED;
     }
 
+
     /**
      * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
      */
     void readFromChannel(boolean eof) {
         final ByteBuffer readBuffer = this.readBuffer.buffer();
         readBuffer.flip();
+        final MessageProcessor<T> messageProcessor = ioServerConfig.getProcessor();
         while (readBuffer.hasRemaining() && !isInvalid()) {
             T dataEntry = null;
             try {
                 dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this);
             } catch (Exception e) {
-                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, e);
+                messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, e);
                 throw e;
             }
             if (dataEntry == null) {
@@ -305,9 +296,9 @@ public class AioSession<T> {
 
             //处理消息
             try {
-                ioServerConfig.getProcessor().process(this, dataEntry);
+                messageProcessor.process(this, dataEntry);
             } catch (Exception e) {
-                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
+                messageProcessor.stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
         }
         if (!outputStream.isClosed() && semaphore.availablePermits() > 0) {
@@ -317,7 +308,7 @@ public class AioSession<T> {
 
         if (eof || status == SESSION_STATUS_CLOSING) {
             close(false);
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
+            messageProcessor.stateEvent(this, StateMachineEnum.INPUT_SHUTDOWN, null);
             return;
         }
         if (status == SESSION_STATUS_CLOSED) {
