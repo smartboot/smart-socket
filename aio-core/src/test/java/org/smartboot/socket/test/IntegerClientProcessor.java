@@ -9,7 +9,6 @@ import org.smartboot.socket.transport.AioSession;
  * @version V1.0 , 2017/8/23
  */
 public class IntegerClientProcessor implements MessageProcessor<Integer> {
-    private AioSession<Integer> session;
 
     @Override
     public void process(AioSession<Integer> session, Integer msg) {
@@ -18,17 +17,9 @@ public class IntegerClientProcessor implements MessageProcessor<Integer> {
 
     @Override
     public void stateEvent(AioSession<Integer> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-        switch (stateMachineEnum) {
-            case NEW_SESSION:
-                this.session = session;
-                break;
-            default:
-                System.out.println("other state:" + stateMachineEnum);
+        System.out.println("other state:" + stateMachineEnum);
+        if(stateMachineEnum==StateMachineEnum.OUTPUT_EXCEPTION){
+            throwable.printStackTrace();
         }
-
-    }
-
-    public AioSession<Integer> getSession() {
-        return session;
     }
 }

@@ -173,7 +173,9 @@ public class AioSession<T> {
             return;
         }
         //也许此时有新的消息通过write方法添加到writeCacheQueue中
-        outputStream.flush();
+        if (!outputStream.isClosed()) {
+            outputStream.flush();
+        }
         bufferPage.clean();
     }
 
@@ -256,7 +258,9 @@ public class AioSession<T> {
             close(true);
         } else {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
-            outputStream.flush();
+            if(!outputStream.isClosed()) {
+                outputStream.flush();
+            }
         }
     }
 

@@ -185,6 +185,7 @@ final class IoServerConfig<T> {
     interface Property {
         String PROJECT_NAME = "smart-socket";
         String SESSION_WRITE_CHUNK_SIZE = PROJECT_NAME + ".session.writeChunkSize";
+        String BUFFER_PAGE_NUM = PROJECT_NAME + ".bufferPool.pageNum";
         String SERVER_PAGE_SIZE = PROJECT_NAME + ".server.pageSize";
         String CLIENT_PAGE_SIZE = PROJECT_NAME + ".client.pageSize";
         String SERVER_PAGE_IS_DIRECT = PROJECT_NAME + ".server.page.isDirect";
