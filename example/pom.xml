@@ -12,6 +12,7 @@
     <modules>
         <module>rpc</module>
         <module>benchmark</module>
+        <module>spring</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 
