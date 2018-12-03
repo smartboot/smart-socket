@@ -153,10 +153,6 @@ public class AioSession<T> {
      * <p>需要调用控制同步</p>
      */
     void writeToChannel() {
-//        if (writeBuffer != null && writeBuffer.buffer().hasRemaining()) {
-//            continueWrite(writeBuffer);
-//            return;
-//        }
         if (writeBuffer != null && !writeBuffer.buffer().hasRemaining()) {
             writeBuffer.clean();
             writeBuffer = null;
