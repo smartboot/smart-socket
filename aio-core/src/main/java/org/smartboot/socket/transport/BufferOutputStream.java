@@ -23,7 +23,7 @@ public class BufferOutputStream extends OutputStream {
     /**
      * 输出缓存块大小
      */
-    private static final int WRITE_CHUNK_SIZE = IoServerConfig.getIntProperty(IoServerConfig.Property.SESSION_WRITE_CHUNK_SIZE, 1024);
+    private static final int WRITE_CHUNK_SIZE = IoServerConfig.getIntProperty(IoServerConfig.Property.SESSION_WRITE_CHUNK_SIZE, 4096);
     LinkedBlockingQueue<VirtualBuffer> bufList = new LinkedBlockingQueue<>();
     private VirtualBuffer writeInBuf;
     private BufferPage bufferPage;
