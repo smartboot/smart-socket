@@ -2,6 +2,7 @@
 smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、稳定性、接口设计各方面都达到极致。如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
 
 **![smart\-socket](//pub.idqqimg.com/wpa/images/group.png)：172299083**
+
 入群须知
 1. 请先Star一下本项目，小小的支持一下开源项目。
 2. 咨询smart-socket问题前请先阅读文档《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》，也许答案已经在文档中。
