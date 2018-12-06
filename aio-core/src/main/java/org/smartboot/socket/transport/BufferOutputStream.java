@@ -29,14 +29,16 @@ public class BufferOutputStream extends OutputStream {
     private BufferPage bufferPage;
     private boolean closed = false;
     private Function<? super BlockingQueue<VirtualBuffer>, Void> function;
+    private Function<? super VirtualBuffer, Boolean> directWriteFunction;
 
-    BufferOutputStream(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction) {
+    BufferOutputStream(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction, Function<? super VirtualBuffer, Boolean> directWriteFunction) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
+        this.directWriteFunction = directWriteFunction;
     }
 
     @Override
-    public synchronized void write(int b) {
+    public void write(int b) {
         if (writeInBuf == null) {
             writeInBuf = bufferPage.allocate(WRITE_CHUNK_SIZE);
         }
@@ -50,7 +52,7 @@ public class BufferOutputStream extends OutputStream {
         function.apply(bufList);
     }
 
-    public synchronized void writeInt(int v) {
+    public void writeInt(int v) {
         write((v >>> 24) & 0xFF);
         write((v >>> 16) & 0xFF);
         write((v >>> 8) & 0xFF);
@@ -58,7 +60,7 @@ public class BufferOutputStream extends OutputStream {
     }
 
     @Override
-    public synchronized void write(byte[] b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         if (closed) {
             throw new IOException("OutputStream has closed");
         }
@@ -84,33 +86,32 @@ public class BufferOutputStream extends OutputStream {
             }
             writeBuffer.put(b, off, minSize);
             off += minSize;
-            if (writeBuffer.hasRemaining()) {
-                continue;
+            if (!writeBuffer.hasRemaining()) {
+                flush();
             }
-            //缓冲区已满
-            writeBuffer.flip();
-            bufList.add(writeInBuf);
-            writeInBuf = null;
-            function.apply(bufList);
         } while (off < len);
     }
 
 
     @Override
-    public synchronized void flush() {
+    public void flush() {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
         if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
-            writeInBuf.buffer().flip();
-            bufList.add(writeInBuf);
+            final VirtualBuffer buffer = writeInBuf;
             writeInBuf = null;
+            buffer.buffer().flip();
+            if (bufList.isEmpty() && directWriteFunction.apply(buffer)) {
+                return;
+            }
+            bufList.add(buffer);
         }
         function.apply(bufList);
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public void close() throws IOException {
         if (closed) {
             throw new IOException("OutputStream has closed");
         }
@@ -129,11 +130,11 @@ public class BufferOutputStream extends OutputStream {
         }
     }
 
-    public synchronized boolean isClosed() {
+    public boolean isClosed() {
         return closed;
     }
 
-    public synchronized boolean hasData() {
+    public boolean hasData() {
         return bufList.size() > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0);
     }
 }

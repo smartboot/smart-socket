@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 /**
  * AIO传输层会话。
@@ -113,7 +114,7 @@ public class AioSession<T> {
      * @param writeCompletionHandler
      * @param bufferPage             是否服务端Session
      */
-    AioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, BufferPage bufferPage) {
+    AioSession(AsynchronousSocketChannel channel, final IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, BufferPage bufferPage) {
         this.channel = channel;
         this.bufferPage = bufferPage;
         this.readCompletionHandler = readCompletionHandler;
@@ -135,6 +136,19 @@ public class AioSession<T> {
                     continueWrite(writeBuffer);
                 }
                 return null;
+            }
+        }, new Function<VirtualBuffer, Boolean>() {
+            @Override
+            public Boolean apply(VirtualBuffer var) {
+                if (!semaphore.tryAcquire()) {
+                    return false;
+                }
+                if (writeBuffer != null) {
+                    throw new IllegalStateException("wirteBuffer is not null," + writeBuffer);
+                }
+                AioSession.this.writeBuffer = var;
+                continueWrite(writeBuffer);
+                return true;
             }
         });
         //触发状态机
@@ -200,7 +214,7 @@ public class AioSession<T> {
      * 内部方法：触发通道的写操作
      */
     protected final void writeToChannel0(ByteBuffer buffer) {
-        channel.write(buffer, this, writeCompletionHandler);
+        channel.write(buffer, 0L, TimeUnit.MILLISECONDS, this, writeCompletionHandler);
     }
 
     public final BufferOutputStream getOutputStream() {
@@ -312,7 +326,7 @@ public class AioSession<T> {
                 messageProcessor.stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
         }
-        if (!outputStream.isClosed() && semaphore.availablePermits() > 0) {
+        if (outputStream != null && !outputStream.isClosed() && semaphore.availablePermits() > 0) {
             outputStream.flush();
         }
 
