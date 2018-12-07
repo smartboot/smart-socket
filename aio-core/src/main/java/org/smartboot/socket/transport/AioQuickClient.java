@@ -92,7 +92,7 @@ public class AioQuickClient<T> {
      * @param asynchronousChannelGroup IO事件处理线程组
      * @see AsynchronousSocketChannel#connect(SocketAddress)
      */
-    public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
+    public AioSession<T> start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         //set socket options
         if (config.getSocketOptions() != null) {
@@ -105,6 +105,7 @@ public class AioQuickClient<T> {
         //连接成功则构造AIOSession对象
         session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), false);
         session.initSession();
+        return session;
     }
 
     /**
@@ -116,14 +117,14 @@ public class AioQuickClient<T> {
      *
      * @see AioQuickClient#start(AsynchronousChannelGroup)
      */
-    public final void start() throws IOException, ExecutionException, InterruptedException {
+    public final AioSession<T> start() throws IOException, ExecutionException, InterruptedException {
         this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 return new Thread(r);
             }
         });
-        start(asynchronousChannelGroup);
+        return start(asynchronousChannelGroup);
     }
 
     /**
