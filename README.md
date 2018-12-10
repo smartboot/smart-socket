@@ -15,6 +15,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
     - smart-socket支持断链重连吗？
     - smart-socket怎么实现广播？
     - smart-socket怎么做长连接？
+    - smart-socket能处理半包、粘包吗？
     
 
 
