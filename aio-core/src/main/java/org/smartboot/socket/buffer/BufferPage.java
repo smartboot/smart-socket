@@ -90,28 +90,28 @@ public final class BufferPage {
         int index = 0;
         Iterator<VirtualBuffer> iterator = freeList.iterator();
         while (iterator.hasNext()) {
-            VirtualBuffer freeChunk = iterator.next();
-            //releaseChunk在freeChunk之前并且形成连续块
-            if (freeChunk.getParentPosition() == cleanBuffer.getParentLimit()) {
-                freeChunk.setParentPosition(cleanBuffer.getParentPosition());
+            VirtualBuffer freeBuffer = iterator.next();
+            //cleanBuffer在freeBuffer之前并且形成连续块
+            if (freeBuffer.getParentPosition() == cleanBuffer.getParentLimit()) {
+                freeBuffer.setParentPosition(cleanBuffer.getParentPosition());
                 return;
             }
-            //releaseChunkfreeChunk之后并形成连续块
-            if (freeChunk.getParentLimit() == cleanBuffer.getParentPosition()) {
-                freeChunk.setParentLimit(cleanBuffer.getParentLimit());
+            //cleanBuffer与freeBuffer之后并形成连续块
+            if (freeBuffer.getParentLimit() == cleanBuffer.getParentPosition()) {
+                freeBuffer.setParentLimit(cleanBuffer.getParentLimit());
                 //判断后一个是否连续
                 if (iterator.hasNext()) {
                     VirtualBuffer next = iterator.next();
-                    if (next.getParentPosition() == freeChunk.getParentLimit()) {
-                        freeChunk.setParentLimit(next.getParentLimit());
+                    if (next.getParentPosition() == freeBuffer.getParentLimit()) {
+                        freeBuffer.setParentLimit(next.getParentLimit());
                         iterator.remove();
-                    } else if (next.getParentPosition() < freeChunk.getParentLimit()) {
+                    } else if (next.getParentPosition() < freeBuffer.getParentLimit()) {
                         throw new RuntimeException("");
                     }
                 }
                 return;
             }
-            if (freeChunk.getParentPosition() > cleanBuffer.getParentLimit()) {
+            if (freeBuffer.getParentPosition() > cleanBuffer.getParentLimit()) {
                 freeList.add(index, cleanBuffer);
                 return;
             }
