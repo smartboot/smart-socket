@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * ByteBuffer内存页
@@ -22,11 +21,6 @@ public final class BufferPage {
      */
     private List<VirtualBuffer> freeList;
     private ByteBuffer buffer;
-
-    /**
-     * 待回收的缓存
-     */
-    private LinkedBlockingQueue<VirtualBuffer> unUsedList = new LinkedBlockingQueue<>();
 
     /**
      * @param size
@@ -53,66 +47,42 @@ public final class BufferPage {
 
     public synchronized VirtualBuffer allocate(final int size) {
         if (freeList.isEmpty()) {
-            clean();
-        }
-        if (freeList.isEmpty()) {
             LOGGER.warn("freeList is empty " + size);
             return new VirtualBuffer(null, allocate0(size, false), 0, 0);
         }
 
 
-        int again = 2;
-        while (again-- > 0) {
-            Iterator<VirtualBuffer> iterator = freeList.iterator();
-            VirtualBuffer bufferChunk = null;
-            while (iterator.hasNext()) {
-                VirtualBuffer freeChunk = iterator.next();
-                final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
-                if (remaining < size) {
-                    continue;
-                }
-                if (remaining == size) {
-                    iterator.remove();
-                    buffer.limit(freeChunk.getParentLimit());
-                    buffer.position(freeChunk.getParentPosition());
-                    freeChunk.buffer(buffer.slice());
-                    bufferChunk = freeChunk;
-                } else {
-                    buffer.limit(freeChunk.getParentPosition() + size);
-                    buffer.position(freeChunk.getParentPosition());
-                    bufferChunk = new VirtualBuffer(this, buffer.slice(), buffer.position(), buffer.limit());
-                    freeChunk.setParentPosition(buffer.limit());
-                }
-                if (bufferChunk.buffer().remaining() != size) {
-                    LOGGER.error(bufferChunk.buffer().remaining() + "aaaa" + size);
-                    throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
-                }
-                return bufferChunk;
+        Iterator<VirtualBuffer> iterator = freeList.iterator();
+        VirtualBuffer bufferChunk = null;
+        while (iterator.hasNext()) {
+            VirtualBuffer freeChunk = iterator.next();
+            final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
+            if (remaining < size) {
+                continue;
             }
-            clean();
+            if (remaining == size) {
+                iterator.remove();
+                buffer.limit(freeChunk.getParentLimit());
+                buffer.position(freeChunk.getParentPosition());
+                freeChunk.buffer(buffer.slice());
+                bufferChunk = freeChunk;
+            } else {
+                buffer.limit(freeChunk.getParentPosition() + size);
+                buffer.position(freeChunk.getParentPosition());
+                bufferChunk = new VirtualBuffer(this, buffer.slice(), buffer.position(), buffer.limit());
+                freeChunk.setParentPosition(buffer.limit());
+            }
+            if (bufferChunk.buffer().remaining() != size) {
+                LOGGER.error(bufferChunk.buffer().remaining() + "aaaa" + size);
+                throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
+            }
+            return bufferChunk;
         }
 //        LOGGER.warn("bufferPage has no available space: " + size);
         return new VirtualBuffer(null, allocate0(size, false), 0, 0);
     }
 
-    void addUnusedBuffer(VirtualBuffer virtualBuffer) {
-        if (virtualBuffer == null) {
-            return;
-        }
-        if (virtualBuffer.bufferPage != this) {
-            throw new IllegalArgumentException();
-        }
-        unUsedList.add(virtualBuffer);
-    }
-
-    public void clean() {
-        VirtualBuffer buffer = null;
-        while ((buffer = unUsedList.poll()) != null) {
-            clean(buffer);
-        }
-    }
-
-    private synchronized void clean(VirtualBuffer cleanBuffer) {
+    synchronized void clean(VirtualBuffer cleanBuffer) {
         if (freeList.isEmpty()) {
             freeList.add(cleanBuffer);
             return;

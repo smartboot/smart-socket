@@ -196,7 +196,6 @@ public class AioSession<T> {
         if (!byteBuf.isClosed()) {
             byteBuf.flush();
         }
-        bufferPage.clean();
     }
 
 
@@ -273,7 +272,6 @@ public class AioSession<T> {
                 logger.debug("close session exception", e);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-            bufferPage.clean();
         } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && !byteBuf.hasData()) {
             close(true);
         } else {
@@ -350,7 +348,6 @@ public class AioSession<T> {
             readBuffer.limit(readBuffer.capacity());
         }
         continueRead();
-        bufferPage.clean();//内存池回收
     }
 
 

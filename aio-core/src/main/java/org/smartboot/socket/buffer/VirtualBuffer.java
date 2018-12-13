@@ -77,7 +77,7 @@ public final class VirtualBuffer {
         buffer=null;
         clean = true;
         if (bufferPage != null) {
-            bufferPage.addUnusedBuffer(this);
+            bufferPage.clean(this);
         }
     }
 
