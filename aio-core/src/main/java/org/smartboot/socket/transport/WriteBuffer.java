@@ -62,7 +62,7 @@ public final class WriteBuffer extends OutputStream {
     }
 
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
+    public synchronized void write(byte[] b, int off, int len) throws IOException {
         if (closed) {
             throw new IOException("OutputStream has closed");
         }
@@ -95,7 +95,7 @@ public final class WriteBuffer extends OutputStream {
 
 
     @Override
-    public void flush() {
+    public synchronized void flush() {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
@@ -112,7 +112,7 @@ public final class WriteBuffer extends OutputStream {
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         if (closed) {
             throw new IOException("OutputStream has closed");
         }
