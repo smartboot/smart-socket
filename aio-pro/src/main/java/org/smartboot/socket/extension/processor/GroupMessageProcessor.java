@@ -58,7 +58,7 @@ abstract class GroupMessageProcessor<T> implements MessageProcessor<T>, GroupIo<
         GroupUnit groupUnit = sessionGroup.get(group);
         for(AioSession<T> aioSession:groupUnit.groupList){
             try {
-                aioSession.getOutputStream().write(t);
+                aioSession.writeBuffer().write(t);
             } catch (IOException e) {
                 e.printStackTrace();
             }

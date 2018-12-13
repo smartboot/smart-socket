@@ -18,8 +18,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @version V1.0 , 2018/11/8
  */
 
-public class BufferOutputStream extends OutputStream {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferOutputStream.class);
+public final class WriteBuffer extends OutputStream {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WriteBuffer.class);
     /**
      * 输出缓存块大小
      */
@@ -30,8 +30,9 @@ public class BufferOutputStream extends OutputStream {
     private boolean closed = false;
     private Function<? super BlockingQueue<VirtualBuffer>, Void> function;
     private Function<? super VirtualBuffer, Boolean> directWriteFunction;
+    private byte[] cacheByte = new byte[8];
 
-    BufferOutputStream(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction, Function<? super VirtualBuffer, Boolean> directWriteFunction) {
+    WriteBuffer(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction, Function<? super VirtualBuffer, Boolean> directWriteFunction) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
         this.directWriteFunction = directWriteFunction;
@@ -52,11 +53,12 @@ public class BufferOutputStream extends OutputStream {
         function.apply(bufList);
     }
 
-    public void writeInt(int v) {
-        write((v >>> 24) & 0xFF);
-        write((v >>> 16) & 0xFF);
-        write((v >>> 8) & 0xFF);
-        write((v >>> 0) & 0xFF);
+    public void writeInt(int v) throws IOException {
+        cacheByte[0] = (byte) ((v >>> 24) & 0xFF);
+        cacheByte[1] = (byte) ((v >>> 16) & 0xFF);
+        cacheByte[2] = (byte) ((v >>> 8) & 0xFF);
+        cacheByte[3] = (byte) ((v >>> 0) & 0xFF);
+        write(cacheByte, 0, 4);
     }
 
     @Override
@@ -72,7 +74,6 @@ public class BufferOutputStream extends OutputStream {
         } else if (len == 0) {
             return;
         }
-
 
         do {
             if (writeInBuf == null) {

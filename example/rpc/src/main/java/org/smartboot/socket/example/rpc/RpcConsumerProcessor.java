@@ -15,11 +15,8 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -118,9 +115,9 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
         ObjectOutput objectOutput = new ObjectOutputStream(byteArrayOutputStream);
         objectOutput.writeObject(request);
         byte[] data=byteArrayOutputStream.toByteArray();
-        aioSession.getOutputStream().writeInt(data.length+4);
-        aioSession.getOutputStream().write(data);
-        aioSession.getOutputStream().flush();
+        aioSession.writeBuffer().writeInt(data.length+4);
+        aioSession.writeBuffer().write(data);
+        aioSession.writeBuffer().flush();
 //        aioSession.write(byteArrayOutputStream.toByteArray());
 
         try {

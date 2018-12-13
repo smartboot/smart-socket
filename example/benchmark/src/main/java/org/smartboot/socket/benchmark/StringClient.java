@@ -6,7 +6,7 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.transport.BufferOutputStream;
+import org.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -56,7 +56,7 @@ public class StringClient {
             }
         });
         AioSession<String> session = client.start();
-        BufferOutputStream outputStream = session.getOutputStream();
+        WriteBuffer outputStream = session.writeBuffer();
 
         int i = 1;
         while (true) {

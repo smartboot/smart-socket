@@ -74,6 +74,7 @@ public final class VirtualBuffer {
             System.err.println("buffer has cleaned");
             return;
         }
+        buffer=null;
         clean = true;
         if (bufferPage != null) {
             bufferPage.addUnusedBuffer(this);

@@ -12,9 +12,6 @@ import org.slf4j.LoggerFactory;
 public class BufferPagePool {
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferPagePool.class);
     private BufferPage[] bufferPageList;
-
-//    private ThreadLocal<BufferPage> bufferPageThreadLocal;
-
     /**
      * 内存页游标
      */

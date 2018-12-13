@@ -7,7 +7,7 @@ import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.transport.BufferOutputStream;
+import org.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
 
@@ -25,10 +25,11 @@ public class StringServer {
             @Override
             public void process0(AioSession<String> session, String msg) {
 //                LOGGER.info(msg);
-                BufferOutputStream outputStream = session.getOutputStream();
-                byte[] bytes = msg.getBytes();
-                outputStream.writeInt(bytes.length);
+                WriteBuffer outputStream = session.writeBuffer();
+
                 try {
+                    byte[] bytes = msg.getBytes();
+                    outputStream.writeInt(bytes.length);
                     outputStream.write(bytes);
                 } catch (IOException e) {
                     e.printStackTrace();

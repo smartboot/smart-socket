@@ -36,7 +36,7 @@ public final class BufferPage {
         freeList = new LinkedList<>();
         if (size > 0) {
             this.buffer = allocate0(size, direct);
-            freeList.add(new VirtualBuffer(this, buffer, buffer.position(), buffer.limit()));
+            freeList.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
         }
     }
 
@@ -67,21 +67,21 @@ public final class BufferPage {
             VirtualBuffer bufferChunk = null;
             while (iterator.hasNext()) {
                 VirtualBuffer freeChunk = iterator.next();
-                final int remaing = freeChunk.getParentLimit() - freeChunk.getParentPosition();
-                if (remaing < size) {
+                final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
+                if (remaining < size) {
                     continue;
                 }
-                if (remaing == size) {
+                if (remaining == size) {
                     iterator.remove();
+                    buffer.limit(freeChunk.getParentLimit());
+                    buffer.position(freeChunk.getParentPosition());
+                    freeChunk.buffer(buffer.slice());
                     bufferChunk = freeChunk;
                 } else {
                     buffer.limit(freeChunk.getParentPosition() + size);
                     buffer.position(freeChunk.getParentPosition());
                     bufferChunk = new VirtualBuffer(this, buffer.slice(), buffer.position(), buffer.limit());
                     freeChunk.setParentPosition(buffer.limit());
-                    buffer.limit(freeChunk.getParentLimit());
-                    buffer.position(freeChunk.getParentPosition());
-                    freeChunk.buffer(buffer.slice());
                 }
                 if (bufferChunk.buffer().remaining() != size) {
                     LOGGER.error(bufferChunk.buffer().remaining() + "aaaa" + size);
@@ -105,7 +105,7 @@ public final class BufferPage {
         unUsedList.add(virtualBuffer);
     }
 
-    public  void clean() {
+    public void clean() {
         VirtualBuffer buffer = null;
         while ((buffer = unUsedList.poll()) != null) {
             clean(buffer);
@@ -113,7 +113,6 @@ public final class BufferPage {
     }
 
     private synchronized void clean(VirtualBuffer cleanBuffer) {
-        cleanBuffer.buffer().clear();
         if (freeList.isEmpty()) {
             freeList.add(cleanBuffer);
             return;
@@ -125,9 +124,6 @@ public final class BufferPage {
             //releaseChunk在freeChunk之前并且形成连续块
             if (freeChunk.getParentPosition() == cleanBuffer.getParentLimit()) {
                 freeChunk.setParentPosition(cleanBuffer.getParentPosition());
-                buffer.limit(freeChunk.getParentLimit());
-                buffer.position(freeChunk.getParentPosition());
-                freeChunk.buffer(buffer.slice());
                 return;
             }
             //releaseChunkfreeChunk之后并形成连续块
@@ -143,28 +139,14 @@ public final class BufferPage {
                         throw new RuntimeException("");
                     }
                 }
-                buffer.limit(freeChunk.getParentLimit());
-                buffer.position(freeChunk.getParentPosition());
-                freeChunk.buffer(buffer.slice());
                 return;
             }
             if (freeChunk.getParentPosition() > cleanBuffer.getParentLimit()) {
-                cleanBuffer.buffer(cleanBuffer.buffer());
                 freeList.add(index, cleanBuffer);
                 return;
             }
             index++;
         }
-        cleanBuffer.buffer(cleanBuffer.buffer());
         freeList.add(cleanBuffer);
-    }
-
-    @Override
-    public String toString() {
-        return "BufferPage{" +
-                "freeList=" + freeList +
-                ", buffer=" + buffer +
-                ", unUsedList=" + unUsedList +
-                '}';
     }
 }

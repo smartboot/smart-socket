@@ -15,7 +15,6 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -86,9 +85,9 @@ public class RpcProviderProcessor implements MessageProcessor<byte[]> {
                 objectOutput = new ObjectOutputStream(byteArrayOutputStream);
                 objectOutput.writeObject(resp);
                 byte[] data=byteArrayOutputStream.toByteArray();
-                session.getOutputStream().writeInt(data.length+4);
-                session.getOutputStream().write(data);
-                session.getOutputStream().flush();
+                session.writeBuffer().writeInt(data.length+4);
+                session.writeBuffer().write(data);
+                session.writeBuffer().flush();
 //                session.write(byteArrayOutputStream.toByteArray());
             } catch (IOException e) {
                 e.printStackTrace();

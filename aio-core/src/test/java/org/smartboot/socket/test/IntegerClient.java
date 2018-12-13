@@ -11,8 +11,7 @@ public class IntegerClient {
         IntegerClientProcessor processor = new IntegerClientProcessor();
         AioQuickClient<Integer> aioQuickClient = new AioQuickClient<Integer>("localhost", 8888, new IntegerProtocol(), processor);
         AioSession<Integer> session = aioQuickClient.start();
-
-        session.getOutputStream().writeInt(1);
+        session.writeBuffer().writeInt(1);
 //        session.getOutputStream().flush();
 //        session.getOutputStream().close();
         Thread.sleep(1000);

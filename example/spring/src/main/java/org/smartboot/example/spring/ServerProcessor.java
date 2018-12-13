@@ -3,7 +3,7 @@ package org.smartboot.example.spring;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.transport.BufferOutputStream;
+import org.smartboot.socket.transport.WriteBuffer;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -16,10 +16,10 @@ import java.io.IOException;
 public class ServerProcessor implements MessageProcessor<String> {
     @Override
     public void process(AioSession<String> session, String msg) {
-        BufferOutputStream outputStream = session.getOutputStream();
-        byte[] bytes = msg.getBytes();
-        outputStream.writeInt(bytes.length);
+        WriteBuffer outputStream = session.writeBuffer();
         try {
+            byte[] bytes = msg.getBytes();
+            outputStream.writeInt(bytes.length);
             outputStream.write(bytes);
         } catch (IOException e) {
             e.printStackTrace();

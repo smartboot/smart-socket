@@ -105,7 +105,7 @@ public class AioSession<T> {
     private WriteCompletionHandler<T> writeCompletionHandler;
     private IoServerConfig<T> ioServerConfig;
     private InputStream inputStream;
-    private BufferOutputStream outputStream;
+    private WriteBuffer byteBuf;
 
     /**
      * @param channel
@@ -120,10 +120,9 @@ public class AioSession<T> {
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.ioServerConfig = config;
-//        this.bufferPage = bufferPage;
 
         this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
-        outputStream = new BufferOutputStream(bufferPage, new Function<BlockingQueue<VirtualBuffer>, Void>() {
+        byteBuf = new WriteBuffer(bufferPage, new Function<BlockingQueue<VirtualBuffer>, Void>() {
             @Override
             public Void apply(BlockingQueue<VirtualBuffer> var) {
                 if (!semaphore.tryAcquire()) {
@@ -171,7 +170,7 @@ public class AioSession<T> {
             writeBuffer.clean();
             writeBuffer = null;
         }
-        VirtualBuffer nextBuffer = outputStream.bufList.poll();
+        VirtualBuffer nextBuffer = byteBuf.bufList.poll();
         if (writeBuffer != null && nextBuffer != null) {
             //若存在输出不完全则合并下一消息,通过一次内存拷贝来抵消IO回调的耗时
             final VirtualBuffer remainingBuffer = writeBuffer;
@@ -194,8 +193,8 @@ public class AioSession<T> {
             return;
         }
         //也许此时有新的消息通过write方法添加到writeCacheQueue中
-        if (!outputStream.isClosed()) {
-            outputStream.flush();
+        if (!byteBuf.isClosed()) {
+            byteBuf.flush();
         }
         bufferPage.clean();
     }
@@ -217,8 +216,8 @@ public class AioSession<T> {
         channel.write(buffer, 0L, TimeUnit.MILLISECONDS, this, writeCompletionHandler);
     }
 
-    public final BufferOutputStream getOutputStream() {
-        return outputStream;
+    public final WriteBuffer writeBuffer() {
+        return byteBuf;
     }
 
     /**
@@ -244,10 +243,10 @@ public class AioSession<T> {
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
             try {
-                if (!outputStream.isClosed()) {
-                    outputStream.close();
+                if (!byteBuf.isClosed()) {
+                    byteBuf.close();
                 }
-                outputStream = null;
+                byteBuf = null;
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -275,12 +274,12 @@ public class AioSession<T> {
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
             bufferPage.clean();
-        } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && !outputStream.hasData()) {
+        } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && !byteBuf.hasData()) {
             close(true);
         } else {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
-            if (!outputStream.isClosed()) {
-                outputStream.flush();
+            if (!byteBuf.isClosed()) {
+                byteBuf.flush();
             }
         }
     }
@@ -326,8 +325,8 @@ public class AioSession<T> {
                 messageProcessor.stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
         }
-        if (outputStream != null && !outputStream.isClosed() && semaphore.availablePermits() > 0) {
-            outputStream.flush();
+        if (byteBuf != null && !byteBuf.isClosed() && semaphore.availablePermits() > 0) {
+            byteBuf.flush();
         }
 
 
