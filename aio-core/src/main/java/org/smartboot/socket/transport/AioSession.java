@@ -89,18 +89,19 @@ public class AioSession<T> {
      */
     protected byte status = SESSION_STATUS_ENABLED;
     /**
-     * 输出信号量
+     * 输出信号量,防止并发write导致异常
      */
     private Semaphore semaphore = new Semaphore(1);
+
+    /**
+     * 内存页,用于申请当前AioSession所需的VirtualBuffer
+     */
     private BufferPage bufferPage;
     /**
      * 附件对象
      */
     private Object attachment;
-    /**
-     * 响应消息缓存队列。
-     * <p>长度取决于AioQuickClient/AioQuickServer设置的setWriteQueueSize</p>
-     */
+
     private ReadCompletionHandler<T> readCompletionHandler;
     private WriteCompletionHandler<T> writeCompletionHandler;
     private IoServerConfig<T> ioServerConfig;

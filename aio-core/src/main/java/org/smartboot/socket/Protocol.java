@@ -34,13 +34,6 @@ import java.nio.ByteBuffer;
  *             return null;
  *         return data.getInt();
  *     }
- *
- *     public ByteBuffer encode(Integer s, AioSession<Integer> session) {
- *         ByteBuffer b = ByteBuffer.allocate(INT_LENGTH);
- *         b.putInt(s);
- *         b.flip();
- *         return b;
- *     }
  * }
  * </pre>
  * </p>

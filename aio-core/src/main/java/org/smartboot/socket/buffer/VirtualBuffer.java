@@ -10,8 +10,6 @@ import java.nio.ByteBuffer;
  */
 public final class VirtualBuffer {
 
-//    private LinkedBlockingQueue<Throwable> cleanStack=new LinkedBlockingQueue<Throwable>();
-
     /**
      * 当前虚拟buffer的归属内存页
      */
@@ -66,28 +64,15 @@ public final class VirtualBuffer {
     }
 
     public synchronized void clean() {
-//        cleanStack.add(new Throwable());
         if (clean) {
-//            for(Throwable e:cleanStack){
-//                e.printStackTrace();
-//            }
             System.err.println("buffer has cleaned");
             return;
         }
-        buffer=null;
+        buffer = null;
         clean = true;
         if (bufferPage != null) {
             bufferPage.clean(this);
         }
     }
 
-    @Override
-    public String toString() {
-        return "VirtualBuffer{" +
-                "buffer=" + buffer +
-                ", clean=" + clean +
-                ", parentPosition=" + parentPosition +
-                ", parentLimit=" + parentLimit +
-                '}';
-    }
 }
