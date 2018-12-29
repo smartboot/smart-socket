@@ -106,7 +106,7 @@ public final class BufferPage {
                         freeBuffer.setParentLimit(next.getParentLimit());
                         iterator.remove();
                     } else if (next.getParentPosition() < freeBuffer.getParentLimit()) {
-                        throw new RuntimeException("");
+                        throw new IllegalStateException("");
                     }
                 }
                 return;
