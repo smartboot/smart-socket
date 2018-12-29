@@ -5,13 +5,17 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 
 入群须知
 1. 请先Star一下本项目，小小的支持一下开源项目。
-2. 咨询smart-socket问题前请先阅读文档《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》，也许答案已经在文档中。
+2. 咨询smart-socket问题前请先阅读文档《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》，也许答案已经在文档中。文档确实写的很烂，大家相互体谅，凑合着看，提升沟通质量。
 3. 如若第一次接触Socket编程，请先百度了解一下Java网络编程的基础知识，避免在群里提萌新问题(提问的尴尬，回答问题的也尴尬)。
-4. 入群后请不要问以下问题：          
+    - 了解ByteBuffer的正确使用姿势。
+    - 对协议概念有正确的理解
+4. 严禁私聊群主咨询问题，有些朋友基础有待提升，有问题请问百度。群主只对开源项目负责，不负责教用户Java入门基础（被人伤到了，请谅解）。
+5. 入群后请不要问以下问题：          
     - smart-socket支持心跳吗？
     - smart-socket支持断链重连吗？
     - smart-socket怎么实现广播？
     - smart-socket怎么做长连接？
+    - smart-socket能处理半包、粘包吗？
     
 
 
