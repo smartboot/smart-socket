@@ -167,21 +167,16 @@ public class AioSession<T> {
      * <p>需要调用控制同步</p>
      */
     void writeToChannel() {
-        if (writeBuffer != null && !writeBuffer.buffer().hasRemaining()) {
-            writeBuffer.clean();
-            writeBuffer = null;
+        if (writeBuffer != null) {
+            if (writeBuffer.buffer().hasRemaining()) {
+                continueWrite(writeBuffer);
+                return;
+            } else {
+                writeBuffer.clean();
+                writeBuffer = null;
+            }
         }
-        VirtualBuffer nextBuffer = byteBuf.bufList.poll();
-        if (writeBuffer != null && nextBuffer != null) {
-            //若存在输出不完全则合并下一消息,通过一次内存拷贝来抵消IO回调的耗时
-            final VirtualBuffer remainingBuffer = writeBuffer;
-            writeBuffer = bufferPage.allocate(remainingBuffer.buffer().remaining() + nextBuffer.buffer().remaining());
-            writeBuffer.buffer().put(writeBuffer.buffer()).put(nextBuffer.buffer()).flip();
-            remainingBuffer.clean();
-            nextBuffer.clean();
-        } else if (writeBuffer == null && nextBuffer != null) {
-            writeBuffer = nextBuffer;
-        }
+        writeBuffer = byteBuf.bufList.poll();
 
         if (writeBuffer != null) {
             continueWrite(writeBuffer);
@@ -305,7 +300,7 @@ public class AioSession<T> {
         final ByteBuffer readBuffer = this.readBuffer.buffer();
         readBuffer.flip();
         final MessageProcessor<T> messageProcessor = ioServerConfig.getProcessor();
-        while (readBuffer.hasRemaining() && !isInvalid()) {
+        while (readBuffer.hasRemaining()) {
             T dataEntry = null;
             try {
                 dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this);

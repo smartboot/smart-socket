@@ -99,15 +99,21 @@ public final class WriteBuffer extends OutputStream {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
-        if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
-            final VirtualBuffer buffer = writeInBuf;
-            writeInBuf = null;
-            buffer.buffer().flip();
-            if (bufList.isEmpty() && directWriteFunction.apply(buffer)) {
-                return;
-            }
-            bufList.add(buffer);
+        //缓冲队列中已有数据,优先输出
+        if (bufList.size() > 0) {
+            function.apply(bufList);
+            return;
         }
+        if (writeInBuf == null || writeInBuf.buffer().position() == 0) {
+            return;
+        }
+        final VirtualBuffer buffer = writeInBuf;
+        writeInBuf = null;
+        buffer.buffer().flip();
+        if (bufList.isEmpty() && directWriteFunction.apply(buffer)) {
+            return;
+        }
+        bufList.add(buffer);
         function.apply(bufList);
     }
 

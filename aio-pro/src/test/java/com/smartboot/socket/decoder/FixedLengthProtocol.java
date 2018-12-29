@@ -1,7 +1,6 @@
 package com.smartboot.socket.decoder;
 
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.transport.AioSession;
 
