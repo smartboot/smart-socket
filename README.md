@@ -3,7 +3,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 
 **![smart\-socket](//pub.idqqimg.com/wpa/images/group.png)：172299083官方群**
 
-入群须知
+任何对smart-socket感兴趣的朋友可入此群，入群须知
 1. 请先Star一下本项目，小小的支持一下开源项目。
 2. 咨询smart-socket问题前请先阅读文档《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》，也许答案已经在文档中。文档确实写的很烂，大家相互体谅，凑合着看，提升沟通质量。
 3. 如若第一次接触Socket编程，请先百度了解一下Java网络编程的基础知识，避免在群里提萌新问题(提问的尴尬，回答问题的也尴尬)。
@@ -18,9 +18,11 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
     - smart-socket能处理半包、粘包吗？
     
 **![smart\-socket](//pub.idqqimg.com/wpa/images/group.png)：971571612企业群**
-入群条件
+
+适用于smart-socket的企业用户，更为专业的交流圈。入群条件
 1. smart-socket的企业级用户
 2. 在[码云](https://gitee.com/smartboot/smart-socket/issues/IHV69)或[Github](https://github.com/smartboot/smart-socket/issues/1)上登记了案例
+3. 入群后需登记smart-socket在公司中应用的业务领域，方便与同行进行交流
 
 **特色：**
 1. 代码量极少，可读性强
