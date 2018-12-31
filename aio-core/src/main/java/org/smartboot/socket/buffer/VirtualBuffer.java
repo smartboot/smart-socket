@@ -74,5 +74,4 @@ public final class VirtualBuffer {
             bufferPage.clean(this);
         }
     }
-
 }

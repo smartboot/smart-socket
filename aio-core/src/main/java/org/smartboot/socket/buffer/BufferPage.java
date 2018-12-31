@@ -74,10 +74,9 @@ public final class BufferPage {
         }
         LOGGER.warn("bufferPage has no available space: " + size);
         return new VirtualBuffer(null, allocate0(size, false), 0, 0);
-
     }
 
-    void clean(VirtualBuffer cleanBuffer) {
+    synchronized void clean(VirtualBuffer cleanBuffer) {
         if (freeList.isEmpty()) {
             freeList.add(cleanBuffer);
             return;

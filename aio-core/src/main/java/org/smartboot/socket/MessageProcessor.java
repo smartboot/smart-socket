@@ -65,7 +65,6 @@ public interface MessageProcessor<T> {
     /**
      * 状态机事件,当枚举事件发生时由框架触发该方法
      *
-     *
      * @param session          本次触发状态机的AioSession对象
      * @param stateMachineEnum 状态枚举
      * @param throwable        异常对象，如果存在的话

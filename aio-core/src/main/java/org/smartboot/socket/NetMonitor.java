@@ -16,12 +16,13 @@ import org.smartboot.socket.transport.AioSession;
  * smart-socket并未单独提供配置监控服务的接口，用户在使用时仅需在MessageProcessor实现类中同时实现当前NetMonitor接口即可。
  * 在注册消息处理器时，若服务监测到该处理器同时实现了NetMonitor接口，则该监视器便会生效。
  * </p>
- *<h2>示例：</h2>
+ * <h2>示例：</h2>
  * <pre>
  *     public class MessageProcessorImpl implements MessageProcessor,NetMonitor{
  *
  *     }
  * </pre>
+ *
  * @author 三刀
  * @version V1.0.0
  */
