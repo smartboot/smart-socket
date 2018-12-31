@@ -29,17 +29,15 @@ public final class WriteBuffer extends OutputStream {
     private BufferPage bufferPage;
     private boolean closed = false;
     private Function<? super BlockingQueue<VirtualBuffer>, Void> function;
-    private Function<? super VirtualBuffer, Boolean> directWriteFunction;
     private byte[] cacheByte = new byte[8];
 
-    WriteBuffer(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction, Function<? super VirtualBuffer, Boolean> directWriteFunction) {
+    WriteBuffer(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
-        this.directWriteFunction = directWriteFunction;
     }
 
     @Override
-    public void write(int b) {
+    public synchronized void write(int b) {
         if (writeInBuf == null) {
             writeInBuf = bufferPage.allocate(WRITE_CHUNK_SIZE);
         }
@@ -99,22 +97,16 @@ public final class WriteBuffer extends OutputStream {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
-        //缓冲队列中已有数据,优先输出
+        if (writeInBuf != null && ((bufList.size() == 0 && writeInBuf.buffer().position() > 0) || writeInBuf.buffer().remaining() == 0)) {
+            final VirtualBuffer buffer = writeInBuf;
+            writeInBuf = null;
+            buffer.buffer().flip();
+            bufList.add(buffer);
+        }
         if (bufList.size() > 0) {
             function.apply(bufList);
             return;
         }
-        if (writeInBuf == null || writeInBuf.buffer().position() == 0) {
-            return;
-        }
-        final VirtualBuffer buffer = writeInBuf;
-        writeInBuf = null;
-        buffer.buffer().flip();
-        if (bufList.isEmpty() && directWriteFunction.apply(buffer)) {
-            return;
-        }
-        bufList.add(buffer);
-        function.apply(bufList);
     }
 
     @Override

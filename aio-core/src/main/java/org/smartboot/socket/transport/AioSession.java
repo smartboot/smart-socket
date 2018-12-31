@@ -137,19 +137,6 @@ public class AioSession<T> {
                 }
                 return null;
             }
-        }, new Function<VirtualBuffer, Boolean>() {
-            @Override
-            public Boolean apply(VirtualBuffer var) {
-                if (!semaphore.tryAcquire()) {
-                    return false;
-                }
-                if (writeBuffer != null) {
-                    throw new IllegalStateException("wirteBuffer is not null," + writeBuffer);
-                }
-                AioSession.this.writeBuffer = var;
-                continueWrite(writeBuffer);
-                return true;
-            }
         });
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
@@ -313,7 +300,7 @@ public class AioSession<T> {
                 messageProcessor.stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
         }
-        if (byteBuf != null && !byteBuf.isClosed() && semaphore.availablePermits() > 0) {
+        if (byteBuf != null && !byteBuf.isClosed()) {
             byteBuf.flush();
         }
 
