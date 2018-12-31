@@ -72,7 +72,9 @@ public final class BufferPage {
             }
             return bufferChunk;
         }
-        LOGGER.warn("bufferPage has no available space: " + size);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("bufferPage has no available space: " + size);
+        }
         return new VirtualBuffer(null, allocate0(size, false), 0, 0);
     }
 
