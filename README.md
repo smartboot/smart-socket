@@ -3,10 +3,10 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 
 **![smart\-socket](//pub.idqqimg.com/wpa/images/group.png)：172299083官方群**
 
-|  群号  | 群类型   |  入群条件  |
+|  群号  | 群类型   |  入群条件  | 福利 |
 | -- | -- | -- |
-|  172299083  |  官方群  |  Star本项目  |
-|  971571612  |   企业群 |   在[码云](https://gitee.com/smartboot/smart-socket/issues/IHV69)或[Github](https://github.com/smartboot/smart-socket/issues/1)上登记案例的企业用户 |
+|  172299083  |  官方群  |  Star本项目  | 与作者交流smart-socket |
+|  971571612  |   企业群 |   在[码云](https://gitee.com/smartboot/smart-socket/issues/IHV69)或[Github](https://github.com/smartboot/smart-socket/issues/1)上登记案例的企业用户 |群员全部是smart-socket的精准用户，方便同行交流|
 
 任何对smart-socket感兴趣的朋友可入此群，入群须知
 1. 请先Star一下本项目，小小的支持一下开源项目。
