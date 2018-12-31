@@ -63,10 +63,10 @@ public final class VirtualBuffer {
         clean = false;
     }
 
-    public synchronized void clean() {
+    public void clean() {
         if (clean) {
             System.err.println("buffer has cleaned");
-            return;
+            throw new RuntimeException();
         }
         buffer = null;
         clean = true;
