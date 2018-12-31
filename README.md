@@ -1,14 +1,14 @@
 ## smart-socket [English](README_EN.md)
 smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、稳定性、接口设计各方面都达到极致。如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
 
-**![smart\-socket](//pub.idqqimg.com/wpa/images/group.png)：172299083官方群**
+**![smart\-socket](//pub.idqqimg.com/wpa/images/group.png)：**
 
 |  群号  | 群类型   |  入群条件  | 福利 |
 | -- | -- | -- | -- |
 |  172299083  |  官方群  |  Star本项目  | 与作者交流smart-socket |
 |  971571612  |   企业群 |   在[码云](https://gitee.com/smartboot/smart-socket/issues/IHV69)或[Github](https://github.com/smartboot/smart-socket/issues/1)上登记案例的企业用户 |群员全部是smart-socket的精准用户，方便同行交流|
 
-任何对smart-socket感兴趣的朋友可入此群，入群须知
+入群须知
 1. 请先Star一下本项目，小小的支持一下开源项目。
 2. 咨询smart-socket问题前请先阅读文档《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》，也许答案已经在文档中。文档确实写的很烂，大家相互体谅，凑合着看，提升沟通质量。
 3. 如若第一次接触Socket编程，请先百度了解一下Java网络编程的基础知识，避免在群里提萌新问题(提问的尴尬，回答问题的也尴尬)。
