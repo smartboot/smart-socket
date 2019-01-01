@@ -8,12 +8,9 @@ import org.smartboot.socket.transport.AioSession;
  */
 public class IntegerClient {
     public static void main(String[] args) throws Exception {
-        IntegerClientProcessor processor = new IntegerClientProcessor();
-        AioQuickClient<Integer> aioQuickClient = new AioQuickClient<Integer>("localhost", 8888, new IntegerProtocol(), processor);
+        AioQuickClient<Integer> aioQuickClient = new AioQuickClient<Integer>("localhost", 8888, new IntegerProtocol(), new IntegerClientProcessor());
         AioSession<Integer> session = aioQuickClient.start();
         session.writeBuffer().writeInt(1);
-//        session.getOutputStream().flush();
-//        session.getOutputStream().close();
         Thread.sleep(1000);
         aioQuickClient.shutdown();
     }
