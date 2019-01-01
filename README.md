@@ -1,6 +1,22 @@
 ## smart-socket [English](README_EN.md)
 smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、稳定性、接口设计各方面都达到极致。如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
 
+## 版本说明
+
+|  系列  | 最新版   |  文档  | 说明 |
+| -- | -- | -- | -- |
+|  1.3  |  [1.3.23](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.3.23)  |  《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》  | 企业级 |
+|  1.4  |   1.4.0 |  暂无 |暂无|
+
+**特色：**
+1. 代码量极少，可读性强
+2. 上手快，二次开发只需实现两个接口
+3. 性能爆表，充分压榨CPU、带宽
+4. 资源占用极低，IO线程0感知
+5. 自带流控、缓存压缩、流量/消息量监控等黑科技
+6. 文档齐全《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》
+
+
 **![smart\-socket](//pub.idqqimg.com/wpa/images/group.png)：**
 
 |  群号  | 群类型   |  入群条件  | 福利 |
@@ -22,21 +38,6 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
     - smart-socket怎么做长连接？
     - smart-socket能处理半包、粘包吗？
   
-## 版本说明
-
-|  系列  | 最新版   |  文档  | 说明 |
-| -- | -- | -- | -- |
-|  1.3  |  1.3.23  |  《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》  | 企业级 |
-|  1.4  |   1.4.0 |  暂无 |暂无|
-
-**特色：**
-1. 代码量极少，可读性强
-2. 上手快，二次开发只需实现两个接口
-3. 性能爆表，充分压榨CPU、带宽
-4. 资源占用极低，IO线程0感知
-5. 自带流控、缓存压缩、流量/消息量监控等黑科技
-6. 文档齐全《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》
-
 
 ## 标题党
 - [《每秒处理 500W 条消息，人、机为之颤抖》](https://www.oschina.net/news/90988/smart-socket-1-2-0-beta)
