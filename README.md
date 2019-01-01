@@ -5,7 +5,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 
 |  系列  | 最新版   |  文档  | 说明 |
 | -- | -- | -- | -- |
-|  1.3  |  [1.3.23](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.3.23)  |  《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》  | 企业级 |
+|  1.3  |  [1.3.23](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.3.23)  |  《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》  | 企业级，已稳定运行在众多企业的生产环境上 |
 |  1.4  |   1.4.0 |  暂无 |暂无|
 
 **特色：**
@@ -14,7 +14,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 3. 性能爆表，充分压榨CPU、带宽
 4. 资源占用极低，IO线程0感知
 5. 自带流控、缓存压缩、流量/消息量监控等黑科技
-6. 文档齐全《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》
+6. 文档齐全
 
 
 **![smart\-socket](//pub.idqqimg.com/wpa/images/group.png)：**
