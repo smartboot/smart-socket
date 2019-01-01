@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
-        <version>1.4.0.1231-beta</version>
+        <version>1.4.0</version>
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
     <dependencies>
@@ -31,4 +31,26 @@
             <!--<artifactId>slf4j-simple</artifactId>-->
         <!--</dependency>-->
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <!--<links>https://docs.oracle.com/javase/7/docs/api/</links>-->
+                    <aggregate>true</aggregate>
+                    <show>public</show>
+                    <additionalparam>-Xdoclint:none</additionalparam>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
