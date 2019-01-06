@@ -94,10 +94,6 @@ public class AioSession<T> {
     private Semaphore semaphore = new Semaphore(1);
 
     /**
-     * 内存页,用于申请当前AioSession所需的VirtualBuffer
-     */
-    private BufferPage bufferPage;
-    /**
      * 附件对象
      */
     private Object attachment;
@@ -117,7 +113,6 @@ public class AioSession<T> {
      */
     AioSession(AsynchronousSocketChannel channel, final IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, BufferPage bufferPage) {
         this.channel = channel;
-        this.bufferPage = bufferPage;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.ioServerConfig = config;
@@ -275,7 +270,7 @@ public class AioSession<T> {
 
 
     /**
-     * 触发通道的读操作，当发现存在严重消息积压时,会触发流控
+     * 触发通道的读回调操作
      */
     void readFromChannel(boolean eof) {
         final ByteBuffer readBuffer = this.readBuffer.buffer();

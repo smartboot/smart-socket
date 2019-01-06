@@ -51,7 +51,7 @@ public final class WriteBuffer extends OutputStream {
         function.apply(bufList);
     }
 
-    public void writeInt(int v) throws IOException {
+    public synchronized void writeInt(int v) throws IOException {
         cacheByte[0] = (byte) ((v >>> 24) & 0xFF);
         cacheByte[1] = (byte) ((v >>> 16) & 0xFF);
         cacheByte[2] = (byte) ((v >>> 8) & 0xFF);
