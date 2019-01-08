@@ -105,7 +105,6 @@ public final class WriteBuffer extends OutputStream {
         }
         if (bufList.size() > 0) {
             function.apply(bufList);
-            return;
         }
     }
 
