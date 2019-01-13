@@ -66,6 +66,11 @@ final class IoServerConfig<T> {
      * 是否启用控制台banner
      */
     private boolean bannerEnabled = true;
+
+    /**
+     * 流控功能开关
+     */
+    private boolean flowControlEnabled = false;
     /**
      * Socket 配置
      */
@@ -162,6 +167,14 @@ final class IoServerConfig<T> {
             socketOptions = new HashMap<>();
         }
         socketOptions.put(socketOption, f);
+    }
+
+    public boolean isFlowControlEnabled() {
+        return flowControlEnabled;
+    }
+
+    public void setFlowControlEnabled(boolean flowControlEnabled) {
+        this.flowControlEnabled = flowControlEnabled;
     }
 
     @Override
