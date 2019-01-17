@@ -128,11 +128,11 @@ public final class WriteBuffer extends OutputStream {
         }
     }
 
-    public boolean isClosed() {
+    boolean isClosed() {
         return closed;
     }
 
-    public boolean hasData() {
+    boolean hasData() {
         return bufList.size() > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0);
     }
 }

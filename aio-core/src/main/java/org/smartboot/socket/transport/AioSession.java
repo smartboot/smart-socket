@@ -124,7 +124,7 @@ public class AioSession<T> {
         byteBuf = new WriteBuffer(bufferPage, new Function<BlockingQueue<VirtualBuffer>, Void>() {
             @Override
             public Void apply(BlockingQueue<VirtualBuffer> var) {
-                if (ioServerConfig.isFlowControlEnabled() && var.size() >= 20) {
+                if (ioServerConfig.isFlowControlEnabled() && var.size() >= ioServerConfig.getFlowControlSize()) {
                     flowControl = true;
                     ioServerConfig.getProcessor().stateEvent(AioSession.this, StateMachineEnum.FLOW_CONTROL, null);
                 }
@@ -167,7 +167,7 @@ public class AioSession<T> {
         if (writeBuffer != null) {
             //如果存在流控并符合释放条件，则触发读操作
             //一定要放在continueWrite之前
-            if (flowControl && byteBuf.bufList.size() < 10) {
+            if (flowControl && byteBuf.bufList.size() < ioServerConfig.getReleaseFlowControlSize()) {
                 ioServerConfig.getProcessor().stateEvent(AioSession.this, StateMachineEnum.RELEASE_FLOW_CONTROL, null);
                 flowControl = false;
                 readFromChannel(false);
