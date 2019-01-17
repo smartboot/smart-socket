@@ -338,6 +338,13 @@ public class AioSession<T> {
             readBuffer.position(readBuffer.limit());
             readBuffer.limit(readBuffer.capacity());
         }
+
+        //读缓冲区已满
+        if (!readBuffer.hasRemaining()) {
+            RuntimeException exception = new RuntimeException("readBuffer has no remaining");
+            messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, exception);
+            throw exception;
+        }
         continueRead();
     }
 
