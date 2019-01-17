@@ -1,6 +1,22 @@
 ## smart-socket [English](README_EN.md)
 smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、稳定性、接口设计各方面都达到极致。如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
 
+## 版本说明
+
+|  系列  | 最新版   |  文档  | 说明 |
+| -- | -- | -- | -- |
+|  1.3  |  [1.3.23](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.3.23)  |  《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》  | 企业级，已稳定运行在众多企业的生产环境上 |
+|  1.4  |   1.4.0-rc.1 |  暂无 |暂无|
+
+**特色：**
+1. 代码量极少，可读性强
+2. 上手快，二次开发只需实现两个接口
+3. 性能爆表，充分压榨CPU、带宽
+4. 资源占用极低，IO线程0感知
+5. 自带流控、缓存压缩、流量/消息量监控等黑科技
+6. 文档齐全
+
+
 **![smart\-socket](//pub.idqqimg.com/wpa/images/group.png)：**
 
 |  群号  | 群类型   |  入群条件  | 福利 |
@@ -22,50 +38,6 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
     - smart-socket怎么做长连接？
     - smart-socket能处理半包、粘包吗？
   
-
-**特色：**
-1. 代码量极少，可读性强
-2. 上手快，二次开发只需实现两个接口
-3. 性能爆表，充分压榨CPU、带宽
-4. 资源占用极低，IO线程0感知
-5. 自带流控、缓存压缩、流量/消息量监控等黑科技
-6. 文档齐全《[smart-socket技术小册](https://smartboot.gitee.io/docs/smart-socket/)》
-
-### Maven
-smart-socket发布了两种类型的包供大家选用：
-
-1. aio-core，针对Socket的初级用户提供的开发包，仅提供基本的AIO通讯服务。
-
-	```xml
-	<dependency>
-	    <groupId>org.smartboot.socket</groupId>
-	    <artifactId>aio-core</artifactId>
-	    <version>1.3.22</version>
-	</dependency>
-	```	
-
-2. aio-pro，面向资深用户提供的进阶版，不仅包含了aio-core的所有功能，还提供了TLS/SSL通讯功能，并提供一些用于辅助编解码的工具类。
-
-	```xml
-	<dependency>
-	    <groupId>org.smartboot.socket</groupId>
-	    <artifactId>aio-pro</artifactId>
-	    <version>1.3.22</version>
-	</dependency>
-	```
-
-## 性能测试报告
-
-| 项目 | 结果 |
-| --- | --- |
-|CPU| i7-4790 3.60Ghz|
-|内存| 8G|
-|测试代码|服务端：P2PServer，客户端：P2PMultiClient|
-|测试时长|大于两分钟（服务端与客户端启动后的第一分钟数据是无效的，因为实际未跑满一分钟）
-|时间单位|1分钟|
-|数据总流量|7064MB|
-|消息大小|33B|
-|消息数|224484842|
 
 ## 标题党
 - [《每秒处理 500W 条消息，人、机为之颤抖》](https://www.oschina.net/news/90988/smart-socket-1-2-0-beta)

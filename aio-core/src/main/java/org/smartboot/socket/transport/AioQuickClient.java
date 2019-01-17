@@ -136,8 +136,19 @@ public class AioQuickClient<T> {
      * </p>
      */
     public final void shutdown() {
+        showdown0(false);
+    }
+
+    /**
+     * 立即关闭客户端
+     */
+    public final void shutdownNow() {
+        showdown0(true);
+    }
+
+    private void showdown0(boolean flag) {
         if (session != null) {
-            session.close();
+            session.close(flag);
             session = null;
         }
         //仅Client内部创建的ChannelGroup需要shutdown
@@ -145,7 +156,6 @@ public class AioQuickClient<T> {
             asynchronousChannelGroup.shutdown();
         }
     }
-
 
     /**
      * 设置读缓存区大小

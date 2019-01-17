@@ -6,10 +6,12 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousChannelGroup;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * @author 三刀
@@ -17,16 +19,28 @@ import java.util.concurrent.ExecutionException;
  */
 public class StringClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(StringClient.class);
+    AsynchronousChannelGroup asynchronousChannelGroup;
+
+    public StringClient(AsynchronousChannelGroup asynchronousChannelGroup) {
+        this.asynchronousChannelGroup = asynchronousChannelGroup;
+    }
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
         System.setProperty("smart-socket.server.pageSize", (1024 * 1024 * 32) + "");
-        System.setProperty("smart-socket.session.writeChunkSize", "1048");
+        System.setProperty("smart-socket.session.writeChunkSize", "2048");
+        final AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r);
+            }
+        });
+
         for (int i = 0; i < 10; i++) {
             new Thread() {
                 @Override
                 public void run() {
                     try {
-                        new StringClient().test();
+                        new StringClient(asynchronousChannelGroup).test();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     } catch (ExecutionException e) {
@@ -50,13 +64,13 @@ public class StringClient {
 
             @Override
             public void stateEvent(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-                if(throwable!=null){
+                if (throwable != null) {
                     throwable.printStackTrace();
                 }
             }
         });
-        AioSession<String> session = client.start();
-        WriteBuffer outputStream = session.writeBuffer();
+        client.setWriteQueueSize(16384);
+        AioSession<String> session = client.start(asynchronousChannelGroup);
 
         int i = 1;
         while (true) {
@@ -66,8 +80,13 @@ public class StringClient {
                 sb.append("smart-socket");
             }
             byte[] bytes = sb.toString().getBytes();
-            outputStream.writeInt(bytes.length);
-            outputStream.write(bytes);
+            ByteBuffer buffer = ByteBuffer.allocate(bytes.length + 4);
+            buffer.putInt(bytes.length);
+            buffer.put(bytes);
+            buffer.flip();
+            session.write(buffer);
+//            outputStream.writeInt(bytes.length);
+//            outputStream.write(bytes);
         }
     }
 }

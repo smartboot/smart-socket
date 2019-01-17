@@ -67,22 +67,15 @@ public final class BufferPage {
                 freeChunk.setParentPosition(buffer.limit());
             }
             if (bufferChunk.buffer().remaining() != size) {
-                LOGGER.error(bufferChunk.buffer().remaining() + "aaaa" + size);
                 throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
             }
             return bufferChunk;
         }
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("bufferPage has no available space: " + size);
-        }
+        LOGGER.warn("bufferPage has no available space: " + size);
         return new VirtualBuffer(null, allocate0(size, false), 0, 0);
     }
 
     synchronized void clean(VirtualBuffer cleanBuffer) {
-        if (freeList.isEmpty()) {
-            freeList.add(cleanBuffer);
-            return;
-        }
         int index = 0;
         Iterator<VirtualBuffer> iterator = freeList.iterator();
         while (iterator.hasNext()) {
