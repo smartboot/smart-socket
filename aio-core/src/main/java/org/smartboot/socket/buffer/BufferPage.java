@@ -67,7 +67,6 @@ public final class BufferPage {
                 freeChunk.setParentPosition(buffer.limit());
             }
             if (bufferChunk.buffer().remaining() != size) {
-                LOGGER.error(bufferChunk.buffer().remaining() + "aaaa" + size);
                 throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
             }
             return bufferChunk;
@@ -77,10 +76,6 @@ public final class BufferPage {
     }
 
     synchronized void clean(VirtualBuffer cleanBuffer) {
-        if (freeList.isEmpty()) {
-            freeList.add(cleanBuffer);
-            return;
-        }
         int index = 0;
         Iterator<VirtualBuffer> iterator = freeList.iterator();
         while (iterator.hasNext()) {

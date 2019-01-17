@@ -20,7 +20,7 @@ public class StringClient {
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
         System.setProperty("smart-socket.server.pageSize", (1024 * 1024 * 32) + "");
-        System.setProperty("smart-socket.session.writeChunkSize", "2048");
+        System.setProperty("smart-socket.session.writeChunkSize", "1048");
         for (int i = 0; i < 10; i++) {
             new Thread() {
                 @Override

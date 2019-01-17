@@ -144,9 +144,7 @@ final class IoServerConfig<T> {
 
     public final void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
-        if (processor instanceof NetMonitor) {
-            this.monitor = (NetMonitor<T>) processor;
-        }
+        this.monitor = (processor instanceof NetMonitor) ? (NetMonitor<T>) processor : null;
     }
 
     public int getReadBufferSize() {
