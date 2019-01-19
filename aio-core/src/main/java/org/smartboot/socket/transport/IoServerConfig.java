@@ -215,6 +215,7 @@ final class IoServerConfig<T> {
         String SERVER_PAGE_SIZE = PROJECT_NAME + ".server.pageSize";
         String CLIENT_PAGE_SIZE = PROJECT_NAME + ".client.pageSize";
         String SERVER_PAGE_IS_DIRECT = PROJECT_NAME + ".server.page.isDirect";
+        String CLIENT_PAGE_IS_DIRECT = PROJECT_NAME + ".client.page.isDirect";
         String SERVER_FLOW_CONTROL_SIZE = PROJECT_NAME + ".server.flowControlSize";
         String SERVER_RELEASE_FLOW_CONTROL_SIZE = PROJECT_NAME + ".server.releaseFlowControlSize";
     }

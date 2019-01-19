@@ -58,7 +58,7 @@ public class AioQuickClient<T> {
      * @see AioSession
      */
     protected AioSession<T> session;
-    protected BufferPagePool bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.CLIENT_PAGE_SIZE, 1024 * 256), 1, true);
+    protected BufferPagePool bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.CLIENT_PAGE_SIZE, 1024 * 256), 1, IoServerConfig.getBoolProperty(IoServerConfig.Property.CLIENT_PAGE_IS_DIRECT, true));
     /**
      * IO事件处理线程组。
      * <p>
