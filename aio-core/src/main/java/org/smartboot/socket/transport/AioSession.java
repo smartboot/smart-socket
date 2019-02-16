@@ -314,9 +314,6 @@ public class AioSession<T> {
                 messageProcessor.stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
         }
-        if (byteBuf != null && !byteBuf.isClosed()) {
-            byteBuf.flush();
-        }
 
 
         if (eof || status == SESSION_STATUS_CLOSING) {
@@ -346,6 +343,10 @@ public class AioSession<T> {
             throw exception;
         }
         continueRead();
+
+        if (byteBuf != null && !byteBuf.isClosed()) {
+            byteBuf.flush();
+        }
     }
 
 

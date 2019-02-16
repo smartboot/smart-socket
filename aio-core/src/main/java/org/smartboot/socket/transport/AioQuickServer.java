@@ -168,7 +168,7 @@ public class AioQuickServer<T> {
             session = aioSessionFunction.apply(channel);
             session.initSession();
         } catch (Exception e1) {
-            LOGGER.debug(e1.getMessage(), e1);
+            LOGGER.error(e1.getMessage(), e1);
             if (session == null) {
                 try {
                     channel.shutdownInput();
