@@ -12,11 +12,13 @@ public class DemoApiImpl implements DemoApi {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        System.out.println(name);
         return "hello " + name;
     }
 
     @Override
     public int sum(int a, int b) {
+        System.out.println(a + " " + b);
         return a + b;
     }
 }

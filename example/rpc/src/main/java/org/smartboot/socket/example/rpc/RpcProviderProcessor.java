@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 public class RpcProviderProcessor implements MessageProcessor<byte[]> {
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcProviderProcessor.class);
     private Map<String, Object> impMap = new HashMap<String, Object>();
-    private ExecutorService pool= Executors.newCachedThreadPool();
+    private ExecutorService pool = Executors.newCachedThreadPool();
     /**
      * 基础数据类型
      */
@@ -41,7 +41,7 @@ public class RpcProviderProcessor implements MessageProcessor<byte[]> {
 
     @Override
     public void process(AioSession<byte[]> session, byte[] msg) {
-        pool.execute(()->{
+        pool.execute(() -> {
             ObjectInput objectInput = null;
             ObjectOutput objectOutput = null;
             try {
@@ -84,10 +84,12 @@ public class RpcProviderProcessor implements MessageProcessor<byte[]> {
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 objectOutput = new ObjectOutputStream(byteArrayOutputStream);
                 objectOutput.writeObject(resp);
-                byte[] data=byteArrayOutputStream.toByteArray();
-                session.writeBuffer().writeInt(data.length+4);
-                session.writeBuffer().write(data);
-                session.writeBuffer().flush();
+                byte[] data = byteArrayOutputStream.toByteArray();
+                synchronized (session) {
+                    session.writeBuffer().writeInt(data.length + 4);
+                    session.writeBuffer().write(data);
+                    session.writeBuffer().flush();
+                }
 //                session.write(byteArrayOutputStream.toByteArray());
             } catch (IOException e) {
                 e.printStackTrace();
