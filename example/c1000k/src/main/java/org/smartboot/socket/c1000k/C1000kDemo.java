@@ -11,6 +11,7 @@ import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.channels.AsynchronousChannelGroup;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -63,10 +64,11 @@ public class C1000kDemo {
         });
         if (args != null) {
             for (String ip : args) {
-                new Thread() {
+                Executors.newFixedThreadPool(10).execute(new Runnable() {
+                    int i = 10000;
                     @Override
                     public void run() {
-                        int i = 10000;
+//                        int i = 10000;
                         while (i-- > 0) {
                             try {
                                 new AioQuickClient(ip, serverPort, null, processor)
@@ -74,11 +76,12 @@ public class C1000kDemo {
                                         .start(channelGroup);
                             } catch (Exception e) {
                                 LOGGER.error("exception", e);
-                               break;
+                                break;
                             }
                         }
                     }
-                }.start();
+                });
+
 
             }
         }
