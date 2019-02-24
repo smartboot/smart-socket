@@ -22,6 +22,9 @@ public class C1000kDemo {
 
     public static void main(String[] args) throws Exception {
         System.setProperty("smart-socket.client.page.isDirect", "false");
+        System.setProperty("smart-socket.server.page.isDirect", "false");
+        System.setProperty("smart-socket.server.pageSize", "1");
+        System.setProperty("smart-socket.client.pageSize", "1");
         MessageProcessor processor = new MessageProcessor() {
             @Override
             public void process(AioSession session, Object msg) {
