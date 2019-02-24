@@ -52,7 +52,7 @@ public class C1000kDemo {
         int serverPort = 8888;
 
         //启动服务端
-        new AioQuickServer<>(serverPort, null, processor1)
+        new AioQuickServer<>("localhost",serverPort, null, processor1)
                 .setReadBufferSize(1).start();
 
         AsynchronousChannelGroup channelGroup = AsynchronousChannelGroup.withFixedThreadPool(4, new ThreadFactory() {
