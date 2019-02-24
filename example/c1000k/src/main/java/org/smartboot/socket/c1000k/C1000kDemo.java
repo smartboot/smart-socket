@@ -73,7 +73,7 @@ public class C1000kDemo {
         if (args != null) {
             for (String ip : args) {
                 Executors.newFixedThreadPool(10).execute(new Runnable() {
-                    int i = 1000;
+                    int i = 10000;
 
                     @Override
                     public void run() {
