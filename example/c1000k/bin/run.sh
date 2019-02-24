@@ -1,4 +1,6 @@
 #!/bin/sh
+echo 4000000 > /proc/sys/fs/nr_open
+echo 4000000 > /proc/sys/fs/file-max
 ulimit -HSn 4000000
 ulimit -c unlimited
 HTTP_HOME=$(dirname $(pwd))
