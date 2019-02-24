@@ -21,6 +21,7 @@ public class C1000kDemo {
     private static final Logger LOGGER = LoggerFactory.getLogger(C1000kDemo.class);
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("smart-socket.client.page.isDirect", "false");
         MessageProcessor processor = new MessageProcessor() {
             @Override
             public void process(AioSession session, Object msg) {
@@ -48,7 +49,8 @@ public class C1000kDemo {
         int serverPort = 8888;
 
         //启动服务端
-        new AioQuickServer<>(serverPort, null, processor1).start();
+        new AioQuickServer<>(serverPort, null, processor1)
+                .setReadBufferSize(1).start();
 
         AsynchronousChannelGroup channelGroup = AsynchronousChannelGroup.withFixedThreadPool(4, new ThreadFactory() {
             @Override
@@ -65,6 +67,7 @@ public class C1000kDemo {
                         while (i-- > 0) {
                             try {
                                 new AioQuickClient(ip, serverPort, null, processor)
+                                        .setReadBufferSize(1)
                                         .start(channelGroup);
                             } catch (Exception e) {
                                 LOGGER.error("exception", e);
