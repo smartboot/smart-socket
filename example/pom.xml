@@ -13,6 +13,7 @@
         <module>rpc</module>
         <module>benchmark</module>
         <module>spring</module>
+        <module>c1000k</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 
