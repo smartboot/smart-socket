@@ -15,7 +15,7 @@ The smart-socket jar file is available from [Maven Central](http://mvnrepository
 <dependency>
     <groupId>org.smartboot.socket</groupId>
     <artifactId>aio-core</artifactId>
-    <version>1.3.22</version>
+    <version>1.3.24</version>
 </dependency>
 ```
 
