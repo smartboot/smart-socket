@@ -15,6 +15,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 /**
+ * ulimit -HSn 4000000
+ * ulimit -c unlimited
+ * cat /proc/<pid>/limits openstack soft nofile 4000000 root soft nofile 4000000 root hard nofile 4000000
  * @author 三刀
  * @version V1.0 , 2019/2/24
  */
@@ -33,6 +36,9 @@ public class C1000kDemo {
 
             @Override
             public void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+                if(throwable!=null){
+                    throwable.printStackTrace();
+                }
             }
         };
 
@@ -45,7 +51,9 @@ public class C1000kDemo {
 
             @Override
             public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-
+                if(throwable!=null){
+                    throwable.printStackTrace();
+                }
             }
         };
         processor1.addPlugin(new MonitorPlugin());
@@ -66,6 +74,7 @@ public class C1000kDemo {
             for (String ip : args) {
                 Executors.newFixedThreadPool(10).execute(new Runnable() {
                     int i = 10000;
+
                     @Override
                     public void run() {
 //                        int i = 10000;
