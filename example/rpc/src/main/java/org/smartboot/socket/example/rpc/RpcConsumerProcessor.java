@@ -115,9 +115,11 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
         ObjectOutput objectOutput = new ObjectOutputStream(byteArrayOutputStream);
         objectOutput.writeObject(request);
         byte[] data=byteArrayOutputStream.toByteArray();
-        aioSession.writeBuffer().writeInt(data.length+4);
-        aioSession.writeBuffer().write(data);
-        aioSession.writeBuffer().flush();
+        synchronized (aioSession) {
+            aioSession.writeBuffer().writeInt(data.length + 4);
+            aioSession.writeBuffer().write(data);
+            aioSession.writeBuffer().flush();
+        }
 //        aioSession.write(byteArrayOutputStream.toByteArray());
 
         try {

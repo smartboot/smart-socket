@@ -27,12 +27,12 @@ public class Consumer {
         pool.execute(()->{
             System.out.println(demoApi.test("smart-socket"));
         });
-//        pool.execute(()->{
-//            System.out.println(demoApi.test("smart-socket2"));
-//        });
-//        pool.execute(()->{
-//            System.out.println(demoApi.sum(1, 2));
-//        });
+        pool.execute(()->{
+            System.out.println(demoApi.test("smart-socket2"));
+        });
+        pool.execute(()->{
+            System.out.println(demoApi.sum(1, 2));
+        });
 
 
     }

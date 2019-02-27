@@ -68,6 +68,11 @@ public class AioQuickClient<T> {
     private AsynchronousChannelGroup asynchronousChannelGroup;
 
     /**
+     * 绑定本地地址
+     */
+    private SocketAddress localAddress;
+
+    /**
      * 当前构造方法设置了启动Aio客户端的必要参数，基本实现开箱即用。
      *
      * @param host             远程服务器地址
@@ -103,6 +108,9 @@ public class AioQuickClient<T> {
             }
         }
         //bind host
+        if (localAddress != null) {
+            socketChannel.bind(localAddress);
+        }
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
         session = new AioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool.allocateBufferPage());
@@ -184,6 +192,18 @@ public class AioQuickClient<T> {
      */
     public final <V> AioQuickClient<T> setOption(SocketOption<V> socketOption, V value) {
         config.setOption(socketOption, value);
+        return this;
+    }
+
+    /**
+     * 绑定本机地址、端口用于连接远程服务
+     *
+     * @param local 若传null则由系统自动获取
+     * @param port  若传0则由系统指定
+     * @return
+     */
+    public final AioQuickClient<T> bindLocal(String local, int port) {
+        localAddress = local == null ? new InetSocketAddress(port) : new InetSocketAddress(local, port);
         return this;
     }
 }

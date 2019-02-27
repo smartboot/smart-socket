@@ -5,7 +5,7 @@
     <parent>
         <artifactId>smart-socket-parent</artifactId>
         <groupId>org.smartboot.socket</groupId>
-        <version>1.4.0-rc.2</version>
+        <version>1.4.0-rc.4</version>
     </parent>
     <packaging>pom</packaging>
     <version>1.0.0</version>
@@ -13,6 +13,7 @@
         <module>rpc</module>
         <module>benchmark</module>
         <module>spring</module>
+        <module>c1000k</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 
