@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * ByteBuffer内存页
@@ -21,6 +22,7 @@ public final class BufferPage {
      */
     private List<VirtualBuffer> freeList;
     private ByteBuffer buffer;
+    private ReentrantLock lock = new ReentrantLock();
 
     /**
      * @param size
@@ -45,67 +47,78 @@ public final class BufferPage {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
-    public synchronized VirtualBuffer allocate(final int size) {
-        Iterator<VirtualBuffer> iterator = freeList.iterator();
-        VirtualBuffer bufferChunk = null;
-        while (iterator.hasNext()) {
-            VirtualBuffer freeChunk = iterator.next();
-            final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
-            if (remaining < size) {
-                continue;
+    public VirtualBuffer allocate(final int size) {
+        lock.lock();
+        try {
+            Iterator<VirtualBuffer> iterator = freeList.iterator();
+            VirtualBuffer bufferChunk = null;
+            while (iterator.hasNext()) {
+                VirtualBuffer freeChunk = iterator.next();
+                final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
+                if (remaining < size) {
+                    continue;
+                }
+                if (remaining == size) {
+                    iterator.remove();
+                    buffer.limit(freeChunk.getParentLimit());
+                    buffer.position(freeChunk.getParentPosition());
+                    freeChunk.buffer(buffer.slice());
+                    bufferChunk = freeChunk;
+                } else {
+                    buffer.limit(freeChunk.getParentPosition() + size);
+                    buffer.position(freeChunk.getParentPosition());
+                    bufferChunk = new VirtualBuffer(this, buffer.slice(), buffer.position(), buffer.limit());
+                    freeChunk.setParentPosition(buffer.limit());
+                }
+                if (bufferChunk.buffer().remaining() != size) {
+                    throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
+                }
+                return bufferChunk;
             }
-            if (remaining == size) {
-                iterator.remove();
-                buffer.limit(freeChunk.getParentLimit());
-                buffer.position(freeChunk.getParentPosition());
-                freeChunk.buffer(buffer.slice());
-                bufferChunk = freeChunk;
-            } else {
-                buffer.limit(freeChunk.getParentPosition() + size);
-                buffer.position(freeChunk.getParentPosition());
-                bufferChunk = new VirtualBuffer(this, buffer.slice(), buffer.position(), buffer.limit());
-                freeChunk.setParentPosition(buffer.limit());
-            }
-            if (bufferChunk.buffer().remaining() != size) {
-                throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
-            }
-            return bufferChunk;
+        } finally {
+            lock.unlock();
         }
         LOGGER.warn("bufferPage has no available space: " + size);
         return new VirtualBuffer(null, allocate0(size, false), 0, 0);
+
     }
 
-    synchronized void clean(VirtualBuffer cleanBuffer) {
+    void clean(VirtualBuffer cleanBuffer) {
         int index = 0;
-        Iterator<VirtualBuffer> iterator = freeList.iterator();
-        while (iterator.hasNext()) {
-            VirtualBuffer freeBuffer = iterator.next();
-            //cleanBuffer在freeBuffer之前并且形成连续块
-            if (freeBuffer.getParentPosition() == cleanBuffer.getParentLimit()) {
-                freeBuffer.setParentPosition(cleanBuffer.getParentPosition());
-                return;
-            }
-            //cleanBuffer与freeBuffer之后并形成连续块
-            if (freeBuffer.getParentLimit() == cleanBuffer.getParentPosition()) {
-                freeBuffer.setParentLimit(cleanBuffer.getParentLimit());
-                //判断后一个是否连续
-                if (iterator.hasNext()) {
-                    VirtualBuffer next = iterator.next();
-                    if (next.getParentPosition() == freeBuffer.getParentLimit()) {
-                        freeBuffer.setParentLimit(next.getParentLimit());
-                        iterator.remove();
-                    } else if (next.getParentPosition() < freeBuffer.getParentLimit()) {
-                        throw new IllegalStateException("");
-                    }
+        lock.lock();
+        try {
+            Iterator<VirtualBuffer> iterator = freeList.iterator();
+            while (iterator.hasNext()) {
+                VirtualBuffer freeBuffer = iterator.next();
+                //cleanBuffer在freeBuffer之前并且形成连续块
+                if (freeBuffer.getParentPosition() == cleanBuffer.getParentLimit()) {
+                    freeBuffer.setParentPosition(cleanBuffer.getParentPosition());
+                    return;
                 }
-                return;
+                //cleanBuffer与freeBuffer之后并形成连续块
+                if (freeBuffer.getParentLimit() == cleanBuffer.getParentPosition()) {
+                    freeBuffer.setParentLimit(cleanBuffer.getParentLimit());
+                    //判断后一个是否连续
+                    if (iterator.hasNext()) {
+                        VirtualBuffer next = iterator.next();
+                        if (next.getParentPosition() == freeBuffer.getParentLimit()) {
+                            freeBuffer.setParentLimit(next.getParentLimit());
+                            iterator.remove();
+                        } else if (next.getParentPosition() < freeBuffer.getParentLimit()) {
+                            throw new IllegalStateException("");
+                        }
+                    }
+                    return;
+                }
+                if (freeBuffer.getParentPosition() > cleanBuffer.getParentLimit()) {
+                    freeList.add(index, cleanBuffer);
+                    return;
+                }
+                index++;
             }
-            if (freeBuffer.getParentPosition() > cleanBuffer.getParentLimit()) {
-                freeList.add(index, cleanBuffer);
-                return;
-            }
-            index++;
+            freeList.add(cleanBuffer);
+        } finally {
+            lock.unlock();
         }
-        freeList.add(cleanBuffer);
     }
 }

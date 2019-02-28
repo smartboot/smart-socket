@@ -37,7 +37,7 @@ public final class WriteBuffer extends OutputStream {
     }
 
     @Override
-    public synchronized void write(int b) {
+    public void write(int b) {
         if (writeInBuf == null) {
             writeInBuf = bufferPage.allocate(WRITE_CHUNK_SIZE);
         }
@@ -51,7 +51,7 @@ public final class WriteBuffer extends OutputStream {
         function.apply(bufList);
     }
 
-    public synchronized void writeInt(int v) throws IOException {
+    public void writeInt(int v) throws IOException {
         cacheByte[0] = (byte) ((v >>> 24) & 0xFF);
         cacheByte[1] = (byte) ((v >>> 16) & 0xFF);
         cacheByte[2] = (byte) ((v >>> 8) & 0xFF);
@@ -60,7 +60,7 @@ public final class WriteBuffer extends OutputStream {
     }
 
     @Override
-    public synchronized void write(byte[] b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         if (closed) {
             throw new IOException("OutputStream has closed");
         }
