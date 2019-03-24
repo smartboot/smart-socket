@@ -22,8 +22,6 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -64,8 +62,6 @@ public class AioQuickServer<T> {
     private Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
-
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     /**
      * 设置服务端启动必要参数配置
@@ -144,12 +140,7 @@ public class AioQuickServer<T> {
                 @Override
                 public void completed(final AsynchronousSocketChannel channel, AsynchronousServerSocketChannel serverSocketChannel) {
                     serverSocketChannel.accept(serverSocketChannel, this);
-                    executorService.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            createSession(channel);
-                        }
-                    });
+                    createSession(channel);
                 }
 
                 @Override
