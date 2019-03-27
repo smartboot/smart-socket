@@ -10,6 +10,8 @@ package org.smartboot.socket;
 
 import org.smartboot.socket.transport.AioSession;
 
+import java.nio.channels.AsynchronousSocketChannel;
+
 /**
  * 网络监控器，提供通讯层面监控功能的接口。
  * <p>
@@ -23,11 +25,26 @@ import org.smartboot.socket.transport.AioSession;
  *     }
  * </pre>
  *
+ * <b>注意:</b>
+ * <p>
+ * 实现本接口时要关注acceptMonitor接口的返回值,如无特殊需求直接返回true，若返回false会拒绝本次连接
+ * </p>
+ *
  * @author 三刀
  * @version V1.0.0
  */
 public interface NetMonitor<T> {
 
+
+    /**
+     * <p>
+     * 监控已接收到的连接
+     * </p>
+     *
+     * @param channel
+     * @return true:接受该连接,false:拒绝该连接
+     */
+    boolean acceptMonitor(AsynchronousSocketChannel channel);
 
     /**
      * 监控触发本次读回调Session的已读数据字节数

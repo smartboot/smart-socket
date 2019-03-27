@@ -6,6 +6,7 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.extension.plugins.Plugin;
 import org.smartboot.socket.transport.AioSession;
 
+import java.nio.channels.AsynchronousSocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +30,18 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
         for (Plugin<T> plugin : plugins) {
             plugin.writeMonitor(session, writeSize);
         }
+    }
+
+    @Override
+    public final boolean acceptMonitor(AsynchronousSocketChannel channel) {
+        boolean accept;
+        for (Plugin<T> plugin : plugins) {
+            accept = plugin.acceptMonitor(channel);
+            if (!accept) {
+                return accept;
+            }
+        }
+        return true;
     }
 
     @Override

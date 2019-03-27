@@ -3,6 +3,8 @@ package org.smartboot.socket.extension.plugins;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 
+import java.nio.channels.AsynchronousSocketChannel;
+
 /**
  * @author 三刀
  * @version V1.0 , 2018/8/19
@@ -16,6 +18,11 @@ public abstract class AbstractPlugin<T> implements Plugin<T> {
     @Override
     public void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
 
+    }
+
+    @Override
+    public boolean acceptMonitor(AsynchronousSocketChannel channel) {
+        return true;
     }
 
     @Override

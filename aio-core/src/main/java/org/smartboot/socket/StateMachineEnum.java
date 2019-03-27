@@ -81,5 +81,11 @@ public enum StateMachineEnum {
     /**
      * 流控
      */
-    FLOW_CONTROL
+    FLOW_CONTROL,
+
+    /**
+     * 拒绝接受连接,仅Server端有效
+     */
+    REJECT_ACCEPT;
+
 }

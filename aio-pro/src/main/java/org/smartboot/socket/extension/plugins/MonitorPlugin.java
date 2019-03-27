@@ -6,6 +6,7 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.QuickTimerTask;
 
+import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -107,6 +108,11 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
                 + "\r\n断开连接数:\t" + disConnectCount
                 + "\r\n在线连接数:\t" + onlineCount.addAndGet(connectCount - disConnectCount)
                 + "\r\n总连接次数:\t" + totalConnect.addAndGet(connectCount));
+    }
+
+    @Override
+    public boolean acceptMonitor(AsynchronousSocketChannel channel) {
+        return true;
     }
 
     @Override
