@@ -37,7 +37,6 @@ public final class BlackListPlugin<T> extends AbstractPlugin<T> {
         return true;
     }
 
-
     /**
      * 添加黑名单失败规则
      *
@@ -57,7 +56,7 @@ public final class BlackListPlugin<T> extends AbstractPlugin<T> {
     }
 
     /**
-     * 黑名单规则
+     * 黑名单规则定义
      */
     public interface BlackListRule {
         boolean access(InetSocketAddress address);
