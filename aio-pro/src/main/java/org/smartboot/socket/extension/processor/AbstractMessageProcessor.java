@@ -34,6 +34,13 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
 
     @Override
     public boolean acceptMonitor(AsynchronousSocketChannel channel) {
+        boolean accept;
+        for (Plugin<T> plugin : plugins) {
+            accept = plugin.acceptMonitor(channel);
+            if (!accept) {
+                return accept;
+            }
+        }
         return true;
     }
 
