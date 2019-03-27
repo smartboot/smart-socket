@@ -9,13 +9,13 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * IP黑名单插件,smart-socket会拒绝与黑名单中的IP建立连接
+ * 黑名单插件,smart-socket会拒绝与黑名单中的IP建立连接
  *
  * @author 三刀
  * @version V1.0 , 2019/3/27
  */
-public final class IPBlackListPlugin<T> extends AbstractPlugin<T> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IPBlackListPlugin.class);
+public final class BlackListPlugin<T> extends AbstractPlugin<T> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BlackListPlugin.class);
     private ConcurrentLinkedQueue<BlackListRule> ipBlackList = new ConcurrentLinkedQueue<>();
 
     @Override
@@ -38,7 +38,6 @@ public final class IPBlackListPlugin<T> extends AbstractPlugin<T> {
     }
 
 
-
     /**
      * 添加黑名单失败规则
      *
@@ -50,6 +49,7 @@ public final class IPBlackListPlugin<T> extends AbstractPlugin<T> {
 
     /**
      * 移除黑名单规则
+     *
      * @param rule
      */
     public void removeRule(BlackListRule rule) {
