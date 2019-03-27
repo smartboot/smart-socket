@@ -58,7 +58,7 @@ public class AioQuickClient<T> {
      * @see AioSession
      */
     protected AioSession<T> session;
-    protected BufferPagePool bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.CLIENT_PAGE_SIZE, 1024 * 256), 1, IoServerConfig.getBoolProperty(IoServerConfig.Property.CLIENT_PAGE_IS_DIRECT, true));
+    protected BufferPagePool bufferPool = null;
     /**
      * IO事件处理线程组。
      * <p>
@@ -101,6 +101,9 @@ public class AioQuickClient<T> {
      */
     public AioSession<T> start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        if (bufferPool == null) {
+            bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.CLIENT_PAGE_SIZE, 1024 * 256), 1, IoServerConfig.getBoolProperty(IoServerConfig.Property.CLIENT_PAGE_IS_DIRECT, true));
+        }
         //set socket options
         if (config.getSocketOptions() != null) {
             for (Map.Entry<SocketOption<Object>, Object> entry : config.getSocketOptions().entrySet()) {
@@ -204,6 +207,11 @@ public class AioQuickClient<T> {
      */
     public final AioQuickClient<T> bindLocal(String local, int port) {
         localAddress = local == null ? new InetSocketAddress(port) : new InetSocketAddress(local, port);
+        return this;
+    }
+
+    public final AioQuickClient<T> setBufferPagePool(BufferPagePool bufferPool) {
+        this.bufferPool = bufferPool;
         return this;
     }
 }

@@ -4,12 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
+import java.nio.channels.AsynchronousChannelGroup;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * @author 三刀
@@ -19,14 +22,22 @@ public class StringClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(StringClient.class);
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
-        System.setProperty("smart-socket.server.pageSize", (1024 * 1024 * 32) + "");
-        System.setProperty("smart-socket.session.writeChunkSize", "1048");
+        System.setProperty("smart-socket.client.pageSize", (1024 * 1024 * 64) + "");
+        System.setProperty("smart-socket.session.writeChunkSize", "512");
+
+        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 16, 10, true);
+        AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(4, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r);
+            }
+        });
         for (int i = 0; i < 10; i++) {
             new Thread() {
                 @Override
                 public void run() {
                     try {
-                        new StringClient().test();
+                        new StringClient().test(asynchronousChannelGroup, bufferPagePool);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     } catch (ExecutionException e) {
@@ -41,7 +52,7 @@ public class StringClient {
 
     }
 
-    public void test() throws InterruptedException, ExecutionException, IOException {
+    public void test(AsynchronousChannelGroup asynchronousChannelGroup, BufferPagePool bufferPagePool) throws InterruptedException, ExecutionException, IOException {
         AioQuickClient<String> client = new AioQuickClient<>("localhost", 8888, new StringProtocol(), new MessageProcessor<String>() {
             @Override
             public void process(AioSession<String> session, String msg) {
@@ -50,12 +61,13 @@ public class StringClient {
 
             @Override
             public void stateEvent(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-                if(throwable!=null){
+                if (throwable != null) {
                     throwable.printStackTrace();
                 }
             }
         });
-        AioSession<String> session = client.start();
+        client.setBufferPagePool(bufferPagePool);
+        AioSession<String> session = client.start(asynchronousChannelGroup);
         WriteBuffer outputStream = session.writeBuffer();
 
         int i = 1;

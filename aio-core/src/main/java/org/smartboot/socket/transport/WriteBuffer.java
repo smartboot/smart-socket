@@ -94,7 +94,6 @@ public final class WriteBuffer extends OutputStream {
                     bufList.add(writeInBuf);
                     writeInBuf = null;
                     function.apply(bufList);
-
                 }
             } while (off < len);
         } finally {
