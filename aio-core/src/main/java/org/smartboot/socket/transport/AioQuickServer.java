@@ -11,7 +11,9 @@ package org.smartboot.socket.transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.StateMachineEnum;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -137,7 +139,13 @@ public class AioQuickServer<T> {
                 @Override
                 public void completed(final AsynchronousSocketChannel channel, AsynchronousServerSocketChannel serverSocketChannel) {
                     serverSocketChannel.accept(serverSocketChannel, this);
-                    createSession(channel);
+                    NetMonitor<T> monitor = config.getMonitor();
+                    if (monitor == null || monitor.acceptMonitor(channel)) {
+                        createSession(channel);
+                    } else {
+                        config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+                        closeChannel(channel);
+                    }
                 }
 
                 @Override
@@ -167,25 +175,28 @@ public class AioQuickServer<T> {
         } catch (Exception e1) {
             LOGGER.debug(e1.getMessage(), e1);
             if (session == null) {
-                try {
-                    channel.shutdownInput();
-                } catch (IOException e) {
-                    LOGGER.debug(e.getMessage(), e);
-                }
-                try {
-                    channel.shutdownOutput();
-                } catch (IOException e) {
-                    LOGGER.debug(e.getMessage(), e);
-                }
-                try {
-                    channel.close();
-                } catch (IOException e) {
-                    LOGGER.debug("close channel exception", e);
-                }
+                closeChannel(channel);
             } else {
                 session.close();
             }
+        }
+    }
 
+    private void closeChannel(AsynchronousSocketChannel channel) {
+        try {
+            channel.shutdownInput();
+        } catch (IOException e) {
+            LOGGER.debug(e.getMessage(), e);
+        }
+        try {
+            channel.shutdownOutput();
+        } catch (IOException e) {
+            LOGGER.debug(e.getMessage(), e);
+        }
+        try {
+            channel.close();
+        } catch (IOException e) {
+            LOGGER.debug("close channel exception", e);
         }
     }
 
