@@ -48,6 +48,10 @@ public final class IPBlackListPlugin<T> extends AbstractPlugin<T> {
         ipBlackList.add(rule);
     }
 
+    /**
+     * 移除黑名单规则
+     * @param rule
+     */
     public void removeRule(BlackListRule rule) {
         ipBlackList.remove(rule);
     }
