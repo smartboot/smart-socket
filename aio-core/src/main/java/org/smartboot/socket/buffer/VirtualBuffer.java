@@ -68,10 +68,18 @@ public final class VirtualBuffer {
             System.err.println("buffer has cleaned");
             throw new RuntimeException();
         }
-        buffer = null;
+//        buffer = null;
         clean = true;
         if (bufferPage != null) {
             bufferPage.clean(this);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "VirtualBuffer{" +
+                "parentPosition=" + parentPosition +
+                ", parentLimit=" + parentLimit +
+                '}';
     }
 }

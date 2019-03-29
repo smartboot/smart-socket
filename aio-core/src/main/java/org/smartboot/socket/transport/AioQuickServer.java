@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.buffer.BufferPagePool;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -139,10 +139,12 @@ public class AioQuickServer<T> {
             }
 
             serverSocketChannel.accept(serverSocketChannel, new CompletionHandler<AsynchronousSocketChannel, AsynchronousServerSocketChannel>() {
+                NetMonitor<T> monitor = config.getMonitor();
+
                 @Override
                 public void completed(final AsynchronousSocketChannel channel, AsynchronousServerSocketChannel serverSocketChannel) {
                     serverSocketChannel.accept(serverSocketChannel, this);
-                    NetMonitor<T> monitor = config.getMonitor();
+
                     if (monitor == null || monitor.acceptMonitor(channel)) {
                         createSession(channel);
                     } else {
