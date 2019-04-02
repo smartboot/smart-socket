@@ -97,7 +97,9 @@ public final class BufferPage {
         } finally {
             lock.unlock();
         }
-        LOGGER.warn("bufferPage has no available space: " + size);
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.warn("bufferPage has no available space: " + size);
+        }
         return new VirtualBuffer(null, allocate0(size, false), 0, 0);
 
     }
