@@ -342,11 +342,11 @@ public class AioSession<T> {
             messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, exception);
             throw exception;
         }
-        continueRead();
 
         if (byteBuf != null && !byteBuf.isClosed()) {
             byteBuf.flush();
         }
+        continueRead();
     }
 
 

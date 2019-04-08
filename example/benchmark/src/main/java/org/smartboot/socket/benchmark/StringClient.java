@@ -23,16 +23,16 @@ public class StringClient {
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
         System.setProperty("smart-socket.client.pageSize", (1024 * 1024 * 64) + "");
-        System.setProperty("smart-socket.session.writeChunkSize", "4096");
+        System.setProperty("smart-socket.session.writeChunkSize", "" + (1024 * 1024));
 
         BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 16, 10, true);
-        AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(4, new ThreadFactory() {
+        AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(22, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 return new Thread(r);
             }
         });
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 1; i++) {
             new Thread() {
                 @Override
                 public void run() {

@@ -79,7 +79,7 @@ public final class WriteBuffer extends OutputStream {
         try {
             do {
                 if (writeInBuf == null) {
-                    writeInBuf = bufferPage.allocate(WRITE_CHUNK_SIZE);
+                    writeInBuf = bufferPage.allocate(Math.max(WRITE_CHUNK_SIZE, len - off));
                 }
                 ByteBuffer writeBuffer = writeInBuf.buffer();
                 int minSize = Math.min(writeBuffer.remaining(), len - off);
@@ -110,7 +110,7 @@ public final class WriteBuffer extends OutputStream {
         int size = bufList.size();
         if (size > 0) {
             function.apply(bufList);
-        } else if (lock.tryLock()) {
+        } else if (writeInBuf != null && writeInBuf.buffer().position() > 0 && lock.tryLock()) {
             try {
                 if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
                     final VirtualBuffer buffer = writeInBuf;

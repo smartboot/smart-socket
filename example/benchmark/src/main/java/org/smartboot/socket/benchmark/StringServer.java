@@ -43,10 +43,10 @@ public class StringServer {
                 }
                 switch (stateMachineEnum){
                     case FLOW_CONTROL:
-//                        System.out.println("流控");
+                        System.out.println("流控");
                         break;
                     case RELEASE_FLOW_CONTROL:
-//                        System.out.println("释放流控");
+                        System.out.println("释放流控");
                         break;
                 }
             }
