@@ -24,6 +24,8 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -52,18 +54,21 @@ public class AioQuickServer<T> {
      * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
      */
     protected IoServerConfig<T> config = new IoServerConfig<>();
+    protected BufferPagePool bufferPool;
     /**
      * 读回调事件处理
      */
-    protected ReadCompletionHandler<T> aioReadCompletionHandler = new ReadCompletionHandler<>();
+    protected ReadCompletionHandler<T> aioReadCompletionHandler;
     /**
      * 写回调事件处理
      */
-    protected WriteCompletionHandler<T> aioWriteCompletionHandler = new WriteCompletionHandler<>();
-    protected BufferPagePool bufferPool;
+    protected WriteCompletionHandler<T> aioWriteCompletionHandler;
+    private boolean reactor = false;
+    private ExecutorService reactorExecutorService;
     private Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
+
 
     /**
      * 设置服务端启动必要参数配置
@@ -114,14 +119,27 @@ public class AioQuickServer<T> {
      */
     protected final void start0(Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction) throws IOException {
         try {
+            if (reactor) {
+                reactorExecutorService = Executors.newFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+                    byte index = 0;
+
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, "smart-socket:AIO-" + (++index));
+                    }
+                });
+            }
+            aioReadCompletionHandler = new ReadCompletionHandler<>(reactorExecutorService);
+            aioWriteCompletionHandler = new WriteCompletionHandler<>(reactorExecutorService);
+
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, config.getThreadNum()), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(reactor ? 2 : config.getThreadNum(), new ThreadFactory() {
                 byte index = 0;
 
                 @Override
                 public Thread newThread(Runnable r) {
-                    return new Thread(r, "smart-socket:AIO-" + (++index));
+                    return new Thread(r, (reactor ? "smart-socket:Reactor-" : "smart-socket:AIO-") + (++index));
                 }
             });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
@@ -142,9 +160,21 @@ public class AioQuickServer<T> {
                 NetMonitor<T> monitor = config.getMonitor();
 
                 @Override
-                public void completed(final AsynchronousSocketChannel channel, AsynchronousServerSocketChannel serverSocketChannel) {
+                public void completed(final AsynchronousSocketChannel channel, final AsynchronousServerSocketChannel serverSocketChannel) {
                     serverSocketChannel.accept(serverSocketChannel, this);
+                    if (reactor) {
+                        reactorExecutorService.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                completed0(channel);
+                            }
+                        });
+                    } else {
+                        completed0(channel);
+                    }
+                }
 
+                private void completed0(final AsynchronousSocketChannel channel) {
                     if (monitor == null || monitor.acceptMonitor(channel)) {
                         createSession(channel);
                     } else {
@@ -152,6 +182,7 @@ public class AioQuickServer<T> {
                         closeChannel(channel);
                     }
                 }
+
 
                 @Override
                 public void failed(Throwable exc, AsynchronousServerSocketChannel serverSocketChannel) {
@@ -277,6 +308,17 @@ public class AioQuickServer<T> {
      */
     public final <V> AioQuickServer<T> setOption(SocketOption<V> socketOption, V value) {
         config.setOption(socketOption, value);
+        return this;
+    }
+
+    /**
+     * 是否启用Reactor模式
+     *
+     * @param reactor true:reactor模式，false:proactor模式
+     * @return
+     */
+    public final AioQuickServer<T> setReactor(boolean reactor) {
+        this.reactor = reactor;
         return this;
     }
 }

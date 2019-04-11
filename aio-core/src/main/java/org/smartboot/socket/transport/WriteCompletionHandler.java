@@ -14,6 +14,7 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.ExecutorService;
 
 /**
  * 读写事件回调处理类
@@ -24,8 +25,34 @@ import java.nio.channels.CompletionHandler;
 class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteCompletionHandler.class);
 
+    private ExecutorService executorService;
+    private ThreadLocal<String> threadLocal = new ThreadLocal<>();
+
+    public WriteCompletionHandler() {
+    }
+
+    public WriteCompletionHandler(ExecutorService executorService) {
+        this.executorService = executorService;
+    }
+
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
+        if (executorService != null && threadLocal.get() == null) {
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    threadLocal.set("");
+                    completed0(result, aioSession);
+                    threadLocal.remove();
+                }
+            });
+        } else {
+            completed0(result, aioSession);
+        }
+
+    }
+
+    private void completed0(final Integer result, final AioSession<T> aioSession) {
         try {
             // 接收到的消息进行预处理
             NetMonitor<T> monitor = aioSession.getServerConfig().getMonitor();
