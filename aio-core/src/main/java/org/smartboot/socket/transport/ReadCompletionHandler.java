@@ -57,7 +57,6 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             if (monitor != null) {
                 monitor.readMonitor(aioSession, result);
             }
-            aioSession.readSemaphore.release();
             aioSession.readFromChannel(result == -1);
         } catch (Exception e) {
             failed(e, aioSession);

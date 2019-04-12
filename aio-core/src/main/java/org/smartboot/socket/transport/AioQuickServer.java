@@ -81,7 +81,6 @@ public class AioQuickServer<T> {
         config.setPort(port);
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
-        config.setFlowControlEnabled(true);
     }
 
     /**

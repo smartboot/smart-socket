@@ -36,16 +36,21 @@ final class IoServerConfig<T> {
     /**
      * 释放流控阈值
      */
-    private final int releaseFlowControlSize = getIntProperty(Property.SERVER_RELEASE_FLOW_CONTROL_SIZE, 10);
+//    private final int releaseFlowControlSize = getIntProperty(Property.SERVER_RELEASE_FLOW_CONTROL_SIZE, 10);
 
     /**
      * 流控阈值
      */
-    private final int flowControlSize = getIntProperty(Property.SERVER_FLOW_CONTROL_SIZE, 20);
+//    private final int flowControlSize = getIntProperty(Property.SERVER_FLOW_CONTROL_SIZE, 20);
     /**
      * 消息体缓存大小,字节
      */
     private int readBufferSize = 512;
+
+    /**
+     * Write缓存区容量
+     */
+    private int writeQueueCapacity = 512;
     /**
      * 远程服务器IP
      */
@@ -74,10 +79,7 @@ final class IoServerConfig<T> {
      * 是否启用控制台banner
      */
     private boolean bannerEnabled = true;
-    /**
-     * 流控功能开关
-     */
-    private boolean flowControlEnabled = false;
+
     /**
      * Socket 配置
      */
@@ -174,20 +176,12 @@ final class IoServerConfig<T> {
         socketOptions.put(socketOption, f);
     }
 
-    public boolean isFlowControlEnabled() {
-        return flowControlEnabled;
+    public int getWriteQueueCapacity() {
+        return writeQueueCapacity;
     }
 
-    public void setFlowControlEnabled(boolean flowControlEnabled) {
-        this.flowControlEnabled = flowControlEnabled;
-    }
-
-    public int getReleaseFlowControlSize() {
-        return releaseFlowControlSize;
-    }
-
-    public int getFlowControlSize() {
-        return flowControlSize;
+    public void setWriteQueueCapacity(int writeQueueCapacity) {
+        this.writeQueueCapacity = writeQueueCapacity;
     }
 
     @Override
@@ -216,7 +210,7 @@ final class IoServerConfig<T> {
         String CLIENT_PAGE_SIZE = PROJECT_NAME + ".client.pageSize";
         String SERVER_PAGE_IS_DIRECT = PROJECT_NAME + ".server.page.isDirect";
         String CLIENT_PAGE_IS_DIRECT = PROJECT_NAME + ".client.page.isDirect";
-        String SERVER_FLOW_CONTROL_SIZE = PROJECT_NAME + ".server.flowControlSize";
-        String SERVER_RELEASE_FLOW_CONTROL_SIZE = PROJECT_NAME + ".server.releaseFlowControlSize";
+//        String SERVER_FLOW_CONTROL_SIZE = PROJECT_NAME + ".server.flowControlSize";
+//        String SERVER_RELEASE_FLOW_CONTROL_SIZE = PROJECT_NAME + ".server.releaseFlowControlSize";
     }
 }

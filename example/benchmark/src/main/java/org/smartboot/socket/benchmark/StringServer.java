@@ -41,14 +41,6 @@ public class StringServer {
                 if (throwable != null) {
                     throwable.printStackTrace();
                 }
-                switch (stateMachineEnum){
-                    case FLOW_CONTROL:
-                        System.out.println("流控");
-                        break;
-                    case RELEASE_FLOW_CONTROL:
-                        System.out.println("释放流控");
-                        break;
-                }
             }
         };
         processor.addPlugin(new MonitorPlugin());

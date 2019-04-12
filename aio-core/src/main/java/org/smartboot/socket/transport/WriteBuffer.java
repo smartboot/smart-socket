@@ -25,7 +25,7 @@ public final class WriteBuffer extends OutputStream {
      * 输出缓存块大小
      */
     private static final int WRITE_CHUNK_SIZE = IoServerConfig.getIntProperty(IoServerConfig.Property.SESSION_WRITE_CHUNK_SIZE, 4096);
-    BlockingQueue<VirtualBuffer> bufList = new LinkedBlockingQueue<>();
+    LinkedBlockingQueue<VirtualBuffer> bufList;
     private VirtualBuffer writeInBuf;
     private BufferPage bufferPage;
     private boolean closed = false;
@@ -33,9 +33,10 @@ public final class WriteBuffer extends OutputStream {
     private byte[] cacheByte = new byte[8];
     private ReentrantLock lock = new ReentrantLock();
 
-    WriteBuffer(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction) {
+    WriteBuffer(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction, int writeQueueSize) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
+        bufList = new LinkedBlockingQueue<>(writeQueueSize);
     }
 
     @Override
@@ -91,7 +92,11 @@ public final class WriteBuffer extends OutputStream {
                 off += minSize;
                 if (!writeBuffer.hasRemaining()) {
                     writeBuffer.flip();
-                    bufList.add(writeInBuf);
+                    try {
+                        bufList.put(writeInBuf);
+                    } catch (InterruptedException e) {
+                        throw new IOException(e);
+                    }
                     writeInBuf = null;
                     function.apply(bufList);
                 }

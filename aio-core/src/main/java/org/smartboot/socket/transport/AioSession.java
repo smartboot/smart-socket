@@ -88,7 +88,6 @@ public class AioSession<T> {
      * @see AioSession#SESSION_STATUS_ENABLED
      */
     protected byte status = SESSION_STATUS_ENABLED;
-    Semaphore readSemaphore = new Semaphore(1);
     /**
      * 输出信号量,防止并发write导致异常
      */
@@ -97,10 +96,7 @@ public class AioSession<T> {
      * 附件对象
      */
     private Object attachment;
-    /**
-     * 是否流控,客户端写流控，服务端读流控
-     */
-    private boolean flowControl;
+
     private ReadCompletionHandler<T> readCompletionHandler;
     private WriteCompletionHandler<T> writeCompletionHandler;
     private IoServerConfig<T> ioServerConfig;
@@ -124,10 +120,6 @@ public class AioSession<T> {
         byteBuf = new WriteBuffer(bufferPage, new Function<BlockingQueue<VirtualBuffer>, Void>() {
             @Override
             public Void apply(BlockingQueue<VirtualBuffer> var) {
-                if (ioServerConfig.isFlowControlEnabled() && var.size() >= ioServerConfig.getFlowControlSize()) {
-                    flowControl = true;
-                    ioServerConfig.getProcessor().stateEvent(AioSession.this, StateMachineEnum.FLOW_CONTROL, null);
-                }
                 if (!semaphore.tryAcquire()) {
                     return null;
                 }
@@ -139,7 +131,7 @@ public class AioSession<T> {
                 }
                 return null;
             }
-        });
+        }, ioServerConfig.getWriteQueueCapacity());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
@@ -148,7 +140,6 @@ public class AioSession<T> {
      * 初始化AioSession
      */
     void initSession() {
-        readSemaphore.tryAcquire();
         continueRead();
     }
 
@@ -165,13 +156,6 @@ public class AioSession<T> {
         }
 
         if (writeBuffer != null) {
-            //如果存在流控并符合释放条件，则触发读操作
-            //一定要放在continueWrite之前
-            if (flowControl && byteBuf.bufList.size() < ioServerConfig.getReleaseFlowControlSize()) {
-                ioServerConfig.getProcessor().stateEvent(AioSession.this, StateMachineEnum.RELEASE_FLOW_CONTROL, null);
-                flowControl = false;
-                readFromChannel(false);
-            }
             continueWrite(writeBuffer);
             return;
         }
@@ -288,10 +272,6 @@ public class AioSession<T> {
      * 触发通道的读回调操作
      */
     void readFromChannel(boolean eof) {
-        //处于流控状态
-        if (flowControl || !readSemaphore.tryAcquire()) {
-            return;
-        }
         final ByteBuffer readBuffer = this.readBuffer.buffer();
         readBuffer.flip();
         final MessageProcessor<T> messageProcessor = ioServerConfig.getProcessor();

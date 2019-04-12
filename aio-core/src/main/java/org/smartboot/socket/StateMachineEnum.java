@@ -74,14 +74,6 @@ public enum StateMachineEnum {
      * <p>AioSession关闭成功</p>
      */
     SESSION_CLOSED,
-    /**
-     * 释放流控
-     */
-    RELEASE_FLOW_CONTROL,
-    /**
-     * 流控
-     */
-    FLOW_CONTROL,
 
     /**
      * 拒绝接受连接,仅Server端有效
