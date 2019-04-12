@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutorService;
 class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
     private ExecutorService executorService;
-    private ThreadLocal<String> threadLocal = new ThreadLocal<>();
+    private ThreadLocal<Object> threadLocal = new ThreadLocal<>();
 
     public ReadCompletionHandler() {
     }
@@ -40,7 +40,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
-                    threadLocal.set("1");
+                    threadLocal.set(this);
                     completed0(result, aioSession);
                     threadLocal.remove();
                 }
@@ -73,7 +73,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             LOGGER.debug(e.getMessage(), e);
         }
         try {
-            aioSession.close(false);
+            aioSession.close();
         } catch (Exception e) {
             LOGGER.debug(e.getMessage(), e);
         }

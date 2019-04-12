@@ -64,7 +64,7 @@ public class AioQuickServer<T> {
      */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler;
     private boolean reactor = false;
-    private ExecutorService reactorExecutorService;
+    private ExecutorService readExecutorService;
     private Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
@@ -120,26 +120,26 @@ public class AioQuickServer<T> {
     protected final void start0(Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction) throws IOException {
         try {
             if (reactor) {
-                reactorExecutorService = Executors.newFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+                readExecutorService = Executors.newFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
                     byte index = 0;
 
                     @Override
                     public Thread newThread(Runnable r) {
-                        return new Thread(r, "smart-socket:AIO-" + (++index));
+                        return new Thread(r, "smart-socket:Reactor-" + (++index));
                     }
                 });
             }
-            aioReadCompletionHandler = new ReadCompletionHandler<>(reactorExecutorService);
-            aioWriteCompletionHandler = new WriteCompletionHandler<>(reactorExecutorService);
+            aioReadCompletionHandler = new ReadCompletionHandler<>(readExecutorService);
+            aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, config.getThreadNum()), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(reactor ? 2 : config.getThreadNum(), new ThreadFactory() {
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(reactor ? Runtime.getRuntime().availableProcessors() : config.getThreadNum(), new ThreadFactory() {
                 byte index = 0;
 
                 @Override
                 public Thread newThread(Runnable r) {
-                    return new Thread(r, (reactor ? "smart-socket:Reactor-" : "smart-socket:AIO-") + (++index));
+                    return new Thread(r, "smart-socket:AIO-" + (++index));
                 }
             });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
@@ -163,7 +163,7 @@ public class AioQuickServer<T> {
                 public void completed(final AsynchronousSocketChannel channel, final AsynchronousServerSocketChannel serverSocketChannel) {
                     serverSocketChannel.accept(serverSocketChannel, this);
                     if (reactor) {
-                        reactorExecutorService.execute(new Runnable() {
+                        readExecutorService.execute(new Runnable() {
                             @Override
                             public void run() {
                                 completed0(channel);
