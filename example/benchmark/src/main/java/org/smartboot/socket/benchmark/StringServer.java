@@ -46,7 +46,7 @@ public class StringServer {
         processor.addPlugin(new MonitorPlugin());
 
         AioQuickServer<String> server = new AioQuickServer<>(8888, new StringProtocol(), processor);
-
+        server.setReactor(true);
         server.start();
     }
 }
