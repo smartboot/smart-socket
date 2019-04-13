@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
@@ -117,9 +116,9 @@ public class AioSession<T> {
         this.ioServerConfig = config;
 
         this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
-        byteBuf = new WriteBuffer(bufferPage, new Function<BlockingQueue<VirtualBuffer>, Void>() {
+        byteBuf = new WriteBuffer(bufferPage, new Function<WriteBuffer, Void>() {
             @Override
-            public Void apply(BlockingQueue<VirtualBuffer> var) {
+            public Void apply(WriteBuffer var) {
                 if (!semaphore.tryAcquire()) {
                     return null;
                 }
@@ -149,10 +148,10 @@ public class AioSession<T> {
      */
     void writeToChannel() {
         if (writeBuffer == null) {
-            writeBuffer = byteBuf.bufList.poll();
+            writeBuffer = byteBuf.poll();
         } else if (!writeBuffer.buffer().hasRemaining()) {
             writeBuffer.clean();
-            writeBuffer = byteBuf.bufList.poll();
+            writeBuffer = byteBuf.poll();
         }
 
         if (writeBuffer != null) {
@@ -183,7 +182,6 @@ public class AioSession<T> {
      * 内部方法：触发通道的写操作
      */
     protected final void writeToChannel0(ByteBuffer buffer) {
-        byteBuf.signal();
         channel.write(buffer, 0L, TimeUnit.MILLISECONDS, this, writeCompletionHandler);
     }
 

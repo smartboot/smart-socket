@@ -8,8 +8,6 @@ import org.smartboot.socket.buffer.VirtualBuffer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,19 +24,28 @@ public final class WriteBuffer extends OutputStream {
      * 输出缓存块大小
      */
     private static final int WRITE_CHUNK_SIZE = IoServerConfig.getIntProperty(IoServerConfig.Property.SESSION_WRITE_CHUNK_SIZE, 4096);
-    LinkedBlockingQueue<VirtualBuffer> bufList;
+    ////
+    private final VirtualBuffer[] items;
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition notEmpty = lock.newCondition();
+    private final Condition notFull = lock.newCondition();
+    int takeIndex;
+
+    int putIndex;
+
+    int count;
+    ////
+
     private VirtualBuffer writeInBuf;
     private BufferPage bufferPage;
     private boolean closed = false;
-    private Function<? super BlockingQueue<VirtualBuffer>, Void> function;
+    private Function<WriteBuffer, Void> function;
     private byte[] cacheByte = new byte[8];
-    private ReentrantLock lock = new ReentrantLock();
-    private final Condition notFull = lock.newCondition();
 
-    WriteBuffer(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction, int writeQueueSize) {
+    WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int writeQueueSize) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
-        bufList = new LinkedBlockingQueue<>(writeQueueSize);
+        this.items = new VirtualBuffer[writeQueueSize];
     }
 
     @Override
@@ -51,9 +58,14 @@ public final class WriteBuffer extends OutputStream {
             return;
         }
         writeInBuf.buffer().flip();
-        bufList.add(writeInBuf);
+        lock.lock();
+        try {
+            this.put(writeInBuf);
+        } finally {
+            lock.unlock();
+        }
         writeInBuf = null;
-        function.apply(bufList);
+        function.apply(this);
     }
 
     public void writeInt(int v) throws IOException {
@@ -94,29 +106,11 @@ public final class WriteBuffer extends OutputStream {
                 off += minSize;
                 if (!writeBuffer.hasRemaining()) {
                     writeBuffer.flip();
-                    while (!bufList.offer(writeInBuf)) {
-                        try {
-                            notFull.await();
-                        } catch (Exception e) {
-                            System.out.println("hahahaha");
-                            throw new IOException(e);
-                        }
-                    }
+                    this.put(writeInBuf);
                     writeInBuf = null;
-                    function.apply(bufList);
-
-
+                    function.apply(this);
                 }
             } while (off < len);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    void signal() {
-        lock.lock();
-        try {
-            notFull.signal();
         } finally {
             lock.unlock();
         }
@@ -127,23 +121,23 @@ public final class WriteBuffer extends OutputStream {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
-        int size = bufList.size();
+        int size = this.count;
         if (size > 0) {
-            function.apply(bufList);
+            function.apply(this);
         } else if (writeInBuf != null && writeInBuf.buffer().position() > 0 && lock.tryLock()) {
             try {
                 if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
                     final VirtualBuffer buffer = writeInBuf;
                     writeInBuf = null;
                     buffer.buffer().flip();
-                    bufList.add(buffer);
+                    this.put(buffer);
                     size++;
                 }
             } finally {
                 lock.unlock();
             }
             if (size > 0) {
-                function.apply(bufList);
+                function.apply(this);
             }
         }
 
@@ -160,12 +154,9 @@ public final class WriteBuffer extends OutputStream {
 
             closed = true;
 
-            if (bufList != null) {
-                VirtualBuffer byteBuf = null;
-                while ((byteBuf = bufList.poll()) != null) {
-                    signal();
-                    byteBuf.clean();
-                }
+            VirtualBuffer byteBuf = null;
+            while ((byteBuf = poll()) != null) {
+                byteBuf.clean();
             }
             if (writeInBuf != null) {
                 writeInBuf.clean();
@@ -180,7 +171,45 @@ public final class WriteBuffer extends OutputStream {
     }
 
     boolean hasData() {
-        return bufList.size() > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0);
+        return count > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0);
+    }
+
+
+    private VirtualBuffer dequeue() {
+        VirtualBuffer x = items[takeIndex];
+        items[takeIndex] = null;
+        if (++takeIndex == items.length) {
+            takeIndex = 0;
+        }
+        count--;
+        notFull.signal();
+        return x;
+    }
+
+
+    private void put(VirtualBuffer e) {
+        try {
+            while (count == items.length) {
+                notFull.await();
+            }
+            items[putIndex] = e;
+            if (++putIndex == items.length) {
+                putIndex = 0;
+            }
+            count++;
+            notEmpty.signal();
+        } catch (InterruptedException e1) {
+            throw new RuntimeException(e1);
+        }
+    }
+
+    VirtualBuffer poll() {
+        lock.lock();
+        try {
+            return (count == 0) ? null : dequeue();
+        } finally {
+            lock.unlock();
+        }
     }
 
 }
