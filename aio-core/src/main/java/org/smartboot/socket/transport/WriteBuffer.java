@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -32,6 +33,7 @@ public final class WriteBuffer extends OutputStream {
     private Function<? super BlockingQueue<VirtualBuffer>, Void> function;
     private byte[] cacheByte = new byte[8];
     private ReentrantLock lock = new ReentrantLock();
+    private final Condition notFull = lock.newCondition();
 
     WriteBuffer(BufferPage bufferPage, Function<? super BlockingQueue<VirtualBuffer>, Void> flushFunction, int writeQueueSize) {
         this.bufferPage = bufferPage;
@@ -92,15 +94,11 @@ public final class WriteBuffer extends OutputStream {
                 off += minSize;
                 if (!writeBuffer.hasRemaining()) {
                     writeBuffer.flip();
-                    if (!bufList.offer(writeInBuf)) {
-                        function.apply(bufList);
+                    while (!bufList.offer(writeInBuf)) {
                         try {
-                            VirtualBuffer putBuffer = writeInBuf;
-                            writeInBuf = null;
-                            lock.unlock();
-                            bufList.put(putBuffer);
-                            lock.lock();
-                        } catch (InterruptedException e) {
+                            notFull.await();
+                        } catch (Exception e) {
+                            System.out.println("hahahaha");
                             throw new IOException(e);
                         }
                     }
@@ -115,6 +113,14 @@ public final class WriteBuffer extends OutputStream {
         }
     }
 
+    void signal() {
+        lock.lock();
+        try {
+            notFull.signal();
+        } finally {
+            lock.unlock();
+        }
+    }
 
     @Override
     public void flush() {
@@ -151,17 +157,18 @@ public final class WriteBuffer extends OutputStream {
                 throw new IOException("OutputStream has closed");
             }
             flush();
+
             closed = true;
 
             if (bufList != null) {
                 VirtualBuffer byteBuf = null;
                 while ((byteBuf = bufList.poll()) != null) {
+                    signal();
                     byteBuf.clean();
                 }
             }
             if (writeInBuf != null) {
                 writeInBuf.clean();
-                LOGGER.info("clean" + writeInBuf);
             }
         } finally {
             lock.unlock();

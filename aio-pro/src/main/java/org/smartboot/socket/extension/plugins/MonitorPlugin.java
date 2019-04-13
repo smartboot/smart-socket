@@ -7,6 +7,7 @@ import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.QuickTimerTask;
 
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -17,10 +18,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> {
+public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
     private static final Logger logger = LoggerFactory.getLogger(MonitorPlugin.class);
-
-    private static final int SECOND = 5;
+    /**
+     * 任务执行频率
+     */
+    private int seconds = 0;
     /**
      * 当前周期内消息 流量监控
      */
@@ -61,15 +64,16 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
 
     private AtomicInteger totalConnect = new AtomicInteger(0);
 
-    @Override
-    protected long getDelay() {
-        return getPeriod();
+    public MonitorPlugin() {
+        this(60);
     }
 
-    @Override
-    protected long getPeriod() {
-        return TimeUnit.MINUTES.toMillis(1);
+    public MonitorPlugin(int seconds) {
+        this.seconds = seconds;
+        long mills = TimeUnit.SECONDS.toMillis(seconds);
+        QuickTimerTask.getTimer().schedule(this, mills, mills);
     }
+
 
     @Override
     public boolean preProcess(AioSession<T> session, T t) {
@@ -101,7 +105,7 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
         long curProcessMsgNum = processMsgNum.getAndSet(0);
         int connectCount = newConnect.getAndSet(0);
         int disConnectCount = disConnect.getAndSet(0);
-        logger.info("\r\n-----这一分钟发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
+        logger.info("\r\n-----这" + seconds + "秒发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n处理失败消息数:\t" + curDiscardNum
                 + "\r\n已处理消息量:\t" + curProcessMsgNum
@@ -109,7 +113,9 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
                 + "\r\n新建连接数:\t" + connectCount
                 + "\r\n断开连接数:\t" + disConnectCount
                 + "\r\n在线连接数:\t" + onlineCount.addAndGet(connectCount - disConnectCount)
-                + "\r\n总连接次数:\t" + totalConnect.addAndGet(connectCount));
+                + "\r\n总连接次数:\t" + totalConnect.addAndGet(connectCount)
+                + "\r\nRequests/sec:\t" + curProcessMsgNum * 1.0 / seconds
+                + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "MB");
     }
 
     @Override

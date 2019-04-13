@@ -33,6 +33,10 @@ public abstract class QuickTimerTask extends TimerTask {
         timer.cancel();
     }
 
+    public static Timer getTimer() {
+        return timer;
+    }
+
     /**
      * 获取定时任务的延迟启动时间
      */

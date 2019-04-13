@@ -183,6 +183,7 @@ public class AioSession<T> {
      * 内部方法：触发通道的写操作
      */
     protected final void writeToChannel0(ByteBuffer buffer) {
+        byteBuf.signal();
         channel.write(buffer, 0L, TimeUnit.MILLISECONDS, this, writeCompletionHandler);
     }
 
@@ -205,7 +206,6 @@ public class AioSession<T> {
      */
     public synchronized void close(boolean immediate) {
         //status == SESSION_STATUS_CLOSED说明close方法被重复调用
-//        new Throwable().printStackTrace();
         if (status == SESSION_STATUS_CLOSED) {
             logger.warn("ignore, session:{} is closed:", getSessionID());
             return;
@@ -223,7 +223,6 @@ public class AioSession<T> {
             readBuffer.clean();
             readBuffer = null;
             if (writeBuffer != null) {
-//                logger.info("AioSession:{} 回收writeInBuf:{}", this.hashCode(), writeBuffer.hashCode() + "" + writeBuffer);
                 writeBuffer.clean();
                 writeBuffer = null;
             }

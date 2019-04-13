@@ -32,21 +32,20 @@ public class StringServer {
                     outputStream.writeInt(bytes.length);
                     outputStream.write(bytes);
                 } catch (IOException e) {
-                    e.printStackTrace();
+//                    e.printStackTrace();
                 }
             }
 
             @Override
             public void stateEvent0(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 if (throwable != null) {
-                    LOGGER.error(stateMachineEnum + " exception:", throwable);
+//                    LOGGER.error(stateMachineEnum + " exception:", throwable);
                 }
             }
         };
-        processor.addPlugin(new MonitorPlugin());
+        processor.addPlugin(new MonitorPlugin(5));
 
         AioQuickServer<String> server = new AioQuickServer<>(8888, new StringProtocol(), processor);
-        server.setReactor(true);
         server.setReadBufferSize(1024 * 1024);
         server.start();
     }

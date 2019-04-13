@@ -39,8 +39,8 @@ public final class BufferPage {
 //        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(new Runnable() {
 //            @Override
 //            public void run() {
-//                System.out.println(freeList);
-//                System.out.println(cleanList);
+//                System.out.println("freeList:" + freeList);
+//                System.out.println("cleanList:" + cleanList);
 //            }
 //        }, 10, 10, TimeUnit.SECONDS);
     }
@@ -98,7 +98,7 @@ public final class BufferPage {
             lock.unlock();
         }
 //        if(LOGGER.isDebugEnabled()) {
-            LOGGER.warn("bufferPage has no available space: " + size);
+        LOGGER.warn("bufferPage has no available space: " + size);
 //        }
         return new VirtualBuffer(null, allocate0(size, false), 0, 0);
 
