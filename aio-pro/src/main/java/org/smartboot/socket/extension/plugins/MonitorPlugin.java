@@ -68,7 +68,7 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
 
     @Override
     protected long getPeriod() {
-        return TimeUnit.SECONDS.toMillis(SECOND);
+        return TimeUnit.MINUTES.toMillis(1);
     }
 
     @Override
@@ -101,8 +101,8 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
         long curProcessMsgNum = processMsgNum.getAndSet(0);
         int connectCount = newConnect.getAndSet(0);
         int disConnectCount = disConnect.getAndSet(0);
-        logger.info("\r\n-----这一分钟发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) / SECOND + "(MB/s)"
-                + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) / SECOND + "(MB/s)"
+        logger.info("\r\n-----这一分钟发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
+                + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n处理失败消息数:\t" + curDiscardNum
                 + "\r\n已处理消息量:\t" + curProcessMsgNum
                 + "\r\n已处理消息总量:\t" + totleProcessMsgNum.get()
