@@ -214,4 +214,15 @@ public class AioQuickClient<T> {
         this.bufferPool = bufferPool;
         return this;
     }
+
+    /**
+     * 设置write缓冲区容量
+     *
+     * @param writeQueueCapacity
+     * @return
+     */
+    public final AioQuickClient<T> setWriteQueueCapacity(int writeQueueCapacity) {
+        config.setWriteQueueCapacity(writeQueueCapacity);
+        return this;
+    }
 }

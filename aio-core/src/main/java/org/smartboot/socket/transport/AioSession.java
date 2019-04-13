@@ -272,10 +272,13 @@ public class AioSession<T> {
      * 触发通道的读回调操作
      */
     void readFromChannel(boolean eof) {
+        if (status == SESSION_STATUS_CLOSED) {
+            return;
+        }
         final ByteBuffer readBuffer = this.readBuffer.buffer();
         readBuffer.flip();
         final MessageProcessor<T> messageProcessor = ioServerConfig.getProcessor();
-        while (readBuffer.hasRemaining()) {
+        while (readBuffer.hasRemaining() && status == SESSION_STATUS_ENABLED) {
             T dataEntry = null;
             try {
                 dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this);

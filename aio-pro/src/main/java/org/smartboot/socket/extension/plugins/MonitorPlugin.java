@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> {
     private static final Logger logger = LoggerFactory.getLogger(MonitorPlugin.class);
+
+    private static final int SECOND = 5;
     /**
      * 当前周期内消息 流量监控
      */
@@ -66,7 +68,7 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
 
     @Override
     protected long getPeriod() {
-        return TimeUnit.MINUTES.toMillis(1);
+        return TimeUnit.SECONDS.toMillis(SECOND);
     }
 
     @Override
@@ -99,8 +101,8 @@ public final class MonitorPlugin<T> extends QuickTimerTask implements Plugin<T> 
         long curProcessMsgNum = processMsgNum.getAndSet(0);
         int connectCount = newConnect.getAndSet(0);
         int disConnectCount = disConnect.getAndSet(0);
-        logger.info("\r\n-----这一分钟发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
-                + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
+        logger.info("\r\n-----这一分钟发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) / SECOND + "(MB/s)"
+                + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) / SECOND + "(MB/s)"
                 + "\r\n处理失败消息数:\t" + curDiscardNum
                 + "\r\n已处理消息量:\t" + curProcessMsgNum
                 + "\r\n已处理消息总量:\t" + totleProcessMsgNum.get()

@@ -320,4 +320,15 @@ public class AioQuickServer<T> {
         this.reactor = reactor;
         return this;
     }
+
+    /**
+     * 设置write缓冲区容量
+     *
+     * @param writeQueueCapacity
+     * @return
+     */
+    public final AioQuickServer<T> setWriteQueueCapacity(int writeQueueCapacity) {
+        config.setWriteQueueCapacity(writeQueueCapacity);
+        return this;
+    }
 }

@@ -20,7 +20,7 @@ public class StringServer {
 
     public static void main(String[] args) throws IOException {
         System.setProperty("smart-socket.server.pageSize", (1024 * 1024 * 16) + "");
-        System.setProperty("smart-socket.session.writeChunkSize", "2048");
+        System.setProperty("smart-socket.session.writeChunkSize", "4096");
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
             public void process0(AioSession<String> session, String msg) {
@@ -39,7 +39,7 @@ public class StringServer {
             @Override
             public void stateEvent0(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 if (throwable != null) {
-                    throwable.printStackTrace();
+                    LOGGER.error(stateMachineEnum + " exception:", throwable);
                 }
             }
         };
@@ -47,6 +47,7 @@ public class StringServer {
 
         AioQuickServer<String> server = new AioQuickServer<>(8888, new StringProtocol(), processor);
         server.setReactor(true);
+        server.setReadBufferSize(1024 * 1024);
         server.start();
     }
 }

@@ -22,14 +22,14 @@ public class StringClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(StringClient.class);
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
-        System.setProperty("smart-socket.client.pageSize", (1024 * 1024 * 64) + "");
-        System.setProperty("smart-socket.session.writeChunkSize", "" + (4 * 1024));
+//        System.setProperty("smart-socket.client.pageSize", (1024 * 1024 * 64) + "");
+        System.setProperty("smart-socket.session.writeChunkSize", "" + (1024 * 1024));
 
-        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 16, 10, true);
-        AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(22, new ThreadFactory() {
+        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 32, 10, true);
+        AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r);
+                return new Thread(r,"ClientGroup");
             }
         });
         for (int i = 0; i < 10; i++) {
@@ -67,19 +67,19 @@ public class StringClient {
             }
         });
         client.setBufferPagePool(bufferPagePool);
+        client.setWriteQueueCapacity(16);
         AioSession<String> session = client.start(asynchronousChannelGroup);
         WriteBuffer outputStream = session.writeBuffer();
 
-        int i = 1;
+        byte[] data = "smart-socket".getBytes();
         while (true) {
             int num = (int) (Math.random() * 10) + 1;
-            StringBuilder sb = new StringBuilder();
+            outputStream.writeInt(data.length * num);
             while (num-- > 0) {
-                sb.append("smart-socket");
+                outputStream.write(data);
             }
-            byte[] bytes = sb.toString().getBytes();
-            outputStream.writeInt(bytes.length);
-            outputStream.write(bytes);
+
+//            Thread.sleep(100);
         }
     }
 }

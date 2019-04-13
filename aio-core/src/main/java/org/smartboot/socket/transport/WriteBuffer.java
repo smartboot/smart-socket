@@ -92,13 +92,22 @@ public final class WriteBuffer extends OutputStream {
                 off += minSize;
                 if (!writeBuffer.hasRemaining()) {
                     writeBuffer.flip();
-                    try {
-                        bufList.put(writeInBuf);
-                    } catch (InterruptedException e) {
-                        throw new IOException(e);
+                    if (!bufList.offer(writeInBuf)) {
+                        function.apply(bufList);
+                        try {
+                            VirtualBuffer putBuffer = writeInBuf;
+                            writeInBuf = null;
+                            lock.unlock();
+                            bufList.put(putBuffer);
+                            lock.lock();
+                        } catch (InterruptedException e) {
+                            throw new IOException(e);
+                        }
                     }
                     writeInBuf = null;
                     function.apply(bufList);
+
+
                 }
             } while (off < len);
         } finally {
