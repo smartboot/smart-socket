@@ -13,7 +13,7 @@ public final class VirtualBuffer {
     /**
      * 当前虚拟buffer的归属内存页
      */
-    final BufferPage bufferPage;
+    private final BufferPage bufferPage;
     /**
      * 通过ByteBuffer.slice()隐射出来的虚拟ByteBuffer
      *
