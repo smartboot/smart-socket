@@ -15,8 +15,4 @@ public class NullProtocol implements Protocol<Void> {
         return null;
     }
 
-    @Override
-    public ByteBuffer encode(Void msg, AioSession<Void> session) {
-        return null;
-    }
 }
