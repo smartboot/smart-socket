@@ -48,7 +48,7 @@ public class StringServer {
 
         AioQuickServer<String> server = new AioQuickServer<>(8888, new StringProtocol(), processor);
         server.setReadBufferSize(1024 * 1024);
-        processor.addPlugin(new BufferPageMonitorPlugin(server, 12));
+//        processor.addPlugin(new BufferPageMonitorPlugin(server, 12));
         processor.addPlugin(new MonitorPlugin(5));
         server.start();
 

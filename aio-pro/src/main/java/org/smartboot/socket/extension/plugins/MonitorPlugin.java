@@ -115,7 +115,7 @@ public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
                 + "\r\n在线连接数:\t" + onlineCount.addAndGet(connectCount - disConnectCount)
                 + "\r\n总连接次数:\t" + totalConnect.addAndGet(connectCount)
                 + "\r\nRequests/sec:\t" + curProcessMsgNum * 1.0 / seconds
-                + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "MB");
+                + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "(MB)");
     }
 
     @Override
