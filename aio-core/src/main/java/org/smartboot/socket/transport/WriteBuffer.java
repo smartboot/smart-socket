@@ -24,19 +24,39 @@ public final class WriteBuffer extends OutputStream {
      * 输出缓存块大小
      */
     private static final int WRITE_CHUNK_SIZE = IoServerConfig.getIntProperty(IoServerConfig.Property.SESSION_WRITE_CHUNK_SIZE, 4096);
-    ////
+    /**
+     * 存储已就绪待输出的数据
+     */
     private final VirtualBuffer[] items;
+    /**
+     * 同步锁
+     */
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition notEmpty = lock.newCondition();
     private final Condition notFull = lock.newCondition();
-    int takeIndex;
 
-    int putIndex;
+    /**
+     * items 读索引位
+     */
+    private int takeIndex;
 
-    int count;
-    ////
+    /**
+     * items 写索引位
+     */
+    private int putIndex;
 
+    /**
+     * items 中存放的缓冲数据数量
+     */
+    private int count;
+
+    /**
+     * 暂存当前业务正在输出的数据,输出完毕后会存放到items中
+     */
     private VirtualBuffer writeInBuf;
+    /**
+     * 为当前 WriteBuffer 提供数据存放功能的缓存页
+     */
     private BufferPage bufferPage;
     private boolean closed = false;
     private Function<WriteBuffer, Void> function;
@@ -154,7 +174,7 @@ public final class WriteBuffer extends OutputStream {
 
             closed = true;
 
-            VirtualBuffer byteBuf = null;
+            VirtualBuffer byteBuf;
             while ((byteBuf = poll()) != null) {
                 byteBuf.clean();
             }
@@ -203,6 +223,11 @@ public final class WriteBuffer extends OutputStream {
         }
     }
 
+    /**
+     * 获取并移除当前缓冲队列中头部的VirtualBuffer
+     *
+     * @return 待输出的VirtualBuffer
+     */
     VirtualBuffer poll() {
         lock.lock();
         try {
