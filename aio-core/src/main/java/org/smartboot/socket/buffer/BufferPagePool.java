@@ -36,5 +36,4 @@ public class BufferPagePool {
         BufferPage page = bufferPageList[cursor];
         return page;
     }
-
 }

@@ -3,7 +3,7 @@ package org.smartboot.socket.benchmark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.extension.plugins.MonitorPlugin;
+import org.smartboot.socket.extension.plugins.BufferPageMonitorPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;
@@ -43,10 +43,13 @@ public class StringServer {
                 }
             }
         };
-        processor.addPlugin(new MonitorPlugin(5));
+
 
         AioQuickServer<String> server = new AioQuickServer<>(8888, new StringProtocol(), processor);
         server.setReadBufferSize(1024 * 1024);
+        processor.addPlugin(new BufferPageMonitorPlugin(server, 5));
+//        processor.addPlugin(new MonitorPlugin(5));
         server.start();
+
     }
 }
