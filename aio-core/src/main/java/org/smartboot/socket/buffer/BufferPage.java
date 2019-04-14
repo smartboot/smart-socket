@@ -114,7 +114,6 @@ public final class BufferPage {
             clean0(cleanBuffer);
             while ((cleanBuffer = cleanBuffers.poll()) != null) {
                 clean0(cleanBuffer);
-//                System.out.println("hahah");
             }
         } finally {
             lock.unlock();
