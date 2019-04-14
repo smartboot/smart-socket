@@ -39,25 +39,16 @@ public final class BufferPage {
      */
     BufferPage(int size, boolean direct) {
         availableBuffers = new LinkedList<>();
-        if (size > 0) {
-            this.buffer = allocate0(size, direct);
-            availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
-        }
-//        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(new Runnable() {
-//            @Override
-//            public void run() {
-//                System.out.println("free1List:" + free1List);
-//                System.out.println("clea1nList:" + clea1nList);
-//            }
-//        }, 10, 10, TimeUnit.SECONDS);
+        this.buffer = allocate0(size, direct);
+        availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
     }
 
     /**
      * 申请物理内存页空间
      *
-     * @param size
-     * @param direct
-     * @return
+     * @param size   物理空间大小
+     * @param direct true:堆外缓冲区,false:堆内缓冲区
+     * @return 缓冲区
      */
     private ByteBuffer allocate0(int size, boolean direct) {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
@@ -77,7 +68,7 @@ public final class BufferPage {
                 }
             }
             Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
-            VirtualBuffer bufferChunk = null;
+            VirtualBuffer bufferChunk;
             while (iterator.hasNext()) {
                 VirtualBuffer freeChunk = iterator.next();
                 final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
