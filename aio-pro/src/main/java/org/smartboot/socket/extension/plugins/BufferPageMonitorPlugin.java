@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
-import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.util.QuickTimerTask;
 
@@ -25,15 +24,7 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin {
      */
     private int seconds = 0;
 
-    private AioQuickClient<T> client;
-
     private AioQuickServer<T> server;
-
-    public BufferPageMonitorPlugin(AioQuickClient<T> client, int seconds) {
-        this.seconds = seconds;
-        this.client = client;
-        init();
-    }
 
     public BufferPageMonitorPlugin(AioQuickServer<T> server, int seconds) {
         this.seconds = seconds;
@@ -47,23 +38,16 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin {
             @Override
             public void run() {
                 {
-                    if (client == null && server == null) {
+                    if (server == null) {
                         LOGGER.error("unKnow server or client need to monitor!");
                         return;
                     }
                     try {
-                        BufferPagePool pagePool;
-                        if (client != null) {
-                            Field bufferPoolField = AioQuickClient.class.getDeclaredField("bufferPool");
-                            bufferPoolField.setAccessible(true);
-                            pagePool = (BufferPagePool) bufferPoolField.get(client);
-                        } else {
-                            Field bufferPoolField = AioQuickServer.class.getDeclaredField("bufferPool");
-                            bufferPoolField.setAccessible(true);
-                            pagePool = (BufferPagePool) bufferPoolField.get(server);
-                        }
+                        Field bufferPoolField = AioQuickServer.class.getDeclaredField("bufferPool");
+                        bufferPoolField.setAccessible(true);
+                        BufferPagePool pagePool = (BufferPagePool) bufferPoolField.get(server);
                         if (pagePool == null) {
-                            LOGGER.error("{} maybe has not started!", client == null ? "server" : "client");
+                            LOGGER.error("server maybe has not started!");
                             return;
                         }
                         Field field = BufferPagePool.class.getDeclaredField("bufferPageList");
