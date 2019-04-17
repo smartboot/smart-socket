@@ -67,7 +67,7 @@ public class StringClient {
             }
         });
         client.setBufferPagePool(bufferPagePool);
-        client.setWriteQueueCapacity(16);
+        client.setWriteQueueCapacity(10);
         AioSession<String> session = client.start(asynchronousChannelGroup);
         WriteBuffer outputStream = session.writeBuffer();
 

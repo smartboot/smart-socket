@@ -34,32 +34,31 @@ public final class WriteBuffer extends OutputStream {
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition notEmpty = lock.newCondition();
     private final Condition notFull = lock.newCondition();
-
+    /**
+     * 为当前 WriteBuffer 提供数据存放功能的缓存页
+     */
+    private final BufferPage bufferPage;
+    private final Function<WriteBuffer, Void> function;
     /**
      * items 读索引位
      */
     private int takeIndex;
-
     /**
      * items 写索引位
      */
     private int putIndex;
-
     /**
      * items 中存放的缓冲数据数量
      */
     private int count;
-
     /**
      * 暂存当前业务正在输出的数据,输出完毕后会存放到items中
      */
     private VirtualBuffer writeInBuf;
     /**
-     * 为当前 WriteBuffer 提供数据存放功能的缓存页
+     * 当前WriteBuffer是否已关闭
      */
-    private BufferPage bufferPage;
     private boolean closed = false;
-    private Function<WriteBuffer, Void> function;
     private byte[] cacheByte = new byte[8];
 
     WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int writeQueueSize) {
@@ -195,18 +194,11 @@ public final class WriteBuffer extends OutputStream {
     }
 
 
-    private VirtualBuffer dequeue() {
-        VirtualBuffer x = items[takeIndex];
-        items[takeIndex] = null;
-        if (++takeIndex == items.length) {
-            takeIndex = 0;
-        }
-        count--;
-        notFull.signal();
-        return x;
-    }
-
-
+    /**
+     * 存储缓冲区至队列中以备输出
+     *
+     * @param e
+     */
     private void put(VirtualBuffer e) {
         try {
             while (count == items.length) {
@@ -231,7 +223,17 @@ public final class WriteBuffer extends OutputStream {
     VirtualBuffer poll() {
         lock.lock();
         try {
-            return (count == 0) ? null : dequeue();
+            if (count == 0) {
+                return null;
+            }
+            VirtualBuffer x = items[takeIndex];
+            items[takeIndex] = null;
+            if (++takeIndex == items.length) {
+                takeIndex = 0;
+            }
+            count--;
+            notFull.signal();
+            return x;
         } finally {
             lock.unlock();
         }
