@@ -165,6 +165,7 @@ public class AioQuickServer<T> {
                                 createSession(channel);
                             } else {
                                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+                                LOGGER.warn("reject accept channel:{}", channel);
                                 closeChannel(channel);
                             }
                         }
