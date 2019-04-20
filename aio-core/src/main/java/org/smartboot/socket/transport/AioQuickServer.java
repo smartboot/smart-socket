@@ -26,6 +26,7 @@ import java.nio.channels.CompletionHandler;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -129,7 +130,8 @@ public class AioQuickServer<T> {
                     return new Thread(r, "smart-socket:WorkerThread-" + (++index));
                 }
             });
-            aioReadCompletionHandler = new ReadCompletionHandler<>(readExecutorService);
+            aioReadCompletionHandler = new ReadCompletionHandler<>(readExecutorService, bossThreadNum > 4 ? new Semaphore(bossThreadNum >> 2) : null)
+            ;
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, config.getThreadNum()), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));

@@ -15,6 +15,7 @@ import org.smartboot.socket.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
 
 /**
  * 读写事件回调处理类
@@ -26,25 +27,42 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
     private ExecutorService executorService;
 
+    private ThreadLocal<Object> threadLocal = new ThreadLocal<>();
+
+    private Semaphore semaphore;
+
     public ReadCompletionHandler() {
     }
 
-    public ReadCompletionHandler(ExecutorService executorService) {
+    public ReadCompletionHandler(ExecutorService executorService, Semaphore semaphore) {
         this.executorService = executorService;
+        this.semaphore = semaphore;
     }
 
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
-        if (executorService != null) {
+        if (executorService == null || threadLocal.get() != null) {
+            completed0(result, aioSession);
+            return;
+        }
+
+        if (semaphore == null || !semaphore.tryAcquire()) {
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
                     completed0(result, aioSession);
                 }
             });
-        } else {
-            completed0(result, aioSession);
+            return;
         }
+        threadLocal.set(this);
+        try {
+            completed0(result, aioSession);
+        } finally {
+            semaphore.release();
+            threadLocal.remove();
+        }
+
     }
 
     private void completed0(final Integer result, final AioSession<T> aioSession) {

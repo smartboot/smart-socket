@@ -50,7 +50,7 @@ public class StringServer {
         server.setReadBufferSize(1024 * 1024);
 //        processor.addPlugin(new BufferPageMonitorPlugin(server, 12));
         processor.addPlugin(new MonitorPlugin(5));
-        server.setBossThreadNum(2);
+        server.setBossThreadNum(4);
         server.start();
 
     }
