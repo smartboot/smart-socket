@@ -130,7 +130,7 @@ public class AioQuickServer<T> {
                     return new Thread(r, "smart-socket:WorkerThread-" + (++index));
                 }
             });
-            aioReadCompletionHandler = new ReadCompletionHandler<>(readExecutorService, bossThreadNum > 4 ? new Semaphore(bossThreadNum >> 2) : null)
+            aioReadCompletionHandler = new ReadCompletionHandler<>(readExecutorService, bossThreadNum >= 4 ? new Semaphore(bossThreadNum >> 2) : null)
             ;
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
