@@ -68,6 +68,10 @@ public class AioQuickServer<T> {
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
 
+    /**
+     * Boss线程数ß
+     */
+    private int bossThreadNum = Runtime.getRuntime().availableProcessors();
 
     /**
      * 设置服务端启动必要参数配置
@@ -130,7 +134,7 @@ public class AioQuickServer<T> {
 
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, config.getThreadNum()), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(bossThreadNum, new ThreadFactory() {
                 byte index = 0;
 
                 @Override
@@ -181,7 +185,7 @@ public class AioQuickServer<T> {
             shutdown();
             throw e;
         }
-        LOGGER.info("smart-socket server started on port {}", config.getPort());
+        LOGGER.info("smart-socket server started on port {},bossThreadNum:{}", config.getPort(), bossThreadNum);
         LOGGER.info("smart-socket server config is {}", config);
     }
 
@@ -307,6 +311,17 @@ public class AioQuickServer<T> {
      */
     public final AioQuickServer<T> setWriteQueueCapacity(int writeQueueCapacity) {
         config.setWriteQueueCapacity(writeQueueCapacity);
+        return this;
+    }
+
+    /**
+     * 设置Boss线程数ß
+     *
+     * @param threadNum
+     * @return
+     */
+    public final AioQuickServer<T> setBossThreadNum(int threadNum) {
+        this.bossThreadNum = threadNum;
         return this;
     }
 }
