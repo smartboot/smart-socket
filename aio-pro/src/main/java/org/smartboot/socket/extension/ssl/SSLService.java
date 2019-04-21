@@ -271,7 +271,7 @@ public class SSLService {
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
-            logger.debug("", e);
+            logger.error("", e);
         }
     }
 

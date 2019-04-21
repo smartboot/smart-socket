@@ -11,7 +11,6 @@ package org.smartboot.socket.transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
-import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.extension.ssl.HandshakeCallback;
 import org.smartboot.socket.extension.ssl.HandshakeModel;
@@ -159,7 +158,8 @@ public class SSLAioSession<T> extends AioSession<T> {
             netReadBuffer.flip();
             ByteBuffer readBuffer = super.readBuffer.buffer();
             SSLEngineResult result = sslEngine.unwrap(netReadBuffer, readBuffer);
-            while (result.getStatus() != SSLEngineResult.Status.OK) {
+            boolean closed = false;
+            while (!closed && result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
                         // Could attempt to drain the dst buffer of any already obtained
@@ -197,6 +197,10 @@ public class SSLAioSession<T> extends AioSession<T> {
                         // then retry the operation.
 //                        netReadBuffer.compact();
                         return;
+                    case CLOSED:
+                        logger.warn("doUnWrap Result:" + result.getStatus());
+                        closed = true;
+                        break;
                     default:
                         logger.error("doUnWrap Result:" + result.getStatus());
                         // other cases: CLOSED, OK.
