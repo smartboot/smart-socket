@@ -198,7 +198,7 @@ public class SSLAioSession<T> extends AioSession<T> {
 //                        netReadBuffer.compact();
                         return;
                     case CLOSED:
-                        logger.warn("doUnWrap Result:" + result.getStatus());
+                        logger.debug("doUnWrap Result:" + result.getStatus());
                         closed = true;
                         break;
                     default:
