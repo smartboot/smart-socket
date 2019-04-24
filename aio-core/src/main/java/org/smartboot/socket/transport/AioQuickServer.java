@@ -163,9 +163,9 @@ public class AioQuickServer<T> {
                 @Override
                 public void completed(final AsynchronousSocketChannel channel, final AsynchronousServerSocketChannel serverSocketChannel) {
                     serverSocketChannel.accept(serverSocketChannel, this);
-                    readExecutorService.execute(new Runnable() {
-                        @Override
-                        public void run() {
+//                    readExecutorService.execute(new Runnable() {
+//                        @Override
+//                        public void run() {
                             if (monitor == null || monitor.acceptMonitor(channel)) {
                                 createSession(channel);
                             } else {
@@ -173,8 +173,8 @@ public class AioQuickServer<T> {
                                 LOGGER.warn("reject accept channel:{}", channel);
                                 closeChannel(channel);
                             }
-                        }
-                    });
+//                        }
+//                    });
                 }
 
                 @Override
