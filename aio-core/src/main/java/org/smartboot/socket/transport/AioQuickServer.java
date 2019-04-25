@@ -77,7 +77,7 @@ public class AioQuickServer<T> {
     /**
      * Boss共享给Worker的线程数
      */
-    private int bossShareToWorkerThreadNum = bossThreadNum - 2;
+    private int bossShareToWorkerThreadNum = bossThreadNum > 4 ? bossThreadNum >> 2 : bossThreadNum - 2;
 
     /**
      * Worker线程数
@@ -173,13 +173,19 @@ public class AioQuickServer<T> {
                 @Override
                 public void completed(final AsynchronousSocketChannel channel, final AsynchronousServerSocketChannel serverSocketChannel) {
                     serverSocketChannel.accept(serverSocketChannel, this);
-                    if (monitor == null || monitor.acceptMonitor(channel)) {
-                        createSession(channel);
-                    } else {
-                        config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-                        LOGGER.warn("reject accept channel:{}", channel);
-                        closeChannel(channel);
-                    }
+                    workerExecutorService.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (monitor == null || monitor.acceptMonitor(channel)) {
+                                createSession(channel);
+                            } else {
+                                config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+                                LOGGER.warn("reject accept channel:{}", channel);
+                                closeChannel(channel);
+                            }
+                        }
+                    });
+
                 }
 
                 @Override
@@ -191,7 +197,7 @@ public class AioQuickServer<T> {
             shutdown();
             throw e;
         }
-        LOGGER.info("smart-socket server started on port {},bossShareToWorkerThreadNum:{},workerThreadNum:{}", config.getPort(), bossThreadNum, bossShareToWorkerThreadNum, workerThreadNum);
+        LOGGER.info("smart-socket server started on port {},bossThreadNum:{} bossShareToWorkerThreadNum:{},workerThreadNum:{}", config.getPort(), bossThreadNum, bossShareToWorkerThreadNum, workerThreadNum);
         LOGGER.info("smart-socket server config is {}", config);
     }
 
