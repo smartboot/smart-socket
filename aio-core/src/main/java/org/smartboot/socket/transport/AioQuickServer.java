@@ -64,15 +64,25 @@ public class AioQuickServer<T> {
      * 写回调事件处理
      */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler;
-    private ExecutorService readExecutorService;
+    private ExecutorService workerExecutorService;
     private Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
 
     /**
-     * Boss线程数ß
+     * Boss线程数
      */
-    private int bossThreadNum = Runtime.getRuntime().availableProcessors();
+    private int bossThreadNum = Runtime.getRuntime().availableProcessors() < 4 ? 3 : Runtime.getRuntime().availableProcessors();
+
+    /**
+     * Boss共享给Worker的线程数
+     */
+    private int bossShareToWorkerThreadNum = bossThreadNum - 2;
+
+    /**
+     * Worker线程数
+     */
+    private int workerThreadNum = bossThreadNum - bossShareToWorkerThreadNum;
 
     /**
      * 设置服务端启动必要参数配置
@@ -122,7 +132,7 @@ public class AioQuickServer<T> {
      */
     protected final void start0(Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction) throws IOException {
         try {
-            readExecutorService = Executors.newFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+            workerExecutorService = Executors.newFixedThreadPool(workerThreadNum, new ThreadFactory() {
                 byte index = 0;
 
                 @Override
@@ -130,7 +140,7 @@ public class AioQuickServer<T> {
                     return new Thread(r, "smart-socket:WorkerThread-" + (++index));
                 }
             });
-            aioReadCompletionHandler = new ReadCompletionHandler<>(readExecutorService, bossThreadNum >= 4 ? new Semaphore(bossThreadNum >> 2) : null);
+            aioReadCompletionHandler = new ReadCompletionHandler<>(workerExecutorService, bossShareToWorkerThreadNum > 0 && bossShareToWorkerThreadNum < bossThreadNum ? new Semaphore(bossShareToWorkerThreadNum) : null);
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, config.getThreadNum()), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
@@ -163,18 +173,13 @@ public class AioQuickServer<T> {
                 @Override
                 public void completed(final AsynchronousSocketChannel channel, final AsynchronousServerSocketChannel serverSocketChannel) {
                     serverSocketChannel.accept(serverSocketChannel, this);
-//                    readExecutorService.execute(new Runnable() {
-//                        @Override
-//                        public void run() {
-                            if (monitor == null || monitor.acceptMonitor(channel)) {
-                                createSession(channel);
-                            } else {
-                                config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-                                LOGGER.warn("reject accept channel:{}", channel);
-                                closeChannel(channel);
-                            }
-//                        }
-//                    });
+                    if (monitor == null || monitor.acceptMonitor(channel)) {
+                        createSession(channel);
+                    } else {
+                        config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+                        LOGGER.warn("reject accept channel:{}", channel);
+                        closeChannel(channel);
+                    }
                 }
 
                 @Override
@@ -186,7 +191,7 @@ public class AioQuickServer<T> {
             shutdown();
             throw e;
         }
-        LOGGER.info("smart-socket server started on port {},bossThreadNum:{}", config.getPort(), bossThreadNum);
+        LOGGER.info("smart-socket server started on port {},bossShareToWorkerThreadNum:{},workerThreadNum:{}", config.getPort(), bossThreadNum, bossShareToWorkerThreadNum, workerThreadNum);
         LOGGER.info("smart-socket server config is {}", config);
     }
 
@@ -257,15 +262,24 @@ public class AioQuickServer<T> {
 
 
     /**
-     * 设置处理线程数量
+     * 设置Worker处理线程数量
      *
      * @param num 线程数
      */
-    public final AioQuickServer<T> setThreadNum(int num) {
-        this.config.setThreadNum(num);
+    public final AioQuickServer<T> setWorkerThreadNum(int num) {
+        this.workerThreadNum = num;
         return this;
     }
 
+    /**
+     * 设置Boss共享出来处理Worker逻辑的线程数，该数值必须小于bossThreadNum
+     *
+     * @param num 线程数
+     */
+    public final AioQuickServer<T> setBossShareToWorkerThreadNum(int num) {
+        this.bossShareToWorkerThreadNum = num;
+        return this;
+    }
 
     /**
      * 设置读缓存区大小
