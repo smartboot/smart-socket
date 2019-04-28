@@ -87,7 +87,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             LOGGER.debug(e.getMessage(), e);
         }
         try {
-            aioSession.close();
+            aioSession.close(false);
         } catch (Exception e) {
             LOGGER.debug(e.getMessage(), e);
         }
