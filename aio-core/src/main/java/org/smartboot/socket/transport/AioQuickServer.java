@@ -145,7 +145,7 @@ public class AioQuickServer<T> {
             aioReadCompletionHandler = new ReadCompletionHandler<>(workerExecutorService, bossShareToWorkerThreadNum > 0 && bossShareToWorkerThreadNum < bossThreadNum ? new Semaphore(bossShareToWorkerThreadNum) : null);
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
-            this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, config.getThreadNum()), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
+            this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, bossThreadNum + workerThreadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(bossThreadNum, new ThreadFactory() {
                 byte index = 0;
@@ -273,6 +273,13 @@ public class AioQuickServer<T> {
             }
         } catch (IOException e) {
             LOGGER.warn(e.getMessage(), e);
+        }
+        if (!workerExecutorService.isTerminated()) {
+            try {
+                workerExecutorService.shutdownNow();
+            } catch (Exception e) {
+                LOGGER.error("shutdown exception", e);
+            }
         }
         if (!asynchronousChannelGroup.isTerminated()) {
             try {

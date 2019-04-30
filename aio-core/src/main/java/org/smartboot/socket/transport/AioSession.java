@@ -95,7 +95,7 @@ public class AioSession<T> {
      * 附件对象
      */
     private Object attachment;
-
+    volatile boolean threadLocal=false;
     private ReadCompletionHandler<T> readCompletionHandler;
     private WriteCompletionHandler<T> writeCompletionHandler;
     private IoServerConfig<T> ioServerConfig;
