@@ -133,6 +133,10 @@ public class AioQuickServer<T> {
      */
     protected final void start0(Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction) throws IOException {
         try {
+            if (bossShareToWorkerThreadNum >= bossThreadNum) {
+                LOGGER.warn("bossShareToWorkerThreadNum:{} must little than bossThreadNum:{},bossShareToWorkerThreadNum will reset to 0", bossShareToWorkerThreadNum, bossThreadNum);
+                bossShareToWorkerThreadNum = 0;
+            }
             workerExecutorService = Executors.newFixedThreadPool(workerThreadNum, new ThreadFactory() {
                 byte index = 0;
 
