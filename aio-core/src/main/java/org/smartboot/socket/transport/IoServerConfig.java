@@ -72,10 +72,6 @@ final class IoServerConfig<T> {
      */
     private Protocol<T> protocol;
     /**
-     * 服务器处理线程数
-     */
-    private int threadNum = Runtime.getRuntime().availableProcessors() + 1;
-    /**
      * 是否启用控制台banner
      */
     private boolean bannerEnabled = true;
@@ -118,14 +114,6 @@ final class IoServerConfig<T> {
 
     public final void setPort(int port) {
         this.port = port;
-    }
-
-    public final int getThreadNum() {
-        return threadNum;
-    }
-
-    public final void setThreadNum(int threadNum) {
-        this.threadNum = threadNum;
     }
 
     public NetMonitor<T> getMonitor() {
@@ -193,7 +181,6 @@ final class IoServerConfig<T> {
                 ", port=" + port +
                 ", processor=" + processor +
                 ", protocol=" + protocol +
-                ", threadNum=" + threadNum +
                 ", bannerEnabled=" + bannerEnabled +
                 ", socketOptions=" + socketOptions +
                 '}';

@@ -366,7 +366,7 @@ public class AioQuickServer<T> {
     }
 
     /**
-     * 设置Boss线程数ß
+     * 设置Boss线程数
      *
      * @param threadNum
      * @return
