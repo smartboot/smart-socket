@@ -137,6 +137,9 @@ public class AioQuickServer<T> {
                 LOGGER.warn("bossShareToWorkerThreadNum:{} must little than bossThreadNum:{},bossShareToWorkerThreadNum will reset to 0", bossShareToWorkerThreadNum, bossThreadNum);
                 bossShareToWorkerThreadNum = 0;
             }
+            if (workerThreadNum <= 0) {
+                workerThreadNum = Runtime.getRuntime().availableProcessors();
+            }
             workerExecutorService = Executors.newFixedThreadPool(workerThreadNum, new ThreadFactory() {
                 byte index = 0;
 
