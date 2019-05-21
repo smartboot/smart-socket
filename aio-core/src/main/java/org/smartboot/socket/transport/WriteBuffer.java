@@ -68,11 +68,21 @@ public final class WriteBuffer extends OutputStream {
     }
 
     @Override
-    public void write(int b) {
+    public void write(int b) throws IOException {
+        writeInt(b);
+    }
+
+    public void writeShort(short v) throws IOException {
+        cacheByte[0] = (byte) ((v >>> 8) & 0xFF);
+        cacheByte[1] = (byte) ((v >>> 0) & 0xFF);
+        write(cacheByte, 0, 2);
+    }
+
+    public void writeByte(byte b) {
         if (writeInBuf == null) {
             writeInBuf = bufferPage.allocate(WRITE_CHUNK_SIZE);
         }
-        writeInBuf.buffer().put((byte) b);
+        writeInBuf.buffer().put(b);
         if (writeInBuf.buffer().hasRemaining()) {
             return;
         }
