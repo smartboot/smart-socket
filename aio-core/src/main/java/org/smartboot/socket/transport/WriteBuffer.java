@@ -67,9 +67,17 @@ public final class WriteBuffer extends OutputStream {
         this.items = new VirtualBuffer[writeQueueSize];
     }
 
+    /**
+     * 按照{@link OutputStream#write(int)}规范：要写入的字节是参数 b 的八个低位。 b 的 24 个高位将被忽略。
+     * <br/>
+     * 而使用该接口时容易传入非byte范围内的数据，接口定义与实际使用出现歧义的可能性较大，故建议废弃该方法，选用{@link WriteBuffer#writeByte(byte)}。
+     * @param b
+     * @throws IOException
+     * @deprecated
+     */
     @Override
     public void write(int b) throws IOException {
-        writeInt(b);
+        writeByte((byte) b);
     }
 
     public void writeShort(short v) throws IOException {
