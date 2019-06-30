@@ -27,8 +27,6 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
     private ExecutorService executorService;
 
-//    private ThreadLocal<Object> threadLocal = new ThreadLocal<>();
-
     private Semaphore semaphore;
 
     public ReadCompletionHandler() {
@@ -41,7 +39,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
 
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
-        if (executorService == null || aioSession.threadLocal) {
+        if (executorService == null || aioSession.recursion) {
             completed0(result, aioSession);
             return;
         }
@@ -55,12 +53,11 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             });
             return;
         }
-//        threadLocal.set(this);
-        aioSession.threadLocal = true;
+        aioSession.recursion = true;
         try {
             completed0(result, aioSession);
         } finally {
-            aioSession.threadLocal = false;
+            aioSession.recursion = false;
             semaphore.release();
         }
 

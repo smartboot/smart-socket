@@ -88,6 +88,10 @@ public class AioSession<T> {
      */
     protected byte status = SESSION_STATUS_ENABLED;
     /**
+     * 递归标识
+     */
+    volatile boolean recursion = false;
+    /**
      * 输出信号量,防止并发write导致异常
      */
     private Semaphore semaphore = new Semaphore(1);
@@ -95,7 +99,6 @@ public class AioSession<T> {
      * 附件对象
      */
     private Object attachment;
-    volatile boolean threadLocal=false;
     private ReadCompletionHandler<T> readCompletionHandler;
     private WriteCompletionHandler<T> writeCompletionHandler;
     private IoServerConfig<T> ioServerConfig;
