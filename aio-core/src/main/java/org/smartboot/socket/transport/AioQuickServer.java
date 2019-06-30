@@ -24,10 +24,11 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -140,15 +141,19 @@ public class AioQuickServer<T> {
             if (workerThreadNum <= 0) {
                 workerThreadNum = Runtime.getRuntime().availableProcessors();
             }
-            workerExecutorService = Executors.newFixedThreadPool(workerThreadNum, new ThreadFactory() {
-                byte index = 0;
+            LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
+            workerExecutorService = new ThreadPoolExecutor(workerThreadNum, workerThreadNum,
+                    0L, TimeUnit.MILLISECONDS,
+                    queue,
+                    new ThreadFactory() {
+                        byte index = 0;
 
-                @Override
-                public Thread newThread(Runnable r) {
-                    return new Thread(r, "smart-socket:WorkerThread-" + (++index));
-                }
-            });
-            aioReadCompletionHandler = new ReadCompletionHandler<>(workerExecutorService, bossShareToWorkerThreadNum > 0 && bossShareToWorkerThreadNum < bossThreadNum ? new Semaphore(bossShareToWorkerThreadNum) : null);
+                        @Override
+                        public Thread newThread(Runnable r) {
+                            return new Thread(r, "smart-socket:WorkerThread-" + (++index));
+                        }
+                    });
+            aioReadCompletionHandler = new ReadCompletionHandler<>(workerExecutorService, queue, bossShareToWorkerThreadNum > 0 && bossShareToWorkerThreadNum < bossThreadNum ? new Semaphore(bossShareToWorkerThreadNum) : null);
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, bossThreadNum + workerThreadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));

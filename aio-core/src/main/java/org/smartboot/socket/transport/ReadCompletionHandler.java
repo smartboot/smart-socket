@@ -14,6 +14,7 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 
@@ -25,15 +26,17 @@ import java.util.concurrent.Semaphore;
  */
 class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
+    private static final int RUN_LIMIT = 16;
     private ExecutorService executorService;
-
+    private BlockingQueue<Runnable> taskQueue;
     private Semaphore semaphore;
 
     public ReadCompletionHandler() {
     }
 
-    public ReadCompletionHandler(ExecutorService executorService, Semaphore semaphore) {
+    public ReadCompletionHandler(ExecutorService executorService, BlockingQueue<Runnable> taskQueue, Semaphore semaphore) {
         this.executorService = executorService;
+        this.taskQueue = taskQueue;
         this.semaphore = semaphore;
     }
 
@@ -48,7 +51,9 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
+                    aioSession.recursion = true;
                     completed0(result, aioSession);
+                    aioSession.recursion = false;
                 }
             });
             return;
@@ -56,10 +61,18 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         aioSession.recursion = true;
         try {
             completed0(result, aioSession);
-        } finally {
             aioSession.recursion = false;
+            if (taskQueue != null) {
+                int count = RUN_LIMIT;
+                Runnable runnable = null;
+                while (count-- > 0 && (runnable = taskQueue.poll()) != null) {
+                    runnable.run();
+                }
+            }
+        } finally {
             semaphore.release();
         }
+
 
     }
 
