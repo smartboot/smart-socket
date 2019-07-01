@@ -27,11 +27,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
     private static final int RUN_LIMIT = 16;
-    private ThreadPoolExecutor workerThreadPool;
     /**
-     * Worker线程池中的任务队列
+     * Worker线程池
      */
-    private BlockingQueue<Runnable> taskQueue;
+    private ThreadPoolExecutor workerThreadPool;
     /**
      * 读回调资源信号量
      */
@@ -39,21 +38,20 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     /**
      * 递归线程标识
      */
-    private ThreadLocal<ReadCompletionHandler> RECURSION_THREAD_LOCAL = new ThreadLocal<>();
+    private ThreadLocal<ReadCompletionHandler> recursionThreadLocal = new ThreadLocal<>();
 
     public ReadCompletionHandler() {
     }
 
     public ReadCompletionHandler(ThreadPoolExecutor workerThreadPool, Semaphore semaphore) {
         this.workerThreadPool = workerThreadPool;
-        this.taskQueue = workerThreadPool.getQueue();
         this.semaphore = semaphore;
     }
 
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
         //未启用Worker线程池或者被递归回调complated直接执行completed0
-        if (workerThreadPool == null || RECURSION_THREAD_LOCAL.get() != null) {
+        if (workerThreadPool == null || recursionThreadLocal.get() != null) {
             completed0(result, aioSession);
             return;
         }
@@ -63,17 +61,17 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             workerThreadPool.execute(new Runnable() {
                 @Override
                 public void run() {
-                    RECURSION_THREAD_LOCAL.set(ReadCompletionHandler.this);
+                    recursionThreadLocal.set(ReadCompletionHandler.this);
                     completed0(result, aioSession);
-                    RECURSION_THREAD_LOCAL.remove();
+                    recursionThreadLocal.remove();
                 }
             });
             return;
         }
         try {
-            RECURSION_THREAD_LOCAL.set(this);
+            recursionThreadLocal.set(this);
             completed0(result, aioSession);
-            RECURSION_THREAD_LOCAL.remove();
+            recursionThreadLocal.remove();
             executeTask();
         } finally {
             semaphore.release();
@@ -84,8 +82,9 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
      * 执行异步队列中的任务
      */
     private void executeTask() {
-        if (taskQueue != null) {
+        if (workerThreadPool != null) {
             int count = RUN_LIMIT;
+            BlockingQueue<Runnable> taskQueue = workerThreadPool.getQueue();
             Runnable runnable = null;
             while (count-- > 0 && (runnable = taskQueue.poll()) != null) {
                 runnable.run();
