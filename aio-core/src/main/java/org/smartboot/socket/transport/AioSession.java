@@ -88,10 +88,6 @@ public class AioSession<T> {
      */
     protected byte status = SESSION_STATUS_ENABLED;
     /**
-     * 递归标识
-     */
-    volatile boolean recursion = false;
-    /**
      * 输出信号量,防止并发write导致异常
      */
     private Semaphore semaphore = new Semaphore(1);
