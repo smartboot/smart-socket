@@ -52,6 +52,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     public void completed(final Integer result, final AioSession<T> aioSession) {
         //未启用Worker线程池或者被递归回调complated直接执行completed0
         if (workerThreadPool == null || recursionThreadLocal.get() != null) {
+            runTask();
             completed0(result, aioSession);
             return;
         }
@@ -61,18 +62,23 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             workerThreadPool.execute(new Runnable() {
                 @Override
                 public void run() {
-                    recursionThreadLocal.set(ReadCompletionHandler.this);
-                    completed0(result, aioSession);
-                    recursionThreadLocal.remove();
+                    if (recursionThreadLocal.get() != null) {
+                        completed0(result, aioSession);
+                    } else {
+                        recursionThreadLocal.set(ReadCompletionHandler.this);
+                        completed0(result, aioSession);
+                        recursionThreadLocal.remove();
+                    }
                 }
             });
             return;
         }
         try {
             recursionThreadLocal.set(this);
+            runTask();
             completed0(result, aioSession);
             recursionThreadLocal.remove();
-            executeTask();
+//            executeTask();
         } finally {
             semaphore.release();
         }
@@ -89,6 +95,19 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             while (count-- > 0 && (runnable = taskQueue.poll()) != null) {
                 runnable.run();
             }
+        }
+    }
+
+    /**
+     * 执行异步队列中的任务
+     */
+    private void runTask() {
+        if (workerThreadPool == null) {
+            return;
+        }
+        Runnable runnable = workerThreadPool.getQueue().poll();
+        if (runnable != null) {
+            runnable.run();
         }
     }
 
