@@ -52,8 +52,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     public void completed(final Integer result, final AioSession<T> aioSession) {
         //未启用Worker线程池或者被递归回调complated直接执行completed0
         if (workerThreadPool == null || recursionThreadLocal.get() != null) {
-            runTask();
             completed0(result, aioSession);
+            runTask();
             return;
         }
 
@@ -75,8 +75,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         }
         try {
             recursionThreadLocal.set(this);
-            runTask();
             completed0(result, aioSession);
+            runTask();
             recursionThreadLocal.remove();
 //            executeTask();
         } finally {
