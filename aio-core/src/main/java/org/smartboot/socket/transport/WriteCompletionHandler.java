@@ -14,6 +14,8 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Semaphore;
 
 /**
  * 读写事件回调处理类
@@ -23,6 +25,27 @@ import java.nio.channels.CompletionHandler;
  */
 class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteCompletionHandler.class);
+
+    private BlockingQueue<Runnable> runnables;
+
+    /**
+     * Runnable处理资源信号量
+     */
+    private Semaphore semaphore;
+    /**
+     * 递归线程标识
+     */
+    private ThreadLocal<WriteCompletionHandler> recursionThreadLocal = new ThreadLocal<>();
+
+    public WriteCompletionHandler() {
+    }
+
+    public WriteCompletionHandler(BlockingQueue<Runnable> runnables, Semaphore semaphore) {
+        if (semaphore != null && runnables != null) {
+            this.runnables = runnables;
+            this.semaphore = semaphore;
+        }
+    }
 
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
@@ -37,6 +60,31 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession
             failed(e, aioSession);
         }
 
+        if (this.semaphore == null) {
+            return;
+        }
+        if (recursionThreadLocal.get() != null) {
+            runTask();
+            return;
+        } else if (semaphore.tryAcquire()) {
+            try {
+                recursionThreadLocal.set(this);
+                runTask();
+            } finally {
+                recursionThreadLocal.remove();
+                semaphore.release();
+            }
+        }
+    }
+
+    /**
+     * 执行异步队列中的任务
+     */
+    private void runTask() {
+        Runnable runnable = runnables.poll();
+        if (runnable != null) {
+            runnable.run();
+        }
     }
 
     @Override

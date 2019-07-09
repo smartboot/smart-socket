@@ -154,7 +154,7 @@ public class AioQuickServer<T> {
                         }
                     });
             aioReadCompletionHandler = new ReadCompletionHandler<>(workerExecutorService, bossShareToWorkerThreadNum > 0 && bossShareToWorkerThreadNum < bossThreadNum ? new Semaphore(bossShareToWorkerThreadNum) : null);
-            aioWriteCompletionHandler = new WriteCompletionHandler<>();
+            aioWriteCompletionHandler = new WriteCompletionHandler<>(workerExecutorService.getQueue(), bossThreadNum - bossShareToWorkerThreadNum > 1 ? new Semaphore(bossThreadNum - bossShareToWorkerThreadNum - 1) : null);
 
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, bossThreadNum + workerThreadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
