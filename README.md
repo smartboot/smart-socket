@@ -1,6 +1,6 @@
 ## smart-socket [English](README_EN.md)[![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
 smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、稳定性、接口设计各方面都达到极致。如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
-
+![输入图片说明](https://smartboot.gitee.io/book/smart-socket-v1.4/chapter-1/2.1-%E5%9F%BA%E7%A1%80%E5%BA%94%E7%94%A8/thread_model.png "在这里输入图片标题")
 ## 版本说明
 
 |  系列  | 最新版   |  文档  | 说明 |
