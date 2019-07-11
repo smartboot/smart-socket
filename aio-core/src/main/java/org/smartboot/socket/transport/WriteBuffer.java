@@ -125,8 +125,9 @@ public final class WriteBuffer extends OutputStream {
                 off += minSize;
                 if (!writeBuffer.hasRemaining()) {
                     writeBuffer.flip();
-                    this.put(writeInBuf);
+                    VirtualBuffer buffer=writeInBuf;
                     writeInBuf = null;
+                    this.put(buffer);
                     function.apply(this);
                 }
             } while (off < len);
