@@ -1,12 +1,12 @@
 ## smart-socket [English](README_EN.md)[![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
 smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、稳定性、接口设计各方面都达到极致。如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
-![输入图片说明](https://smartboot.gitee.io/book/smart-socket-v1.4/chapter-1/2.1-%E5%9F%BA%E7%A1%80%E5%BA%94%E7%94%A8/thread_model.png "在这里输入图片标题")
+![输入图片说明](https://images.gitee.com/uploads/images/2019/0711/142007_9a939ee3_351975.png "在这里输入图片标题")
 ## 版本说明
 
 |  系列  | 最新版   |  文档  | 说明 |
 | -- | -- | -- | -- |
-|  1.3  |  [1.3.25](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.3.25)  |  《[smart-socket技术小册](https://smartboot.gitee.io/book/smart-socket/)》  | 企业级，已稳定运行在众多企业的生产环境上 |
-|  1.4  |   1.4.2.rc-7 |  群内分享 |暂无|
+|  1.3  |  [1.3.25](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.3.25)  |  暂停维护  | 企业级，已稳定运行在众多企业的生产环境上 |
+|  1.4  |   1.4.2.rc-7 |  《[smart-socket技术小册](https://smartboot.gitee.io/book/)》 |暂无|
 
 **特色：**
 1. 代码量极少，可读性强。核心代码仅1千行左右。
