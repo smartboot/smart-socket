@@ -22,6 +22,7 @@ import java.net.SocketOption;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -153,8 +154,9 @@ public class AioQuickServer<T> {
                             return new Thread(r, "smart-socket:WorkerThread-" + (++index));
                         }
                     });
-            aioReadCompletionHandler = new ReadCompletionHandler<>(workerExecutorService, bossShareToWorkerThreadNum > 0 && bossShareToWorkerThreadNum < bossThreadNum ? new Semaphore(bossShareToWorkerThreadNum) : null);
-            aioWriteCompletionHandler = new WriteCompletionHandler<>(workerExecutorService.getQueue(), bossThreadNum - bossShareToWorkerThreadNum > 1 ? new Semaphore(bossThreadNum - bossShareToWorkerThreadNum - 1) : null);
+            ThreadLocal<CompletionHandler> recursionThreadLocal=new ThreadLocal<>();
+            aioReadCompletionHandler = new ReadCompletionHandler<>(recursionThreadLocal,workerExecutorService, bossShareToWorkerThreadNum > 0 && bossShareToWorkerThreadNum < bossThreadNum ? new Semaphore(bossShareToWorkerThreadNum) : null);
+            aioWriteCompletionHandler = new WriteCompletionHandler<>(recursionThreadLocal,workerExecutorService.getQueue(), bossThreadNum - bossShareToWorkerThreadNum > 1 ? new Semaphore(bossThreadNum - bossShareToWorkerThreadNum - 1) : null);
 
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, bossThreadNum + workerThreadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
@@ -184,22 +186,23 @@ public class AioQuickServer<T> {
 
                 @Override
                 public void run() {
+                    Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
                     while (running) {
-                        Future<AsynchronousSocketChannel> future = serverSocketChannel.accept();
                         try {
-                            final AsynchronousSocketChannel channel = future.get();
-                            workerExecutorService.execute(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (monitor == null || monitor.acceptMonitor(channel)) {
-                                        createSession(channel);
-                                    } else {
-                                        config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-                                        LOGGER.warn("reject accept channel:{}", channel);
-                                        closeChannel(channel);
-                                    }
-                                }
-                            });
+                            final AsynchronousSocketChannel channel = nextFuture.get();
+                            nextFuture = serverSocketChannel.accept();
+//                            workerExecutorService.execute(new Runnable() {
+//                                @Override
+//                                public void run() {
+                            if (monitor == null || monitor.acceptMonitor(channel)) {
+                                createSession(channel);
+                            } else {
+                                config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+                                LOGGER.warn("reject accept channel:{}", channel);
+                                closeChannel(channel);
+                            }
+//                                }
+//                            });
                         } catch (Exception e) {
                             LOGGER.error("AcceptThread Exception", e);
                         }

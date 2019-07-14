@@ -35,15 +35,16 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession
     /**
      * 递归线程标识
      */
-    private ThreadLocal<WriteCompletionHandler> recursionThreadLocal = new ThreadLocal<>();
+    private ThreadLocal<CompletionHandler> recursionThreadLocal = null;
 
     public WriteCompletionHandler() {
     }
 
-    public WriteCompletionHandler(BlockingQueue<Runnable> runnables, Semaphore semaphore) {
+    public WriteCompletionHandler(ThreadLocal<CompletionHandler> recursionThreadLocal, BlockingQueue<Runnable> runnables, Semaphore semaphore) {
         if (semaphore != null && runnables != null) {
             this.runnables = runnables;
             this.semaphore = semaphore;
+            this.recursionThreadLocal = recursionThreadLocal;
         }
     }
 
@@ -60,7 +61,7 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession
             failed(e, aioSession);
         }
 
-        if (this.semaphore == null) {
+        if (this.recursionThreadLocal == null) {
             return;
         }
         if (recursionThreadLocal.get() != null) {

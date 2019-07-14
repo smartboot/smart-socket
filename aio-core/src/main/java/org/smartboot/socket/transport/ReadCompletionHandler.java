@@ -38,23 +38,23 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     /**
      * 递归线程标识
      */
-    private ThreadLocal<ReadCompletionHandler> recursionThreadLocal = new ThreadLocal<>();
+    private ThreadLocal<CompletionHandler> recursionThreadLocal =null;
 
     public ReadCompletionHandler() {
     }
 
-    public ReadCompletionHandler(ThreadPoolExecutor workerThreadPool, Semaphore semaphore) {
+    public ReadCompletionHandler(ThreadLocal<CompletionHandler> recursionThreadLocal, ThreadPoolExecutor workerThreadPool, Semaphore semaphore) {
         this.workerThreadPool = workerThreadPool;
         this.semaphore = semaphore;
+        this.recursionThreadLocal = recursionThreadLocal;
     }
 
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
         //未启用Worker线程池或者被递归回调complated直接执行completed0
-        if (workerThreadPool == null || recursionThreadLocal.get() != null) {
+        if (recursionThreadLocal == null || recursionThreadLocal.get() != null) {
             runTask();
             completed0(result, aioSession);
-
             return;
         }
 
