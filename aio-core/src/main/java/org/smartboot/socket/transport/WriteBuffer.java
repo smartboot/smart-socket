@@ -71,6 +71,7 @@ public final class WriteBuffer extends OutputStream {
      * 按照{@link OutputStream#write(int)}规范：要写入的字节是参数 b 的八个低位。 b 的 24 个高位将被忽略。
      * <br/>
      * 而使用该接口时容易传入非byte范围内的数据，接口定义与实际使用出现歧义的可能性较大，故建议废弃该方法，选用{@link WriteBuffer#writeByte(byte)}。
+     *
      * @param b
      * @throws IOException
      * @deprecated
@@ -143,7 +144,7 @@ public final class WriteBuffer extends OutputStream {
                 off += minSize;
                 if (!writeBuffer.hasRemaining()) {
                     writeBuffer.flip();
-                    VirtualBuffer buffer=writeInBuf;
+                    VirtualBuffer buffer = writeInBuf;
                     writeInBuf = null;
                     this.put(buffer);
                     function.apply(this);
@@ -152,6 +153,32 @@ public final class WriteBuffer extends OutputStream {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * 写入内容并刷新缓冲区。在{@link org.smartboot.socket.MessageProcessor#process(AioSession, Object)}执行的write操作可无需调用该方法，业务执行完毕后框架本身会自动触发flush。
+     * 调用该方法后数据会及时的输出到对端，如果再循环体中通过该方法往某个通道中写入数据将无法获得最佳性能表现，
+     *
+     * @param b 待输出数据
+     * @throws IOException
+     */
+    public void writeAndFlush(byte[] b) throws IOException {
+        if (b == null) {
+            throw new NullPointerException();
+        }
+        writeAndFlush(b, 0, b.length);
+    }
+
+    /**
+     * @param b   待输出数据
+     * @param off b的起始位点
+     * @param len 从b中输出的数据长度
+     * @throws IOException
+     * @see WriteBuffer#writeAndFlush(byte[])
+     */
+    public void writeAndFlush(byte[] b, int off, int len) throws IOException {
+        write(b, off, len);
+        flush();
     }
 
     @Override
