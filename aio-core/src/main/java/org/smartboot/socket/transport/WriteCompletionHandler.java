@@ -14,8 +14,6 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Semaphore;
 
 /**
  * 读写事件回调处理类
@@ -26,26 +24,7 @@ import java.util.concurrent.Semaphore;
 class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteCompletionHandler.class);
 
-    private BlockingQueue<Runnable> runnables;
-
-    /**
-     * Runnable处理资源信号量
-     */
-    private Semaphore semaphore;
-    /**
-     * 递归线程标识
-     */
-    private ThreadLocal<CompletionHandler> recursionThreadLocal = null;
-
     public WriteCompletionHandler() {
-    }
-
-    public WriteCompletionHandler(ThreadLocal<CompletionHandler> recursionThreadLocal, BlockingQueue<Runnable> runnables, Semaphore semaphore) {
-        if (semaphore != null && runnables != null) {
-            this.runnables = runnables;
-            this.semaphore = semaphore;
-            this.recursionThreadLocal = recursionThreadLocal;
-        }
     }
 
     @Override
@@ -60,33 +39,8 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession
         } catch (Exception e) {
             failed(e, aioSession);
         }
-
-        if (this.recursionThreadLocal == null) {
-            return;
-        }
-        if (recursionThreadLocal.get() != null) {
-            runTask();
-            return;
-        } else if (semaphore.tryAcquire()) {
-            try {
-                recursionThreadLocal.set(this);
-                runTask();
-            } finally {
-                recursionThreadLocal.remove();
-                semaphore.release();
-            }
-        }
     }
 
-    /**
-     * 执行异步队列中的任务
-     */
-    private void runTask() {
-        Runnable runnable = runnables.poll();
-        if (runnable != null) {
-            runnable.run();
-        }
-    }
 
     @Override
     public void failed(Throwable exc, AioSession<T> aioSession) {

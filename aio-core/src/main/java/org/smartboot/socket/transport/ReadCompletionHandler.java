@@ -12,11 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.list.Node;
+import org.smartboot.socket.list.RingBuffer;
 
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * 读写事件回调处理类
@@ -26,11 +26,6 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
-    private static final int RUN_LIMIT = 16;
-    /**
-     * Worker线程池
-     */
-    private ThreadPoolExecutor workerThreadPool;
     /**
      * 读回调资源信号量
      */
@@ -38,48 +33,63 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     /**
      * 递归线程标识
      */
-    private ThreadLocal<CompletionHandler> recursionThreadLocal =null;
+    private ThreadLocal<CompletionHandler> recursionThreadLocal = null;
+
+    private RingBuffer ringBuffer;
+
+    private Semaphore readSemaphore = new Semaphore(1);
 
     public ReadCompletionHandler() {
     }
 
-    public ReadCompletionHandler(ThreadLocal<CompletionHandler> recursionThreadLocal, ThreadPoolExecutor workerThreadPool, Semaphore semaphore) {
-        this.workerThreadPool = workerThreadPool;
+    public ReadCompletionHandler(final RingBuffer ringBuffer, final ThreadLocal<CompletionHandler> recursionThreadLocal, Semaphore semaphore) {
         this.semaphore = semaphore;
         this.recursionThreadLocal = recursionThreadLocal;
+        this.ringBuffer = ringBuffer;
+        for (int i = 0; i < 1; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (true) {
+                        try {
+                            Node node = ringBuffer.take();
+                            AioSession aioSession = node.getSession();
+                            int size = node.getSize();
+                            ringBuffer.resetNode(node);
+                            completed0(size, aioSession);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }
+            }).start();
+        }
     }
 
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
         //未启用Worker线程池或者被递归回调complated直接执行completed0
         if (recursionThreadLocal == null || recursionThreadLocal.get() != null) {
-            runTask();
             completed0(result, aioSession);
+//            runTask();
             return;
         }
 
         //Boss线程不处理读回调，或者Boss线程中的读信号量不足
         if (semaphore == null || !semaphore.tryAcquire()) {
-            workerThreadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    if (recursionThreadLocal.get() != null) {
-                        completed0(result, aioSession);
-                    } else {
-                        recursionThreadLocal.set(ReadCompletionHandler.this);
-                        completed0(result, aioSession);
-                        recursionThreadLocal.remove();
-                    }
-                }
-            });
+            try {
+                ringBuffer.put(aioSession, result);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             return;
         }
         try {
             recursionThreadLocal.set(this);
-            runTask();
             completed0(result, aioSession);
+            runTask();
             recursionThreadLocal.remove();
-//            executeTask();
         } finally {
             semaphore.release();
         }
@@ -88,27 +98,31 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
     /**
      * 执行异步队列中的任务
      */
-    private void executeTask() {
-        if (workerThreadPool != null) {
-            int count = RUN_LIMIT;
-            BlockingQueue<Runnable> taskQueue = workerThreadPool.getQueue();
-            Runnable runnable = null;
-            while (count-- > 0 && (runnable = taskQueue.poll()) != null) {
-                runnable.run();
-            }
-        }
-    }
-
-    /**
-     * 执行异步队列中的任务
-     */
-    private void runTask() {
-        if (workerThreadPool == null) {
+    void runTask() {
+        if (ringBuffer == null) {
             return;
         }
-        Runnable runnable = workerThreadPool.getQueue().poll();
-        if (runnable != null) {
-            runnable.run();
+        Node node;
+        if (readSemaphore.tryAcquire()) {
+            try {
+                while ((node = ringBuffer.poll()) != null) {
+                    AioSession aioSession = node.getSession();
+                    int size = node.getSize();
+                    ringBuffer.resetNode(node);
+                    completed0(size, aioSession);
+                }
+            } finally {
+                readSemaphore.release();
+            }
+        } else {
+            node = ringBuffer.poll();
+            if (node == null) {
+                return;
+            }
+            AioSession aioSession = node.getSession();
+            int size = node.getSize();
+            ringBuffer.resetNode(node);
+            completed0(size, aioSession);
         }
     }
 

@@ -40,7 +40,7 @@ public class StringServer {
             @Override
             public void stateEvent0(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 if (throwable != null) {
-//                    LOGGER.error(stateMachineEnum + " exception:", throwable);
+                    LOGGER.error(stateMachineEnum + " exception:", throwable);
                 }
             }
         };
@@ -50,9 +50,9 @@ public class StringServer {
         server.setReadBufferSize(1024 * 1024);
 //        processor.addPlugin(new BufferPageMonitorPlugin(server, 12));
         processor.addPlugin(new MonitorPlugin(5));
-        server.setBossThreadNum(Runtime.getRuntime().availableProcessors());
-        server.setWorkerThreadNum(Runtime.getRuntime().availableProcessors());
-        server.setBossShareToWorkerThreadNum(0);
+        server.setBossThreadNum(Runtime.getRuntime().availableProcessors()+1);
+//        server.setWorkerThreadNum(Runtime.getRuntime().availableProcessors());
+//        server.setBossShareToWorkerThreadNum(0);
         server.start();
 
     }

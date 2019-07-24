@@ -15,6 +15,7 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.list.RingBuffer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -65,10 +66,6 @@ public class AioQuickServer<T> {
      * 写回调事件处理
      */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler;
-    /**
-     * Worker线程池
-     */
-    private ThreadPoolExecutor workerExecutorService;
     private Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
@@ -78,16 +75,6 @@ public class AioQuickServer<T> {
      * Boss线程数
      */
     private int bossThreadNum = Runtime.getRuntime().availableProcessors() < 4 ? 3 : Runtime.getRuntime().availableProcessors();
-
-    /**
-     * Boss共享给Worker的线程数
-     */
-    private int bossShareToWorkerThreadNum = bossThreadNum > 4 ? bossThreadNum >> 2 : bossThreadNum - 2;
-
-    /**
-     * Worker线程数
-     */
-    private int workerThreadNum = bossThreadNum - bossShareToWorkerThreadNum;
 
     /**
      * 设置服务端启动必要参数配置
@@ -137,30 +124,10 @@ public class AioQuickServer<T> {
      */
     protected final void start0(Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction) throws IOException {
         try {
-            if (bossShareToWorkerThreadNum >= bossThreadNum) {
-                LOGGER.warn("bossShareToWorkerThreadNum:{} must little than bossThreadNum:{},bossShareToWorkerThreadNum will reset to 0", bossShareToWorkerThreadNum, bossThreadNum);
-                bossShareToWorkerThreadNum = 0;
-            }
-            if (workerThreadNum <= 0) {
-                workerThreadNum = Runtime.getRuntime().availableProcessors();
-            }
-            workerExecutorService = new ThreadPoolExecutor(workerThreadNum, workerThreadNum, 0L, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<Runnable>(),
-                    new ThreadFactory() {
-                        byte index = 0;
 
-                        @Override
-                        public Thread newThread(Runnable r) {
-                            return new Thread(r, "smart-socket:WorkerThread-" + (++index));
-                        }
-                    });
-            ThreadLocal<CompletionHandler> recursionThreadLocal=new ThreadLocal<>();
-            aioReadCompletionHandler = new ReadCompletionHandler<>(recursionThreadLocal,workerExecutorService, bossShareToWorkerThreadNum > 0 && bossShareToWorkerThreadNum < bossThreadNum ? new Semaphore(bossShareToWorkerThreadNum) : null);
-            aioWriteCompletionHandler = new WriteCompletionHandler<>(recursionThreadLocal,workerExecutorService.getQueue(), bossThreadNum - bossShareToWorkerThreadNum > 1 ? new Semaphore(bossThreadNum - bossShareToWorkerThreadNum - 1) : null);
-
-            this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, bossThreadNum + workerThreadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
-            this.aioSessionFunction = aioSessionFunction;
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(bossThreadNum, new ThreadFactory() {
+            ThreadLocal<CompletionHandler> recursionThreadLocal = new ThreadLocal<>();
+            ThreadPoolExecutor executorService = new ThreadPoolExecutor(bossThreadNum, bossThreadNum, 0L, TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
                 byte index = 0;
 
                 @Override
@@ -168,6 +135,21 @@ public class AioQuickServer<T> {
                     return new Thread(r, "smart-socket:BossThread-" + (++index));
                 }
             });
+            RingBuffer buffer = new RingBuffer(4096);
+            aioReadCompletionHandler = new ReadCompletionHandler<>(buffer, recursionThreadLocal, bossThreadNum > 1 ? new Semaphore(bossThreadNum - 1) : null);
+            aioWriteCompletionHandler = new WriteCompletionHandler<>();
+            this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, bossThreadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
+            this.aioSessionFunction = aioSessionFunction;
+
+            asynchronousChannelGroup = AsynchronousChannelGroup.withThreadPool(executorService);
+//            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(bossThreadNum, new ThreadFactory() {
+//                byte index = 0;
+//
+//                @Override
+//                public Thread newThread(Runnable r) {
+//                    return new Thread(r, "smart-socket:BossThread-" + (++index));
+//                }
+//            });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
             //set socket options
             if (config.getSocketOptions() != null) {
@@ -230,7 +212,7 @@ public class AioQuickServer<T> {
             shutdown();
             throw e;
         }
-        LOGGER.info("smart-socket server started on port {},bossThreadNum:{} bossShareToWorkerThreadNum:{},workerThreadNum:{}", config.getPort(), bossThreadNum, bossShareToWorkerThreadNum, workerThreadNum);
+        LOGGER.info("smart-socket server started on port {},bossThreadNum:{}", config.getPort(), bossThreadNum);
         LOGGER.info("smart-socket server config is {}", config);
     }
 
@@ -286,13 +268,7 @@ public class AioQuickServer<T> {
         } catch (IOException e) {
             LOGGER.warn(e.getMessage(), e);
         }
-        if (!workerExecutorService.isTerminated()) {
-            try {
-                workerExecutorService.shutdownNow();
-            } catch (Exception e) {
-                LOGGER.error("shutdown exception", e);
-            }
-        }
+
         if (!asynchronousChannelGroup.isTerminated()) {
             try {
                 asynchronousChannelGroup.shutdownNow();
@@ -305,27 +281,6 @@ public class AioQuickServer<T> {
         } catch (InterruptedException e) {
             LOGGER.error("shutdown exception", e);
         }
-    }
-
-
-    /**
-     * 设置Worker处理线程数量
-     *
-     * @param num 线程数
-     */
-    public final AioQuickServer<T> setWorkerThreadNum(int num) {
-        this.workerThreadNum = num;
-        return this;
-    }
-
-    /**
-     * 设置Boss共享出来处理Worker逻辑的线程数，该数值必须小于bossThreadNum
-     *
-     * @param num 线程数
-     */
-    public final AioQuickServer<T> setBossShareToWorkerThreadNum(int num) {
-        this.bossShareToWorkerThreadNum = num;
-        return this;
     }
 
     /**
