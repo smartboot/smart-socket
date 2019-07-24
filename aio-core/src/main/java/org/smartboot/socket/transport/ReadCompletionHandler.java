@@ -102,27 +102,26 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         if (ringBuffer == null) {
             return;
         }
-        Node node;
+        Node node = ringBuffer.poll();
+        if (node == null) {
+            return;
+        }
+        AioSession aioSession = node.getSession();
+        int size = node.getSize();
+        ringBuffer.resetNode(node);
+        completed0(size, aioSession);
+
         if (readSemaphore.tryAcquire()) {
             try {
                 while ((node = ringBuffer.poll()) != null) {
-                    AioSession aioSession = node.getSession();
-                    int size = node.getSize();
+                    aioSession = node.getSession();
+                    size = node.getSize();
                     ringBuffer.resetNode(node);
                     completed0(size, aioSession);
                 }
             } finally {
                 readSemaphore.release();
             }
-        } else {
-            node = ringBuffer.poll();
-            if (node == null) {
-                return;
-            }
-            AioSession aioSession = node.getSession();
-            int size = node.getSize();
-            ringBuffer.resetNode(node);
-            completed0(size, aioSession);
         }
     }
 
