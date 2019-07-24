@@ -37,14 +37,17 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
 
     private RingBuffer ringBuffer;
 
-    private Semaphore readSemaphore = new Semaphore(1);
+    private Semaphore readSemaphore;
 
     public ReadCompletionHandler() {
     }
 
     public ReadCompletionHandler(final RingBuffer ringBuffer, final ThreadLocal<CompletionHandler> recursionThreadLocal, Semaphore semaphore) {
         this.semaphore = semaphore;
+        int avail = semaphore.availablePermits();
+        this.readSemaphore = new Semaphore(avail > 1 ? avail - 1 : 1);
         this.recursionThreadLocal = recursionThreadLocal;
+        LOGGER.info("semaphore:{} ,readSemaphore:{}", avail, readSemaphore.availablePermits());
         this.ringBuffer = ringBuffer;
         for (int i = 0; i < 1; i++) {
             new Thread(new Runnable() {
