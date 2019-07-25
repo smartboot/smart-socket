@@ -170,9 +170,6 @@ public class AioQuickServer<T> {
                         try {
                             final AsynchronousSocketChannel channel = nextFuture.get();
                             nextFuture = serverSocketChannel.accept();
-//                            workerExecutorService.execute(new Runnable() {
-//                                @Override
-//                                public void run() {
                             if (monitor == null || monitor.acceptMonitor(channel)) {
                                 createSession(channel);
                             } else {
@@ -180,8 +177,6 @@ public class AioQuickServer<T> {
                                 LOGGER.warn("reject accept channel:{}", channel);
                                 closeChannel(channel);
                             }
-//                                }
-//                            });
                         } catch (Exception e) {
                             LOGGER.error("AcceptThread Exception", e);
                         }
@@ -195,8 +190,19 @@ public class AioQuickServer<T> {
 //
 //                @Override
 //                public void completed(final AsynchronousSocketChannel channel, final AsynchronousServerSocketChannel serverSocketChannel) {
+//                    NetMonitor<T> monitor = config.getMonitor();
 //                    serverSocketChannel.accept(serverSocketChannel, this);
-//
+//                    try {
+//                        if (monitor == null || monitor.acceptMonitor(channel)) {
+//                            createSession(channel);
+//                        } else {
+//                            config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+//                            LOGGER.warn("reject accept channel:{}", channel);
+//                            closeChannel(channel);
+//                        }
+//                    } catch (Exception e) {
+//                        LOGGER.error("AcceptThread Exception", e);
+//                    }
 //
 //                }
 //
