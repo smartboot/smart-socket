@@ -24,9 +24,6 @@ import java.nio.channels.CompletionHandler;
 class WriteCompletionHandler<T> implements CompletionHandler<Integer, AioSession<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteCompletionHandler.class);
 
-    public WriteCompletionHandler() {
-    }
-
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
         try {

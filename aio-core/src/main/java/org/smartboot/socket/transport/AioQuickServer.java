@@ -26,10 +26,8 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -126,23 +124,13 @@ public class AioQuickServer<T> {
         try {
 
             ThreadLocal<CompletionHandler> recursionThreadLocal = new ThreadLocal<>();
-            ThreadPoolExecutor executorService = new ThreadPoolExecutor(bossThreadNum, bossThreadNum, 0L, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
-                byte index = 0;
-
-                @Override
-                public Thread newThread(Runnable r) {
-                    return new Thread(r, "smart-socket:BossThread-" + (++index));
-                }
-            });
             RingBuffer buffer = new RingBuffer(4096);
             aioReadCompletionHandler = new ReadCompletionHandler<>(buffer, recursionThreadLocal, bossThreadNum > 1 ? new Semaphore(bossThreadNum - 1) : null);
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, bossThreadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
 
-            asynchronousChannelGroup = AsynchronousChannelGroup.withThreadPool(executorService);
-//            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(bossThreadNum, new ThreadFactory() {
+//            ExecutorService executorService = Executors.newFixedThreadPool(bossThreadNum, new ThreadFactory() {
 //                byte index = 0;
 //
 //                @Override
@@ -150,6 +138,15 @@ public class AioQuickServer<T> {
 //                    return new Thread(r, "smart-socket:BossThread-" + (++index));
 //                }
 //            });
+//            asynchronousChannelGroup = AsynchronousChannelGroup.withThreadPool(executorService);
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(bossThreadNum, new ThreadFactory() {
+                byte index = 0;
+
+                @Override
+                public Thread newThread(Runnable r) {
+                    return new Thread(r, "smart-socket:BossThread-" + (++index));
+                }
+            });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
             //set socket options
             if (config.getSocketOptions() != null) {

@@ -49,25 +49,23 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         this.recursionThreadLocal = recursionThreadLocal;
         LOGGER.info("semaphore:{} ,readSemaphore:{}", avail, readSemaphore.availablePermits());
         this.ringBuffer = ringBuffer;
-        for (int i = 0; i < 1; i++) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (true) {
-                        try {
-                            Node node = ringBuffer.take();
-                            AioSession aioSession = node.getSession();
-                            int size = node.getSize();
-                            ringBuffer.resetNode(node);
-                            completed0(size, aioSession);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Node node = ringBuffer.take();
+                        AioSession aioSession = node.getSession();
+                        int size = node.getSize();
+                        ringBuffer.resetNode(node);
+                        completed0(size, aioSession);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
+
                 }
-            }).start();
-        }
+            }
+        }, "smart-socket:BossDefendThread").start();
     }
 
     @Override
