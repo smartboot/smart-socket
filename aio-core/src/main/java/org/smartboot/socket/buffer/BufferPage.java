@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -25,7 +25,7 @@ public final class BufferPage {
     /**
      * 待回收的虚拟Buffer
      */
-    private LinkedBlockingQueue<VirtualBuffer> cleanBuffers = new LinkedBlockingQueue<VirtualBuffer>();
+    private ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<VirtualBuffer>();
 
     /**
      * 当前缓存页的物理缓冲区

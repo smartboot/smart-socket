@@ -197,15 +197,13 @@ public class RingBuffer {
         node.size = -1;
         node.status = NodeStatus.WRITEABLE;
         final ReentrantLock lock = this.lock;
-        if (!lock.tryLock()) {
-            needSingle = true;
-            return;
-        }
-        try {
-            needSingle = false;
-            notFull.signal();
-        } finally {
-            lock.unlock();
+        needSingle = true;
+        if (lock.tryLock()) {
+            try {
+                notFullSignal();
+            } finally {
+                lock.unlock();
+            }
         }
     }
 

@@ -90,8 +90,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             recursionThreadLocal.set(this);
             completed0(result, aioSession);
             runTask();
-            recursionThreadLocal.remove();
         } finally {
+            recursionThreadLocal.remove();
             semaphore.release();
         }
     }
