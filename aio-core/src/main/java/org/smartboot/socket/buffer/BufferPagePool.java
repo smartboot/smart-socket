@@ -1,5 +1,8 @@
 package org.smartboot.socket.buffer;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 /**
  * ByteBuffer内存池
  *
@@ -7,6 +10,7 @@ package org.smartboot.socket.buffer;
  * @version V1.0 , 2018/10/31
  */
 public class BufferPagePool {
+    private static Timer timer = new Timer("BufferPoolClean", true);
     private BufferPage[] bufferPageList;
     /**
      * 内存页游标
@@ -23,6 +27,14 @@ public class BufferPagePool {
         for (int i = 0; i < poolSize; i++) {
             bufferPageList[i] = new BufferPage(pageSize, isDirect);
         }
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                for (BufferPage bufferPage : bufferPageList) {
+                    bufferPage.tryClean();
+                }
+            }
+        }, 500, 1000);
     }
 
     /**

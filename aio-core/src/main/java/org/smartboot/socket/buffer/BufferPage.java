@@ -33,6 +33,8 @@ public final class BufferPage {
     private ByteBuffer buffer;
     private ReentrantLock lock = new ReentrantLock();
 
+    private long lastAllocateTime;
+
     /**
      * @param size
      * @param direct
@@ -55,9 +57,18 @@ public final class BufferPage {
     }
 
     public VirtualBuffer allocate(final int size) {
+        lastAllocateTime = System.currentTimeMillis();
+        VirtualBuffer cleanBuffer = cleanBuffers.poll();
+        if (cleanBuffer != null && cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
+            cleanBuffer.buffer().clear();
+            cleanBuffer.buffer(cleanBuffer.buffer());
+            return cleanBuffer;
+        }
         lock.lock();
         try {
-            VirtualBuffer cleanBuffer;
+            if (cleanBuffer != null) {
+                clean0(cleanBuffer);
+            }
             while ((cleanBuffer = cleanBuffers.poll()) != null) {
                 if (cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
                     cleanBuffer.buffer().clear();
@@ -103,21 +114,31 @@ public final class BufferPage {
     }
 
     void clean(VirtualBuffer cleanBuffer) {
-        if (!lock.tryLock()) {
-            if (cleanBuffers.offer(cleanBuffer)) {
-                return;
-            } else {
-                lock.lock();
-            }
+        if (cleanBuffers.offer(cleanBuffer)) {
+            return;
         }
+        System.out.println("aaaa");
+        lock.lock();
         try {
             clean0(cleanBuffer);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    void tryClean() {
+        if (System.currentTimeMillis() - lastAllocateTime < 1000 || !lock.tryLock()) {
+            return;
+        }
+        try {
+            VirtualBuffer cleanBuffer;
             while ((cleanBuffer = cleanBuffers.poll()) != null) {
                 clean0(cleanBuffer);
             }
         } finally {
             lock.unlock();
         }
+
     }
 
     private void clean0(VirtualBuffer cleanBuffer) {
