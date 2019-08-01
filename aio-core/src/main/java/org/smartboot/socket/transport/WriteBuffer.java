@@ -34,11 +34,13 @@ public final class WriteBuffer extends OutputStream {
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition notEmpty = lock.newCondition();
     private final Condition notFull = lock.newCondition();
+    private final Condition waiting = lock.newCondition();
     /**
      * 为当前 WriteBuffer 提供数据存放功能的缓存页
      */
     private final BufferPage bufferPage;
     private final Function<WriteBuffer, Void> function;
+    private volatile boolean isWaiting = false;
     /**
      * items 读索引位
      */
@@ -127,9 +129,9 @@ public final class WriteBuffer extends OutputStream {
         } else if (len == 0) {
             return;
         }
-
         lock.lock();
         try {
+            waitPreWriteFinish();
             do {
                 if (writeInBuf == null) {
                     writeInBuf = bufferPage.allocate(Math.max(WRITE_CHUNK_SIZE, len - off));
@@ -150,8 +152,32 @@ public final class WriteBuffer extends OutputStream {
                     function.apply(this);
                 }
             } while (off < len);
+            notifyWaiting();
         } finally {
             lock.unlock();
+        }
+    }
+
+    /**
+     * 唤醒处于waiting状态的线程
+     */
+    private void notifyWaiting() {
+        isWaiting = false;
+        waiting.signal();
+    }
+
+    /**
+     * 确保数据输出有序性
+     *
+     * @throws IOException
+     */
+    private void waitPreWriteFinish() throws IOException {
+        while (isWaiting) {
+            try {
+                waiting.await();
+            } catch (InterruptedException e) {
+                throw new IOException(e);
+            }
         }
     }
 
@@ -248,6 +274,7 @@ public final class WriteBuffer extends OutputStream {
     private void put(VirtualBuffer e) {
         try {
             while (count == items.length) {
+                isWaiting = true;
                 notFull.await();
             }
             items[putIndex] = e;
