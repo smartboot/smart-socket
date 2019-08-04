@@ -61,7 +61,7 @@ public class StringMutilClient {
                 public void run() {
                     try {
                         WriteBuffer outputStream = session.writeBuffer();
-                        byte[] data = "smart-socket".getBytes();
+                        byte[] data = "smart-s1ocket".getBytes();
                         ByteBuffer buffer=ByteBuffer.allocate(Integer.BYTES+data.length);
                         buffer.putInt(data.length);
                         buffer.put(data);
