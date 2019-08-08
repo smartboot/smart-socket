@@ -73,7 +73,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         //未启用Worker线程池或者被递归回调complated直接执行completed0
         if (recursionThreadLocal == null || recursionThreadLocal.get() != null) {
             completed0(result, aioSession);
-//            runTask();
+            runTask();
             return;
         }
 
@@ -112,18 +112,18 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         ringBuffer.resetNode(node);
         completed0(size, aioSession);
 
-        if (readSemaphore.tryAcquire()) {
-            try {
-                while ((node = ringBuffer.poll()) != null) {
-                    aioSession = node.getSession();
-                    size = node.getSize();
-                    ringBuffer.resetNode(node);
-                    completed0(size, aioSession);
-                }
-            } finally {
-                readSemaphore.release();
-            }
-        }
+//        if (readSemaphore.tryAcquire()) {
+//            try {
+//                while ((node = ringBuffer.poll()) != null) {
+//                    aioSession = node.getSession();
+//                    size = node.getSize();
+//                    ringBuffer.resetNode(node);
+//                    completed0(size, aioSession);
+//                }
+//            } finally {
+//                readSemaphore.release();
+//            }
+//        }
     }
 
     private void completed0(final Integer result, final AioSession<T> aioSession) {
