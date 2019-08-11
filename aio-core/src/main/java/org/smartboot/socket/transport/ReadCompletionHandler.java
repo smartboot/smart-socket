@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.list.Node;
 import org.smartboot.socket.list.RingBuffer;
 
 import java.nio.channels.CompletionHandler;
@@ -35,14 +34,14 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
      */
     private ThreadLocal<CompletionHandler> recursionThreadLocal = null;
 
-    private RingBuffer ringBuffer;
+    private RingBuffer<ReadEvent> ringBuffer;
 
     private Semaphore readSemaphore;
 
     public ReadCompletionHandler() {
     }
 
-    public ReadCompletionHandler(final RingBuffer ringBuffer, final ThreadLocal<CompletionHandler> recursionThreadLocal, Semaphore semaphore) {
+    public ReadCompletionHandler(final RingBuffer<ReadEvent> ringBuffer, final ThreadLocal<CompletionHandler> recursionThreadLocal, Semaphore semaphore) {
         this.semaphore = semaphore;
         int avail = semaphore.availablePermits();
         this.readSemaphore = new Semaphore(avail > 1 ? avail - 1 : 1);
@@ -54,10 +53,11 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             public void run() {
                 while (true) {
                     try {
-                        Node node = ringBuffer.take();
-                        AioSession aioSession = node.getSession();
-                        int size = node.getSize();
-                        ringBuffer.resetNode(node);
+                        int consumerIndex = ringBuffer.nextReadIndex();
+                        ReadEvent readEvent = ringBuffer.get(consumerIndex);
+                        AioSession aioSession = readEvent.getSession();
+                        int size = readEvent.getReadSize();
+                        ringBuffer.publishReadIndex(consumerIndex);
                         completed0(size, aioSession);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -70,7 +70,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
 
     @Override
     public void completed(final Integer result, final AioSession<T> aioSession) {
-        //未启用Worker线程池或者被递归回调complated直接执行completed0
+        //未启用Worker线程池或者被递归回调completed直接执行completed0
         if (recursionThreadLocal == null || recursionThreadLocal.get() != null) {
             completed0(result, aioSession);
             runTask();
@@ -80,7 +80,12 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         //Boss线程不处理读回调，或者Boss线程中的读信号量不足
         if (semaphore == null || !semaphore.tryAcquire()) {
             try {
-                ringBuffer.put(aioSession, result);
+                int sequence = ringBuffer.nextWriteIndex();
+                ReadEvent readEvent = ringBuffer.get(sequence);
+                readEvent.setSession(aioSession);
+                readEvent.setReadSize(result);
+                ringBuffer.publishWriteIndex(sequence);
+//                ringBuffer.put(aioSession, result);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -103,13 +108,14 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         if (ringBuffer == null) {
             return;
         }
-        Node node = ringBuffer.poll();
-        if (node == null) {
+        int index = ringBuffer.tryNextReadIndex();
+        if (index < 0) {
             return;
         }
-        AioSession aioSession = node.getSession();
-        int size = node.getSize();
-        ringBuffer.resetNode(node);
+        ReadEvent readEvent = ringBuffer.get(index);
+        AioSession aioSession = readEvent.getSession();
+        int size = readEvent.getReadSize();
+        ringBuffer.publishReadIndex(index);
         completed0(size, aioSession);
 
 //        if (readSemaphore.tryAcquire()) {

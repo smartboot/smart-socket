@@ -16,6 +16,8 @@ import java.net.SocketOption;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.smartboot.socket.transport.IoServerConfig.Property.READ_BACKLOG;
+
 /**
  * Quickly服务端/客户端配置信息 T:解码后生成的对象类型
  *
@@ -32,16 +34,8 @@ final class IoServerConfig<T> {
             "\\__, \\| ( ) ( ) |( (_| || |   | |_    \\__, \\( (_) )( (___ | |\\`\\ (  ___/| |_ \n" +
             "(____/(_) (_) (_)`\\__,_)(_)   `\\__)   (____/`\\___/'`\\____)(_) (_)`\\____)`\\__)";
 
-    public static final String VERSION = "v1.4.3.rc-5";
-    /**
-     * 释放流控阈值
-     */
-//    private final int releaseFlowControlSize = getIntProperty(Property.SERVER_RELEASE_FLOW_CONTROL_SIZE, 10);
+    public static final String VERSION = "v1.4.3.rc-6";
 
-    /**
-     * 流控阈值
-     */
-//    private final int flowControlSize = getIntProperty(Property.SERVER_FLOW_CONTROL_SIZE, 20);
     /**
      * 消息体缓存大小,字节
      */
@@ -80,6 +74,8 @@ final class IoServerConfig<T> {
      * Socket 配置
      */
     private Map<SocketOption<Object>, Object> socketOptions;
+
+    private int readBacklog = getIntProperty(READ_BACKLOG, 4096);
 
     static int getIntProperty(String property, int defaultVal) {
         String valString = System.getProperty(property);
@@ -172,6 +168,10 @@ final class IoServerConfig<T> {
         this.writeQueueCapacity = writeQueueCapacity;
     }
 
+    public int getReadBacklog() {
+        return readBacklog;
+    }
+
     @Override
     public String toString() {
         return "IoServerConfig{" +
@@ -197,7 +197,6 @@ final class IoServerConfig<T> {
         String CLIENT_PAGE_SIZE = PROJECT_NAME + ".client.pageSize";
         String SERVER_PAGE_IS_DIRECT = PROJECT_NAME + ".server.page.isDirect";
         String CLIENT_PAGE_IS_DIRECT = PROJECT_NAME + ".client.page.isDirect";
-//        String SERVER_FLOW_CONTROL_SIZE = PROJECT_NAME + ".server.flowControlSize";
-//        String SERVER_RELEASE_FLOW_CONTROL_SIZE = PROJECT_NAME + ".server.releaseFlowControlSize";
+        String READ_BACKLOG = PROJECT_NAME + ".read.backlog";
     }
 }

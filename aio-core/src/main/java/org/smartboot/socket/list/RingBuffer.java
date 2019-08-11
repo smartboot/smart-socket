@@ -35,21 +35,20 @@
 
 package org.smartboot.socket.list;
 
-import org.smartboot.socket.transport.AioSession;
-
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class RingBuffer {
+public final class RingBuffer<T> {
 
+    private static final byte READABLE = 1, READING = 1 << 1, WRITEABLE = 1 << 2, WRITING = 1 << 3;
     /**
      * The queued items
      */
-    final Node[] items;
+    private final Node<T>[] items;
     /**
      * Main lock guarding all access
      */
-    final ReentrantLock lock;
+    private final ReentrantLock lock;
     /**
      * Condition for waiting takes
      */
@@ -66,12 +65,16 @@ public class RingBuffer {
     /**
      * items index for next take, poll, peek or remove
      */
-    int takeIndex;
+    private int takeIndex;
     /**
      * items index for next put, offer, or add
      */
-    int putIndex;
-    private boolean needSingle = false;
+    private int putIndex;
+    private volatile boolean needFullSingle = false;
+
+    private volatile boolean needEmptySingle = false;
+
+    private EventFactory<T> eventFactory;
 
 
     /**
@@ -81,123 +84,127 @@ public class RingBuffer {
      * @param capacity the capacity of this queue
      * @throws IllegalArgumentException if {@code capacity < 1}
      */
-    public RingBuffer(int capacity) {
-        this(capacity, false);
-    }
-
-    /**
-     * Creates an {@code ArrayBlockingQueue} with the given (fixed)
-     * capacity and the specified access policy.
-     *
-     * @param capacity the capacity of this queue
-     * @param fair     if {@code true} then queue accesses for threads blocked
-     *                 on insertion or removal, are processed in FIFO order;
-     *                 if {@code false} the access order is unspecified.
-     * @throws IllegalArgumentException if {@code capacity < 1}
-     */
-    public RingBuffer(int capacity, boolean fair) {
+    public RingBuffer(int capacity, EventFactory<T> factory) {
         if (capacity <= 0)
             throw new IllegalArgumentException();
         this.items = new Node[capacity];
-        lock = new ReentrantLock(fair);
+        lock = new ReentrantLock(false);
         notEmpty = lock.newCondition();
         notFull = lock.newCondition();
+        this.eventFactory = factory;
     }
 
-    /**
-     * Inserts the specified element at the tail of this queue, waiting
-     * for space to become available if the queue is full.
-     *
-     * @throws InterruptedException {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
-     */
-    public void put(AioSession session, int size) throws InterruptedException {
-//        checkNotNull(e);
+    public int nextWriteIndex() throws InterruptedException {
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
             notFullSignal();
-            final Node[] items = this.items;
-            Node node = items[putIndex];
+            final Node<T>[] items = this.items;
+            Node<T> node = items[putIndex];
             if (node == null) {
-                node = new Node();
-                node.status = NodeStatus.WRITEABLE;
+                node = new Node<>(eventFactory.newInstance());
+                node.status = WRITEABLE;
                 items[putIndex] = node;
             }
-            while (node.status != NodeStatus.WRITEABLE) {
+            while (node.status != WRITEABLE) {
                 notFull.await();
+                notFullSignal();
                 node = items[putIndex];
             }
 
-            node.session = session;
-            node.size = size;
-            node.status = NodeStatus.READABLE;
+            node.status = WRITING;
+            int index = putIndex;
             if (++putIndex == items.length)
                 putIndex = 0;
-            notEmpty.signal();
+            return index;
         } finally {
             lock.unlock();
         }
     }
 
-    public Node poll() {
+    public void publishWriteIndex(int sequence) {
+        Node<T> node = items[sequence];
+        if (node.status != WRITING) {
+            throw new RuntimeException("invalid status");
+        }
+        node.status = READABLE;
+        final ReentrantLock lock = this.lock;
+        needEmptySingle = true;
+        if (lock.tryLock()) {
+            try {
+                notFullSignal();
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    public T get(int sequence) {
+        return items[sequence].entity;
+    }
+
+    public int tryNextReadIndex() {
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
             notFullSignal();
             final Node[] items = this.items;
             Node x = items[takeIndex];
-            if (x == null || x.status != NodeStatus.READABLE) {
-                return null;
+            if (x == null || x.status != READABLE) {
+                return -1;
             }
-
+            x.status = READING;
+            int index = takeIndex;
             if (++takeIndex == items.length)
                 takeIndex = 0;
-            x.status = NodeStatus.READING;
-            return x;
+            return index;
         } finally {
             lock.unlock();
         }
     }
 
-    public Node take() throws InterruptedException {
+    public int nextReadIndex() throws InterruptedException {
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
             notFullSignal();
             final Node[] items = this.items;
             Node x = items[takeIndex];
-            while (x == null || x.status != NodeStatus.READABLE) {
+            while (x == null || x.status != READABLE) {
                 notEmpty.await();
                 notFullSignal();
                 x = items[takeIndex];
             }
-
+            x.status = READING;
+            int index = takeIndex;
             if (++takeIndex == items.length)
                 takeIndex = 0;
-            x.status = NodeStatus.READING;
-            return x;
+            return index;
         } finally {
             lock.unlock();
         }
     }
 
     private void notFullSignal() {
-        if (needSingle) {
+        if (needFullSingle) {
             notFull.signal();
-            needSingle = false;
+            needFullSingle = false;
+        }
+        if (needEmptySingle) {
+            notEmpty.signal();
+            needEmptySingle = false;
         }
     }
 
-    public void resetNode(Node node) {
-        if (node.status != NodeStatus.READING) {
+    public void publishReadIndex(int sequence) {
+        Node<T> node = items[sequence];
+        if (node.status != READING) {
             throw new RuntimeException("invalid status");
         }
-        node.session = null;
-        node.size = -1;
-        node.status = NodeStatus.WRITEABLE;
+        eventFactory.restEntity(node.entity);
+        node.status = WRITEABLE;
         final ReentrantLock lock = this.lock;
-        needSingle = true;
+        needFullSingle = true;
         if (lock.tryLock()) {
             try {
                 notFullSignal();
@@ -208,4 +215,13 @@ public class RingBuffer {
     }
 
 
+    class Node<T> {
+
+        byte status;
+        T entity;
+
+        Node(T entity) {
+            this.entity = entity;
+        }
+    }
 }

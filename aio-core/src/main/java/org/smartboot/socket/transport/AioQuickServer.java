@@ -15,6 +15,7 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.list.EventFactory;
 import org.smartboot.socket.list.RingBuffer;
 
 import java.io.IOException;
@@ -124,7 +125,18 @@ public class AioQuickServer<T> {
         try {
 
             ThreadLocal<CompletionHandler> recursionThreadLocal = new ThreadLocal<>();
-            RingBuffer buffer = new RingBuffer(4096);
+            RingBuffer<ReadEvent> buffer = new RingBuffer<ReadEvent>(config.getReadBacklog(), new EventFactory<ReadEvent>() {
+                @Override
+                public ReadEvent newInstance() {
+                    return new ReadEvent();
+                }
+
+                @Override
+                public void restEntity(ReadEvent entity) {
+                    entity.setReadSize(-1);
+                    entity.setSession(null);
+                }
+            });
             aioReadCompletionHandler = new ReadCompletionHandler<>(buffer, recursionThreadLocal, bossThreadNum > 1 ? new Semaphore(bossThreadNum - 1) : null);
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, bossThreadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
