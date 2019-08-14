@@ -104,12 +104,44 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
             return;
         }
         try {
+            runAllTask();
             recursionThreadLocal.set(this);
             completed0(result, aioSession);
             runTask();
         } finally {
             recursionThreadLocal.remove();
             semaphore.release();
+        }
+    }
+
+    /**
+     * 执行异步队列中的任务
+     */
+    void runAllTask() {
+        if (ringBuffer == null) {
+            return;
+        }
+        if (readSemaphore.tryAcquire()) {
+            try {
+                defendThreadBlockFlag = true;
+                int index = -1;
+                ReadEvent readEvent;
+                AioSession aioSession;
+                int size;
+                while ((index = ringBuffer.tryNextReadIndex()) >= 0) {
+                    readEvent = ringBuffer.get(index);
+                    aioSession = readEvent.getSession();
+                    size = readEvent.getReadSize();
+                    ringBuffer.publishReadIndex(index);
+                    completed0(size, aioSession);
+                }
+                defendThreadBlockFlag = false;
+                synchronized (defendThreadLock) {
+                    defendThreadLock.notifyAll();
+                }
+            } finally {
+                readSemaphore.release();
+            }
         }
     }
 
@@ -130,24 +162,24 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         ringBuffer.publishReadIndex(index);
         completed0(size, aioSession);
 
-        if (readSemaphore.tryAcquire()) {
-            try {
-                defendThreadBlockFlag = true;
-                while ((index = ringBuffer.tryNextReadIndex()) >= 0) {
-                    readEvent = ringBuffer.get(index);
-                    aioSession = readEvent.getSession();
-                    size = readEvent.getReadSize();
-                    ringBuffer.publishReadIndex(index);
-                    completed0(size, aioSession);
-                }
-                defendThreadBlockFlag = false;
-                synchronized (defendThreadLock) {
-                    defendThreadLock.notifyAll();
-                }
-            } finally {
-                readSemaphore.release();
-            }
-        }
+//        if (readSemaphore.tryAcquire()) {
+//            try {
+//                defendThreadBlockFlag = true;
+//                while ((index = ringBuffer.tryNextReadIndex()) >= 0) {
+//                    readEvent = ringBuffer.get(index);
+//                    aioSession = readEvent.getSession();
+//                    size = readEvent.getReadSize();
+//                    ringBuffer.publishReadIndex(index);
+//                    completed0(size, aioSession);
+//                }
+//                defendThreadBlockFlag = false;
+//                synchronized (defendThreadLock) {
+//                    defendThreadLock.notifyAll();
+//                }
+//            } finally {
+//                readSemaphore.release();
+//            }
+//        }
     }
 
     private void completed0(final Integer result, final AioSession<T> aioSession) {
