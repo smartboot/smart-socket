@@ -38,21 +38,31 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
 
     private Semaphore readSemaphore;
 
+    private Object defendThreadLock = new Object();
+    private volatile boolean defendThreadBlockFlag = false;
+
     public ReadCompletionHandler() {
     }
 
     public ReadCompletionHandler(final RingBuffer<ReadEvent> ringBuffer, final ThreadLocal<CompletionHandler> recursionThreadLocal, Semaphore semaphore) {
         this.semaphore = semaphore;
         int avail = semaphore.availablePermits();
-        this.readSemaphore = new Semaphore(avail > 1 ? avail - 1 : 1);
+        this.readSemaphore = new Semaphore(1);
         this.recursionThreadLocal = recursionThreadLocal;
         LOGGER.info("semaphore:{} ,readSemaphore:{}", avail, readSemaphore.availablePermits());
         this.ringBuffer = ringBuffer;
-        new Thread(new Runnable() {
+        Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (true) {
                     try {
+                        if (defendThreadBlockFlag) {
+                            synchronized (defendThreadLock) {
+                                if (defendThreadBlockFlag) {
+                                    defendThreadLock.wait();
+                                }
+                            }
+                        }
                         int consumerIndex = ringBuffer.nextReadIndex();
                         ReadEvent readEvent = ringBuffer.get(consumerIndex);
                         AioSession aioSession = readEvent.getSession();
@@ -65,7 +75,9 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
 
                 }
             }
-        }, "smart-socket:BossDefendThread").start();
+        }, "smart-socket:BossDefendThread");
+        t.setPriority(1);
+        t.start();
     }
 
     @Override
@@ -118,18 +130,24 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, AioSession<
         ringBuffer.publishReadIndex(index);
         completed0(size, aioSession);
 
-//        if (readSemaphore.tryAcquire()) {
-//            try {
-//                while ((node = ringBuffer.poll()) != null) {
-//                    aioSession = node.getSession();
-//                    size = node.getSize();
-//                    ringBuffer.resetNode(node);
-//                    completed0(size, aioSession);
-//                }
-//            } finally {
-//                readSemaphore.release();
-//            }
-//        }
+        if (readSemaphore.tryAcquire()) {
+            try {
+                defendThreadBlockFlag = true;
+                while ((index = ringBuffer.tryNextReadIndex()) >= 0) {
+                    readEvent = ringBuffer.get(index);
+                    aioSession = readEvent.getSession();
+                    size = readEvent.getReadSize();
+                    ringBuffer.publishReadIndex(index);
+                    completed0(size, aioSession);
+                }
+                defendThreadBlockFlag = false;
+                synchronized (defendThreadLock) {
+                    defendThreadLock.notifyAll();
+                }
+            } finally {
+                readSemaphore.release();
+            }
+        }
     }
 
     private void completed0(final Integer result, final AioSession<T> aioSession) {
