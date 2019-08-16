@@ -2,8 +2,8 @@ package org.smartboot.socket.udp;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.list.EventFactory;
-import org.smartboot.socket.list.RingBuffer;
+import org.smartboot.socket.buffer.ring.EventFactory;
+import org.smartboot.socket.buffer.ring.RingBuffer;
 
 import java.io.IOException;
 import java.net.SocketAddress;

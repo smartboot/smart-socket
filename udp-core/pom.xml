@@ -17,7 +17,7 @@
     <dependencies>
         <dependency>
             <groupId>org.smartboot.socket</groupId>
-            <artifactId>aio-core</artifactId>
+            <artifactId>smart-buffer</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

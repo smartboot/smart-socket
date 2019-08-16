@@ -8,8 +8,6 @@
 
 package org.smartboot.socket.udp;
 
-import org.smartboot.socket.transport.AioSession;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -44,7 +42,6 @@ import java.nio.ByteBuffer;
 public interface Protocol<T> {
     /**
      * 对于从Socket流中获取到的数据采用当前Protocol的实现类协议进行解析。
-     *
      *
      * @param readBuffer 待处理的读buffer
      * @return 本次解码成功后封装的业务消息对象, 返回null则表示解码未完成
