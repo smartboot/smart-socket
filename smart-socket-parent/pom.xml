@@ -28,6 +28,11 @@
         <dependencies>
             <dependency>
                 <groupId>org.smartboot.socket</groupId>
+                <artifactId>smart-buffer</artifactId>
+                <version>${aio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.smartboot.socket</groupId>
                 <artifactId>aio-core</artifactId>
                 <version>${aio.version}</version>
             </dependency>
@@ -246,6 +251,7 @@
     <modules>
         <module>../aio-core</module>
         <module>../aio-pro</module>
+        <module>../smart-buffer</module>
         <module>../udp-core</module>
     </modules>
 </project>

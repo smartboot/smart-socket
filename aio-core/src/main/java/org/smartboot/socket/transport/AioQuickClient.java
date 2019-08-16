@@ -11,7 +11,7 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.buffer.pool.BufferPagePool;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
