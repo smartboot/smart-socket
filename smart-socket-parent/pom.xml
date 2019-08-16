@@ -246,5 +246,6 @@
     <modules>
         <module>../aio-core</module>
         <module>../aio-pro</module>
+        <module>../udp-core</module>
     </modules>
 </project>
