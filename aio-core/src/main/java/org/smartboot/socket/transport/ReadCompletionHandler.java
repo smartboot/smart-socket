@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.list.RingBuffer;
+import org.smartboot.socket.buffer.ring.RingBuffer;
 
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.Semaphore;

@@ -1,4 +1,4 @@
-package org.smartboot.socket.buffer;
+package org.smartboot.socket.buffer.pool;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
