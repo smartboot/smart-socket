@@ -24,6 +24,7 @@ public final class UdpChannel<T> {
     private IoServerConfig<T> config;
     private RingBuffer<ReadEvent<T>>[] readBuffers;
     private Object lock = new Object();
+    private boolean running = true;
     private EventFactory<ReadEvent<T>> factory = new EventFactory<ReadEvent<T>>() {
         @Override
         public ReadEvent<T> newInstance() {
@@ -60,7 +61,7 @@ public final class UdpChannel<T> {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    while (true) {
+                    while (running) {
                         try {
                             int index = ringBuffer.nextReadIndex();
                             ReadEvent<T> event = ringBuffer.get(index);
@@ -78,12 +79,19 @@ public final class UdpChannel<T> {
     }
 
     void doRead() throws IOException, InterruptedException {
+//        LOGGER.info("doRead");
         SocketAddress remote = channel.receive(readBuffer);
+//        channel.connect(remote);
+
         readBuffer.flip();
         //解码
         T t = config.getProtocol().decode(readBuffer);
         if (t == null) {
             System.out.println("decode null");
+            return;
+        }
+        if (config.getThreadNum() == 0) {
+            config.getProcessor().process(this, remote, t);
             return;
         }
         RingBuffer<ReadEvent<T>> ringBuffer = readBuffers[remote.hashCode() % config.getThreadNum()];
@@ -111,6 +119,7 @@ public final class UdpChannel<T> {
     }
 
     void doWrite() throws IOException {
+//        LOGGER.info("doWrite");
         int writeSize = -1;
         do {
             int index = ringBuffer.tryNextReadIndex();
@@ -136,5 +145,17 @@ public final class UdpChannel<T> {
                 LOGGER.error("buffer has remaining!");
             }
         } while (writeSize > 0);
+    }
+
+    void shutdown() {
+        running = false;
+        try {
+            if (channel != null) {
+                channel.close();
+                channel = null;
+            }
+        } catch (IOException e) {
+            LOGGER.error("", e);
+        }
     }
 }

@@ -39,7 +39,18 @@ public class UdpBootstrap<T> implements Runnable {
 
 
     public void shutdown() {
-
+        if (udpChannel != null) {
+            udpChannel.shutdown();
+            udpChannel = null;
+        }
+        try {
+            if (selector != null) {
+                selector.close();
+                selector = null;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public UdpChannel<T> start() throws IOException {
@@ -75,7 +86,7 @@ public class UdpBootstrap<T> implements Runnable {
         // 通过检查状态使之一直保持服务状态
         while (IoServerStatusEnum.RUNING == status) {
             try {
-                LOGGER.info("running");
+//                LOGGER.info("running");
                 running();
             } catch (ClosedSelectorException e) {
                 updateServiceStatus(IoServerStatusEnum.Abnormal);// Selector关闭触发服务终止
@@ -119,4 +130,24 @@ public class UdpBootstrap<T> implements Runnable {
         selectionKeys.clear();
     }
 
+    /**
+     * 设置读缓存区大小
+     *
+     * @param size 单位：byte
+     */
+    public final UdpBootstrap<T> setReadBufferSize(int size) {
+        this.config.setReadBufferSize(size);
+        return this;
+    }
+
+
+    /**
+     * 设置线程大小
+     *
+     * @param num
+     */
+    public final UdpBootstrap<T> setThreadNum(int num) {
+        this.config.setThreadNum(num);
+        return this;
+    }
 }

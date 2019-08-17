@@ -13,10 +13,11 @@ import java.nio.ByteBuffer;
  */
 public class UdpServerDemo {
     public static void main(String[] args) throws IOException, InterruptedException {
+        //服务端
         UdpBootstrap<String> server = new UdpBootstrap<String>(new StringProtocol(), new MessageProcessor<String>() {
             @Override
             public void process(UdpChannel<String> session, SocketAddress remote, String msg) {
-                System.out.println("msg:" + msg);
+                System.out.println("server receive request:" + msg);
                 byte[] b = msg.getBytes();
                 ByteBuffer buffer = ByteBuffer.allocate(4 + b.length);
                 buffer.putInt(b.length);
@@ -31,29 +32,23 @@ public class UdpServerDemo {
         }, 9999);
         server.start();
 
-
-        UdpBootstrap<String> client = new UdpBootstrap<String>(new StringProtocol(), new MessageProcessor<String>() {
-            @Override
-            public void process(UdpChannel<String> session, SocketAddress remote, String msg) {
-                System.out.println("msg:" + msg);
-//                byte[] b = msg.getBytes();
-//                ByteBuffer buffer = ByteBuffer.allocate(4 + b.length);
-//                buffer.putInt(b.length);
-//                buffer.put(b);
-//                buffer.flip();
-//                try {
-//                    session.write(buffer, remote);
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-            }
-        });
-        UdpChannel<String> channel = client.start();
-        byte[] b = "HelloWorld".getBytes();
-        ByteBuffer buffer = ByteBuffer.allocate(4 + b.length);
-        buffer.putInt(b.length);
-        buffer.put(b);
-        buffer.flip();
-        channel.write(buffer, new InetSocketAddress("localhost",9999));
+        //客户端
+        int i = 10;
+        SocketAddress remote = new InetSocketAddress("localhost", 9999);
+        while (i-- > 0) {
+            UdpBootstrap<String> client = new UdpBootstrap<String>(new StringProtocol(), new MessageProcessor<String>() {
+                @Override
+                public void process(UdpChannel<String> session, SocketAddress remote, String msg) {
+                    System.out.println(session + " receive response:" + msg);
+                }
+            });
+            UdpChannel<String> channel = client.start();
+            byte[] b = "HelloWorld".getBytes();
+            ByteBuffer buffer = ByteBuffer.allocate(4 + b.length);
+            buffer.putInt(b.length);
+            buffer.put(b);
+            buffer.flip();
+            channel.write(buffer, remote);
+        }
     }
 }
