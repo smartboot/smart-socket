@@ -13,8 +13,10 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
+ * UDP服务启动类
+ *
  * @author 三刀
- * @version V1.0 , 2019/8/15
+ * @version V1.0 , 2019/8/17
  */
 public class UdpBootstrap<T> implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpBootstrap.class);
@@ -22,27 +24,27 @@ public class UdpBootstrap<T> implements Runnable {
      * 服务状态
      */
     private volatile IoServerStatusEnum status = IoServerStatusEnum.Init;
+    /**
+     * 多路复用器
+     */
     private Selector selector;
 
-    private UdpChannel<T> udpChannel;
     private IoServerConfig<T> config = new IoServerConfig<>();
+    private volatile boolean threadStarted = false;
+
 
     public UdpBootstrap(Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
     }
 
-    public UdpBootstrap(Protocol<T> protocol, MessageProcessor<T> messageProcessor, int port) {
-        this(protocol, messageProcessor);
-        config.setPort(port);
-    }
+//    public UdpBootstrap(Protocol<T> protocol, MessageProcessor<T> messageProcessor, int port) {
+//        this(protocol, messageProcessor);
+//        config.setPort(port);
+//    }
 
 
     public void shutdown() {
-        if (udpChannel != null) {
-            udpChannel.shutdown();
-            udpChannel = null;
-        }
         try {
             if (selector != null) {
                 selector.close();
@@ -54,23 +56,45 @@ public class UdpBootstrap<T> implements Runnable {
     }
 
     public UdpChannel<T> start() throws IOException {
-        try {
-//            checkStart();
-//            assertAbnormalStatus();
-            updateServiceStatus(IoServerStatusEnum.STARTING);
-            DatagramChannel channel = DatagramChannel.open();
-            channel.configureBlocking(false);
-            if (config.getPort() > 0) {
-                channel.socket().bind(new InetSocketAddress(config.getPort()));
-            }
-            selector = Selector.open();
-            SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
+        return start(0);
+    }
 
-            this.udpChannel = new UdpChannel<>(channel, selectionKey, config);
-            Thread serverThread = new Thread(this, "Nio-Server");
-            serverThread.start();
-        } catch (final IOException e) {
-            throw e;
+    /**
+     * 启动服务
+     *
+     * @param port
+     * @return
+     * @throws IOException
+     */
+    public UdpChannel<T> start(int port) throws IOException {
+
+        if (selector == null) {
+            synchronized (this) {
+                if (selector == null) {
+                    selector = Selector.open();
+                }
+            }
+        }
+
+        DatagramChannel channel = DatagramChannel.open();
+        channel.configureBlocking(false);
+        if (port > 0) {
+            channel.socket().bind(new InetSocketAddress(port));
+        }
+
+        SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
+        UdpChannel<T> udpChannel = new UdpChannel<T>(channel, selectionKey, config);
+        selectionKey.attach(udpChannel);
+
+        if (!threadStarted) {
+            synchronized (this) {
+                if (!threadStarted) {
+                    updateServiceStatus(IoServerStatusEnum.STARTING);
+                    Thread serverThread = new Thread(this, "Nio-Server");
+                    serverThread.start();
+                    threadStarted = true;
+                }
+            }
         }
         return udpChannel;
     }
@@ -86,7 +110,6 @@ public class UdpBootstrap<T> implements Runnable {
         // 通过检查状态使之一直保持服务状态
         while (IoServerStatusEnum.RUNING == status) {
             try {
-//                LOGGER.info("running");
                 running();
             } catch (ClosedSelectorException e) {
                 updateServiceStatus(IoServerStatusEnum.Abnormal);// Selector关闭触发服务终止
@@ -114,6 +137,7 @@ public class UdpBootstrap<T> implements Runnable {
         // 执行本次已触发待处理的事件
         while (keyIterator.hasNext()) {
             final SelectionKey key = keyIterator.next();
+            UdpChannel<T> udpChannel = (UdpChannel<T>) key.attachment();
             try {
                 // 读取客户端数据
                 if (key.isReadable()) {

@@ -20,11 +20,18 @@ public final class UdpChannel<T> {
     private DatagramChannel channel;
     private SelectionKey selectionKey;
     private ByteBuffer readBuffer;
-    private RingBuffer<WriteEvent> ringBuffer;
+    /**
+     * 待输出消息
+     */
+    private RingBuffer<WriteEvent> writeRingBuffer;
     private IoServerConfig<T> config;
-    private RingBuffer<ReadEvent<T>>[] readBuffers;
+    /**
+     * 已完成解码待业务处理的消息集合
+     */
+    private RingBuffer<ReadEvent<T>>[] readRingBuffers;
     private Object lock = new Object();
     private boolean running = true;
+
     private EventFactory<ReadEvent<T>> factory = new EventFactory<ReadEvent<T>>() {
         @Override
         public ReadEvent<T> newInstance() {
@@ -40,7 +47,7 @@ public final class UdpChannel<T> {
 
     UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, final IoServerConfig<T> config) {
         this.channel = channel;
-        ringBuffer = new RingBuffer<>(2024, new EventFactory<WriteEvent>() {
+        writeRingBuffer = new RingBuffer<>(2024, new EventFactory<WriteEvent>() {
             @Override
             public WriteEvent newInstance() {
                 return new WriteEvent();
@@ -55,9 +62,9 @@ public final class UdpChannel<T> {
         this.config = config;
         readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
 
-        readBuffers = new RingBuffer[config.getThreadNum()];
+        readRingBuffers = new RingBuffer[config.getThreadNum()];
         for (int i = 0; i < config.getThreadNum(); i++) {
-            final RingBuffer<ReadEvent<T>> ringBuffer = readBuffers[i] = new RingBuffer<ReadEvent<T>>(1024, factory);
+            final RingBuffer<ReadEvent<T>> ringBuffer = readRingBuffers[i] = new RingBuffer<ReadEvent<T>>(1024, factory);
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -94,7 +101,7 @@ public final class UdpChannel<T> {
             config.getProcessor().process(this, remote, t);
             return;
         }
-        RingBuffer<ReadEvent<T>> ringBuffer = readBuffers[remote.hashCode() % config.getThreadNum()];
+        RingBuffer<ReadEvent<T>> ringBuffer = readRingBuffers[remote.hashCode() % config.getThreadNum()];
         int index = ringBuffer.nextWriteIndex();
         ReadEvent<T> udpEvent = ringBuffer.get(index);
         udpEvent.setRemote(remote);
@@ -104,11 +111,11 @@ public final class UdpChannel<T> {
     }
 
     public void write(ByteBuffer byteBuffer, SocketAddress remote) throws InterruptedException {
-        int index = ringBuffer.nextWriteIndex();
-        WriteEvent event = ringBuffer.get(index);
+        int index = writeRingBuffer.nextWriteIndex();
+        WriteEvent event = writeRingBuffer.get(index);
         event.setBuffer(byteBuffer);
         event.setRemote(remote);
-        ringBuffer.publishWriteIndex(index);
+        writeRingBuffer.publishWriteIndex(index);
 
         if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) == 0) {
             synchronized (lock) {
@@ -122,24 +129,24 @@ public final class UdpChannel<T> {
 //        LOGGER.info("doWrite");
         int writeSize = -1;
         do {
-            int index = ringBuffer.tryNextReadIndex();
+            int index = writeRingBuffer.tryNextReadIndex();
             //无可写数据,去除写关注
             if (index < 0) {
                 synchronized (lock) {
                     selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
                     selectionKey.selector().wakeup();
                 }
-                index = ringBuffer.tryNextReadIndex();
+                index = writeRingBuffer.tryNextReadIndex();
                 if (index < 0) {
                     return;
                 } else {
                     selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
                 }
             }
-            WriteEvent event = ringBuffer.get(index);
+            WriteEvent event = writeRingBuffer.get(index);
             ByteBuffer buffer = event.getBuffer();
             SocketAddress remote = event.getRemote();
-            ringBuffer.publishReadIndex(index);
+            writeRingBuffer.publishReadIndex(index);
             writeSize = channel.send(buffer, remote);
             if (buffer.hasRemaining()) {
                 LOGGER.error("buffer has remaining!");

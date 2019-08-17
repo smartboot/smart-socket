@@ -29,19 +29,19 @@ public class UdpServerDemo {
                     e.printStackTrace();
                 }
             }
-        }, 9999);
-        server.start();
-
+        });
+        server.start(9999);
+        System.out.println("启动成功");
         //客户端
         int i = 10;
         SocketAddress remote = new InetSocketAddress("localhost", 9999);
+        UdpBootstrap<String> client = new UdpBootstrap<String>(new StringProtocol(), new MessageProcessor<String>() {
+            @Override
+            public void process(UdpChannel<String> session, SocketAddress remote, String msg) {
+                System.out.println(session + " receive response:" + msg);
+            }
+        });
         while (i-- > 0) {
-            UdpBootstrap<String> client = new UdpBootstrap<String>(new StringProtocol(), new MessageProcessor<String>() {
-                @Override
-                public void process(UdpChannel<String> session, SocketAddress remote, String msg) {
-                    System.out.println(session + " receive response:" + msg);
-                }
-            });
             UdpChannel<String> channel = client.start();
             byte[] b = "HelloWorld".getBytes();
             ByteBuffer buffer = ByteBuffer.allocate(4 + b.length);
