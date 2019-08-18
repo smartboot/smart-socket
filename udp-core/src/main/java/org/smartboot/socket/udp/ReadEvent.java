@@ -7,6 +7,7 @@ import java.net.SocketAddress;
  * @version V1.0 , 2019/8/16
  */
 final class ReadEvent<T> {
+    private UdpChannel<T> channel;
     private SocketAddress remote;
     private T message;
 
@@ -24,5 +25,13 @@ final class ReadEvent<T> {
 
     public void setMessage(T message) {
         this.message = message;
+    }
+
+    public UdpChannel<T> getChannel() {
+        return channel;
+    }
+
+    public void setChannel(UdpChannel<T> channel) {
+        this.channel = channel;
     }
 }

@@ -10,6 +10,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
+import java.util.concurrent.Semaphore;
 
 /**
  * @author 三刀
@@ -19,7 +20,7 @@ public final class UdpChannel<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
     private DatagramChannel channel;
     private SelectionKey selectionKey;
-    private ByteBuffer readBuffer;
+
     /**
      * 待输出消息
      */
@@ -28,22 +29,9 @@ public final class UdpChannel<T> {
     /**
      * 已完成解码待业务处理的消息集合
      */
-    private RingBuffer<ReadEvent<T>>[] readRingBuffers;
     private Object lock = new Object();
-    private boolean running = true;
 
-    private EventFactory<ReadEvent<T>> factory = new EventFactory<ReadEvent<T>>() {
-        @Override
-        public ReadEvent<T> newInstance() {
-            return new ReadEvent<>();
-        }
-
-        @Override
-        public void restEntity(ReadEvent<T> entity) {
-            entity.setMessage(null);
-            entity.setRemote(null);
-        }
-    };
+    private Semaphore writeSemaphore = new Semaphore(1);
 
     UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, final IoServerConfig<T> config) {
         this.channel = channel;
@@ -60,35 +48,11 @@ public final class UdpChannel<T> {
         });
         this.selectionKey = selectionKey;
         this.config = config;
-        readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
-
-        readRingBuffers = new RingBuffer[config.getThreadNum()];
-        for (int i = 0; i < config.getThreadNum(); i++) {
-            final RingBuffer<ReadEvent<T>> ringBuffer = readRingBuffers[i] = new RingBuffer<ReadEvent<T>>(1024, factory);
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    while (running) {
-                        try {
-                            int index = ringBuffer.nextReadIndex();
-                            ReadEvent<T> event = ringBuffer.get(index);
-                            SocketAddress remote = event.getRemote();
-                            T message = event.getMessage();
-                            ringBuffer.publishReadIndex(index);
-                            config.getProcessor().process(UdpChannel.this, remote, message);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }).start();
-        }
     }
 
-    void doRead() throws IOException, InterruptedException {
+    void doRead(ByteBuffer readBuffer, RingBuffer<ReadEvent<T>>[] readRingBuffers) throws IOException, InterruptedException {
 //        LOGGER.info("doRead");
         SocketAddress remote = channel.receive(readBuffer);
-//        channel.connect(remote);
 
         readBuffer.flip();
         //解码
@@ -106,11 +70,19 @@ public final class UdpChannel<T> {
         ReadEvent<T> udpEvent = ringBuffer.get(index);
         udpEvent.setRemote(remote);
         udpEvent.setMessage(t);
+        udpEvent.setChannel(this);
         ringBuffer.publishWriteIndex(index);
         readBuffer.clear();
     }
 
-    public void write(ByteBuffer byteBuffer, SocketAddress remote) throws InterruptedException {
+    public void write(ByteBuffer byteBuffer, SocketAddress remote) throws InterruptedException, IOException {
+        if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) == 0 && writeSemaphore.tryAcquire()) {
+            channel.send(byteBuffer, remote);
+            writeSemaphore.release();
+//            System.out.println("aaa");
+            return;
+        }
+//        System.out.println("bbb");
         int index = writeRingBuffer.nextWriteIndex();
         WriteEvent event = writeRingBuffer.get(index);
         event.setBuffer(byteBuffer);
@@ -155,7 +127,6 @@ public final class UdpChannel<T> {
     }
 
     void shutdown() {
-        running = false;
         try {
             if (channel != null) {
                 channel.close();

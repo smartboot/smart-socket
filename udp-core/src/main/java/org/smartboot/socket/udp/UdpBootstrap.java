@@ -2,9 +2,13 @@ package org.smartboot.socket.udp;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartboot.socket.buffer.ring.EventFactory;
+import org.smartboot.socket.buffer.ring.RingBuffer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
@@ -31,18 +35,31 @@ public class UdpBootstrap<T> implements Runnable {
 
     private IoServerConfig<T> config = new IoServerConfig<>();
     private volatile boolean threadStarted = false;
+    /**
+     * 已完成解码待业务处理的消息集合
+     */
+    private RingBuffer<ReadEvent<T>>[] readRingBuffers;
 
+    private ByteBuffer readBuffer;
+
+    private EventFactory<ReadEvent<T>> factory = new EventFactory<ReadEvent<T>>() {
+        @Override
+        public ReadEvent<T> newInstance() {
+            return new ReadEvent<>();
+        }
+
+        @Override
+        public void restEntity(ReadEvent<T> entity) {
+            entity.setMessage(null);
+            entity.setRemote(null);
+            entity.setChannel(null);
+        }
+    };
 
     public UdpBootstrap(Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
     }
-
-//    public UdpBootstrap(Protocol<T> protocol, MessageProcessor<T> messageProcessor, int port) {
-//        this(protocol, messageProcessor);
-//        config.setPort(port);
-//    }
-
 
     public void shutdown() {
         try {
@@ -83,15 +100,40 @@ public class UdpBootstrap<T> implements Runnable {
         }
 
         SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
-        UdpChannel<T> udpChannel = new UdpChannel<T>(channel, selectionKey, config);
+        UdpChannel<T> udpChannel = new UdpChannel<>(channel, selectionKey, config);
         selectionKey.attach(udpChannel);
 
         if (!threadStarted) {
             synchronized (this) {
                 if (!threadStarted) {
+                    readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
+
                     updateServiceStatus(IoServerStatusEnum.STARTING);
                     Thread serverThread = new Thread(this, "Nio-Server");
                     serverThread.start();
+
+                    readRingBuffers = new RingBuffer[config.getThreadNum()];
+                    for (int i = 0; i < config.getThreadNum(); i++) {
+                        final RingBuffer<ReadEvent<T>> ringBuffer = readRingBuffers[i] = new RingBuffer<>(1024, factory);
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                while (IoServerStatusEnum.RUNING == status) {
+                                    try {
+                                        int index = ringBuffer.nextReadIndex();
+                                        ReadEvent<T> event = ringBuffer.get(index);
+                                        SocketAddress remote = event.getRemote();
+                                        UdpChannel<T> channel = event.getChannel();
+                                        T message = event.getMessage();
+                                        ringBuffer.publishReadIndex(index);
+                                        config.getProcessor().process(channel, remote, message);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        }).start();
+                    }
                     threadStarted = true;
                 }
             }
@@ -99,7 +141,7 @@ public class UdpBootstrap<T> implements Runnable {
         return udpChannel;
     }
 
-    final void updateServiceStatus(final IoServerStatusEnum status) {
+    private void updateServiceStatus(final IoServerStatusEnum status) {
         this.status = status;
 //        notifyWhenUpdateStatus(status);
     }
@@ -141,7 +183,7 @@ public class UdpBootstrap<T> implements Runnable {
             try {
                 // 读取客户端数据
                 if (key.isReadable()) {
-                    udpChannel.doRead();
+                    udpChannel.doRead(readBuffer, readRingBuffers);
                 } else if (key.isWritable()) {
                     udpChannel.doWrite();
                 } else {
