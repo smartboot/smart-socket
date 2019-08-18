@@ -122,6 +122,32 @@ public final class RingBuffer<T> {
         }
     }
 
+    public int tryNextWriteIndex() throws InterruptedException {
+        final ReentrantLock lock = this.lock;
+        lock.lockInterruptibly();
+        try {
+            notFullSignal();
+            final Node<T>[] items = this.items;
+            Node<T> node = items[putIndex];
+            if (node == null) {
+                node = new Node<>(eventFactory.newInstance());
+                node.status = WRITEABLE;
+                items[putIndex] = node;
+            }
+            if (node.status != WRITEABLE) {
+                return -1;
+            }
+
+            node.status = WRITING;
+            int index = putIndex;
+            if (++putIndex == items.length)
+                putIndex = 0;
+            return index;
+        } finally {
+            lock.unlock();
+        }
+    }
+
     public void publishWriteIndex(int sequence) {
         Node<T> node = items[sequence];
         if (node.status != WRITING) {

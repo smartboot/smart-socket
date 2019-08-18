@@ -66,7 +66,20 @@ public final class UdpChannel<T> {
             return;
         }
         RingBuffer<ReadEvent<T>> ringBuffer = readRingBuffers[remote.hashCode() % config.getThreadNum()];
-        int index = ringBuffer.nextWriteIndex();
+
+        int index = -1;
+        while ((index = ringBuffer.tryNextWriteIndex()) < 0) {
+            doWrite();
+            int readIndex = ringBuffer.tryNextReadIndex();
+            if (readIndex >= 0) {
+                ReadEvent<T> event = ringBuffer.get(index);
+                SocketAddress address = event.getRemote();
+                UdpChannel<T> readChannel = event.getChannel();
+                T message = event.getMessage();
+                ringBuffer.publishReadIndex(index);
+                config.getProcessor().process(readChannel, address, message);
+            }
+        }
         ReadEvent<T> udpEvent = ringBuffer.get(index);
         udpEvent.setRemote(remote);
         udpEvent.setMessage(t);
@@ -79,11 +92,13 @@ public final class UdpChannel<T> {
         if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) == 0 && writeSemaphore.tryAcquire()) {
             channel.send(byteBuffer, remote);
             writeSemaphore.release();
-//            System.out.println("aaa");
             return;
         }
-//        System.out.println("bbb");
-        int index = writeRingBuffer.nextWriteIndex();
+        int index = writeRingBuffer.tryNextWriteIndex();
+        if (index < 0) {
+            channel.send(byteBuffer, remote);
+            return;
+        }
         WriteEvent event = writeRingBuffer.get(index);
         event.setBuffer(byteBuffer);
         event.setRemote(remote);
