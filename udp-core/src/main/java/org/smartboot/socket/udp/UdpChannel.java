@@ -14,7 +14,7 @@ import java.util.concurrent.Semaphore;
 
 /**
  * @author 三刀
- * @version V1.0 , 2019/8/16
+ * @version V1.0 , 2019/8/18
  */
 public final class UdpChannel<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
@@ -69,14 +69,16 @@ public final class UdpChannel<T> {
 
         int index = -1;
         while ((index = ringBuffer.tryNextWriteIndex()) < 0) {
+            //读缓冲区已满,尝试清空写缓冲区
             doWrite();
+            //尝试消费一个读缓冲区资源
             int readIndex = ringBuffer.tryNextReadIndex();
             if (readIndex >= 0) {
-                ReadEvent<T> event = ringBuffer.get(index);
+                ReadEvent<T> event = ringBuffer.get(readIndex);
                 SocketAddress address = event.getRemote();
                 UdpChannel<T> readChannel = event.getChannel();
                 T message = event.getMessage();
-                ringBuffer.publishReadIndex(index);
+                ringBuffer.publishReadIndex(readIndex);
                 config.getProcessor().process(readChannel, address, message);
             }
         }
@@ -89,12 +91,17 @@ public final class UdpChannel<T> {
     }
 
     public void write(ByteBuffer byteBuffer, SocketAddress remote) throws InterruptedException, IOException {
+        //无并发则同步输出
         if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) == 0 && writeSemaphore.tryAcquire()) {
-            channel.send(byteBuffer, remote);
-            writeSemaphore.release();
+            try {
+                channel.send(byteBuffer, remote);
+            } finally {
+                writeSemaphore.release();
+            }
             return;
         }
         int index = writeRingBuffer.tryNextWriteIndex();
+        //缓存区已满,同步输出
         if (index < 0) {
             channel.send(byteBuffer, remote);
             return;
@@ -142,6 +149,9 @@ public final class UdpChannel<T> {
     }
 
     void shutdown() {
+        if (selectionKey != null) {
+            selectionKey.cancel();
+        }
         try {
             if (channel != null) {
                 channel.close();

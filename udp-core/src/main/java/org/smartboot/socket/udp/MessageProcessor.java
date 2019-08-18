@@ -50,16 +50,16 @@ import java.net.SocketAddress;
  * </p>
  *
  * @author 三刀
- * @version V1.0.0 2018/5/19
+ * @version V1.0.0 2019/8/18
  */
 public interface MessageProcessor<T> {
 
     /**
      * 处理接收到的消息
      *
-     * @param session 通信会话
+     * @param channel 通信会话
      * @param msg     待处理的业务消息
      */
-    void process(UdpChannel<T> session, SocketAddress remote, T msg);
+    void process(UdpChannel<T> channel, SocketAddress remote, T msg);
 
 }
