@@ -27,5 +27,5 @@ public interface Protocol<Request, Response> {
      */
     Request decode(final ByteBuffer readBuffer);
 
-    ByteBuffer encode(Response response);
+    void encode(ByteBuffer bufferPage, Response response);
 }

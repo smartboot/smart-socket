@@ -2,13 +2,15 @@ package org.smartboot.socket.udp;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartboot.socket.buffer.pool.BufferPage;
+import org.smartboot.socket.buffer.pool.BufferPagePool;
+import org.smartboot.socket.buffer.pool.VirtualBuffer;
 import org.smartboot.socket.buffer.ring.EventFactory;
 import org.smartboot.socket.buffer.ring.RingBuffer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
@@ -65,26 +67,33 @@ public class UdpBootstrap<Request, Response> implements Runnable {
     /**
      * 已完成解码待业务处理的消息集合
      */
-    private RingBuffer<ReadEvent<Request,Response>>[] readRingBuffers;
+    private RingBuffer<ReadEvent<Request, Response>>[] readRingBuffers;
 
     /**
      * 读缓冲区
      */
-    private ByteBuffer readBuffer;
+    private VirtualBuffer readBuffer;
 
-    private EventFactory<ReadEvent<Request,Response>> factory = new EventFactory<ReadEvent<Request,Response>>() {
+    /**
+     * 写缓冲区
+     */
+    private VirtualBuffer writeBuffer;
+
+    private EventFactory<ReadEvent<Request, Response>> factory = new EventFactory<ReadEvent<Request, Response>>() {
         @Override
-        public ReadEvent<Request,Response> newInstance() {
+        public ReadEvent<Request, Response> newInstance() {
             return new ReadEvent<>();
         }
 
         @Override
-        public void restEntity(ReadEvent<Request,Response> entity) {
+        public void restEntity(ReadEvent<Request, Response> entity) {
             entity.setMessage(null);
             entity.setRemote(null);
             entity.setChannel(null);
         }
     };
+
+    private BufferPage bufferPage = new BufferPagePool(1024, 1, true).allocateBufferPage();
 
     public UdpBootstrap(Protocol<Request, Response> protocol, MessageProcessor<Request, Response> messageProcessor) {
         config.setProtocol(protocol);
@@ -135,7 +144,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
             selector.wakeup();
         }
         SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
-        UdpChannel<Request, Response> udpChannel = new UdpChannel<>(channel, selectionKey, config);
+        UdpChannel<Request, Response> udpChannel = new UdpChannel<>(channel, selectionKey, config, bufferPage);
         selectionKey.attach(udpChannel);
 
         //启动线程服务
@@ -153,14 +162,15 @@ public class UdpBootstrap<Request, Response> implements Runnable {
             }
             updateServiceStatus(STATUS_STARTING);
 
-            readBuffer = ByteBuffer.allocate(config.getReadBufferSize());
+            readBuffer = bufferPage.allocate(config.getReadBufferSize());
+            writeBuffer = bufferPage.allocate(config.getWriteBufferSize());
             int uid = UdpBootstrap.uid++;
             Thread serverThread = new Thread(this, "UDP-Selector-" + uid);
             serverThread.start();
 
             readRingBuffers = new RingBuffer[config.getThreadNum()];
             for (int i = 0; i < config.getThreadNum(); i++) {
-                final RingBuffer<ReadEvent<Request,Response>> ringBuffer = readRingBuffers[i] = new RingBuffer<>(1024, factory);
+                final RingBuffer<ReadEvent<Request, Response>> ringBuffer = readRingBuffers[i] = new RingBuffer<>(1024, factory);
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -170,7 +180,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
                                 if (STATUS_RUNNING != status) {
                                     break;
                                 }
-                                ReadEvent<Request,Response> event = ringBuffer.get(index);
+                                ReadEvent<Request, Response> event = ringBuffer.get(index);
                                 SocketAddress remote = event.getRemote();
                                 UdpChannel<Request, Response> channel = event.getChannel();
                                 Request message = event.getMessage();
@@ -234,11 +244,15 @@ public class UdpBootstrap<Request, Response> implements Runnable {
             final SelectionKey key = keyIterator.next();
             UdpChannel<Request, Response> udpChannel = (UdpChannel<Request, Response>) key.attachment();
             try {
+                if (!key.isValid()) {
+                    udpChannel.close();
+                    continue;
+                }
                 // 读取客户端数据
                 if (key.isReadable()) {
-                    udpChannel.doRead(readBuffer, readRingBuffers);
+                    udpChannel.doRead(readBuffer.buffer(), readRingBuffers);
                 } else if (key.isWritable()) {
-                    udpChannel.doWrite();
+                    udpChannel.doWrite(writeBuffer);
                 } else {
                     LOGGER.warn("奇怪了...");
                 }
@@ -253,7 +267,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
         status = STATUS_STOPPING;
 
         for (int i = 0; i < config.getThreadNum(); i++) {
-            RingBuffer<ReadEvent<Request,Response>> ringBuffer = readRingBuffers[i];
+            RingBuffer<ReadEvent<Request, Response>> ringBuffer = readRingBuffers[i];
             try {
                 int index = ringBuffer.tryNextWriteIndex();
                 ringBuffer.publishWriteIndex(index);

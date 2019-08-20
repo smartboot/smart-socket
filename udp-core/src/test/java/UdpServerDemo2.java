@@ -55,7 +55,7 @@ public class UdpServerDemo2 {
             }).start();
 
         }
-        Thread.sleep(10);
+        Thread.sleep(100);
         bootstrap.shutdown();
     }
 }

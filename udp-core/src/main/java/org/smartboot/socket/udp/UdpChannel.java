@@ -2,6 +2,8 @@ package org.smartboot.socket.udp;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.smartboot.socket.buffer.pool.BufferPage;
+import org.smartboot.socket.buffer.pool.VirtualBuffer;
 import org.smartboot.socket.buffer.ring.EventFactory;
 import org.smartboot.socket.buffer.ring.RingBuffer;
 
@@ -10,7 +12,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
-import java.util.concurrent.Semaphore;
+import java.nio.channels.Selector;
 
 /**
  * @author 三刀
@@ -20,6 +22,8 @@ public final class UdpChannel<Request, Response> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
     private DatagramChannel channel;
     private SelectionKey selectionKey;
+
+    private BufferPage bufferPage;
 
     /**
      * 待输出消息
@@ -31,9 +35,7 @@ public final class UdpChannel<Request, Response> {
      */
     private Object lock = new Object();
 
-    private Semaphore writeSemaphore = new Semaphore(1);
-
-    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, final IoServerConfig<Request, Response> config) {
+    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, final IoServerConfig<Request, Response> config, BufferPage bufferPage) {
         this.channel = channel;
         writeRingBuffer = new RingBuffer<>(2024, new EventFactory<WriteEvent>() {
             @Override
@@ -43,20 +45,20 @@ public final class UdpChannel<Request, Response> {
 
             @Override
             public void restEntity(WriteEvent entity) {
-                entity.setBuffer(null);
+                entity.setResponse(null);
+                entity.setRemote(null);
             }
         });
         this.selectionKey = selectionKey;
         this.config = config;
+        this.bufferPage = bufferPage;
     }
 
-    void doRead(ByteBuffer readBuffer, RingBuffer<ReadEvent<Request, Response>>[] readRingBuffers) throws IOException, InterruptedException {
-//        LOGGER.info("doRead");
-        SocketAddress remote = channel.receive(readBuffer);
-
-        readBuffer.flip();
+    void doRead(ByteBuffer persistReadBuffer, RingBuffer<ReadEvent<Request, Response>>[] readRingBuffers) throws IOException, InterruptedException {
+        SocketAddress remote = channel.receive(persistReadBuffer);
+        persistReadBuffer.flip();
         //解码
-        Request t = config.getProtocol().decode(readBuffer);
+        Request t = config.getProtocol().decode(persistReadBuffer);
         if (t == null) {
             System.out.println("decode null");
             return;
@@ -70,7 +72,12 @@ public final class UdpChannel<Request, Response> {
         int index = -1;
         while ((index = ringBuffer.tryNextWriteIndex()) < 0) {
             //读缓冲区已满,尝试清空写缓冲区
-            doWrite();
+            VirtualBuffer buffer = bufferPage.allocate(config.getWriteBufferSize());
+            try {
+                doWrite(buffer);
+            } finally {
+                buffer.clean();
+            }
             //尝试消费一个读缓冲区资源
             int readIndex = ringBuffer.tryNextReadIndex();
             if (readIndex >= 0) {
@@ -87,32 +94,24 @@ public final class UdpChannel<Request, Response> {
         udpEvent.setMessage(t);
         udpEvent.setChannel(this);
         ringBuffer.publishWriteIndex(index);
-        readBuffer.clear();
+        persistReadBuffer.clear();
     }
 
     public void write(Response response, SocketAddress remote) throws IOException, InterruptedException {
-        write(config.getProtocol().encode(response), remote);
-    }
-
-
-    public void write(ByteBuffer byteBuffer, SocketAddress remote) throws InterruptedException, IOException {
-        //无并发则同步输出
-        if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) == 0 && writeSemaphore.tryAcquire()) {
-            try {
-                channel.send(byteBuffer, remote);
-            } finally {
-                writeSemaphore.release();
-            }
-            return;
-        }
         int index = writeRingBuffer.tryNextWriteIndex();
         //缓存区已满,同步输出
         if (index < 0) {
-            channel.send(byteBuffer, remote);
+            VirtualBuffer virtualBuffer = bufferPage.allocate(config.getWriteBufferSize());
+            config.getProtocol().encode(virtualBuffer.buffer(), response);
+            try {
+                channel.send(virtualBuffer.buffer(), remote);
+            } finally {
+                virtualBuffer.clean();
+            }
             return;
         }
-        WriteEvent event = writeRingBuffer.get(index);
-        event.setBuffer(byteBuffer);
+        WriteEvent<Response> event = writeRingBuffer.get(index);
+        event.setResponse(response);
         event.setRemote(remote);
         writeRingBuffer.publishWriteIndex(index);
 
@@ -124,7 +123,7 @@ public final class UdpChannel<Request, Response> {
         }
     }
 
-    void doWrite() throws IOException {
+    void doWrite(VirtualBuffer virtualBuffer) throws IOException {
 //        LOGGER.info("doWrite");
         int writeSize = -1;
         do {
@@ -142,11 +141,17 @@ public final class UdpChannel<Request, Response> {
                     selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
                 }
             }
-            WriteEvent event = writeRingBuffer.get(index);
-            ByteBuffer buffer = event.getBuffer();
+
+            WriteEvent<Response> event = writeRingBuffer.get(index);
+            Response response = event.getResponse();
             SocketAddress remote = event.getRemote();
             writeRingBuffer.publishReadIndex(index);
+
+            ByteBuffer buffer = virtualBuffer.buffer();
+            buffer.clear();
+            config.getProtocol().encode(buffer, response);
             writeSize = channel.send(buffer, remote);
+
             if (buffer.hasRemaining()) {
                 LOGGER.error("buffer has remaining!");
             }
@@ -155,13 +160,10 @@ public final class UdpChannel<Request, Response> {
 
 
     public void close() {
-        close(true);
-    }
-
-    public void close(boolean immediate) {
         if (selectionKey != null) {
+            Selector selector = selectionKey.selector();
             selectionKey.cancel();
-            selectionKey.selector().wakeup();
+            selector.wakeup();
             selectionKey = null;
         }
         try {
@@ -173,4 +175,5 @@ public final class UdpChannel<Request, Response> {
             LOGGER.error("", e);
         }
     }
+
 }

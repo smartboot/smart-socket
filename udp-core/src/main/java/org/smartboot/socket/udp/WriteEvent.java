@@ -1,13 +1,12 @@
 package org.smartboot.socket.udp;
 
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 
 /**
  * @author 三刀
  * @version V1.0 , 2019/8/18
  */
-final class WriteEvent {
+final class WriteEvent<Response> {
     /**
      * 待输出数据的接受地址
      */
@@ -15,14 +14,14 @@ final class WriteEvent {
     /**
      * 待输出数据
      */
-    private ByteBuffer buffer;
+    private Response response;
 
-    public ByteBuffer getBuffer() {
-        return buffer;
+    public Response getResponse() {
+        return response;
     }
 
-    public void setBuffer(ByteBuffer buffer) {
-        this.buffer = buffer;
+    public void setResponse(Response response) {
+        this.response = response;
     }
 
     public SocketAddress getRemote() {

@@ -27,12 +27,10 @@ public class StringProtocol implements Protocol<String, String> {
     }
 
     @Override
-    public ByteBuffer encode(String response) {
+    public void encode(ByteBuffer buffer, String response) {
         byte[] b = response.getBytes();
-        ByteBuffer buffer = ByteBuffer.allocate(4 + b.length);
         buffer.putInt(b.length);
         buffer.put(b);
         buffer.flip();
-        return buffer;
     }
 }

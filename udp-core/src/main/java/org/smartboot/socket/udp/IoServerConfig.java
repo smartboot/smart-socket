@@ -23,6 +23,12 @@ final class IoServerConfig<Request, Response> {
      */
     private int readBufferSize = 512;
 
+
+    /**
+     * 消息体缓存大小,字节
+     */
+    private int writeBufferSize = 512;
+
     /**
      * 消息处理器
      */
@@ -37,6 +43,13 @@ final class IoServerConfig<Request, Response> {
      */
     private int threadNum = 1;
 
+    public int getWriteBufferSize() {
+        return writeBufferSize;
+    }
+
+    public void setWriteBufferSize(int writeBufferSize) {
+        this.writeBufferSize = writeBufferSize;
+    }
 
     public int getThreadNum() {
         return threadNum;
