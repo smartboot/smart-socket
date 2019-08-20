@@ -97,9 +97,15 @@ public final class UdpChannel<Request, Response> {
         persistReadBuffer.clear();
     }
 
+    /**
+     * @param response
+     * @param remote
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public void write(Response response, SocketAddress remote) throws IOException, InterruptedException {
         int index = writeRingBuffer.tryNextWriteIndex();
-        //缓存区已满,同步输出
+        //缓存区已满,同步输出确保线程不发送死锁
         if (index < 0) {
             VirtualBuffer virtualBuffer = bufferPage.allocate(config.getWriteBufferSize());
             config.getProtocol().encode(virtualBuffer.buffer(), response);

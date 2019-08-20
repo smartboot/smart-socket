@@ -222,6 +222,15 @@ public class UdpBootstrap<Request, Response> implements Runnable {
             }
             selector = null;
         }
+        for (int i = 0; i < config.getThreadNum(); i++) {
+            RingBuffer<ReadEvent<Request, Response>> ringBuffer = readRingBuffers[i];
+            try {
+                int index = ringBuffer.tryNextWriteIndex();
+                ringBuffer.publishWriteIndex(index);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         updateServiceStatus(STATUS_STOPPED);
         LOGGER.info("Channel is stop!");
     }
@@ -265,16 +274,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
 
     public void shutdown() {
         status = STATUS_STOPPING;
-
-        for (int i = 0; i < config.getThreadNum(); i++) {
-            RingBuffer<ReadEvent<Request, Response>> ringBuffer = readRingBuffers[i];
-            try {
-                int index = ringBuffer.tryNextWriteIndex();
-                ringBuffer.publishWriteIndex(index);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        selector.wakeup();
     }
 
     /**
