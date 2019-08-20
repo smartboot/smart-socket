@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
  * @author 三刀
  * @version V1.0 , 2019/8/16
  */
-public class StringProtocol implements Protocol<String> {
+public class StringProtocol implements Protocol<String, String> {
     @Override
     public String decode(ByteBuffer readBuffer) {
         int remaining = readBuffer.remaining();
@@ -24,5 +24,15 @@ public class StringProtocol implements Protocol<String> {
         readBuffer.get(b);
         readBuffer.mark();
         return new String(b);
+    }
+
+    @Override
+    public ByteBuffer encode(String response) {
+        byte[] b = response.getBytes();
+        ByteBuffer buffer = ByteBuffer.allocate(4 + b.length);
+        buffer.putInt(b.length);
+        buffer.put(b);
+        buffer.flip();
+        return buffer;
     }
 }

@@ -18,12 +18,14 @@ import java.nio.ByteBuffer;
  * @author 三刀
  * @version V1.0.0 2018/8/18
  */
-public interface Protocol<T> {
+public interface Protocol<Request, Response> {
     /**
      * 对于从Socket流中获取到的数据采用当前Protocol的实现类协议进行解析。
      *
      * @param readBuffer 待处理的读buffer
      * @return 本次解码成功后封装的业务消息对象, 返回null则表示解码未完成
      */
-    T decode(final ByteBuffer readBuffer);
+    Request decode(final ByteBuffer readBuffer);
+
+    ByteBuffer encode(Response response);
 }

@@ -16,7 +16,7 @@ import java.util.concurrent.Semaphore;
  * @author 三刀
  * @version V1.0 , 2019/8/18
  */
-public final class UdpChannel<T> {
+public final class UdpChannel<Request, Response> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
     private DatagramChannel channel;
     private SelectionKey selectionKey;
@@ -25,7 +25,7 @@ public final class UdpChannel<T> {
      * 待输出消息
      */
     private RingBuffer<WriteEvent> writeRingBuffer;
-    private IoServerConfig<T> config;
+    private IoServerConfig<Request, Response> config;
     /**
      * 已完成解码待业务处理的消息集合
      */
@@ -33,7 +33,7 @@ public final class UdpChannel<T> {
 
     private Semaphore writeSemaphore = new Semaphore(1);
 
-    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, final IoServerConfig<T> config) {
+    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, final IoServerConfig<Request, Response> config) {
         this.channel = channel;
         writeRingBuffer = new RingBuffer<>(2024, new EventFactory<WriteEvent>() {
             @Override
@@ -50,13 +50,13 @@ public final class UdpChannel<T> {
         this.config = config;
     }
 
-    void doRead(ByteBuffer readBuffer, RingBuffer<ReadEvent<T>>[] readRingBuffers) throws IOException, InterruptedException {
+    void doRead(ByteBuffer readBuffer, RingBuffer<ReadEvent<Request, Response>>[] readRingBuffers) throws IOException, InterruptedException {
 //        LOGGER.info("doRead");
         SocketAddress remote = channel.receive(readBuffer);
 
         readBuffer.flip();
         //解码
-        T t = config.getProtocol().decode(readBuffer);
+        Request t = config.getProtocol().decode(readBuffer);
         if (t == null) {
             System.out.println("decode null");
             return;
@@ -65,7 +65,7 @@ public final class UdpChannel<T> {
             config.getProcessor().process(this, remote, t);
             return;
         }
-        RingBuffer<ReadEvent<T>> ringBuffer = readRingBuffers[remote.hashCode() % config.getThreadNum()];
+        RingBuffer<ReadEvent<Request, Response>> ringBuffer = readRingBuffers[remote.hashCode() % config.getThreadNum()];
 
         int index = -1;
         while ((index = ringBuffer.tryNextWriteIndex()) < 0) {
@@ -74,21 +74,26 @@ public final class UdpChannel<T> {
             //尝试消费一个读缓冲区资源
             int readIndex = ringBuffer.tryNextReadIndex();
             if (readIndex >= 0) {
-                ReadEvent<T> event = ringBuffer.get(readIndex);
+                ReadEvent<Request, Response> event = ringBuffer.get(readIndex);
                 SocketAddress address = event.getRemote();
-                UdpChannel<T> readChannel = event.getChannel();
-                T message = event.getMessage();
+                UdpChannel<Request, Response> readChannel = event.getChannel();
+                Request message = event.getMessage();
                 ringBuffer.publishReadIndex(readIndex);
                 config.getProcessor().process(readChannel, address, message);
             }
         }
-        ReadEvent<T> udpEvent = ringBuffer.get(index);
+        ReadEvent<Request, Response> udpEvent = ringBuffer.get(index);
         udpEvent.setRemote(remote);
         udpEvent.setMessage(t);
         udpEvent.setChannel(this);
         ringBuffer.publishWriteIndex(index);
         readBuffer.clear();
     }
+
+    public void write(Response response, SocketAddress remote) throws IOException, InterruptedException {
+        write(config.getProtocol().encode(response), remote);
+    }
+
 
     public void write(ByteBuffer byteBuffer, SocketAddress remote) throws InterruptedException, IOException {
         //无并发则同步输出
@@ -148,9 +153,16 @@ public final class UdpChannel<T> {
         } while (writeSize > 0);
     }
 
-    void shutdown() {
+
+    public void close() {
+        close(true);
+    }
+
+    public void close(boolean immediate) {
         if (selectionKey != null) {
             selectionKey.cancel();
+            selectionKey.selector().wakeup();
+            selectionKey = null;
         }
         try {
             if (channel != null) {

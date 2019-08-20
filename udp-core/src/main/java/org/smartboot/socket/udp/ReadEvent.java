@@ -6,11 +6,11 @@ import java.net.SocketAddress;
  * @author 三刀
  * @version V1.0 , 2019/8/18
  */
-final class ReadEvent<T> {
+final class ReadEvent<Request, Response> {
     /**
      * 当前收到消息的UDP通道
      */
-    private UdpChannel<T> channel;
+    private UdpChannel<Request, Response> channel;
     /**
      * 消息来源
      */
@@ -18,7 +18,7 @@ final class ReadEvent<T> {
     /**
      * 消息体
      */
-    private T message;
+    private Request message;
 
     public SocketAddress getRemote() {
         return remote;
@@ -28,19 +28,19 @@ final class ReadEvent<T> {
         this.remote = remote;
     }
 
-    public T getMessage() {
+    public Request getMessage() {
         return message;
     }
 
-    public void setMessage(T message) {
+    public void setMessage(Request message) {
         this.message = message;
     }
 
-    public UdpChannel<T> getChannel() {
+    public UdpChannel<Request, Response> getChannel() {
         return channel;
     }
 
-    public void setChannel(UdpChannel<T> channel) {
+    public void setChannel(UdpChannel<Request, Response> channel) {
         this.channel = channel;
     }
 }

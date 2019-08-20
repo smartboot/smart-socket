@@ -5,31 +5,25 @@ import org.smartboot.socket.udp.UdpChannel;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 
 /**
  * @author 三刀
  * @version V1.0 , 2019/8/16
  */
 public class UdpServerDemo2 {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
 
         //服务端
-        final UdpBootstrap<String> bootstrap = new UdpBootstrap<String>(new StringProtocol(), new MessageProcessor<String>() {
+        final UdpBootstrap<String, String> bootstrap = new UdpBootstrap<String, String>(new StringProtocol(), new MessageProcessor<String, String>() {
             @Override
-            public void process(UdpChannel<String> channel, SocketAddress remote, String msg) {
+            public void process(UdpChannel<String, String> channel, SocketAddress remote, String msg) {
                 InetSocketAddress remoteAddress = (InetSocketAddress) remote;
                 if (remoteAddress.getPort() == 9999) {
                     System.out.println(channel + " receive response:" + msg);
                 } else {
                     System.out.println("server receive request:" + msg);
-                    byte[] b = msg.getBytes();
-                    ByteBuffer buffer = ByteBuffer.allocate(4 + b.length);
-                    buffer.putInt(b.length);
-                    buffer.put(b);
-                    buffer.flip();
                     try {
-                        channel.write(buffer, remote);
+                        channel.write(msg, remote);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -48,16 +42,12 @@ public class UdpServerDemo2 {
                 public void run() {
                     try {
                         int count = 10;
-                        UdpChannel<String> channel = bootstrap.open();
-                        byte[] b = "HelloWorld".getBytes();
+                        UdpChannel<String, String> channel = bootstrap.open();
                         while (count-- > 0) {
-                            ByteBuffer buffer = ByteBuffer.allocate(4 + b.length);
-                            buffer.putInt(b.length);
-                            buffer.put(b);
-                            buffer.flip();
-                            channel.write(buffer, remote);
+                            channel.write("HelloWorld", remote);
                         }
                         System.out.println("发送完毕");
+                        channel.close();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -65,5 +55,7 @@ public class UdpServerDemo2 {
             }).start();
 
         }
+        Thread.sleep(10);
+        bootstrap.shutdown();
     }
 }
