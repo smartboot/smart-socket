@@ -47,7 +47,7 @@ public class UdpDemo {
                             channel.write("HelloWorld", remote);
                         }
                         System.out.println("发送完毕");
-                        channel.close();
+//                        channel.close();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
