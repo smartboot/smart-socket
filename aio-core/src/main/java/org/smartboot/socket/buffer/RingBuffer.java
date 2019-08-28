@@ -33,7 +33,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package org.smartboot.socket.buffer.ring;
+package org.smartboot.socket.buffer;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;

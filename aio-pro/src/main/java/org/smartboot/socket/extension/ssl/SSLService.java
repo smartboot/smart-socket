@@ -10,7 +10,6 @@ package org.smartboot.socket.extension.ssl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.transport.SSLAioSession;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;

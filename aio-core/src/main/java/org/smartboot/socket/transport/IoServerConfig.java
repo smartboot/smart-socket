@@ -75,6 +75,16 @@ final class IoServerConfig<T> {
      */
     private Map<SocketOption<Object>, Object> socketOptions;
 
+    /**
+     * 消息体缓存大小,字节
+     */
+    private int writeBufferSize = 512;
+    /**
+     * 线程数
+     */
+    private int threadNum = 1;
+
+
     private int readBacklog = getIntProperty(READ_BACKLOG, 4096);
 
     static int getIntProperty(String property, int defaultVal) {
@@ -166,6 +176,22 @@ final class IoServerConfig<T> {
 
     public void setWriteQueueCapacity(int writeQueueCapacity) {
         this.writeQueueCapacity = writeQueueCapacity;
+    }
+
+    public int getThreadNum() {
+        return threadNum;
+    }
+
+    public void setThreadNum(int threadNum) {
+        this.threadNum = threadNum;
+    }
+
+    public int getWriteBufferSize() {
+        return writeBufferSize;
+    }
+
+    public void setWriteBufferSize(int writeBufferSize) {
+        this.writeBufferSize = writeBufferSize;
     }
 
     public int getReadBacklog() {

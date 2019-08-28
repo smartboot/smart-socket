@@ -8,17 +8,17 @@ public final class ReadEvent {
     /**
      * 当前触发读回调的会话
      */
-    private AioSession session;
+    private TcpAioSession session;
     /**
      * 本次读取的字节数
      */
     private int readSize;
 
-    public AioSession getSession() {
+    public TcpAioSession getSession() {
         return session;
     }
 
-    public void setSession(AioSession session) {
+    public void setSession(TcpAioSession session) {
         this.session = session;
     }
 

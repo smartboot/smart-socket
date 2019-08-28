@@ -1,4 +1,4 @@
-package org.smartboot.socket.buffer.ring;
+package org.smartboot.socket.buffer;
 
 /**
  * @author 三刀

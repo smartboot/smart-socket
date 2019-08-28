@@ -14,9 +14,9 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.buffer.pool.BufferPagePool;
-import org.smartboot.socket.buffer.ring.EventFactory;
-import org.smartboot.socket.buffer.ring.RingBuffer;
+import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.buffer.EventFactory;
+import org.smartboot.socket.buffer.RingBuffer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -65,7 +65,7 @@ public class AioQuickServer<T> {
      * 写回调事件处理
      */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler;
-    private Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction;
+    private Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private Thread acceptThread = null;
@@ -108,10 +108,10 @@ public class AioQuickServer<T> {
         if (config.isBannerEnabled()) {
             LOGGER.info(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
         }
-        start0(new Function<AsynchronousSocketChannel, AioSession<T>>() {
+        start0(new Function<AsynchronousSocketChannel, TcpAioSession<T>>() {
             @Override
-            public AioSession<T> apply(AsynchronousSocketChannel channel) {
-                return new AioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage());
+            public TcpAioSession<T> apply(AsynchronousSocketChannel channel) {
+                return new TcpAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage());
             }
         });
     }
@@ -121,7 +121,7 @@ public class AioQuickServer<T> {
      *
      * @throws IOException
      */
-    protected final void start0(Function<AsynchronousSocketChannel, AioSession<T>> aioSessionFunction) throws IOException {
+    protected final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
         try {
 
             ThreadLocal<CompletionHandler> recursionThreadLocal = new ThreadLocal<>();
@@ -238,7 +238,7 @@ public class AioQuickServer<T> {
      */
     private void createSession(AsynchronousSocketChannel channel) {
         //连接成功则构造AIOSession对象
-        AioSession<T> session = null;
+        TcpAioSession<T> session = null;
         try {
             session = aioSessionFunction.apply(channel);
             session.initSession();

@@ -16,8 +16,8 @@
     </parent>
     <dependencies>
         <dependency>
-            <groupId>org.smartboot.socket</groupId>
-            <artifactId>smart-buffer</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
     </dependencies>
     <build>

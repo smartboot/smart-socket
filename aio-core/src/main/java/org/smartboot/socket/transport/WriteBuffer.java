@@ -2,8 +2,8 @@ package org.smartboot.socket.transport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.buffer.pool.BufferPage;
-import org.smartboot.socket.buffer.pool.VirtualBuffer;
+import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @version V1.0 , 2018/11/8
  */
 
-public final class WriteBuffer extends OutputStream {
+public class WriteBuffer extends OutputStream {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteBuffer.class);
     /**
      * 输出缓存块大小
@@ -63,7 +63,7 @@ public final class WriteBuffer extends OutputStream {
     private boolean closed = false;
     private byte[] cacheByte = new byte[8];
 
-    WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int writeQueueSize) {
+    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int writeQueueSize) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
         this.items = new VirtualBuffer[writeQueueSize];
@@ -293,7 +293,7 @@ public final class WriteBuffer extends OutputStream {
      *
      * @return 待输出的VirtualBuffer
      */
-    VirtualBuffer poll() {
+    protected final VirtualBuffer poll0() {
         lock.lock();
         try {
             if (count == 0) {
@@ -312,4 +312,7 @@ public final class WriteBuffer extends OutputStream {
         }
     }
 
+    final VirtualBuffer poll() {
+        return poll0();
+    }
 }

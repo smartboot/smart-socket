@@ -29,7 +29,7 @@ public class StringClient {
         AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r,"ClientGroup");
+                return new Thread(r, "ClientGroup");
             }
         });
         for (int i = 0; i < 10; i++) {

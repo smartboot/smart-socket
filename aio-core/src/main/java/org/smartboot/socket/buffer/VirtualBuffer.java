@@ -1,4 +1,4 @@
-package org.smartboot.socket.buffer.pool;
+package org.smartboot.socket.buffer;
 
 import java.nio.ByteBuffer;
 

@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
-import org.smartboot.socket.extension.plugins.HeartPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
@@ -12,9 +11,7 @@ import org.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousChannelGroup;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * @author 三刀
@@ -62,10 +59,10 @@ public class StringMutilClient {
                     try {
                         WriteBuffer outputStream = session.writeBuffer();
                         byte[] data = "smart-s1ocket".getBytes();
-                        ByteBuffer buffer=ByteBuffer.allocate(Integer.BYTES+data.length);
+                        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + data.length);
                         buffer.putInt(data.length);
                         buffer.put(data);
-                        byte[] a=buffer.array();
+                        byte[] a = buffer.array();
                         while (true) {
 
                             outputStream.write(a);

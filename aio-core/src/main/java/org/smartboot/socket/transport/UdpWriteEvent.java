@@ -1,4 +1,6 @@
-package org.smartboot.socket.udp;
+package org.smartboot.socket.transport;
+
+import org.smartboot.socket.buffer.VirtualBuffer;
 
 import java.net.SocketAddress;
 
@@ -6,7 +8,7 @@ import java.net.SocketAddress;
  * @author 三刀
  * @version V1.0 , 2019/8/18
  */
-final class WriteEvent<Response> {
+final class UdpWriteEvent {
     /**
      * 待输出数据的接受地址
      */
@@ -14,13 +16,13 @@ final class WriteEvent<Response> {
     /**
      * 待输出数据
      */
-    private Response response;
+    private VirtualBuffer response;
 
-    public Response getResponse() {
+    public VirtualBuffer getResponse() {
         return response;
     }
 
-    public void setResponse(Response response) {
+    public void setResponse(VirtualBuffer response) {
         this.response = response;
     }
 

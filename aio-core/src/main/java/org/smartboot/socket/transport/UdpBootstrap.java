@@ -1,16 +1,19 @@
-package org.smartboot.socket.udp;
+package org.smartboot.socket.transport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.buffer.pool.BufferPage;
-import org.smartboot.socket.buffer.pool.BufferPagePool;
-import org.smartboot.socket.buffer.pool.VirtualBuffer;
-import org.smartboot.socket.buffer.ring.EventFactory;
-import org.smartboot.socket.buffer.ring.RingBuffer;
+import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.Protocol;
+import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.buffer.EventFactory;
+import org.smartboot.socket.buffer.RingBuffer;
+import org.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
@@ -24,7 +27,7 @@ import java.util.Set;
  * @author 三刀
  * @version V1.0 , 2019/8/18
  */
-public class UdpBootstrap<Request, Response> implements Runnable {
+public class UdpBootstrap<Request> implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpBootstrap.class);
     /**
      * 状态：初始
@@ -62,40 +65,35 @@ public class UdpBootstrap<Request, Response> implements Runnable {
     /**
      * 服务配置
      */
-    private IoServerConfig<Request, Response> config = new IoServerConfig<>();
+    private IoServerConfig<Request> config = new IoServerConfig<>();
 
     /**
      * 已完成解码待业务处理的消息集合
      */
-    private RingBuffer<ReadEvent<Request, Response>>[] readRingBuffers;
+    private RingBuffer<UdpReadEvent<Request>>[] readRingBuffers;
 
     /**
      * 读缓冲区
      */
     private VirtualBuffer readBuffer;
 
-    /**
-     * 写缓冲区
-     */
-    private VirtualBuffer writeBuffer;
-
-    private EventFactory<ReadEvent<Request, Response>> factory = new EventFactory<ReadEvent<Request, Response>>() {
+    private EventFactory<UdpReadEvent<Request>> factory = new EventFactory<UdpReadEvent<Request>>() {
         @Override
-        public ReadEvent<Request, Response> newInstance() {
-            return new ReadEvent<>();
+        public UdpReadEvent<Request> newInstance() {
+            return new UdpReadEvent<>();
         }
 
         @Override
-        public void restEntity(ReadEvent<Request, Response> entity) {
+        public void restEntity(UdpReadEvent<Request> entity) {
             entity.setMessage(null);
-            entity.setRemote(null);
-            entity.setChannel(null);
+            entity.setAioSession(null);
         }
     };
 
+
     private BufferPage bufferPage = new BufferPagePool(1024, 1, true).allocateBufferPage();
 
-    public UdpBootstrap(Protocol<Request, Response> protocol, MessageProcessor<Request, Response> messageProcessor) {
+    public UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
     }
@@ -105,7 +103,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
      *
      * @return UDP通道
      */
-    public UdpChannel<Request, Response> open() throws IOException {
+    public UdpChannel<Request> open() throws IOException {
         return open(0);
     }
 
@@ -114,10 +112,9 @@ public class UdpBootstrap<Request, Response> implements Runnable {
      *
      * @param port 指定绑定端口号,为0则随机指定
      */
-    public UdpChannel<Request, Response> open(int port) throws IOException {
+    public UdpChannel<Request> open(int port) throws IOException {
         return open(null, port);
     }
-
 
     /**
      * 开启一个UDP通道
@@ -125,7 +122,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
      * @param host 绑定本机地址
      * @param port 指定绑定端口号,为0则随机指定
      */
-    public UdpChannel<Request, Response> open(String host, int port) throws IOException {
+    public UdpChannel<Request> open(String host, int port) throws IOException {
         if (selector == null) {
             synchronized (this) {
                 if (selector == null) {
@@ -144,7 +141,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
             selector.wakeup();
         }
         SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
-        UdpChannel<Request, Response> udpChannel = new UdpChannel<>(channel, selectionKey, config, bufferPage);
+        UdpChannel<Request> udpChannel = new UdpChannel<>(channel, selectionKey, config, bufferPage);
         selectionKey.attach(udpChannel);
 
         //启动线程服务
@@ -163,14 +160,13 @@ public class UdpBootstrap<Request, Response> implements Runnable {
             updateServiceStatus(STATUS_STARTING);
 
             readBuffer = bufferPage.allocate(config.getReadBufferSize());
-            writeBuffer = bufferPage.allocate(config.getWriteBufferSize());
             int uid = UdpBootstrap.uid++;
             Thread serverThread = new Thread(this, "UDP-Selector-" + uid);
             serverThread.start();
 
             readRingBuffers = new RingBuffer[config.getThreadNum()];
             for (int i = 0; i < config.getThreadNum(); i++) {
-                final RingBuffer<ReadEvent<Request, Response>> ringBuffer = readRingBuffers[i] = new RingBuffer<>(1024, factory);
+                final RingBuffer<UdpReadEvent<Request>> ringBuffer = readRingBuffers[i] = new RingBuffer<>(1024, factory);
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -180,12 +176,11 @@ public class UdpBootstrap<Request, Response> implements Runnable {
                                 if (STATUS_RUNNING != status) {
                                     break;
                                 }
-                                ReadEvent<Request, Response> event = ringBuffer.get(index);
-                                SocketAddress remote = event.getRemote();
-                                UdpChannel<Request, Response> channel = event.getChannel();
+                                UdpReadEvent<Request> event = ringBuffer.get(index);
+                                UdpAioSession<Request> aioSession = event.getAioSession();
                                 Request message = event.getMessage();
                                 ringBuffer.publishReadIndex(index);
-                                config.getProcessor().process(channel, remote, message);
+                                config.getProcessor().process(aioSession, message);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
@@ -223,7 +218,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
             selector = null;
         }
         for (int i = 0; i < config.getThreadNum(); i++) {
-            RingBuffer<ReadEvent<Request, Response>> ringBuffer = readRingBuffers[i];
+            RingBuffer<UdpReadEvent<Request>> ringBuffer = readRingBuffers[i];
             try {
                 int index = ringBuffer.tryNextWriteIndex();
                 ringBuffer.publishWriteIndex(index);
@@ -251,7 +246,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
         // 执行本次已触发待处理的事件
         while (keyIterator.hasNext()) {
             final SelectionKey key = keyIterator.next();
-            UdpChannel<Request, Response> udpChannel = (UdpChannel<Request, Response>) key.attachment();
+            UdpChannel<Request> udpChannel = (UdpChannel<Request>) key.attachment();
             try {
                 if (!key.isValid()) {
                     udpChannel.close();
@@ -259,9 +254,10 @@ public class UdpBootstrap<Request, Response> implements Runnable {
                 }
                 // 读取客户端数据
                 if (key.isReadable()) {
-                    udpChannel.doRead(readBuffer.buffer(), readRingBuffers);
+//                    udpChannel.doRead(readBuffer.buffer(), ringBufferRoutefunction);
+                    doRead(udpChannel);
                 } else if (key.isWritable()) {
-                    udpChannel.doWrite(writeBuffer);
+                    udpChannel.doWrite();
                 } else {
                     LOGGER.warn("奇怪了...");
                 }
@@ -270,6 +266,55 @@ public class UdpBootstrap<Request, Response> implements Runnable {
             }
         }
         selectionKeys.clear();
+    }
+
+    /**
+     * 去读数据
+     *
+     * @param channel
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private void doRead(UdpChannel channel) throws IOException, InterruptedException {
+        //接收数据
+        ByteBuffer buffer = readBuffer.buffer();
+        SocketAddress remote = channel.getChannel().receive(buffer);
+        buffer.flip();
+        UdpAioSession<Request> aioSession = channel.createAndCacheSession(remote);
+
+        //解码
+        Request t = config.getProtocol().decode(buffer, aioSession);
+        buffer.clear();
+        if (t == null) {
+            System.out.println("decode null");
+            return;
+        }
+
+        if (config.getThreadNum() == 0) {
+            //非异步则同步处理业务
+            config.getProcessor().process(aioSession, t);
+            return;
+        }
+
+        RingBuffer<UdpReadEvent<Request>> ringBuffer = readRingBuffers[remote.hashCode() % config.getThreadNum()];
+        int index = -1;
+        while ((index = ringBuffer.tryNextWriteIndex()) < 0) {
+            //读缓冲区已满,尝试清空写缓冲区
+            channel.doWrite();
+            //尝试消费一个读缓冲区资源
+            int readIndex = ringBuffer.tryNextReadIndex();
+            if (readIndex >= 0) {
+                UdpReadEvent<Request> event = ringBuffer.get(readIndex);
+                UdpAioSession<Request> session = event.getAioSession();
+                Request message = event.getMessage();
+                ringBuffer.publishReadIndex(readIndex);
+                config.getProcessor().process(session, message);
+            }
+        }
+        UdpReadEvent<Request> udpEvent = ringBuffer.get(index);
+        udpEvent.setAioSession(aioSession);
+        udpEvent.setMessage(t);
+        ringBuffer.publishWriteIndex(index);
     }
 
     public void shutdown() {
@@ -282,7 +327,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
      *
      * @param size 单位：byte
      */
-    public final UdpBootstrap<Request, Response> setReadBufferSize(int size) {
+    public final UdpBootstrap<Request> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
         return this;
     }
@@ -293,7 +338,7 @@ public class UdpBootstrap<Request, Response> implements Runnable {
      *
      * @param num
      */
-    public final UdpBootstrap<Request, Response> setThreadNum(int num) {
+    public final UdpBootstrap<Request> setThreadNum(int num) {
         this.config.setThreadNum(num);
         return this;
     }
