@@ -25,7 +25,7 @@ public final class BufferPage {
     /**
      * 待回收的虚拟Buffer
      */
-    private ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<VirtualBuffer>();
+    private ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<>();
 
     /**
      * 当前缓存页的物理缓冲区
@@ -36,8 +36,8 @@ public final class BufferPage {
     private long lastAllocateTime;
 
     /**
-     * @param size
-     * @param direct
+     * @param size   缓存页大小
+     * @param direct 是否使用堆外内存
      */
     BufferPage(int size, boolean direct) {
         availableBuffers = new LinkedList<>();

@@ -241,12 +241,12 @@ public final class RingBuffer<T> {
     }
 
 
-    class Node<T> {
+    class Node<T1> {
 
         byte status;
-        T entity;
+        T1 entity;
 
-        Node(T entity) {
+        Node(T1 entity) {
             this.entity = entity;
         }
     }

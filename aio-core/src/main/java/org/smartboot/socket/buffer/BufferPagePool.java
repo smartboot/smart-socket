@@ -2,6 +2,7 @@ package org.smartboot.socket.buffer;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * ByteBuffer内存池
@@ -15,7 +16,7 @@ public class BufferPagePool {
     /**
      * 内存页游标
      */
-    private volatile int cursor = -1;
+    private volatile AtomicInteger cursor = new AtomicInteger(0);
 
     /**
      * @param pageSize 内存页大小
@@ -40,12 +41,10 @@ public class BufferPagePool {
     /**
      * 申请内存页
      *
-     * @return
+     * @return 缓存页对象
      */
     public BufferPage allocateBufferPage() {
         //轮训游标，均衡分配内存页
-        cursor = (cursor + 1) % bufferPageList.length;
-        BufferPage page = bufferPageList[cursor];
-        return page;
+        return bufferPageList[cursor.getAndIncrement() % bufferPageList.length];
     }
 }
