@@ -1,23 +1,23 @@
-<?xml version="1.0"?>
-<project
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-        xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <name>aio-core</name>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <name>udp-core</name>
     <description>A high performance network application framework based on Java AIO</description>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.smartboot.socket</groupId>
-    <artifactId>aio-core</artifactId>
-
+    <artifactId>udp-core</artifactId>
     <parent>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
         <version>1.4.3.rc-8</version>
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
+
     <dependencies>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>org.smartboot.socket</groupId>
+            <artifactId>smart-buffer</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -42,4 +42,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

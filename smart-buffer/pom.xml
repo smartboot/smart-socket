@@ -2,11 +2,11 @@
 <project
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
         xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <name>aio-core</name>
+    <name>smart-buffer</name>
     <description>A high performance network application framework based on Java AIO</description>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.smartboot.socket</groupId>
-    <artifactId>aio-core</artifactId>
+    <artifactId>smart-buffer</artifactId>
 
     <parent>
         <groupId>org.smartboot.socket</groupId>
@@ -15,6 +15,7 @@
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
     <dependencies>
+        <!-- 日志系统 -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
