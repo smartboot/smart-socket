@@ -122,7 +122,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         defendThreadBlockFlag = true;
         int index = -1;
         ReadEvent readEvent;
-        AioSession aioSession;
+        TcpAioSession<T> aioSession;
         int size;
         while ((index = ringBuffer.tryNextReadIndex()) >= 0) {
             readEvent = ringBuffer.get(index);
