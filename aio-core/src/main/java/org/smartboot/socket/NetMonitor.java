@@ -41,7 +41,7 @@ public interface NetMonitor<T> {
      * 监控已接收到的连接
      * </p>
      *
-     * @param channel
+     * @param channel 当前已经建立连接的通道对象
      * @return true:接受该连接,false:拒绝该连接
      */
     boolean acceptMonitor(AsynchronousSocketChannel channel);

@@ -78,6 +78,6 @@ public enum StateMachineEnum {
     /**
      * 拒绝接受连接,仅Server端有效
      */
-    REJECT_ACCEPT;
+    REJECT_ACCEPT
 
 }

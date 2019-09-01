@@ -234,7 +234,7 @@ public class AioQuickServer<T> {
     /**
      * 为每个新建立的连接创建AIOSession对象
      *
-     * @param channel
+     * @param channel 当前已建立连接通道
      */
     private void createSession(AsynchronousSocketChannel channel) {
         //连接成功则构造AIOSession对象

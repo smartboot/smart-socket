@@ -1,7 +1,5 @@
 package org.smartboot.socket.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
@@ -19,7 +17,6 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 
 public class WriteBuffer extends OutputStream {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WriteBuffer.class);
     /**
      * 输出缓存块大小
      */
@@ -75,7 +72,7 @@ public class WriteBuffer extends OutputStream {
      * 而使用该接口时容易传入非byte范围内的数据，接口定义与实际使用出现歧义的可能性较大，故建议废弃该方法，选用{@link WriteBuffer#writeByte(byte)}。
      *
      * @param b
-     * @throws IOException
+     * @throws IOException 如果发生 I/O 错误
      * @deprecated
      */
     @Override
@@ -169,7 +166,7 @@ public class WriteBuffer extends OutputStream {
     /**
      * 确保数据输出有序性
      *
-     * @throws IOException
+     * @throws IOException 如果发生 I/O 错误
      */
     private void waitPreWriteFinish() throws IOException {
         while (isWaiting) {
@@ -186,7 +183,7 @@ public class WriteBuffer extends OutputStream {
      * 调用该方法后数据会及时的输出到对端，如果再循环体中通过该方法往某个通道中写入数据将无法获得最佳性能表现，
      *
      * @param b 待输出数据
-     * @throws IOException
+     * @throws IOException 如果发生 I/O 错误
      */
     public void writeAndFlush(byte[] b) throws IOException {
         if (b == null) {
@@ -199,7 +196,7 @@ public class WriteBuffer extends OutputStream {
      * @param b   待输出数据
      * @param off b的起始位点
      * @param len 从b中输出的数据长度
-     * @throws IOException
+     * @throws IOException 如果发生 I/O 错误
      * @see WriteBuffer#writeAndFlush(byte[])
      */
     public void writeAndFlush(byte[] b, int off, int len) throws IOException {
@@ -269,15 +266,15 @@ public class WriteBuffer extends OutputStream {
     /**
      * 存储缓冲区至队列中以备输出
      *
-     * @param e
+     * @param virtualBuffer 缓存对象
      */
-    private void put(VirtualBuffer e) {
+    private void put(VirtualBuffer virtualBuffer) {
         try {
             while (count == items.length) {
                 isWaiting = true;
                 notFull.await();
             }
-            items[putIndex] = e;
+            items[putIndex] = virtualBuffer;
             if (++putIndex == items.length) {
                 putIndex = 0;
             }
@@ -293,7 +290,7 @@ public class WriteBuffer extends OutputStream {
      *
      * @return 待输出的VirtualBuffer
      */
-    protected final VirtualBuffer poll0() {
+    VirtualBuffer poll() {
         lock.lock();
         try {
             if (count == 0) {
@@ -312,7 +309,4 @@ public class WriteBuffer extends OutputStream {
         }
     }
 
-    final VirtualBuffer poll() {
-        return poll0();
-    }
 }
