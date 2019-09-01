@@ -21,8 +21,8 @@ import java.nio.channels.CompletionHandler;
  * @author 三刀
  * @version V1.0.0
  */
-class WriteCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WriteCompletionHandler.class);
+class TcpWriteCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TcpWriteCompletionHandler.class);
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {

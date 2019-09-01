@@ -79,8 +79,8 @@ class TcpAioSession<T> extends AioSession<T> {
      * 输出信号量,防止并发write导致异常
      */
     private Semaphore semaphore = new Semaphore(1);
-    private ReadCompletionHandler<T> readCompletionHandler;
-    private WriteCompletionHandler<T> writeCompletionHandler;
+    private TcpReadCompletionHandler<T> readCompletionHandler;
+    private TcpWriteCompletionHandler<T> writeCompletionHandler;
     private IoServerConfig<T> ioServerConfig;
     private InputStream inputStream;
     private WriteBuffer byteBuf;
@@ -92,7 +92,7 @@ class TcpAioSession<T> extends AioSession<T> {
      * @param writeCompletionHandler
      * @param bufferPage             是否服务端Session
      */
-    TcpAioSession(AsynchronousSocketChannel channel, final IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, BufferPage bufferPage) {
+    TcpAioSession(AsynchronousSocketChannel channel, final IoServerConfig<T> config, TcpReadCompletionHandler<T> readCompletionHandler, TcpWriteCompletionHandler<T> writeCompletionHandler, BufferPage bufferPage) {
         this.channel = channel;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;

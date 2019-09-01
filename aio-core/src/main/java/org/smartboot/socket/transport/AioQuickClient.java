@@ -116,7 +116,7 @@ public class AioQuickClient<T> {
         }
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
-        session = new TcpAioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool.allocateBufferPage());
+        session = new TcpAioSession<T>(socketChannel, config, new TcpReadCompletionHandler<T>(), new TcpWriteCompletionHandler<T>(), bufferPool.allocateBufferPage());
         session.initSession();
         return session;
     }

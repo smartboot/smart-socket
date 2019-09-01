@@ -4,7 +4,7 @@ package org.smartboot.socket.transport;
  * @author 三刀
  * @version V1.0 , 2019/8/11
  */
-public final class ReadEvent {
+final class TcpReadEvent {
     /**
      * 当前触发读回调的会话
      */

@@ -60,11 +60,11 @@ public class AioQuickServer<T> {
     /**
      * 读回调事件处理
      */
-    protected ReadCompletionHandler<T> aioReadCompletionHandler;
+    protected TcpReadCompletionHandler<T> aioReadCompletionHandler;
     /**
      * 写回调事件处理
      */
-    protected WriteCompletionHandler<T> aioWriteCompletionHandler;
+    protected TcpWriteCompletionHandler<T> aioWriteCompletionHandler;
     private Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
@@ -125,20 +125,20 @@ public class AioQuickServer<T> {
         try {
 
             ThreadLocal<CompletionHandler> recursionThreadLocal = new ThreadLocal<>();
-            RingBuffer<ReadEvent> buffer = new RingBuffer<ReadEvent>(config.getReadBacklog(), new EventFactory<ReadEvent>() {
+            RingBuffer<TcpReadEvent> buffer = new RingBuffer<TcpReadEvent>(config.getReadBacklog(), new EventFactory<TcpReadEvent>() {
                 @Override
-                public ReadEvent newInstance() {
-                    return new ReadEvent();
+                public TcpReadEvent newInstance() {
+                    return new TcpReadEvent();
                 }
 
                 @Override
-                public void restEntity(ReadEvent entity) {
+                public void restEntity(TcpReadEvent entity) {
                     entity.setReadSize(-1);
                     entity.setSession(null);
                 }
             });
-            aioReadCompletionHandler = new ReadCompletionHandler<>(buffer, recursionThreadLocal, bossThreadNum > 1 ? new Semaphore(bossThreadNum - 1) : null);
-            aioWriteCompletionHandler = new WriteCompletionHandler<>();
+            aioReadCompletionHandler = new TcpReadCompletionHandler<>(buffer, recursionThreadLocal, bossThreadNum > 1 ? new Semaphore(bossThreadNum - 1) : null);
+            aioWriteCompletionHandler = new TcpWriteCompletionHandler<>();
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, bossThreadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
 

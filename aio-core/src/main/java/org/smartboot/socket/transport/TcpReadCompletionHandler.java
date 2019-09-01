@@ -23,8 +23,8 @@ import java.util.concurrent.Semaphore;
  * @author 三刀
  * @version V1.0.0
  */
-class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
+class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TcpReadCompletionHandler.class);
     /**
      * 读回调资源信号量
      */
@@ -34,17 +34,17 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
      */
     private ThreadLocal<CompletionHandler> recursionThreadLocal = null;
 
-    private RingBuffer<ReadEvent> ringBuffer;
+    private RingBuffer<TcpReadEvent> ringBuffer;
 
 //    private Semaphore readSemaphore = new Semaphore(1);
 
     private Object defendThreadLock = new Object();
     private volatile boolean defendThreadBlockFlag = false;
 
-    public ReadCompletionHandler() {
+    public TcpReadCompletionHandler() {
     }
 
-    public ReadCompletionHandler(final RingBuffer<ReadEvent> ringBuffer, final ThreadLocal<CompletionHandler> recursionThreadLocal, Semaphore semaphore) {
+    public TcpReadCompletionHandler(final RingBuffer<TcpReadEvent> ringBuffer, final ThreadLocal<CompletionHandler> recursionThreadLocal, Semaphore semaphore) {
         this.semaphore = semaphore;
         this.recursionThreadLocal = recursionThreadLocal;
         this.ringBuffer = ringBuffer;
@@ -61,7 +61,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
                             }
                         }
                         int consumerIndex = ringBuffer.nextReadIndex();
-                        ReadEvent readEvent = ringBuffer.get(consumerIndex);
+                        TcpReadEvent readEvent = ringBuffer.get(consumerIndex);
                         TcpAioSession aioSession = readEvent.getSession();
                         int size = readEvent.getReadSize();
                         ringBuffer.publishReadIndex(consumerIndex);
@@ -90,7 +90,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         if (semaphore == null || !semaphore.tryAcquire()) {
             try {
                 int sequence = ringBuffer.nextWriteIndex();
-                ReadEvent readEvent = ringBuffer.get(sequence);
+                TcpReadEvent readEvent = ringBuffer.get(sequence);
                 readEvent.setSession(aioSession);
                 readEvent.setReadSize(result);
                 ringBuffer.publishWriteIndex(sequence);
@@ -121,7 +121,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         }
         defendThreadBlockFlag = true;
         int index = -1;
-        ReadEvent readEvent;
+        TcpReadEvent readEvent;
         TcpAioSession<T> aioSession;
         int size;
         while ((index = ringBuffer.tryNextReadIndex()) >= 0) {
@@ -148,7 +148,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         if (index < 0) {
             return;
         }
-        ReadEvent readEvent = ringBuffer.get(index);
+        TcpReadEvent readEvent = ringBuffer.get(index);
         TcpAioSession aioSession = readEvent.getSession();
         int size = readEvent.getReadSize();
         ringBuffer.publishReadIndex(index);
