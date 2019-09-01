@@ -38,8 +38,6 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
 
 //    private Semaphore readSemaphore = new Semaphore(1);
 
-    private Object defendThreadLock = new Object();
-    private volatile boolean defendThreadBlockFlag = false;
 
     public TcpReadCompletionHandler() {
     }
@@ -53,13 +51,6 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
             public void run() {
                 while (true) {
                     try {
-                        while (defendThreadBlockFlag) {
-                            synchronized (defendThreadLock) {
-                                if (defendThreadBlockFlag) {
-                                    defendThreadLock.wait();
-                                }
-                            }
-                        }
                         int consumerIndex = ringBuffer.nextReadIndex();
                         TcpReadEvent readEvent = ringBuffer.get(consumerIndex);
                         TcpAioSession aioSession = readEvent.getSession();
@@ -119,8 +110,7 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
         if (ringBuffer == null) {
             return;
         }
-        defendThreadBlockFlag = true;
-        int index = -1;
+        int index;
         TcpReadEvent readEvent;
         TcpAioSession<T> aioSession;
         int size;
@@ -130,10 +120,6 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
             size = readEvent.getReadSize();
             ringBuffer.publishReadIndex(index);
             completed0(size, aioSession);
-        }
-        defendThreadBlockFlag = false;
-        synchronized (defendThreadLock) {
-            defendThreadLock.notifyAll();
         }
     }
 
