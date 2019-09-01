@@ -47,6 +47,9 @@ public class UdpDemo {
                 }
             }
         });
+        int threadNum = Runtime.getRuntime().availableProcessors();
+        bootstrap.setThreadNum(threadNum);
+        bootstrap.setReadBufferSize(1024);
         bootstrap.open(9999);
         System.out.println("启动成功");
 

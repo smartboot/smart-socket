@@ -254,7 +254,6 @@ public class UdpBootstrap<Request> implements Runnable {
                 }
                 // 读取客户端数据
                 if (key.isReadable()) {
-//                    udpChannel.doRead(readBuffer.buffer(), ringBufferRoutefunction);
                     doRead(udpChannel);
                 } else if (key.isWritable()) {
                     udpChannel.doWrite();
