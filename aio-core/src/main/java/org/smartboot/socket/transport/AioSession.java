@@ -39,6 +39,9 @@ public abstract class AioSession<T> {
      */
     private Object attachment;
 
+    AioSession() {
+    }
+
     public abstract WriteBuffer writeBuffer();
 
     /**
