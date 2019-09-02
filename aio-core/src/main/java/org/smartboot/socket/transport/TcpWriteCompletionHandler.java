@@ -27,7 +27,6 @@ class TcpWriteCompletionHandler<T> implements CompletionHandler<Integer, TcpAioS
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         try {
-            // 接收到的消息进行预处理
             NetMonitor<T> monitor = aioSession.getServerConfig().getMonitor();
             if (monitor != null) {
                 monitor.writeMonitor(aioSession, result);

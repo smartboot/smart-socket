@@ -36,9 +36,6 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
 
     private RingBuffer<TcpReadEvent> ringBuffer;
 
-//    private Semaphore readSemaphore = new Semaphore(1);
-
-
     public TcpReadCompletionHandler() {
     }
 
@@ -73,7 +70,6 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
         //未启用Worker线程池或者被递归回调completed直接执行completed0
         if (recursionThreadLocal == null || recursionThreadLocal.get() != null) {
             completed0(result, aioSession);
-//            runTask();
             return;
         }
 
@@ -85,18 +81,15 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
                 readEvent.setSession(aioSession);
                 readEvent.setReadSize(result);
                 ringBuffer.publishWriteIndex(sequence);
-//                ringBuffer.put(aioSession, result);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOGGER.error("InterruptedException", e);
             }
             return;
         }
         try {
-
             recursionThreadLocal.set(this);
             completed0(result, aioSession);
             runAllTask();
-//            runTask();
         } finally {
             recursionThreadLocal.remove();
             semaphore.release();
@@ -123,24 +116,6 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
         }
     }
 
-    /**
-     * 执行异步队列中的任务
-     */
-    void runTask() {
-        if (ringBuffer == null) {
-            return;
-        }
-        int index = ringBuffer.tryNextReadIndex();
-        if (index < 0) {
-            return;
-        }
-        TcpReadEvent readEvent = ringBuffer.get(index);
-        TcpAioSession aioSession = readEvent.getSession();
-        int size = readEvent.getReadSize();
-        ringBuffer.publishReadIndex(index);
-        completed0(size, aioSession);
-    }
-
     private void completed0(final Integer result, final TcpAioSession<T> aioSession) {
         try {
             // 接收到的消息进行预处理
@@ -156,7 +131,6 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
 
     @Override
     public void failed(Throwable exc, TcpAioSession<T> aioSession) {
-
         try {
             aioSession.getServerConfig().getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
         } catch (Exception e) {

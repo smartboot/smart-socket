@@ -322,22 +322,6 @@ class TcpAioSession<T> extends AioSession<T> {
     }
 
     /**
-     * 获取附件对象
-     *
-     * @return
-     */
-//    public final <T> T getAttachment() {
-//        return (T) attachment;
-//    }
-//
-//    /**
-//     * 存放附件，支持任意类型
-//     */
-//    public final <T> void setAttachment(T attachment) {
-//        this.attachment = attachment;
-//    }
-
-    /**
      * @see AsynchronousSocketChannel#getLocalAddress()
      */
     public final InetSocketAddress getLocalAddress() throws IOException {
