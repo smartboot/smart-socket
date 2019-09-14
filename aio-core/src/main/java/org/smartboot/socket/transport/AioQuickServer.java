@@ -70,10 +70,6 @@ public class AioQuickServer<T> {
     private AsynchronousChannelGroup asynchronousChannelGroup;
     private Thread acceptThread = null;
     private volatile boolean running = true;
-    /**
-     * Boss线程数
-     */
-    private int bossThreadNum = Runtime.getRuntime().availableProcessors() < 4 ? 3 : Runtime.getRuntime().availableProcessors();
 
     /**
      * 设置服务端启动必要参数配置
@@ -86,6 +82,7 @@ public class AioQuickServer<T> {
         config.setPort(port);
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
+        config.setThreadNum(Runtime.getRuntime().availableProcessors());
     }
 
     /**
@@ -122,6 +119,7 @@ public class AioQuickServer<T> {
      * @throws IOException
      */
     protected final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
+        int threadNum = config.getThreadNum();
         try {
 
             ThreadLocal<CompletionHandler> recursionThreadLocal = new ThreadLocal<>();
@@ -137,9 +135,9 @@ public class AioQuickServer<T> {
                     entity.setSession(null);
                 }
             });
-            aioReadCompletionHandler = new TcpReadCompletionHandler<>(buffer, recursionThreadLocal, bossThreadNum > 1 ? new Semaphore(bossThreadNum - 1) : null);
+            aioReadCompletionHandler = new TcpReadCompletionHandler<>(buffer, recursionThreadLocal, threadNum > 1 ? new Semaphore(threadNum - 1) : null);
             aioWriteCompletionHandler = new TcpWriteCompletionHandler<>();
-            this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, bossThreadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
+            this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, threadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
 
 //            ExecutorService executorService = Executors.newFixedThreadPool(bossThreadNum, new ThreadFactory() {
@@ -151,7 +149,7 @@ public class AioQuickServer<T> {
 //                }
 //            });
 //            asynchronousChannelGroup = AsynchronousChannelGroup.withThreadPool(executorService);
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(bossThreadNum, new ThreadFactory() {
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(threadNum, new ThreadFactory() {
                 byte index = 0;
 
                 @Override
@@ -227,7 +225,7 @@ public class AioQuickServer<T> {
             shutdown();
             throw e;
         }
-        LOGGER.info("smart-socket server started on port {},bossThreadNum:{}", config.getPort(), bossThreadNum);
+        LOGGER.info("smart-socket server started on port {},bossThreadNum:{}", config.getPort(), threadNum);
         LOGGER.info("smart-socket server config is {}", config);
     }
 
@@ -352,8 +350,8 @@ public class AioQuickServer<T> {
      * @param threadNum
      * @return
      */
-    public final AioQuickServer<T> setBossThreadNum(int threadNum) {
-        this.bossThreadNum = threadNum;
+    public final AioQuickServer<T> setThreadNum(int threadNum) {
+        config.setThreadNum(threadNum);
         return this;
     }
 }

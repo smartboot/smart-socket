@@ -49,7 +49,7 @@ public class StringServer {
         server.setReadBufferSize(1024 * 1024);
 //        processor.addPlugin(new BufferPageMonitorPlugin(server, 12));
         processor.addPlugin(new MonitorPlugin(5));
-        server.setBossThreadNum(Runtime.getRuntime().availableProcessors()+1);
+        server.setThreadNum(Runtime.getRuntime().availableProcessors()+1);
 //        server.setWorkerThreadNum(Runtime.getRuntime().availableProcessors());
 //        server.setBossShareToWorkerThreadNum(0);
         server.start();
