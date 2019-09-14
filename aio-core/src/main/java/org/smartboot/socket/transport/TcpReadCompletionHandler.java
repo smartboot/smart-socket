@@ -74,8 +74,16 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
         }
 
         //Boss线程不处理读回调，或者Boss线程中的读信号量不足
-
-        if (semaphore == null || !semaphore.tryAcquire()) {
+        if (semaphore.tryAcquire()) {
+            try {
+                recursionThreadLocal.set(this);
+                completed0(result, aioSession);
+                runAllTask();
+            } finally {
+                recursionThreadLocal.remove();
+                semaphore.release();
+            }
+        } else {
             try {
                 int sequence = ringBuffer.nextWriteIndex();
                 TcpReadEvent readEvent = ringBuffer.get(sequence);
@@ -85,19 +93,8 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
             } catch (InterruptedException e) {
                 LOGGER.error("InterruptedException", e);
             }
-            return;
         }
-        try {
-            semaphore.acquire();
-            recursionThreadLocal.set(this);
-            completed0(result, aioSession);
-            runAllTask();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            recursionThreadLocal.remove();
-            semaphore.release();
-        }
+
     }
 
     /**
