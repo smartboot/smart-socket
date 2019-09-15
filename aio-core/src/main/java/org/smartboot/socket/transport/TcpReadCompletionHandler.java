@@ -78,7 +78,7 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
             try {
                 recursionThreadLocal.set(this);
                 completed0(result, aioSession);
-                runAllTask();
+                runRingBufferTask();
             } finally {
                 recursionThreadLocal.remove();
                 semaphore.release();
@@ -100,7 +100,7 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
     /**
      * 执行异步队列中的任务
      */
-    void runAllTask() {
+    void runRingBufferTask() {
         if (ringBuffer == null) {
             return;
         }

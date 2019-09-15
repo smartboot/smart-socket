@@ -32,7 +32,7 @@ public class UdpDemo {
                         byte[] bytes = msg.getBytes();
                         buffer.writeInt(bytes.length);
                         buffer.write(bytes);
-                        buffer.flush();
+//                        buffer.flush();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
