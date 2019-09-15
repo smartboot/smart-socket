@@ -117,7 +117,6 @@ public final class BufferPage {
         if (cleanBuffers.offer(cleanBuffer)) {
             return;
         }
-        System.out.println("aaaa");
         lock.lock();
         try {
             clean0(cleanBuffer);
