@@ -25,6 +25,7 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
@@ -119,6 +120,10 @@ public class AioQuickServer<T> {
      * @throws IOException
      */
     protected final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
+        //确保单核CPU默认初始化至少2个线程
+        if (config.getThreadNum() == 1) {
+            config.setThreadNum(2);
+        }
         int threadNum = config.getThreadNum();
         try {
 
@@ -135,20 +140,11 @@ public class AioQuickServer<T> {
                     entity.setSession(null);
                 }
             });
-            aioReadCompletionHandler = new TcpReadCompletionHandler<>(buffer, recursionThreadLocal, threadNum > 1 ? new Semaphore(threadNum - 1) : null);
+            aioReadCompletionHandler = new TcpReadCompletionHandler<>(buffer, recursionThreadLocal, new Semaphore(threadNum - 1));
             aioWriteCompletionHandler = new TcpWriteCompletionHandler<>();
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, threadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
 
-//            ExecutorService executorService = Executors.newFixedThreadPool(bossThreadNum, new ThreadFactory() {
-//                byte index = 0;
-//
-//                @Override
-//                public Thread newThread(Runnable r) {
-//                    return new Thread(r, "smart-socket:BossThread-" + (++index));
-//                }
-//            });
-//            asynchronousChannelGroup = AsynchronousChannelGroup.withThreadPool(executorService);
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(threadNum, new ThreadFactory() {
                 byte index = 0;
 
@@ -195,37 +191,11 @@ public class AioQuickServer<T> {
                 }
             }, "smart-socket:AcceptThread");
             acceptThread.start();
-//            serverSocketChannel.accept(serverSocketChannel, new CompletionHandler<AsynchronousSocketChannel, AsynchronousServerSocketChannel>() {
-//
-//
-//                @Override
-//                public void completed(final AsynchronousSocketChannel channel, final AsynchronousServerSocketChannel serverSocketChannel) {
-//                    NetMonitor<T> monitor = config.getMonitor();
-//                    serverSocketChannel.accept(serverSocketChannel, this);
-//                    try {
-//                        if (monitor == null || monitor.acceptMonitor(channel)) {
-//                            createSession(channel);
-//                        } else {
-//                            config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-//                            LOGGER.warn("reject accept channel:{}", channel);
-//                            closeChannel(channel);
-//                        }
-//                    } catch (Exception e) {
-//                        LOGGER.error("AcceptThread Exception", e);
-//                    }
-//
-//                }
-//
-//                @Override
-//                public void failed(Throwable exc, AsynchronousServerSocketChannel serverSocketChannel) {
-//                    LOGGER.error("smart-socket server accept fail", exc);
-//                }
-//            });
         } catch (IOException e) {
             shutdown();
             throw e;
         }
-        LOGGER.info("smart-socket server started on port {},bossThreadNum:{}", config.getPort(), threadNum);
+        LOGGER.info("smart-socket server started on port {},threadNum:{}", config.getPort(), threadNum);
         LOGGER.info("smart-socket server config is {}", config);
     }
 
@@ -345,12 +315,15 @@ public class AioQuickServer<T> {
     }
 
     /**
-     * 设置Boss线程数
+     * 设置服务工作线程数,设置数值必须大于等于2
      *
-     * @param threadNum
+     * @param threadNum 线程数
      * @return
      */
     public final AioQuickServer<T> setThreadNum(int threadNum) {
+        if (threadNum <= 1) {
+            throw new InvalidParameterException("threadNum must >= 2");
+        }
         config.setThreadNum(threadNum);
         return this;
     }

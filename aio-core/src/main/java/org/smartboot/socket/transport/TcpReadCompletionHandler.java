@@ -55,25 +55,23 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
                         ringBuffer.publishReadIndex(consumerIndex);
                         completed0(size, aioSession);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        LOGGER.error("", e);
                     }
-
                 }
             }
-        }, "smart-socket:BossDefendThread");
+        }, "smart-socket:DaemonThread");
+        t.setDaemon(true);
         t.setPriority(1);
         t.start();
     }
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
-        //未启用Worker线程池或者被递归回调completed直接执行completed0
         if (recursionThreadLocal == null || recursionThreadLocal.get() != null) {
             completed0(result, aioSession);
             return;
         }
 
-        //Boss线程不处理读回调，或者Boss线程中的读信号量不足
         if (semaphore.tryAcquire()) {
             try {
                 recursionThreadLocal.set(this);
