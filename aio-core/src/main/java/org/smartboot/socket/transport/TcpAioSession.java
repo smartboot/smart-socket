@@ -84,6 +84,7 @@ class TcpAioSession<T> extends AioSession<T> {
     private IoServerConfig<T> ioServerConfig;
     private InputStream inputStream;
     private WriteBuffer byteBuf;
+    private volatile boolean writing = false;
 
     /**
      * @param channel
@@ -109,6 +110,7 @@ class TcpAioSession<T> extends AioSession<T> {
                 if (writeBuffer == null) {
                     semaphore.release();
                 } else {
+                    writing = true;
                     continueWrite(writeBuffer);
                 }
                 return null;
@@ -141,6 +143,7 @@ class TcpAioSession<T> extends AioSession<T> {
             continueWrite(writeBuffer);
             return;
         }
+        writing = false;
         semaphore.release();
         //此时可能是Closing或Closed状态
         if (status != SESSION_STATUS_ENABLED) {
@@ -306,14 +309,10 @@ class TcpAioSession<T> extends AioSession<T> {
             throw exception;
         }
 
-
-        continueRead();
-    }
-
-    void flush() {
-        if (byteBuf != null && !byteBuf.isClosed()) {
+        if (!writing && byteBuf != null && !byteBuf.isClosed()) {
             byteBuf.flush();
         }
+        continueRead();
     }
 
 
