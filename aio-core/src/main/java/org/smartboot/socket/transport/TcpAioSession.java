@@ -306,10 +306,14 @@ class TcpAioSession<T> extends AioSession<T> {
             throw exception;
         }
 
+
+        continueRead();
+    }
+
+    void flush() {
         if (byteBuf != null && !byteBuf.isClosed()) {
             byteBuf.flush();
         }
-        continueRead();
     }
 
 

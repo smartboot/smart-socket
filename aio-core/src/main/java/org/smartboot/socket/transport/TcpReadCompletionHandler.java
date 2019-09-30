@@ -69,6 +69,9 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         if (recursionThreadLocal == null || recursionThreadLocal.get() != null) {
             completed0(result, aioSession);
+            if(recursionThreadLocal==null){
+                aioSession.flush();
+            }
             return;
         }
 
@@ -76,6 +79,7 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
             try {
                 recursionThreadLocal.set(this);
                 completed0(result, aioSession);
+                aioSession.flush();
                 runRingBufferTask();
             } finally {
                 recursionThreadLocal.remove();
@@ -112,6 +116,7 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
             size = readEvent.getReadSize();
             ringBuffer.publishReadIndex(index);
             completed0(size, aioSession);
+            aioSession.flush();
         }
     }
 
