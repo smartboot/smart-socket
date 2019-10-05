@@ -54,6 +54,8 @@ public interface NetMonitor<T> {
      */
     void readMonitor(AioSession<T> session, int readSize);
 
+    void readEvent(AioSession<T> session);
+
     /**
      * 监控触发本次写回调session的已写数据字节数
      *
@@ -61,5 +63,7 @@ public interface NetMonitor<T> {
      * @param writeSize 本次输出的数据长度
      */
     void writeMonitor(AioSession<T> session, int writeSize);
+
+    void writeEvent(AioSession<T> session);
 
 }

@@ -34,4 +34,14 @@ public abstract class AbstractPlugin<T> implements Plugin<T> {
     public void writeMonitor(AioSession<T> session, int writeSize) {
 
     }
+
+    @Override
+    public void readEvent(AioSession<T> session) {
+
+    }
+
+    @Override
+    public void writeEvent(AioSession<T> session) {
+
+    }
 }

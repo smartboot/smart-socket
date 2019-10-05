@@ -33,6 +33,20 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
     }
 
     @Override
+    public final void readEvent(AioSession<T> session) {
+        for (Plugin<T> plugin : plugins) {
+            plugin.readEvent(session);
+        }
+    }
+
+    @Override
+    public final void writeEvent(AioSession<T> session) {
+        for (Plugin<T> plugin : plugins) {
+            plugin.writeEvent(session);
+        }
+    }
+
+    @Override
     public final boolean acceptMonitor(AsynchronousSocketChannel channel) {
         boolean accept;
         for (Plugin<T> plugin : plugins) {

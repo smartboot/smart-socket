@@ -64,6 +64,10 @@ public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
 
     private AtomicInteger totalConnect = new AtomicInteger(0);
 
+    private AtomicInteger readCount = new AtomicInteger(0);
+
+    private AtomicInteger writeCount = new AtomicInteger(0);
+
     public MonitorPlugin() {
         this(60);
     }
@@ -110,12 +114,17 @@ public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
                 + "\r\n处理失败消息数:\t" + curDiscardNum
                 + "\r\n已处理消息量:\t" + curProcessMsgNum
                 + "\r\n已处理消息总量:\t" + totleProcessMsgNum.get()
+                + "\r\n读次数:\t" + readCount.get() + "\t写次数:\t" + writeCount.get()
                 + "\r\n新建连接数:\t" + connectCount
                 + "\r\n断开连接数:\t" + disConnectCount
                 + "\r\n在线连接数:\t" + onlineCount.addAndGet(connectCount - disConnectCount)
                 + "\r\n总连接次数:\t" + totalConnect.addAndGet(connectCount)
                 + "\r\nRequests/sec:\t" + curProcessMsgNum * 1.0 / seconds
                 + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "(MB)");
+        if (onlineCount.get() == 0) {
+            readCount.set(0);
+            writeCount.set(0);
+        }
     }
 
     @Override
@@ -133,7 +142,17 @@ public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
     }
 
     @Override
+    public void readEvent(AioSession<T> session) {
+        readCount.incrementAndGet();
+    }
+
+    @Override
     public void writeMonitor(AioSession<T> session, int writeSize) {
         outFlow.addAndGet(writeSize);
+    }
+
+    @Override
+    public void writeEvent(AioSession<T> session) {
+        writeCount.incrementAndGet();
     }
 }

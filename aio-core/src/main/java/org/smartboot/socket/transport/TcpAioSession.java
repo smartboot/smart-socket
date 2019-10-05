@@ -12,6 +12,7 @@ package org.smartboot.socket.transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
@@ -317,10 +318,18 @@ class TcpAioSession<T> extends AioSession<T> {
 
 
     protected void continueRead() {
+        NetMonitor<T> monitor = getServerConfig().getMonitor();
+        if (monitor != null) {
+            monitor.readEvent(this);
+        }
         readFromChannel0(readBuffer.buffer());
     }
 
     protected void continueWrite(VirtualBuffer writeBuffer) {
+        NetMonitor<T> monitor = getServerConfig().getMonitor();
+        if (monitor != null) {
+            monitor.writeEvent(this);
+        }
         writeToChannel0(writeBuffer.buffer());
     }
 
