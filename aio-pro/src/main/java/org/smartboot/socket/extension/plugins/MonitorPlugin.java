@@ -106,9 +106,9 @@ public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
         long curInFlow = inFlow.getAndSet(0);
         long curOutFlow = outFlow.getAndSet(0);
         long curDiscardNum = processFailNum.getAndSet(0);
-        long curProcessMsgNum = processMsgNum.getAndSet(0);
-        int connectCount = newConnect.getAndSet(0);
-        int disConnectCount = disConnect.getAndSet(0);
+        long curProcessMsgNum = processMsgNum.getAndAdd(-processMsgNum.get());
+        int connectCount = newConnect.getAndAdd(-newConnect.get());
+        int disConnectCount = disConnect.getAndAdd(-disConnect.get());
         logger.info("\r\n-----这" + seconds + "秒发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\n处理失败消息数:\t" + curDiscardNum

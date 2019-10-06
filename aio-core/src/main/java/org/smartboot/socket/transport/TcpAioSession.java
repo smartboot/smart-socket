@@ -149,7 +149,7 @@ class TcpAioSession<T> extends AioSession<T> {
         //此时可能是Closing或Closed状态
         if (status != SESSION_STATUS_ENABLED) {
             close();
-        } else if (!byteBuf.isClosed()) {
+        } else {
             //也许此时有新的消息通过write方法添加到writeCacheQueue中
             byteBuf.flush();
         }
@@ -198,9 +198,7 @@ class TcpAioSession<T> extends AioSession<T> {
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
             try {
-                if (!byteBuf.isClosed()) {
-                    byteBuf.close();
-                }
+                byteBuf.close();
                 byteBuf = null;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -231,9 +229,7 @@ class TcpAioSession<T> extends AioSession<T> {
             close(true);
         } else {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
-            if (!byteBuf.isClosed()) {
-                byteBuf.flush();
-            }
+            byteBuf.flush();
         }
     }
 
@@ -310,7 +306,7 @@ class TcpAioSession<T> extends AioSession<T> {
             throw exception;
         }
 
-        if (!writing && byteBuf != null && !byteBuf.isClosed()) {
+        if (!writing && byteBuf != null) {
             byteBuf.flush();
         }
         continueRead();

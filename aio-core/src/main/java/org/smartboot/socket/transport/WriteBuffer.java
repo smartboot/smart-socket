@@ -233,15 +233,13 @@ public class WriteBuffer extends OutputStream {
 
     @Override
     public void close() throws IOException {
+        if (closed) {
+            return;
+        }
         lock.lock();
         try {
-            if (closed) {
-                throw new IOException("OutputStream has closed");
-            }
             flush();
-
             closed = true;
-
             VirtualBuffer byteBuf;
             while ((byteBuf = poll()) != null) {
                 byteBuf.clean();
@@ -254,9 +252,6 @@ public class WriteBuffer extends OutputStream {
         }
     }
 
-    boolean isClosed() {
-        return closed;
-    }
 
     boolean hasData() {
         return count > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0);
