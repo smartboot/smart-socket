@@ -54,6 +54,9 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
                         int size = readEvent.getReadSize();
                         ringBuffer.publishReadIndex(consumerIndex);
                         completed0(size, aioSession);
+                        synchronized (this) {
+                            this.wait(100);
+                        }
                     } catch (InterruptedException e) {
                         LOGGER.error("", e);
                     }

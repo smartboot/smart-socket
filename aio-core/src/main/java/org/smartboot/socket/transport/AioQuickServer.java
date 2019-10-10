@@ -141,6 +141,7 @@ public class AioQuickServer<T> {
                 }
             });
             aioReadCompletionHandler = new TcpReadCompletionHandler<>(buffer, recursionThreadLocal, new Semaphore(threadNum - 1));
+//            aioReadCompletionHandler = new TcpReadCompletionHandler<>();
             aioWriteCompletionHandler = new TcpWriteCompletionHandler<>();
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, threadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
