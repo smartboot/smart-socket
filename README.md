@@ -58,6 +58,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 
 ## 参考
 https://jfarcand.wordpress.com/2008/11/25/tricks-and-tips-with-aio-part-1-the-frightening-thread-pool/
+https://webtide.com/on-jdk-7-asynchronous-io/
 
 ## 关于作者
 Edit By 三刀  
