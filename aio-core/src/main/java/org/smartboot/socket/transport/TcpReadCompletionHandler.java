@@ -25,6 +25,7 @@ import java.util.concurrent.Semaphore;
  */
 class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TcpReadCompletionHandler.class);
+    private static final int SPIN_LOCK_TIMES = Integer.MAX_VALUE;
     /**
      * 读回调资源信号量
      */
@@ -33,7 +34,6 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
      * 递归线程标识
      */
     private ThreadLocal<CompletionHandler> recursionThreadLocal = null;
-
     private RingBuffer<TcpReadEvent> ringBuffer;
 
     public TcpReadCompletionHandler() {
@@ -68,34 +68,39 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
         t.start();
     }
 
+
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         if (recursionThreadLocal == null || recursionThreadLocal.get() != null) {
             completed0(result, aioSession);
             return;
         }
-
-        if (semaphore.tryAcquire()) {
-            try {
-                recursionThreadLocal.set(this);
-                completed0(result, aioSession);
-                runRingBufferTask();
-            } finally {
-                recursionThreadLocal.remove();
-                semaphore.release();
+        int spinLock = SPIN_LOCK_TIMES;
+        do {
+            if (semaphore.tryAcquire()) {
+                if (spinLock < SPIN_LOCK_TIMES) {
+                    LOGGER.info("spin lock success");
+                }
+                try {
+                    recursionThreadLocal.set(this);
+                    completed0(result, aioSession);
+                    runRingBufferTask();
+                } finally {
+                    recursionThreadLocal.remove();
+                    semaphore.release();
+                }
+                return;
             }
-        } else {
-            try {
-                int sequence = ringBuffer.nextWriteIndex();
-                TcpReadEvent readEvent = ringBuffer.get(sequence);
-                readEvent.setSession(aioSession);
-                readEvent.setReadSize(result);
-                ringBuffer.publishWriteIndex(sequence);
-            } catch (InterruptedException e) {
-                LOGGER.error("InterruptedException", e);
-            }
+        } while ((spinLock >>= 1) > 0);
+        try {
+            int sequence = ringBuffer.nextWriteIndex();
+            TcpReadEvent readEvent = ringBuffer.get(sequence);
+            readEvent.setSession(aioSession);
+            readEvent.setReadSize(result);
+            ringBuffer.publishWriteIndex(sequence);
+        } catch (InterruptedException e) {
+            LOGGER.error("InterruptedException", e);
         }
-
     }
 
     /**
