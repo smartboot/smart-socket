@@ -16,7 +16,7 @@ public class BufferPagePool {
     /**
      * 内存页游标
      */
-    private volatile AtomicInteger cursor = new AtomicInteger(0);
+    private AtomicInteger cursor = new AtomicInteger(0);
 
     /**
      * @param pageSize 内存页大小

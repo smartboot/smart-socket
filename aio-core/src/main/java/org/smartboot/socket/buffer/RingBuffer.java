@@ -70,9 +70,9 @@ public final class RingBuffer<T> {
      * items index for next put, offer, or add
      */
     private int putIndex;
-    private volatile boolean needFullSingle = false;
+    private boolean needFullSingle = false;
 
-    private volatile boolean needEmptySingle = false;
+    private boolean needEmptySingle = false;
 
     private EventFactory<T> eventFactory;
 

@@ -85,7 +85,7 @@ class TcpAioSession<T> extends AioSession<T> {
     private IoServerConfig<T> ioServerConfig;
     private InputStream inputStream;
     private WriteBuffer byteBuf;
-    private volatile boolean writing = false;
+    private boolean writing = false;
 
     /**
      * @param channel
