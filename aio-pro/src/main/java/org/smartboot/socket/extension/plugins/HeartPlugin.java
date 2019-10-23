@@ -93,6 +93,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
                 if (System.currentTimeMillis() - lastTime > timeout) {
                     try {
                         sendHeartRequest(session);
+                        session.writeBuffer().flush();
                     } catch (IOException e) {
                         LOGGER.error("heart exception", e);
                     }
