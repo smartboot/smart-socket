@@ -109,16 +109,16 @@ public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
         long curProcessMsgNum = processMsgNum.getAndAdd(-processMsgNum.get());
         int connectCount = newConnect.getAndAdd(-newConnect.get());
         int disConnectCount = disConnect.getAndAdd(-disConnect.get());
-        logger.info("\r\n-----这" + seconds + "秒发生了什么----\r\n流入流量:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
-                + "\r\n流出流量:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
-                + "\r\n处理失败消息数:\t" + curDiscardNum
-                + "\r\n已处理消息量:\t" + curProcessMsgNum
-                + "\r\n已处理消息总量:\t" + totleProcessMsgNum.get()
-                + "\r\n读次数:\t" + readCount.get() + "\t写次数:\t" + writeCount.get()
-                + "\r\n新建连接数:\t" + connectCount
-                + "\r\n断开连接数:\t" + disConnectCount
-                + "\r\n在线连接数:\t" + onlineCount.addAndGet(connectCount - disConnectCount)
-                + "\r\n总连接次数:\t" + totalConnect.addAndGet(connectCount)
+        logger.info("\r\n-----这" + seconds + "秒发生了什么----\r\ninflow:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
+                + "\r\noutflow:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
+                + "\r\nprocess fail:\t" + curDiscardNum
+                + "\r\nprocess success:\t" + curProcessMsgNum
+                + "\r\nprocess total:\t" + totleProcessMsgNum.get()
+                + "\r\nread count:\t" + readCount.get() + "\twrite count:\t" + writeCount.get()
+                + "\r\nconnect count:\t" + connectCount
+                + "\r\ndisconnect count:\t" + disConnectCount
+                + "\r\nonline count:\t" + onlineCount.addAndGet(connectCount - disConnectCount)
+                + "\r\nconnected total:\t" + totalConnect.addAndGet(connectCount)
                 + "\r\nRequests/sec:\t" + curProcessMsgNum * 1.0 / seconds
                 + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "(MB)");
         if (onlineCount.get() == 0) {

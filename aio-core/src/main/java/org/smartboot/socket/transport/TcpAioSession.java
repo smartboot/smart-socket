@@ -86,6 +86,11 @@ class TcpAioSession<T> extends AioSession<T> {
     private InputStream inputStream;
     private WriteBuffer byteBuf;
     private boolean writing = false;
+    /**
+     * 最近一次读取到的字节数
+     */
+    private int lastReadSize;
+
 
     /**
      * @param channel
@@ -327,6 +332,14 @@ class TcpAioSession<T> extends AioSession<T> {
             monitor.writeEvent(this);
         }
         writeToChannel0(writeBuffer.buffer());
+    }
+
+    int getLastReadSize() {
+        return lastReadSize;
+    }
+
+    void setLastReadSize(int lastReadSize) {
+        this.lastReadSize = lastReadSize;
     }
 
     /**
