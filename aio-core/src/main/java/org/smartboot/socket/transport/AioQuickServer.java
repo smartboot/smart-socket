@@ -179,7 +179,6 @@ public class AioQuickServer<T> {
                             final AsynchronousSocketChannel channel = nextFuture.get();
                             nextFuture = serverSocketChannel.accept();
                             if (monitor == null || monitor.acceptMonitor(channel)) {
-                                channel.setOption(StandardSocketOptions.TCP_NODELAY, true);
                                 createSession(channel);
                             } else {
                                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
