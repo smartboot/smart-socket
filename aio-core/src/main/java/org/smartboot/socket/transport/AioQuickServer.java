@@ -21,7 +21,6 @@ import org.smartboot.socket.buffer.RingBuffer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketOption;
-import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;

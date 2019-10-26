@@ -27,8 +27,9 @@ import java.nio.channels.AsynchronousSocketChannel;
  *
  * <b>注意:</b>
  * <p>
- * 实现本接口时要关注acceptMonitor接口的返回值,如无特殊需求直接返回true，若返回false会拒绝本次连接
+ * 实现本接口时要关注acceptMonitor接口的返回值,如无特殊需求直接返回true，若返回false会拒绝本次连接。
  * </p>
+ * <b>非必要情况下请勿使用该接口，该接口的方法定义不够专业，后续可能会调整</b>
  *
  * @author 三刀
  * @version V1.0.0
