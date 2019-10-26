@@ -19,38 +19,38 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
     private List<Plugin<T>> plugins = new ArrayList<>();
 
     @Override
-    public final void readMonitor(AioSession<T> session, int readSize) {
+    public final void afterRead(AioSession<T> session, int readSize) {
         for (Plugin<T> plugin : plugins) {
-            plugin.readMonitor(session, readSize);
+            plugin.afterRead(session, readSize);
         }
     }
 
     @Override
-    public final void writeMonitor(AioSession<T> session, int writeSize) {
+    public final void afterWrite(AioSession<T> session, int writeSize) {
         for (Plugin<T> plugin : plugins) {
-            plugin.writeMonitor(session, writeSize);
+            plugin.afterWrite(session, writeSize);
         }
     }
 
     @Override
-    public final void readEvent(AioSession<T> session) {
+    public final void beforeRead(AioSession<T> session) {
         for (Plugin<T> plugin : plugins) {
-            plugin.readEvent(session);
+            plugin.beforeRead(session);
         }
     }
 
     @Override
-    public final void writeEvent(AioSession<T> session) {
+    public final void beforeWrite(AioSession<T> session) {
         for (Plugin<T> plugin : plugins) {
-            plugin.writeEvent(session);
+            plugin.beforeWrite(session);
         }
     }
 
     @Override
-    public final boolean acceptMonitor(AsynchronousSocketChannel channel) {
+    public final boolean shouldAccept(AsynchronousSocketChannel channel) {
         boolean accept;
         for (Plugin<T> plugin : plugins) {
-            accept = plugin.acceptMonitor(channel);
+            accept = plugin.shouldAccept(channel);
             if (!accept) {
                 return accept;
             }

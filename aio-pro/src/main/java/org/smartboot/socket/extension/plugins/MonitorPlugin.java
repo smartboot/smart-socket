@@ -128,12 +128,12 @@ public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
     }
 
     @Override
-    public boolean acceptMonitor(AsynchronousSocketChannel channel) {
+    public boolean shouldAccept(AsynchronousSocketChannel channel) {
         return true;
     }
 
     @Override
-    public void readMonitor(AioSession<T> session, int readSize) {
+    public void afterRead(AioSession<T> session, int readSize) {
         //出现result为0,说明代码存在问题
         if (readSize == 0) {
             logger.error("readSize is 0");
@@ -142,17 +142,17 @@ public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
     }
 
     @Override
-    public void readEvent(AioSession<T> session) {
+    public void beforeRead(AioSession<T> session) {
         readCount.incrementAndGet();
     }
 
     @Override
-    public void writeMonitor(AioSession<T> session, int writeSize) {
+    public void afterWrite(AioSession<T> session, int writeSize) {
         outFlow.addAndGet(writeSize);
     }
 
     @Override
-    public void writeEvent(AioSession<T> session) {
+    public void beforeWrite(AioSession<T> session) {
         writeCount.incrementAndGet();
     }
 }

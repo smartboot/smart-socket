@@ -321,7 +321,7 @@ class TcpAioSession<T> extends AioSession<T> {
     protected void continueRead() {
         NetMonitor<T> monitor = getServerConfig().getMonitor();
         if (monitor != null) {
-            monitor.readEvent(this);
+            monitor.beforeRead(this);
         }
         readFromChannel0(readBuffer.buffer());
     }
@@ -329,7 +329,7 @@ class TcpAioSession<T> extends AioSession<T> {
     protected void continueWrite(VirtualBuffer writeBuffer) {
         NetMonitor<T> monitor = getServerConfig().getMonitor();
         if (monitor != null) {
-            monitor.writeEvent(this);
+            monitor.beforeWrite(this);
         }
         writeToChannel0(writeBuffer.buffer());
     }

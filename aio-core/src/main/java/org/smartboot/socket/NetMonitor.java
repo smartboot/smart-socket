@@ -45,7 +45,7 @@ public interface NetMonitor<T> {
      * @param channel 当前已经建立连接的通道对象
      * @return true:接受该连接,false:拒绝该连接
      */
-    boolean acceptMonitor(AsynchronousSocketChannel channel);
+    boolean shouldAccept(AsynchronousSocketChannel channel);
 
     /**
      * 监控触发本次读回调Session的已读数据字节数
@@ -53,9 +53,12 @@ public interface NetMonitor<T> {
      * @param session  当前执行read的AioSession对象
      * @param readSize 已读数据长度
      */
-    void readMonitor(AioSession<T> session, int readSize);
+    void afterRead(AioSession<T> session, int readSize);
 
-    void readEvent(AioSession<T> session);
+    /**
+     * @param session
+     */
+    void beforeRead(AioSession<T> session);
 
     /**
      * 监控触发本次写回调session的已写数据字节数
@@ -63,8 +66,8 @@ public interface NetMonitor<T> {
      * @param session   本次执行write回调的AIOSession对象
      * @param writeSize 本次输出的数据长度
      */
-    void writeMonitor(AioSession<T> session, int writeSize);
+    void afterWrite(AioSession<T> session, int writeSize);
 
-    void writeEvent(AioSession<T> session);
+    void beforeWrite(AioSession<T> session);
 
 }

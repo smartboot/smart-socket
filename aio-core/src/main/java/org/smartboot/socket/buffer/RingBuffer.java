@@ -38,6 +38,10 @@ package org.smartboot.socket.buffer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * @param <T>
+ * @author 三刀
+ */
 public final class RingBuffer<T> {
 
     private static final byte READABLE = 1, READING = 1 << 1, WRITEABLE = 1 << 2, WRITING = 1 << 3;
@@ -85,8 +89,9 @@ public final class RingBuffer<T> {
      * @throws IllegalArgumentException if {@code capacity < 1}
      */
     public RingBuffer(int capacity, EventFactory<T> factory) {
-        if (capacity <= 0)
+        if (capacity <= 0) {
             throw new IllegalArgumentException();
+        }
         this.items = new Node[capacity];
         lock = new ReentrantLock(false);
         notEmpty = lock.newCondition();
@@ -114,8 +119,9 @@ public final class RingBuffer<T> {
 
             node.status = WRITING;
             int index = putIndex;
-            if (++putIndex == items.length)
+            if (++putIndex == items.length) {
                 putIndex = 0;
+            }
             return index;
         } finally {
             lock.unlock();
@@ -140,8 +146,9 @@ public final class RingBuffer<T> {
 
             node.status = WRITING;
             int index = putIndex;
-            if (++putIndex == items.length)
+            if (++putIndex == items.length) {
                 putIndex = 0;
+            }
             return index;
         } finally {
             lock.unlock();
@@ -181,8 +188,9 @@ public final class RingBuffer<T> {
             }
             x.status = READING;
             int index = takeIndex;
-            if (++takeIndex == items.length)
+            if (++takeIndex == items.length) {
                 takeIndex = 0;
+            }
             return index;
         } finally {
             lock.unlock();
@@ -203,8 +211,9 @@ public final class RingBuffer<T> {
             }
             x.status = READING;
             int index = takeIndex;
-            if (++takeIndex == items.length)
+            if (++takeIndex == items.length) {
                 takeIndex = 0;
+            }
             return index;
         } finally {
             lock.unlock();

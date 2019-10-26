@@ -22,9 +22,9 @@ public class SocketOptionPlugin<T> extends AbstractPlugin<T> {
     private Map<SocketOption<Object>, Object> optionMap = new HashMap<>();
 
     @Override
-    public final boolean acceptMonitor(AsynchronousSocketChannel channel) {
+    public final boolean shouldAccept(AsynchronousSocketChannel channel) {
         setOption(channel);
-        return super.acceptMonitor(channel);
+        return super.shouldAccept(channel);
     }
 
     /**

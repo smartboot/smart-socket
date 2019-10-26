@@ -165,7 +165,7 @@ final class IoServerConfig<T> {
 
     public void setOption(SocketOption socketOption, Object f) {
         if (socketOptions == null) {
-            socketOptions = new HashMap<>();
+            socketOptions = new HashMap<>(4);
         }
         socketOptions.put(socketOption, f);
     }

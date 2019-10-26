@@ -102,7 +102,6 @@ public final class UdpChannel<Request> {
     }
 
     void doWrite() throws IOException {
-//        LOGGER.info("doWrite");
         int writeSize = -1;
         do {
             int index = writeRingBuffer.tryNextReadIndex();

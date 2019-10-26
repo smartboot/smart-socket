@@ -21,27 +21,27 @@ public abstract class AbstractPlugin<T> implements Plugin<T> {
     }
 
     @Override
-    public boolean acceptMonitor(AsynchronousSocketChannel channel) {
+    public boolean shouldAccept(AsynchronousSocketChannel channel) {
         return true;
     }
 
     @Override
-    public void readMonitor(AioSession<T> session, int readSize) {
+    public void afterRead(AioSession<T> session, int readSize) {
 
     }
 
     @Override
-    public void writeMonitor(AioSession<T> session, int writeSize) {
+    public void afterWrite(AioSession<T> session, int writeSize) {
 
     }
 
     @Override
-    public void readEvent(AioSession<T> session) {
+    public void beforeRead(AioSession<T> session) {
 
     }
 
     @Override
-    public void writeEvent(AioSession<T> session) {
+    public void beforeWrite(AioSession<T> session) {
 
     }
 }

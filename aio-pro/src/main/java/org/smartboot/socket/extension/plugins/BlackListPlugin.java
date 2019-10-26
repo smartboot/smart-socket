@@ -19,7 +19,7 @@ public final class BlackListPlugin<T> extends AbstractPlugin<T> {
     private ConcurrentLinkedQueue<BlackListRule> ipBlackList = new ConcurrentLinkedQueue<>();
 
     @Override
-    public boolean acceptMonitor(AsynchronousSocketChannel channel) {
+    public boolean shouldAccept(AsynchronousSocketChannel channel) {
         InetSocketAddress inetSocketAddress = null;
         try {
             inetSocketAddress = (InetSocketAddress) channel.getRemoteAddress();
