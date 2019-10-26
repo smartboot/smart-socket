@@ -1,38 +1,3 @@
-/*
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */
-
-/*
- *
- *
- *
- *
- *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
-
 package org.smartboot.socket.buffer;
 
 import java.util.concurrent.locks.Condition;
@@ -74,10 +39,11 @@ public final class RingBuffer<T> {
      * items index for next put, offer, or add
      */
     private int putIndex;
+    /**/
     private boolean needFullSingle = false;
-
+    /**/
     private boolean needEmptySingle = false;
-
+    /**/
     private EventFactory<T> eventFactory;
 
 
@@ -252,8 +218,8 @@ public final class RingBuffer<T> {
 
     class Node<T1> {
 
-        byte status;
-        T1 entity;
+        private byte status;
+        private T1 entity;
 
         Node(T1 entity) {
             this.entity = entity;

@@ -14,7 +14,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version V1.0 , 2018/10/31
  */
 public class BufferPagePool {
-    private static ScheduledExecutorService timer = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+    /**
+     * 守护线程用以回收内存
+     */
+    private static final ScheduledExecutorService BUFFER_POOL_CLEAN = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             Thread thread = new Thread(r, "BufferPoolClean");
@@ -22,6 +25,9 @@ public class BufferPagePool {
             return thread;
         }
     });
+    /**
+     * 内存页组
+     */
     private BufferPage[] bufferPageList;
     /**
      * 内存页游标
@@ -38,7 +44,7 @@ public class BufferPagePool {
         for (int i = 0; i < poolSize; i++) {
             bufferPageList[i] = new BufferPage(pageSize, isDirect);
         }
-        timer.scheduleWithFixedDelay(new TimerTask() {
+        BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new TimerTask() {
             @Override
             public void run() {
                 for (BufferPage bufferPage : bufferPageList) {

@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.buffer.RingBuffer;
 
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -27,7 +26,13 @@ import java.util.concurrent.locks.ReentrantLock;
  * @version V1.0.0
  */
 class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
+    /**
+     * logger
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(TcpReadCompletionHandler.class);
+    /**
+     * 自旋次数
+     */
     private static final int SPIN_LOCK_TIMES = Short.MAX_VALUE;
     /**
      * 读回调资源信号量
@@ -37,25 +42,31 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
      * 递归线程标识
      */
     private ThreadLocal<CompletionHandler> recursionThreadLocal = null;
-    private RingBuffer<TcpReadEvent> ringBuffer;
 
+    /**
+     * 读会话缓存队列
+     */
     private ConcurrentLinkedQueue<TcpAioSession<T>> cacheAioSessionQueue;
 
     /**
      * 应该可以不用volatile
      */
     private boolean needNotify = true;
-
+    /**
+     * 同步锁
+     */
     private ReentrantLock lock = new ReentrantLock();
+    /**
+     * 非空条件
+     */
     private final Condition notEmpty = lock.newCondition();
 
-    public TcpReadCompletionHandler() {
+    TcpReadCompletionHandler() {
     }
 
-    public TcpReadCompletionHandler(final RingBuffer<TcpReadEvent> ringBuffer, final ThreadLocal<CompletionHandler> recursionThreadLocal, Semaphore semaphore) {
+    TcpReadCompletionHandler(final ThreadLocal<CompletionHandler> recursionThreadLocal, Semaphore semaphore) {
         this.semaphore = semaphore;
         this.recursionThreadLocal = recursionThreadLocal;
-        this.ringBuffer = ringBuffer;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
         Thread t = new Thread(new Runnable() {
             @Override

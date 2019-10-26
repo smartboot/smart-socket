@@ -24,10 +24,14 @@ import java.util.Set;
 /**
  * UDP服务启动类
  *
+ * @param <Request>
  * @author 三刀
  * @version V1.0 , 2019/8/18
  */
 public class UdpBootstrap<Request> implements Runnable {
+    /**
+     * logger
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpBootstrap.class);
     /**
      * 状态：初始
@@ -52,7 +56,7 @@ public class UdpBootstrap<Request> implements Runnable {
     /**
      * 服务ID
      */
-    private static int uid;
+    private static int UID;
     /**
      * 服务状态
      */
@@ -77,6 +81,9 @@ public class UdpBootstrap<Request> implements Runnable {
      */
     private VirtualBuffer readBuffer;
 
+    /**
+     * EventFactory
+     */
     private EventFactory<UdpReadEvent<Request>> factory = new EventFactory<UdpReadEvent<Request>>() {
         @Override
         public UdpReadEvent<Request> newInstance() {
@@ -90,7 +97,9 @@ public class UdpBootstrap<Request> implements Runnable {
         }
     };
 
-
+    /**
+     * 缓存页
+     */
     private BufferPage bufferPage = new BufferPagePool(1024, 1, true).allocateBufferPage();
 
     public UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
@@ -160,7 +169,7 @@ public class UdpBootstrap<Request> implements Runnable {
             updateServiceStatus(STATUS_STARTING);
 
             readBuffer = bufferPage.allocate(config.getReadBufferSize());
-            int uid = UdpBootstrap.uid++;
+            int uid = UdpBootstrap.UID++;
             Thread serverThread = new Thread(this, "UDP-Selector-" + uid);
             serverThread.start();
 

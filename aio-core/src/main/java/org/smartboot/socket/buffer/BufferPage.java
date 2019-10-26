@@ -17,7 +17,13 @@ import java.util.concurrent.locks.ReentrantLock;
  * @version V1.0 , 2018/10/31
  */
 public final class BufferPage {
+    /**
+     * logger
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferPage.class);
+    /**
+     * 缓存回收周期
+     */
     private static final int BUFFER_REUSE_CYCLE = 1000;
     /**
      * 当前空闲的虚拟Buffer
@@ -32,8 +38,14 @@ public final class BufferPage {
      * 当前缓存页的物理缓冲区
      */
     private ByteBuffer buffer;
+    /**
+     * 条件锁
+     */
     private ReentrantLock lock = new ReentrantLock();
 
+    /**
+     * 上次内存申请时间
+     */
     private long lastAllocateTime;
 
     /**
@@ -57,6 +69,12 @@ public final class BufferPage {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
+    /**
+     * 申请虚拟内存
+     *
+     * @param size 申请大小
+     * @return 虚拟内存对象
+     */
     public VirtualBuffer allocate(final int size) {
         lastAllocateTime = System.currentTimeMillis();
         VirtualBuffer cleanBuffer = cleanBuffers.poll();
@@ -114,6 +132,11 @@ public final class BufferPage {
 
     }
 
+    /**
+     * 内存回收
+     *
+     * @param cleanBuffer 待回收的虚拟内存
+     */
     void clean(VirtualBuffer cleanBuffer) {
         if (cleanBuffers.offer(cleanBuffer)) {
             return;
@@ -126,6 +149,9 @@ public final class BufferPage {
         }
     }
 
+    /**
+     * 尝试回收缓冲区
+     */
     void tryClean() {
         if (System.currentTimeMillis() - lastAllocateTime < BUFFER_REUSE_CYCLE || !lock.tryLock()) {
             return;
@@ -141,6 +167,11 @@ public final class BufferPage {
 
     }
 
+    /**
+     * 回收虚拟缓冲区
+     *
+     * @param cleanBuffer 虚拟缓冲区
+     */
     private void clean0(VirtualBuffer cleanBuffer) {
         int index = 0;
         Iterator<VirtualBuffer> iterator = availableBuffers.iterator();

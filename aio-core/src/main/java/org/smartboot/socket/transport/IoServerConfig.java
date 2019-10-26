@@ -16,8 +16,6 @@ import java.net.SocketOption;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.smartboot.socket.transport.IoServerConfig.Property.READ_BACKLOG;
-
 /**
  * Quickly服务端/客户端配置信息 T:解码后生成的对象类型
  *
@@ -26,6 +24,9 @@ import static org.smartboot.socket.transport.IoServerConfig.Property.READ_BACKLO
  */
 final class IoServerConfig<T> {
 
+    /**
+     * banner信息
+     */
     public static final String BANNER = "\n" +
             "                               _                           _             _   \n" +
             "                              ( )_                        ( )           ( )_ \n" +
@@ -84,9 +85,6 @@ final class IoServerConfig<T> {
      */
     private int threadNum = 1;
 
-
-    private int readBacklog = getIntProperty(READ_BACKLOG, 4096);
-
     static int getIntProperty(String property, int defaultVal) {
         String valString = System.getProperty(property);
         if (valString != null) {
@@ -106,19 +104,19 @@ final class IoServerConfig<T> {
         return defaultVal;
     }
 
-    public final String getHost() {
+    public String getHost() {
         return host;
     }
 
-    public final void setHost(String host) {
+    public void setHost(String host) {
         this.host = host;
     }
 
-    public final int getPort() {
+    public int getPort() {
         return port;
     }
 
-    public final void setPort(int port) {
+    public void setPort(int port) {
         this.port = port;
     }
 
@@ -134,11 +132,11 @@ final class IoServerConfig<T> {
         this.protocol = protocol;
     }
 
-    public final MessageProcessor<T> getProcessor() {
+    public MessageProcessor<T> getProcessor() {
         return processor;
     }
 
-    public final void setProcessor(MessageProcessor<T> processor) {
+    public void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
         this.monitor = (processor instanceof NetMonitor) ? (NetMonitor<T>) processor : null;
     }
@@ -194,9 +192,6 @@ final class IoServerConfig<T> {
         this.writeBufferSize = writeBufferSize;
     }
 
-    public int getReadBacklog() {
-        return readBacklog;
-    }
 
     @Override
     public String toString() {

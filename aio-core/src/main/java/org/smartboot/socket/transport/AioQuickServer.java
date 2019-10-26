@@ -15,8 +15,6 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
-import org.smartboot.socket.buffer.EventFactory;
-import org.smartboot.socket.buffer.RingBuffer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -128,26 +126,14 @@ public class AioQuickServer<T> {
         try {
 
             ThreadLocal<CompletionHandler> recursionThreadLocal = new ThreadLocal<>();
-            RingBuffer<TcpReadEvent> buffer = new RingBuffer<TcpReadEvent>(config.getReadBacklog(), new EventFactory<TcpReadEvent>() {
-                @Override
-                public TcpReadEvent newInstance() {
-                    return new TcpReadEvent();
-                }
-
-                @Override
-                public void restEntity(TcpReadEvent entity) {
-                    entity.setReadSize(-1);
-                    entity.setSession(null);
-                }
-            });
-            aioReadCompletionHandler = new TcpReadCompletionHandler<>(buffer, recursionThreadLocal, new Semaphore(threadNum - 1));
+            aioReadCompletionHandler = new TcpReadCompletionHandler<>(recursionThreadLocal, new Semaphore(threadNum - 1));
 //            aioReadCompletionHandler = new TcpReadCompletionHandler<>();
             aioWriteCompletionHandler = new TcpWriteCompletionHandler<>();
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, threadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
 
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(threadNum, new ThreadFactory() {
-                byte index = 0;
+                private byte index = 0;
 
                 @Override
                 public Thread newThread(Runnable r) {
@@ -168,7 +154,7 @@ public class AioQuickServer<T> {
                 serverSocketChannel.bind(new InetSocketAddress(config.getPort()), 1000);
             }
             acceptThread = new Thread(new Runnable() {
-                NetMonitor<T> monitor = config.getMonitor();
+                private NetMonitor<T> monitor = config.getMonitor();
 
                 @Override
                 public void run() {
