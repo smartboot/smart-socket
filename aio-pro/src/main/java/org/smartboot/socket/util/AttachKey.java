@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentMap;
  * @version V1.0 , 2018/6/2
  */
 public class AttachKey<T> {
-    private static final ConcurrentMap<String, AttachKey> names = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, AttachKey> NAMES = new ConcurrentHashMap<>();
     private String key;
     private T value;
 
@@ -17,10 +17,10 @@ public class AttachKey<T> {
     }
 
     public static <T> AttachKey<T> valueOf(String name) {
-        AttachKey<T> option = names.get(name);
+        AttachKey<T> option = NAMES.get(name);
         if (option == null) {
             option = new AttachKey<T>(name);
-            AttachKey<T> old = names.putIfAbsent(name, option);
+            AttachKey<T> old = NAMES.putIfAbsent(name, option);
             if (old != null) {
                 option = old;
             }

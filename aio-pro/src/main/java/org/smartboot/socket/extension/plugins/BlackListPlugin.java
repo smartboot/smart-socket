@@ -59,6 +59,12 @@ public final class BlackListPlugin<T> extends AbstractPlugin<T> {
      * 黑名单规则定义
      */
     public interface BlackListRule {
+        /**
+         * 是否允许建立连接
+         *
+         * @param address
+         * @return
+         */
         boolean access(InetSocketAddress address);
     }
 }

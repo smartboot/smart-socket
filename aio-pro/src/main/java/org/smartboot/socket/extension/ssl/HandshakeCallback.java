@@ -13,5 +13,8 @@ package org.smartboot.socket.extension.ssl;
  * @version V1.0 , 2018/1/2
  */
 public interface HandshakeCallback {
+    /**
+     * 握手回调
+     */
     void callback();
 }

@@ -12,30 +12,40 @@ package org.smartboot.socket.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 服务器定时任务
  *
  * @author 三刀
  */
-public abstract class QuickTimerTask extends TimerTask {
+public abstract class QuickTimerTask implements Runnable {
+    public static final ScheduledExecutorService SCHEDULED_EXECUTOR_SERVICE = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, "Quick Timer");
+            thread.setDaemon(true);
+            return thread;
+        }
+    });
     private static final Logger logger = LoggerFactory.getLogger(QuickTimerTask.class);
-    private static Timer timer = new Timer("Quick Timer", true);
 
     public QuickTimerTask() {
-        timer.schedule(this, getDelay(), getPeriod());
+        SCHEDULED_EXECUTOR_SERVICE.scheduleAtFixedRate(this, getDelay(), getPeriod(), TimeUnit.MILLISECONDS);
         logger.info("Regist QuickTimerTask---- " + this.getClass().getSimpleName());
     }
 
     public static void cancelQuickTask() {
-        timer.cancel();
+        SCHEDULED_EXECUTOR_SERVICE.shutdown();
     }
 
-    public static Timer getTimer() {
-        return timer;
+    public static void scheduleAtFixedRate(Runnable command, long initialDelay, long period) {
+        SCHEDULED_EXECUTOR_SERVICE.scheduleAtFixedRate(command, initialDelay, period, TimeUnit.MILLISECONDS);
     }
+
 
     /**
      * 获取定时任务的延迟启动时间
@@ -46,6 +56,8 @@ public abstract class QuickTimerTask extends TimerTask {
 
     /**
      * 获取定时任务的执行频率
+     *
+     * @return
      */
     protected abstract long getPeriod();
 }

@@ -14,6 +14,7 @@ public interface Plugin<T> extends NetMonitor<T> {
      * 对请求消息进行预处理，并决策是否进行后续的MessageProcessor处理。
      * 若返回false，则当前消息将被忽略。
      * 若返回true，该消息会正常秩序MessageProcessor.process.
+     *
      * @param session
      * @param t
      * @return
@@ -22,9 +23,12 @@ public interface Plugin<T> extends NetMonitor<T> {
 
 
     /**
+     * 监听状态机事件
+     *
      * @param stateMachineEnum
      * @param session
      * @param throwable
+     * @see org.smartboot.socket.MessageProcessor#stateEvent(AioSession, StateMachineEnum, Throwable)
      */
     void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable);
 

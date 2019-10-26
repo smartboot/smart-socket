@@ -11,8 +11,8 @@ package org.smartboot.socket.transport;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.ssl.ClientAuth;
-import org.smartboot.socket.extension.ssl.SSLConfig;
-import org.smartboot.socket.extension.ssl.SSLService;
+import org.smartboot.socket.extension.ssl.SslConfig;
+import org.smartboot.socket.extension.ssl.SslService;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -20,12 +20,13 @@ import java.nio.channels.AsynchronousSocketChannel;
 
 /**
  * AIO服务端
- * Created by 三刀 on 2017/6/28.
+ *
+ * @author 三刀 on 2017/6/28.
  */
 public class AioSSLQuickServer<T> extends AioQuickServer<T> {
-    private SSLConfig sslConfig = new SSLConfig();
+    private SslConfig sslConfig = new SslConfig();
 
-    private SSLService sslService;
+    private SslService sslService;
 
 
     /**
@@ -53,11 +54,11 @@ public class AioSSLQuickServer<T> extends AioQuickServer<T> {
             printBanner(System.out);
         }
         //启动SSL服务
-        sslService = new SSLService(sslConfig);
+        sslService = new SslService(sslConfig);
         start0(new Function<AsynchronousSocketChannel, TcpAioSession<T>>() {
             @Override
             public TcpAioSession<T> apply(AsynchronousSocketChannel channel) {
-                return new SSLAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, sslService, bufferPool.allocateBufferPage());
+                return new SslAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, sslService, bufferPool.allocateBufferPage());
             }
         });
     }

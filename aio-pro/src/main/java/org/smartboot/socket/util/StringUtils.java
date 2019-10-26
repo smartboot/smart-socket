@@ -14,14 +14,15 @@ package org.smartboot.socket.util;
  * @author 三刀
  * @version StringUtils.java, v 0.1 2015年8月25日 下午2:48:21 Seer Exp.
  */
-public class StringUtils{
+public class StringUtils {
 
     /**
      * 秘钥Key
      */
     public static final String SECRET_KEY = "_SecretKey_";
-    private final static char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e',
+    private final static char[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e',
             'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+    private static final int TWO = 2;
 
     /**
      * 将字节转换成16进制显示
@@ -30,9 +31,9 @@ public class StringUtils{
      * @return String
      */
     public static String toHex(byte b) {
-        final char[] buf = new char[2];
-        for (int i = 0; i < 2; i++) {
-            buf[1 - i] = digits[b & 0xF];
+        final char[] buf = new char[TWO];
+        for (int i = 0; i < buf.length; i++) {
+            buf[1 - i] = DIGITS[b & 0xF];
             b = (byte) (b >>> 4);
         }
         return new String(buf);

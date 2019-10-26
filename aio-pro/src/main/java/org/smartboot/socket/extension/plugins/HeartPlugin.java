@@ -4,12 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.util.QuickTimerTask;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 心跳插件
@@ -19,7 +20,6 @@ import java.util.TimerTask;
  */
 public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(HeartPlugin.class);
-    private static Timer timer = new Timer("HeartMonitor Timer", true);
     private Map<AioSession<T>, Long> sessionMap = new HashMap<>();
     private int timeout;
 
@@ -50,6 +50,8 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
                 //移除心跳监测
                 sessionMap.remove(session);
                 break;
+            default:
+                break;
         }
     }
 
@@ -57,6 +59,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
      * 自定义心跳消息并发送
      *
      * @param session
+     * @throws IOException
      */
     public abstract void sendHeartRequest(AioSession<T> session) throws IOException;
 
@@ -76,7 +79,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
             return;
         }
         LOGGER.info("session:{}注册心跳任务,超时时间:{}", session, timeout);
-        timer.schedule(new TimerTask() {
+        QuickTimerTask.SCHEDULED_EXECUTOR_SERVICE.schedule(new TimerTask() {
             @Override
             public void run() {
                 if (session.isInvalid()) {
@@ -100,6 +103,6 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
                 }
                 registerHeart(session, timeout);
             }
-        }, timeout);
+        }, timeout, TimeUnit.MILLISECONDS);
     }
 }

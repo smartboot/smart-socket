@@ -11,8 +11,8 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.extension.ssl.SSLConfig;
-import org.smartboot.socket.extension.ssl.SSLService;
+import org.smartboot.socket.extension.ssl.SslConfig;
+import org.smartboot.socket.extension.ssl.SslService;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -22,12 +22,13 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * AIO实现的客户端服务
- * Created by 三刀 on 2017/6/28.
+ *
+ * @author 三刀
  */
 public final class AioSSLQuickClient<T> extends AioQuickClient<T> {
-    private SSLService sslService;
+    private SslService sslService;
 
-    private SSLConfig sslConfig = new SSLConfig();
+    private SslConfig sslConfig = new SslConfig();
 
     /**
      * @param host             远程服务器地址
@@ -49,11 +50,11 @@ public final class AioSSLQuickClient<T> extends AioQuickClient<T> {
     public AioSession<T> start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         //启动SSL服务
         sslConfig.setClientMode(true);
-        sslService = new SSLService(sslConfig);
+        sslService = new SslService(sslConfig);
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
         //连接成功则构造AIOSession对象
-        session = new SSLAioSession<T>(socketChannel, config, new TcpReadCompletionHandler<T>(), new TcpWriteCompletionHandler<T>(), sslService, bufferPool.allocateBufferPage());
+        session = new SslAioSession<T>(socketChannel, config, new TcpReadCompletionHandler<T>(), new TcpWriteCompletionHandler<T>(), sslService, bufferPool.allocateBufferPage());
         session.initSession();
         return session;
     }

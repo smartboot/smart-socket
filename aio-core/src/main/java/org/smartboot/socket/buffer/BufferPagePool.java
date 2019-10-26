@@ -1,7 +1,10 @@
 package org.smartboot.socket.buffer;
 
-import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -11,7 +14,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version V1.0 , 2018/10/31
  */
 public class BufferPagePool {
-    private static Timer timer = new Timer("BufferPoolClean", true);
+    private static ScheduledExecutorService timer = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, "BufferPoolClean");
+            thread.setDaemon(true);
+            return thread;
+        }
+    });
     private BufferPage[] bufferPageList;
     /**
      * 内存页游标
@@ -28,14 +38,14 @@ public class BufferPagePool {
         for (int i = 0; i < poolSize; i++) {
             bufferPageList[i] = new BufferPage(pageSize, isDirect);
         }
-        timer.schedule(new TimerTask() {
+        timer.scheduleWithFixedDelay(new TimerTask() {
             @Override
             public void run() {
                 for (BufferPage bufferPage : bufferPageList) {
                     bufferPage.tryClean();
                 }
             }
-        }, 500, 1000);
+        }, 500, 1000, TimeUnit.MILLISECONDS);
     }
 
     /**

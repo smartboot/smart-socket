@@ -14,7 +14,7 @@ import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.extension.ssl.HandshakeCallback;
 import org.smartboot.socket.extension.ssl.HandshakeModel;
-import org.smartboot.socket.extension.ssl.SSLService;
+import org.smartboot.socket.extension.ssl.SslService;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -26,8 +26,8 @@ import java.nio.channels.AsynchronousSocketChannel;
  * @author 三刀
  * @version V1.0 , 2017/12/19
  */
-class SSLAioSession<T> extends TcpAioSession<T> {
-    private static final Logger logger = LoggerFactory.getLogger(SSLAioSession.class);
+class SslAioSession<T> extends TcpAioSession<T> {
+    private static final Logger logger = LoggerFactory.getLogger(SslAioSession.class);
     private ByteBuffer netWriteBuffer;
 
     private ByteBuffer netReadBuffer;
@@ -40,7 +40,7 @@ class SSLAioSession<T> extends TcpAioSession<T> {
     /**
      * 完成握手置null
      */
-    private SSLService sslService;
+    private SslService sslService;
 
     /**
      * @param channel
@@ -49,7 +49,7 @@ class SSLAioSession<T> extends TcpAioSession<T> {
      * @param aioWriteCompletionHandler
      * @param sslService                是否服务端Session
      */
-    SSLAioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, TcpReadCompletionHandler<T> aioReadCompletionHandler, TcpWriteCompletionHandler<T> aioWriteCompletionHandler, SSLService sslService, BufferPage bufferPage) {
+    SslAioSession(AsynchronousSocketChannel channel, IoServerConfig<T> config, TcpReadCompletionHandler<T> aioReadCompletionHandler, TcpWriteCompletionHandler<T> aioWriteCompletionHandler, SslService sslService, BufferPage bufferPage) {
         super(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPage);
         this.handshakeModel = sslService.createSSLEngine(channel);
         this.sslService = sslService;
@@ -76,11 +76,12 @@ class SSLAioSession<T> extends TcpAioSession<T> {
         this.handshakeModel.setHandshakeCallback(new HandshakeCallback() {
             @Override
             public void callback() {
-                synchronized (SSLAioSession.this) {
-                    handshakeModel = null;//释放内存
-                    SSLAioSession.this.notifyAll();
+                synchronized (SslAioSession.this) {
+                    //释放内存
+                    handshakeModel = null;
+                    SslAioSession.this.notifyAll();
                 }
-                sslService = null;//释放内存
+                sslService = null;
                 continueRead();
             }
         });
@@ -132,12 +133,6 @@ class SSLAioSession<T> extends TcpAioSession<T> {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
                         logger.info("doWrap BUFFER_OVERFLOW");
-//                        int appSize = netWriteBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? netWriteBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
-//                        logger.info("doWrap BUFFER_OVERFLOW:" + appSize);
-//                        ByteBuffer b = ByteBuffer.allocate(appSize);
-//                        netWriteBuffer.flip();
-//                        b.put(netWriteBuffer);
-//                        netWriteBuffer = b;
                         break;
                     case BUFFER_UNDERFLOW:
                         logger.info("doWrap BUFFER_UNDERFLOW");
@@ -173,10 +168,6 @@ class SSLAioSession<T> extends TcpAioSession<T> {
                         // retry the operation.
                         break;
                     case BUFFER_UNDERFLOW:
-
-//                        int netSize = readBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? readBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
-//                        int netSize = sslEngine.getSession().getPacketBufferSize();
-
                         // Resize buffer if needed.
                         if (netReadBuffer.limit() == netReadBuffer.capacity()) {
                             int netSize = netReadBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? netReadBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
@@ -195,7 +186,6 @@ class SSLAioSession<T> extends TcpAioSession<T> {
                         }
                         // Obtain more inbound network data for src,
                         // then retry the operation.
-//                        netReadBuffer.compact();
                         return;
                     case CLOSED:
                         logger.debug("doUnWrap Result:" + result.getStatus());

@@ -12,7 +12,7 @@ package org.smartboot.socket.extension.ssl;
  * @author 三刀
  * @version V1.0 , 2018/1/1
  */
-public class SSLConfig {
+public class SslConfig {
     /**
      * 配置引擎在握手时使用客户端（或服务器）模式
      */

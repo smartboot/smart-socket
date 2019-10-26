@@ -7,7 +7,6 @@ import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.QuickTimerTask;
 
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -18,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
+public final class MonitorPlugin<T> implements Runnable, Plugin<T> {
     private static final Logger logger = LoggerFactory.getLogger(MonitorPlugin.class);
     /**
      * 任务执行频率
@@ -75,7 +74,7 @@ public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
     public MonitorPlugin(int seconds) {
         this.seconds = seconds;
         long mills = TimeUnit.SECONDS.toMillis(seconds);
-        QuickTimerTask.getTimer().schedule(this, mills, mills);
+        QuickTimerTask.scheduleAtFixedRate(this, mills, mills);
     }
 
 
@@ -97,6 +96,9 @@ public final class MonitorPlugin<T> extends TimerTask implements Plugin<T> {
                 break;
             case SESSION_CLOSED:
                 disConnect.incrementAndGet();
+                break;
+            default:
+                //ignore other state
                 break;
         }
     }

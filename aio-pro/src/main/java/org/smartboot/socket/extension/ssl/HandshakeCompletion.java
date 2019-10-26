@@ -20,9 +20,9 @@ import java.nio.channels.CompletionHandler;
  */
 class HandshakeCompletion implements CompletionHandler<Integer, HandshakeModel> {
     private static final Logger logger = LoggerFactory.getLogger(HandshakeCompletion.class);
-    private SSLService sslService;
+    private SslService sslService;
 
-    public HandshakeCompletion(SSLService sslService) {
+    public HandshakeCompletion(SslService sslService) {
         this.sslService = sslService;
     }
 

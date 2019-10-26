@@ -71,8 +71,20 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
         }
     }
 
+    /**
+     * 处理接收到的消息
+     *
+     * @param session
+     * @param msg
+     * @see MessageProcessor#process(AioSession, Object)
+     */
     public abstract void process0(AioSession<T> session, T msg);
 
+    /**
+     * @param session          本次触发状态机的AioSession对象
+     * @param stateMachineEnum 状态枚举
+     * @param throwable        异常对象，如果存在的话
+     */
     @Override
     public final void stateEvent(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         for (Plugin<T> plugin : plugins) {
@@ -81,6 +93,12 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
         stateEvent0(session, stateMachineEnum, throwable);
     }
 
+    /**
+     * @param session
+     * @param stateMachineEnum
+     * @param throwable
+     * @see #stateEvent(AioSession, StateMachineEnum, Throwable)
+     */
     public abstract void stateEvent0(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable);
 
     public final void addPlugin(Plugin plugin) {

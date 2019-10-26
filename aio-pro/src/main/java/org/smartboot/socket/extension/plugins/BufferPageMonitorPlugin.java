@@ -8,7 +8,6 @@ import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.util.QuickTimerTask;
 
 import java.lang.reflect.Field;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,7 +33,7 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin {
 
     private void init() {
         long mills = TimeUnit.SECONDS.toMillis(seconds);
-        QuickTimerTask.getTimer().schedule(new TimerTask() {
+        QuickTimerTask.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 {

@@ -36,21 +36,21 @@ import java.security.cert.X509Certificate;
  * @author 三刀
  * @version V1.0 , 2018/1/1
  */
-public class SSLService {
+public class SslService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SSLService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SslService.class);
 
     private SSLContext sslContext;
 
-    private SSLConfig config;
+    private SslConfig config;
 
     private HandshakeCompletion handshakeCompletion = new HandshakeCompletion(this);
 
-    public SSLService(SSLConfig config) {
+    public SslService(SslConfig config) {
         init(config);
     }
 
-    private void init(SSLConfig config) {
+    private void init(SslConfig config) {
         try {
             this.config = config;
             KeyManager[] keyManagers = null;
@@ -155,9 +155,12 @@ public class SSLService {
             }
             while (!handshakeModel.isFinished()) {
                 handshakeStatus = engine.getHandshakeStatus();
-//                logger.info("握手状态:" + handshakeStatus);
+                if (logger.isDebugEnabled()) {
+                    logger.info("握手状态:" + handshakeStatus);
+                }
                 switch (handshakeStatus) {
-                    case NEED_UNWRAP://解码
+                    case NEED_UNWRAP:
+                        //解码
                         netReadBuffer.flip();
                         if (netReadBuffer.hasRemaining()) {
                             result = engine.unwrap(netReadBuffer, appReadBuffer);
@@ -176,13 +179,12 @@ public class SSLService {
                             case OK:
                                 break;
                             case BUFFER_OVERFLOW:
-//                                logger.warn("BUFFER_OVERFLOW");
                                 // Will occur when appReadBuffer's capacity is smaller than the data derived from netReadBuffer's unwrap.
                                 appReadBuffer = enlargeApplicationBuffer(engine, appReadBuffer);
                                 handshakeModel.setAppReadBuffer(appReadBuffer);
                                 break;
-                            case BUFFER_UNDERFLOW://两种情况会触发BUFFER_UNDERFLOW,1:读到的数据不够,2:netReadBuffer空间太小
-//                                logger.warn("BUFFER_UNDERFLOW");
+                            //两种情况会触发BUFFER_UNDERFLOW,1:读到的数据不够,2:netReadBuffer空间太小
+                            case BUFFER_UNDERFLOW:
                                 // Will occur either when no data was read from the peer or when the netReadBuffer buffer was too small to hold all peer's data.
                                 netReadBuffer = handleBufferUnderflow(engine.getSession(), netReadBuffer);
                                 handshakeModel.setNetReadBuffer(netReadBuffer);
@@ -225,9 +227,6 @@ public class SSLService {
                             case CLOSED:
                                 try {
                                     netWriteBuffer.flip();
-//                                    while (netWriteBuffer.hasRemaining()) {
-//                                        socketChannel.write(netWriteBuffer).get();
-//                                    }
                                     // At this point the handshake status will probably be NEED_UNWRAP so we make sure that netReadBuffer is clear to read.
                                     netReadBuffer.clear();
                                 } catch (Exception e) {
