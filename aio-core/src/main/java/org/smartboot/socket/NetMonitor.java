@@ -56,6 +56,8 @@ public interface NetMonitor<T> {
     void afterRead(AioSession<T> session, int readSize);
 
     /**
+     * 即将开始读取数据
+     *
      * @param session
      */
     void beforeRead(AioSession<T> session);
@@ -68,6 +70,11 @@ public interface NetMonitor<T> {
      */
     void afterWrite(AioSession<T> session, int writeSize);
 
+    /**
+     * 即将开始写数据
+     *
+     * @param session
+     */
     void beforeWrite(AioSession<T> session);
 
 }

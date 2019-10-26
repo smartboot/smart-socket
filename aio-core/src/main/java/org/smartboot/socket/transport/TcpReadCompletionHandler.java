@@ -77,7 +77,6 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
                             continue;
                         }
                         try {
-//                            LOGGER.info("wait");
                             needNotify = true;
                             notEmpty.await();
                         } finally {

@@ -22,21 +22,6 @@ import java.nio.ByteBuffer;
  * <b>
  * 注意：框架本身的所有Socket链路复用同一个Protocol，请勿在其实现类的成员变量中存储特定链路的数据。
  * </b>
- * <p>
- * <h2>示例：</h2>
- * <pre>
- * public class IntegerProtocol implements Protocol<Integer> {
- *
- *     private static final int INT_LENGTH = 4;
- *
- *     public Integer decode(ByteBuffer data, AioSession<Integer> session, boolean eof) {
- *         if (data.remaining() < INT_LENGTH)
- *             return null;
- *         return data.getInt();
- *     }
- * }
- * </pre>
- * </p>
  *
  * @author 三刀
  * @version V1.0.0 2018/5/19
@@ -44,7 +29,6 @@ import java.nio.ByteBuffer;
 public interface Protocol<T> {
     /**
      * 对于从Socket流中获取到的数据采用当前Protocol的实现类协议进行解析。
-     *
      *
      * @param readBuffer 待处理的读buffer
      * @param session    本次需要解码的session

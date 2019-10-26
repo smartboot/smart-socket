@@ -18,6 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public final class BufferPage {
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferPage.class);
+    private static final int BUFFER_REUSE_CYCLE = 1000;
     /**
      * 当前空闲的虚拟Buffer
      */
@@ -126,7 +127,7 @@ public final class BufferPage {
     }
 
     void tryClean() {
-        if (System.currentTimeMillis() - lastAllocateTime < 1000 || !lock.tryLock()) {
+        if (System.currentTimeMillis() - lastAllocateTime < BUFFER_REUSE_CYCLE || !lock.tryLock()) {
             return;
         }
         try {

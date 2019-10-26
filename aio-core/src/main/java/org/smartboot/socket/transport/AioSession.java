@@ -42,6 +42,11 @@ public abstract class AioSession<T> {
     AioSession() {
     }
 
+    /**
+     * 获取WriteBuffer用以数据输出
+     *
+     * @return
+     */
     public abstract WriteBuffer writeBuffer();
 
     /**
@@ -91,11 +96,19 @@ public abstract class AioSession<T> {
     }
 
     /**
+     * 获取当前会话的本地连接地址
+     *
+     * @return
+     * @throws IOException
      * @see AsynchronousSocketChannel#getLocalAddress()
      */
     public abstract InetSocketAddress getLocalAddress() throws IOException;
 
     /**
+     * 获取当前会话的远程连接地址
+     *
+     * @return
+     * @throws IOException
      * @see AsynchronousSocketChannel#getRemoteAddress()
      */
     public abstract InetSocketAddress getRemoteAddress() throws IOException;
