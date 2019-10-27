@@ -230,7 +230,7 @@ class TcpAioSession<T> extends AioSession<T> {
                 logger.debug("close session exception", e);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-        } else if (!writeBuffer.buffer().hasRemaining() && !byteBuf.hasData()) {
+        } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && !byteBuf.hasData()) {
             close(true);
         } else {
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
