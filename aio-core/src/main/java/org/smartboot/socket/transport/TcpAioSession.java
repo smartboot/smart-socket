@@ -52,6 +52,9 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0.0
  */
 class TcpAioSession<T> extends AioSession<T> {
+    /**
+     * logger
+     */
     private static final Logger logger = LoggerFactory.getLogger(TcpAioSession.class);
 
 
