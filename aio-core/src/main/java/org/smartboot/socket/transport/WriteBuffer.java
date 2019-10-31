@@ -29,7 +29,13 @@ public class WriteBuffer extends OutputStream {
      * 同步锁
      */
     private final ReentrantLock lock = new ReentrantLock();
+    /**
+     * Condition for waiting takes
+     */
     private final Condition notEmpty = lock.newCondition();
+    /**
+     * Condition for waiting puts
+     */
     private final Condition notFull = lock.newCondition();
     private final Condition waiting = lock.newCondition();
     /**
@@ -86,6 +92,10 @@ public class WriteBuffer extends OutputStream {
         write(cacheByte, 0, 2);
     }
 
+    /**
+     * @param b
+     * @see #write(int)
+     */
     public void writeByte(byte b) {
         if (writeInBuf == null) {
             writeInBuf = bufferPage.allocate(WRITE_CHUNK_SIZE);
