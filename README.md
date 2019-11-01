@@ -56,6 +56,9 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 - 提交 [Pull Request](https://gitee.com/smartboot/smart-socket/pulls) 改进 smart-socket 的代码。
 - 在开源中国发表smart-socket相关的技术性文章。
 
+## 哪些项目在用smart-socket？
+- [https://gitee.com/wendal/irtu-gps](https://gitee.com/wendal/irtu-gps)基于iRTU项目,实现GPS数据的接收和展示
+
 ## 参考
 https://jfarcand.wordpress.com/2008/11/25/tricks-and-tips-with-aio-part-1-the-frightening-thread-pool/
 https://webtide.com/on-jdk-7-asynchronous-io/
