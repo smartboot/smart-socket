@@ -6,7 +6,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 |  系列  | 最新版   |  文档  | 说明 |
 | -- | -- | -- | -- |
 |  1.3  |  [1.3.25](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.3.25)  |  暂停维护  | 企业级，已稳定运行在众多企业的生产环境上 |
-|  1.4  |   1.4.4.rc-7 |  《[smart-socket技术小册](https://smartboot.gitee.io/book/)》 |暂无|
+|  1.4  |   1.4.4 |  《[smart-socket技术小册](https://smartboot.gitee.io/book/)》 |暂无|
 
 **特色：**
 1. 代码量极少，可读性强。核心代码仅1千行左右。
@@ -20,7 +20,6 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 |  群号  | 群类型   |  入群条件  | 福利 |
 | -- | -- | -- | -- |
 |  830015805<br/>172299083🈵  |  官方群  |  Star本项目  | 与作者交流smart-socket |
-|  971571612  |   企业群 |   在[码云](https://gitee.com/smartboot/smart-socket/issues/IHV69)或[Github](https://github.com/smartboot/smart-socket/issues/1)上登记案例的企业用户 |群员全部是smart-socket的精准用户，方便同行交流|
 
 入群须知
 1. 请先Star一下本项目，小小的支持一下开源项目。
@@ -55,6 +54,9 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 - 通过 [Issue](https://gitee.com/smartboot/smart-socket/issues) 报告 bug 或进行咨询。
 - 提交 [Pull Request](https://gitee.com/smartboot/smart-socket/pulls) 改进 smart-socket 的代码。
 - 在开源中国发表smart-socket相关的技术性文章。
+
+## 哪些项目在用smart-socket？
+- [https://gitee.com/wendal/irtu-gps](https://gitee.com/wendal/irtu-gps) 基于iRTU项目,实现GPS数据的接收和展示
 
 ## 参考
 https://jfarcand.wordpress.com/2008/11/25/tricks-and-tips-with-aio-part-1-the-frightening-thread-pool/

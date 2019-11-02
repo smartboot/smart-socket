@@ -25,6 +25,9 @@ public class C1000kDemo {
     private static final Logger LOGGER = LoggerFactory.getLogger(C1000kDemo.class);
 
     public static void main(String[] args) throws Exception {
+        if(args==null||args.length==0){
+            args=new String[]{"localhost"};
+        }
         System.setProperty("smart-socket.client.page.isDirect", "false");
         System.setProperty("smart-socket.server.page.isDirect", "true");
         System.setProperty("smart-socket.server.pageSize", "" + (1024 * 1024 * 16));
@@ -56,7 +59,7 @@ public class C1000kDemo {
                 }
             }
         };
-        processor1.addPlugin(new MonitorPlugin());
+        processor1.addPlugin(new MonitorPlugin(5));
 
         int serverPort = 8888;
 
@@ -73,7 +76,7 @@ public class C1000kDemo {
         if (args != null) {
             for (String ip : args) {
                 Executors.newFixedThreadPool(10).execute(new Runnable() {
-                    int i = 10000;
+                    int i = 4000;
 
                     @Override
                     public void run() {
