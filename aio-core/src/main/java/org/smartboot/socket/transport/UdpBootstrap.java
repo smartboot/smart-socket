@@ -305,8 +305,11 @@ public class UdpBootstrap<Request> implements Runnable {
             aioSession.writeBuffer().flush();
             return;
         }
-
-        RingBuffer<UdpReadEvent<Request>> ringBuffer = readRingBuffers[remote.hashCode() % config.getThreadNum()];
+        int hashCode = remote.hashCode();
+        if (hashCode < 0) {
+            hashCode = -hashCode;
+        }
+        RingBuffer<UdpReadEvent<Request>> ringBuffer = readRingBuffers[hashCode % config.getThreadNum()];
         int index = -1;
         while ((index = ringBuffer.tryNextWriteIndex()) < 0) {
             //读缓冲区已满,尝试清空写缓冲区
