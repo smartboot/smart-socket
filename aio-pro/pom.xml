@@ -1,12 +1,4 @@
 <?xml version="1.0"?>
-<!--
-  ~ Copyright (c) 2018, org.smartboot. All rights reserved.
-  ~ project name: smart-socket
-  ~ file name: pom.xml
-  ~ Date: 2018-02-04
-  ~ Author: sandao
-  -->
-
 <project
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
         xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -19,7 +11,7 @@
     <parent>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
-        <version>1.4.5.rc-1</version>
+        <version>1.4.5.rc-2</version>
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
     <dependencies>
