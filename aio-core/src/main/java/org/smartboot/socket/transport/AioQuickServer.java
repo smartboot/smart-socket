@@ -25,6 +25,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -66,6 +67,8 @@ public class AioQuickServer<T> {
     private Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
+    private Thread acceptThread = null;
+    private volatile boolean running = true;
 
     /**
      * 设置服务端启动必要参数配置
@@ -150,26 +153,31 @@ public class AioQuickServer<T> {
             } else {
                 serverSocketChannel.bind(new InetSocketAddress(config.getPort()), 1000);
             }
-            serverSocketChannel.accept(serverSocketChannel, new CompletionHandler<AsynchronousSocketChannel, AsynchronousServerSocketChannel>() {
+            acceptThread = new Thread(new Runnable() {
                 private NetMonitor<T> monitor = config.getMonitor();
 
                 @Override
-                public void completed(final AsynchronousSocketChannel channel, AsynchronousServerSocketChannel serverSocketChannel) {
-                    serverSocketChannel.accept(serverSocketChannel, this);
-                    if (monitor == null || monitor.shouldAccept(channel)) {
-                        createSession(channel);
-                    } else {
-                        config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-                        LOGGER.warn("reject accept channel:{}", channel);
-                        closeChannel(channel);
+                public void run() {
+                    Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
+                    while (running) {
+                        try {
+                            final AsynchronousSocketChannel channel = nextFuture.get();
+                            nextFuture = serverSocketChannel.accept();
+                            if (monitor == null || monitor.shouldAccept(channel)) {
+                                createSession(channel);
+                            } else {
+                                config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+                                LOGGER.warn("reject accept channel:{}", channel);
+                                closeChannel(channel);
+                            }
+                        } catch (Exception e) {
+                            LOGGER.error("AcceptThread Exception", e);
+                        }
+
                     }
                 }
-
-                @Override
-                public void failed(Throwable exc, AsynchronousServerSocketChannel serverSocketChannel) {
-                    LOGGER.error("smart-socket server accept fail", exc);
-                }
-            });
+            }, "smart-socket:AcceptThread");
+            acceptThread.start();
         } catch (IOException e) {
             shutdown();
             throw e;
@@ -221,6 +229,7 @@ public class AioQuickServer<T> {
      * 停止服务端
      */
     public final void shutdown() {
+        running = false;
         try {
             if (serverSocketChannel != null) {
                 serverSocketChannel.close();

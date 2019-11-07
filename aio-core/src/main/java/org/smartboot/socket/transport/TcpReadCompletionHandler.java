@@ -31,10 +31,6 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(TcpReadCompletionHandler.class);
     /**
-     * 自旋次数
-     */
-    private static final int SPIN_LOCK_TIMES = Short.MAX_VALUE;
-    /**
      * 读回调资源信号量
      */
     private Semaphore semaphore;
@@ -114,23 +110,18 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
             completed0(result, aioSession);
             return;
         }
-        int spinLock = SPIN_LOCK_TIMES;
-        do {
-            if (semaphore.tryAcquire()) {
-                if (spinLock < SPIN_LOCK_TIMES) {
-                    LOGGER.info("spin lock success");
-                }
-                try {
-                    recursionThreadLocal.set(this);
-                    completed0(result, aioSession);
-                    runRingBufferTask();
-                } finally {
-                    recursionThreadLocal.remove();
-                    semaphore.release();
-                }
-                return;
+        if (semaphore.tryAcquire()) {
+            try {
+                recursionThreadLocal.set(this);
+                completed0(result, aioSession);
+                runRingBufferTask();
+            } finally {
+                recursionThreadLocal.remove();
+                semaphore.release();
             }
-        } while ((spinLock >>= 1) > 0);
+            return;
+        }
+
         cacheAioSessionQueue.offer(aioSession);
         if (needNotify && lock.tryLock()) {
             try {

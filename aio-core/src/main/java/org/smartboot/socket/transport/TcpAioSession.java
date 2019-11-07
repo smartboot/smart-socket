@@ -124,7 +124,19 @@ class TcpAioSession<T> extends AioSession<T> {
                 }
                 return null;
             }
-        }, ioServerConfig.getWriteQueueCapacity());
+        }, ioServerConfig.getWriteQueueCapacity(), new DirectWriteFunction() {
+            @Override
+            public boolean tryAcquire() {
+                return !writing && semaphore.tryAcquire();
+            }
+
+            @Override
+            public void write(VirtualBuffer buffer) {
+                writing = true;
+                writeBuffer = buffer;
+                continueWrite(writeBuffer);
+            }
+        });
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
