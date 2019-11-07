@@ -1,6 +1,7 @@
 ## smart-socket [English](README_EN.md)[![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
 smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、稳定性、接口设计各方面都达到极致。如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
 
+官方QQ群：172299083🈵 、830015805（入群条件：Star本项目）
 ## 版本说明
 
 |  系列  | 最新版   |  文档  | 说明 |
@@ -17,13 +18,6 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 ## 哪些项目在用smart-socket？
 - [smart-http](https://gitee.com/smartboot/smart-http) 国内首款基于smart-socket实现的Http服务器
 - [https://gitee.com/wendal/irtu-gps](https://gitee.com/wendal/irtu-gps) 基于iRTU项目,实现GPS数据的接收和展示
-
-
-**![smart\-socket](//pub.idqqimg.com/wpa/images/group.png)：**
-
-|  群号  | 群类型   |  入群条件  | 福利 |
-| -- | -- | -- | -- |
-|  830015805<br/>172299083🈵  |  官方群  |  Star本项目  | 与作者交流smart-socket |
 
 
 
