@@ -312,8 +312,9 @@ public class WriteBuffer extends OutputStream {
             if (++takeIndex == items.length) {
                 takeIndex = 0;
             }
-            count--;
-            notFull.signal();
+            if (count-- == items.length) {
+                notFull.signal();
+            }
             return x;
         } finally {
             lock.unlock();
