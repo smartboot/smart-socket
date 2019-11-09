@@ -30,10 +30,6 @@ public class WriteBuffer extends OutputStream {
      */
     private final ReentrantLock lock = new ReentrantLock();
     /**
-     * Condition for waiting takes
-     */
-    private final Condition notEmpty = lock.newCondition();
-    /**
      * Condition for waiting puts
      */
     private final Condition notFull = lock.newCondition();
@@ -295,7 +291,6 @@ public class WriteBuffer extends OutputStream {
                 putIndex = 0;
             }
             count++;
-            notEmpty.signal();
         } catch (InterruptedException e1) {
             throw new RuntimeException(e1);
         }
