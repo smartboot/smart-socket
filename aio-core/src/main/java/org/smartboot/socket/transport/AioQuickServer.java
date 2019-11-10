@@ -26,9 +26,9 @@ import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * AIO服务端。
@@ -126,8 +126,7 @@ public class AioQuickServer<T> {
         try {
 
             ThreadLocal<CompletionHandler> recursionThreadLocal = new ThreadLocal<>();
-            aioReadCompletionHandler = new TcpReadCompletionHandler<>(recursionThreadLocal, new Semaphore(threadNum - 1));
-//            aioReadCompletionHandler = new TcpReadCompletionHandler<>();
+            aioReadCompletionHandler = new TcpReadCompletionHandler<>(recursionThreadLocal, new AtomicInteger(threadNum - 1));
             aioWriteCompletionHandler = new TcpWriteCompletionHandler<>();
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, threadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
@@ -178,6 +177,26 @@ public class AioQuickServer<T> {
                 }
             }, "smart-socket:AcceptThread");
             acceptThread.start();
+//            serverSocketChannel.accept(serverSocketChannel, new CompletionHandler<AsynchronousSocketChannel, AsynchronousServerSocketChannel>() {
+//                private NetMonitor<T> monitor = config.getMonitor();
+//
+//                @Override
+//                public void completed(final AsynchronousSocketChannel channel, AsynchronousServerSocketChannel serverSocketChannel) {
+//                    serverSocketChannel.accept(serverSocketChannel, this);
+//                    if (monitor == null || monitor.shouldAccept(channel)) {
+//                        createSession(channel);
+//                    } else {
+//                        config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+//                        LOGGER.warn("reject accept channel:{}", channel);
+//                        closeChannel(channel);
+//                    }
+//                }
+//
+//                @Override
+//                public void failed(Throwable exc, AsynchronousServerSocketChannel serverSocketChannel) {
+//                    LOGGER.error("smart-socket server accept fail", exc);
+//                }
+//            });
         } catch (IOException e) {
             shutdown();
             throw e;

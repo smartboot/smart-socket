@@ -15,7 +15,7 @@ import org.smartboot.socket.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -33,7 +33,8 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
     /**
      * 读回调资源信号量
      */
-    private Semaphore semaphore;
+//    private Semaphore semaphore;
+    private AtomicInteger semaphore;
     /**
      * 递归线程标识
      */
@@ -60,7 +61,7 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
     TcpReadCompletionHandler() {
     }
 
-    TcpReadCompletionHandler(final ThreadLocal<CompletionHandler> recursionThreadLocal, Semaphore semaphore) {
+    TcpReadCompletionHandler(final ThreadLocal<CompletionHandler> recursionThreadLocal, AtomicInteger semaphore) {
         this.semaphore = semaphore;
         this.recursionThreadLocal = recursionThreadLocal;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
@@ -110,16 +111,16 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
             completed0(result, aioSession);
             return;
         }
-        if (semaphore.tryAcquire()) {
-            try {
+        try {
+            if (semaphore.getAndDecrement() > 0) {
                 recursionThreadLocal.set(this);
                 completed0(result, aioSession);
                 runRingBufferTask();
-            } finally {
                 recursionThreadLocal.remove();
-                semaphore.release();
+                return;
             }
-            return;
+        } finally {
+            semaphore.incrementAndGet();
         }
 
         cacheAioSessionQueue.offer(aioSession);
