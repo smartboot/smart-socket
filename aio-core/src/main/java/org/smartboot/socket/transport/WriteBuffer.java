@@ -249,7 +249,7 @@ public class WriteBuffer extends OutputStream {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (closed) {
             return;
         }

@@ -29,11 +29,7 @@ final class UdpAioSession<T> extends AioSession<T> {
 
     @Override
     public void close(boolean immediate) {
-        try {
-            writeBuffer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        writeBuffer.close();
     }
 
     @Override

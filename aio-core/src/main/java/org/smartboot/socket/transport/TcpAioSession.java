@@ -217,12 +217,8 @@ class TcpAioSession<T> extends AioSession<T> {
         }
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
-            try {
-                byteBuf.close();
-                byteBuf = null;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            byteBuf.close();
+            byteBuf = null;
             readBuffer.clean();
             readBuffer = null;
             if (writeBuffer != null) {
