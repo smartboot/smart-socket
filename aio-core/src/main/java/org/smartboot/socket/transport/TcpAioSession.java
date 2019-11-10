@@ -22,8 +22,8 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * AIO传输层会话。
@@ -82,7 +82,7 @@ class TcpAioSession<T> extends AioSession<T> {
     /**
      * 输出信号量,防止并发write导致异常
      */
-    private Semaphore semaphore = new Semaphore(1);
+    private AtomicInteger semaphore = new AtomicInteger(1);
     private TcpReadCompletionHandler<T> readCompletionHandler;
     private TcpWriteCompletionHandler<T> writeCompletionHandler;
     private IoServerConfig<T> ioServerConfig;
@@ -112,12 +112,13 @@ class TcpAioSession<T> extends AioSession<T> {
         byteBuf = new WriteBuffer(bufferPage, new Function<WriteBuffer, Void>() {
             @Override
             public Void apply(WriteBuffer var) {
-                if (!semaphore.tryAcquire()) {
+                if (semaphore.getAndDecrement() <= 0) {
+                    semaphore.incrementAndGet();
                     return null;
                 }
                 TcpAioSession.this.writeBuffer = var.poll();
                 if (writeBuffer == null) {
-                    semaphore.release();
+                    semaphore.incrementAndGet();
                 } else {
                     writing = true;
                     continueWrite(writeBuffer);
@@ -127,7 +128,14 @@ class TcpAioSession<T> extends AioSession<T> {
         }, ioServerConfig.getWriteQueueCapacity(), new DirectWriteFunction() {
             @Override
             public boolean tryAcquire() {
-                return !writing && semaphore.tryAcquire();
+                if (writing) {
+                    return false;
+                }
+                if (semaphore.getAndDecrement() > 0) {
+                    return true;
+                }
+                semaphore.incrementAndGet();
+                return false;
             }
 
             @Override
@@ -165,7 +173,7 @@ class TcpAioSession<T> extends AioSession<T> {
             return;
         }
         writing = false;
-        semaphore.release();
+        semaphore.incrementAndGet();
         //此时可能是Closing或Closed状态
         if (status != SESSION_STATUS_ENABLED) {
             close();
