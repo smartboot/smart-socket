@@ -16,14 +16,9 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 4. 提供丰富的插件式服务，包括：心跳插件、断链重连插件、服务监控插件、黑名单插件、内存池监测插件。
 
 ## 哪些项目在用smart-socket？
-- [smart-http](https://gitee.com/smartboot/smart-http) 国内首款基于smart-socket实现的Http服务器
-- [https://gitee.com/wendal/irtu-gps](https://gitee.com/wendal/irtu-gps) 基于iRTU项目,实现GPS数据的接收和展示
+1. [smart-http](https://gitee.com/smartboot/smart-http) 国内首款基于smart-socket实现的Http服务器
+2. [irtu-gps](https://gitee.com/wendal/irtu-gps) 基于iRTU项目,实现GPS数据的接收和展示
 
-
-
-## 标题党
-- [《每秒处理 500W 条消息，人、机为之颤抖》](https://www.oschina.net/news/90988/smart-socket-1-2-0-beta)
-- [《再见，Netty！你好，smart-socket!》](https://my.oschina.net/u/2385344/blog/1603648)
 
 ## 社区互助
 如果您在使用的过程中碰到问题，可以通过下面几个途径寻求帮助，同时我们也鼓励资深用户给新人提供帮助。
@@ -49,6 +44,4 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 ## 关于作者
 Edit By 三刀  
 E-mail:zhengjunweimail@163.com  
-
-
 Update Date: 2019-11-07
