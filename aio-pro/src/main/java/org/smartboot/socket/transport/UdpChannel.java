@@ -3,8 +3,6 @@ package org.smartboot.socket.transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
-import org.smartboot.socket.buffer.EventFactory;
-import org.smartboot.socket.buffer.RingBuffer;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;

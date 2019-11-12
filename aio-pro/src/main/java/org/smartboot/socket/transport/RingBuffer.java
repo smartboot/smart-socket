@@ -1,4 +1,4 @@
-package org.smartboot.socket.buffer;
+package org.smartboot.socket.transport;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -7,7 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @param <T>
  * @author 三刀
  */
-public final class RingBuffer<T> {
+final class RingBuffer<T> {
 
     private static final byte READABLE = 1, READING = 1 << 1, WRITEABLE = 1 << 2, WRITING = 1 << 3;
     /**

@@ -1,10 +1,10 @@
-package org.smartboot.socket.buffer;
+package org.smartboot.socket.transport;
 
 /**
  * @author 三刀
  * @version V1.0 , 2019/8/11
  */
-public interface EventFactory<T> {
+interface EventFactory<T> {
     /**
      * 实例化对象
      *
