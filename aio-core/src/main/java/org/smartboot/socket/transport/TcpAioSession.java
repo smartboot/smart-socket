@@ -396,7 +396,7 @@ class TcpAioSession<T> extends AioSession<T> {
      * MessageProcessor采用异步处理消息的方式时，调用该方法可能会出现异常。
      * </p>
      */
-    public InputStream getInputStream() throws IOException {
+    public final InputStream getInputStream() throws IOException {
         return inputStream == null ? getInputStream(-1) : inputStream;
     }
 
@@ -405,7 +405,7 @@ class TcpAioSession<T> extends AioSession<T> {
      *
      * @param length InputStream长度
      */
-    public InputStream getInputStream(int length) throws IOException {
+    public final InputStream getInputStream(int length) throws IOException {
         if (inputStream != null) {
             throw new IOException("pre inputStream has not closed");
         }

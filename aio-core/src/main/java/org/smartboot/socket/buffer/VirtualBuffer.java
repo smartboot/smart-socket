@@ -93,9 +93,6 @@ public final class VirtualBuffer {
 
     @Override
     public String toString() {
-        return "VirtualBuffer{" +
-                "parentPosition=" + parentPosition +
-                ", parentLimit=" + parentLimit +
-                '}';
+        return "VirtualBuffer{parentPosition=" + parentPosition + ", parentLimit=" + parentLimit + '}';
     }
 }

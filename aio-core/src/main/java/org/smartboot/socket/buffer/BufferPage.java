@@ -138,15 +138,7 @@ public final class BufferPage {
      * @param cleanBuffer 待回收的虚拟内存
      */
     void clean(VirtualBuffer cleanBuffer) {
-        if (cleanBuffers.offer(cleanBuffer)) {
-            return;
-        }
-        lock.lock();
-        try {
-            clean0(cleanBuffer);
-        } finally {
-            lock.unlock();
-        }
+        cleanBuffers.offer(cleanBuffer);
     }
 
     /**
