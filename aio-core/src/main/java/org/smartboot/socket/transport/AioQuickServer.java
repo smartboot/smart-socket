@@ -22,7 +22,6 @@ import java.net.SocketOption;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -125,8 +124,7 @@ public class AioQuickServer<T> {
         int threadNum = config.getThreadNum();
         try {
 
-            ThreadLocal<CompletionHandler> recursionThreadLocal = new ThreadLocal<>();
-            aioReadCompletionHandler = new ReadCompletionHandler<>(recursionThreadLocal, new AtomicInteger(threadNum - 1));
+            aioReadCompletionHandler = new ReadCompletionHandler<>(new AtomicInteger(threadNum - 1));
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, threadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;

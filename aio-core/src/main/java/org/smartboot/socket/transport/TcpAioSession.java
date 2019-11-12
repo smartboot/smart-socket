@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AIO传输层会话。
@@ -80,6 +81,11 @@ class TcpAioSession<T> extends AioSession<T> {
      */
     protected byte status = SESSION_STATUS_ENABLED;
     /**
+     * read递归回调标识
+     */
+    private AtomicReference<Thread> threadReference = null;
+
+    /**
      * 输出信号量,防止并发write导致异常
      */
     private AtomicInteger semaphore = new AtomicInteger(1);
@@ -93,7 +99,6 @@ class TcpAioSession<T> extends AioSession<T> {
      * 最近一次读取到的字节数
      */
     private int lastReadSize;
-
 
     /**
      * @param channel
@@ -149,6 +154,7 @@ class TcpAioSession<T> extends AioSession<T> {
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
 
+
     /**
      * 初始化AioSession
      */
@@ -183,6 +189,13 @@ class TcpAioSession<T> extends AioSession<T> {
         }
     }
 
+    AtomicReference<Thread> getThreadReference() {
+        return threadReference;
+    }
+
+    void setThreadReference(AtomicReference<Thread> threadReference) {
+        this.threadReference = threadReference;
+    }
 
     /**
      * 内部方法：触发通道的读操作

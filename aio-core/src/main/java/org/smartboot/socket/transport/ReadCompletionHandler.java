@@ -16,6 +16,7 @@ import org.smartboot.socket.StateMachineEnum;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -33,12 +34,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     /**
      * 读回调资源信号量
      */
-//    private Semaphore semaphore;
     private AtomicInteger semaphore;
-    /**
-     * 递归线程标识
-     */
-    private ThreadLocal<CompletionHandler> recursionThreadLocal = null;
 
     /**
      * 读会话缓存队列
@@ -61,9 +57,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     ReadCompletionHandler() {
     }
 
-    ReadCompletionHandler(final ThreadLocal<CompletionHandler> recursionThreadLocal, AtomicInteger semaphore) {
+    ReadCompletionHandler(AtomicInteger semaphore) {
         this.semaphore = semaphore;
-        this.recursionThreadLocal = recursionThreadLocal;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
         Thread t = new Thread(new Runnable() {
             @Override
@@ -106,17 +101,21 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         aioSession.setLastReadSize(result);
-        if (recursionThreadLocal == null || recursionThreadLocal.get() != null) {
+        if (semaphore != null && aioSession.getThreadReference() == null) {
+            aioSession.setThreadReference(new AtomicReference<Thread>());
+        }
+        if (semaphore == null || aioSession.getThreadReference().get() == Thread.currentThread()) {
             runRingBufferTask();
             completed0(result, aioSession);
             return;
         }
         try {
             if (semaphore.getAndDecrement() > 0) {
-                recursionThreadLocal.set(this);
+                Thread thread = Thread.currentThread();
+                aioSession.getThreadReference().set(thread);
                 completed0(result, aioSession);
                 runRingBufferTask();
-                recursionThreadLocal.remove();
+                aioSession.getThreadReference().compareAndSet(thread, null);
                 return;
             }
         } finally {
@@ -127,7 +126,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         if (needNotify && lock.tryLock()) {
             try {
                 needNotify = false;
-                notEmpty.signalAll();
+                notEmpty.signal();
             } finally {
                 lock.unlock();
             }
