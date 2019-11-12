@@ -25,11 +25,11 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author 三刀
  * @version V1.0.0
  */
-class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
+class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
     /**
      * logger
      */
-    private static final Logger LOGGER = LoggerFactory.getLogger(TcpReadCompletionHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
     /**
      * 读回调资源信号量
      */
@@ -58,10 +58,10 @@ class TcpReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSe
      */
     private final Condition notEmpty = lock.newCondition();
 
-    TcpReadCompletionHandler() {
+    ReadCompletionHandler() {
     }
 
-    TcpReadCompletionHandler(final ThreadLocal<CompletionHandler> recursionThreadLocal, AtomicInteger semaphore) {
+    ReadCompletionHandler(final ThreadLocal<CompletionHandler> recursionThreadLocal, AtomicInteger semaphore) {
         this.semaphore = semaphore;
         this.recursionThreadLocal = recursionThreadLocal;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();

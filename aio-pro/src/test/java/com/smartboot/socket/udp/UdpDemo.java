@@ -1,4 +1,4 @@
-package org.smartboot.socket.test;
+package com.smartboot.socket.udp;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;

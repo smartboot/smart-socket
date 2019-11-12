@@ -15,5 +15,4 @@ class DirectWriteFunction {
     void write(VirtualBuffer buffer) {
     }
 
-
 }

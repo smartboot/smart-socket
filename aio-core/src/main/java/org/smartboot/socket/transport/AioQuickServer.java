@@ -59,11 +59,11 @@ public class AioQuickServer<T> {
     /**
      * 读回调事件处理
      */
-    protected TcpReadCompletionHandler<T> aioReadCompletionHandler;
+    protected ReadCompletionHandler<T> aioReadCompletionHandler;
     /**
      * 写回调事件处理
      */
-    protected TcpWriteCompletionHandler<T> aioWriteCompletionHandler;
+    protected WriteCompletionHandler<T> aioWriteCompletionHandler;
     private Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
@@ -126,8 +126,8 @@ public class AioQuickServer<T> {
         try {
 
             ThreadLocal<CompletionHandler> recursionThreadLocal = new ThreadLocal<>();
-            aioReadCompletionHandler = new TcpReadCompletionHandler<>(recursionThreadLocal, new AtomicInteger(threadNum - 1));
-            aioWriteCompletionHandler = new TcpWriteCompletionHandler<>();
+            aioReadCompletionHandler = new ReadCompletionHandler<>(recursionThreadLocal, new AtomicInteger(threadNum - 1));
+            aioWriteCompletionHandler = new WriteCompletionHandler<>();
             this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, threadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
 
