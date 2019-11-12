@@ -116,17 +116,13 @@ public final class MonitorPlugin<T> implements Runnable, Plugin<T> {
                 + "\r\nprocess fail:\t" + curDiscardNum
                 + "\r\nprocess success:\t" + curProcessMsgNum
                 + "\r\nprocess total:\t" + totleProcessMsgNum.get()
-                + "\r\nread count:\t" + readCount.get() + "\twrite count:\t" + writeCount.get()
+                + "\r\nread count:\t" + readCount.getAndSet(0) + "\twrite count:\t" + writeCount.getAndSet(0)
                 + "\r\nconnect count:\t" + connectCount
                 + "\r\ndisconnect count:\t" + disConnectCount
                 + "\r\nonline count:\t" + onlineCount.addAndGet(connectCount - disConnectCount)
                 + "\r\nconnected total:\t" + totalConnect.addAndGet(connectCount)
                 + "\r\nRequests/sec:\t" + curProcessMsgNum * 1.0 / seconds
                 + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "(MB)");
-        if (onlineCount.get() == 0) {
-            readCount.set(0);
-            writeCount.set(0);
-        }
     }
 
     @Override
