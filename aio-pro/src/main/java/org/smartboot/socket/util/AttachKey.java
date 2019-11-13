@@ -9,16 +9,31 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version V1.0 , 2018/6/2
  */
 public final class AttachKey<T> {
+    /**
+     * 支持附件数量上限
+     */
     public static final int MAX_ATTACHE_COUNT = 128;
+    /**
+     * 缓存同名Key
+     */
     private static final ConcurrentMap<String, AttachKey> NAMES = new ConcurrentHashMap<>();
-    private static final AtomicInteger index = new AtomicInteger(0);
+    /**
+     * 索引构造器
+     */
+    private static final AtomicInteger INDEX_BUILDER = new AtomicInteger(0);
+    /**
+     * 附件名称
+     */
     private final String key;
-    private final int keyIndex;
+    /**
+     * 附件索引
+     */
+    private final int index;
 
     private AttachKey(String key) {
         this.key = key;
-        this.keyIndex = index.getAndIncrement();
-        if (this.keyIndex < 0 || this.keyIndex >= MAX_ATTACHE_COUNT) {
+        this.index = INDEX_BUILDER.getAndIncrement();
+        if (this.index < 0 || this.index >= MAX_ATTACHE_COUNT) {
             throw new RuntimeException("too many attach key");
         }
     }
@@ -40,7 +55,7 @@ public final class AttachKey<T> {
     }
 
 
-    int getKeyIndex() {
-        return keyIndex;
+    int getIndex() {
+        return index;
     }
 }
