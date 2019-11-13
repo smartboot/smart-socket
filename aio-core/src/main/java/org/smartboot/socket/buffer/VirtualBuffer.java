@@ -81,8 +81,7 @@ public final class VirtualBuffer {
      */
     public void clean() {
         if (clean) {
-            System.err.println("buffer has cleaned");
-            throw new RuntimeException();
+            throw new UnsupportedOperationException("buffer has cleaned");
         }
         clean = true;
         if (bufferPage != null) {
