@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class BufferPagePool {
     /**
-     * 守护线程用以回收内存
+     * 守护线程在空闲时期回收内存资源
      */
     private static final ScheduledExecutorService BUFFER_POOL_CLEAN = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
@@ -61,6 +61,10 @@ public class BufferPagePool {
      */
     public BufferPage allocateBufferPage() {
         //轮训游标，均衡分配内存页
-        return bufferPageList[cursor.getAndIncrement() % bufferPageList.length];
+        int index = cursor.getAndIncrement();
+        if (index < 0) {
+            cursor.set(0);
+        }
+        return bufferPageList[index % bufferPageList.length];
     }
 }

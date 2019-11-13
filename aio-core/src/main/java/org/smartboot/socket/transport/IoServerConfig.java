@@ -77,10 +77,6 @@ final class IoServerConfig<T> {
     private Map<SocketOption<Object>, Object> socketOptions;
 
     /**
-     * 消息体缓存大小,字节
-     */
-    private int writeBufferSize = 512;
-    /**
      * 线程数
      */
     private int threadNum = 1;
@@ -184,14 +180,6 @@ final class IoServerConfig<T> {
         this.threadNum = threadNum;
     }
 
-    public int getWriteBufferSize() {
-        return writeBufferSize;
-    }
-
-    public void setWriteBufferSize(int writeBufferSize) {
-        this.writeBufferSize = writeBufferSize;
-    }
-
 
     @Override
     public String toString() {
@@ -218,6 +206,5 @@ final class IoServerConfig<T> {
         String CLIENT_PAGE_SIZE = PROJECT_NAME + ".client.pageSize";
         String SERVER_PAGE_IS_DIRECT = PROJECT_NAME + ".server.page.isDirect";
         String CLIENT_PAGE_IS_DIRECT = PROJECT_NAME + ".client.page.isDirect";
-        String READ_BACKLOG = PROJECT_NAME + ".read.backlog";
     }
 }

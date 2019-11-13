@@ -66,8 +66,14 @@ public class AioQuickServer<T> {
     private Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction;
     private AsynchronousServerSocketChannel serverSocketChannel = null;
     private AsynchronousChannelGroup asynchronousChannelGroup;
+    /**
+     * accept处理线程
+     */
     private Thread acceptThread = null;
-    private volatile boolean running = true;
+    /**
+     * accept线程运行状态
+     */
+    private volatile boolean acceptRunning = true;
 
     /**
      * 设置服务端启动必要参数配置
@@ -126,7 +132,9 @@ public class AioQuickServer<T> {
 
             aioReadCompletionHandler = new ReadCompletionHandler<>(new AtomicInteger(threadNum - 1));
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
-            this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024), IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, threadNum), IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
+            this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024)
+                    , IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, threadNum)
+                    , IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
             this.aioSessionFunction = aioSessionFunction;
 
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(threadNum, new ThreadFactory() {
@@ -156,7 +164,7 @@ public class AioQuickServer<T> {
                 @Override
                 public void run() {
                     Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
-                    while (running) {
+                    while (acceptRunning) {
                         try {
                             final AsynchronousSocketChannel channel = nextFuture.get();
                             nextFuture = serverSocketChannel.accept();
@@ -246,7 +254,7 @@ public class AioQuickServer<T> {
      * 停止服务端
      */
     public final void shutdown() {
-        running = false;
+        acceptRunning = false;
         try {
             if (serverSocketChannel != null) {
                 serverSocketChannel.close();

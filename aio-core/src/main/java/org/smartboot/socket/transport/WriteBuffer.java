@@ -61,13 +61,13 @@ public class WriteBuffer extends OutputStream {
      */
     private boolean closed = false;
     private byte[] cacheByte = new byte[8];
-    private DirectWriteFunction directWriteFunction;
+    private FasterWrite fasterWrite;
 
-    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int writeQueueSize, DirectWriteFunction directWriteFunction) {
+    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int writeQueueSize, FasterWrite fasterWrite) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
         this.items = new VirtualBuffer[writeQueueSize];
-        this.directWriteFunction = directWriteFunction == null ? new DirectWriteFunction() : directWriteFunction;
+        this.fasterWrite = fasterWrite == null ? new FasterWrite() : fasterWrite;
     }
 
     /**
@@ -229,7 +229,7 @@ public class WriteBuffer extends OutputStream {
                     writeInBuf = null;
                     buffer.buffer().flip();
                     if (size == 0) {
-                        fastWrite = directWriteFunction.tryAcquire();
+                        fastWrite = fasterWrite.tryAcquire();
                     }
                     if (!fastWrite) {
                         this.put(buffer);
@@ -240,7 +240,7 @@ public class WriteBuffer extends OutputStream {
                 lock.unlock();
             }
             if (fastWrite) {
-                directWriteFunction.write(buffer);
+                fasterWrite.write(buffer);
             } else if (size > 0) {
                 function.apply(this);
             }

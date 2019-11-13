@@ -130,7 +130,7 @@ class TcpAioSession<T> extends AioSession<T> {
                 }
                 return null;
             }
-        }, ioServerConfig.getWriteQueueCapacity(), new DirectWriteFunction() {
+        }, ioServerConfig.getWriteQueueCapacity(), new FasterWrite() {
             @Override
             public boolean tryAcquire() {
                 if (writing) {

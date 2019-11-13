@@ -200,9 +200,6 @@ public final class BufferPage {
 
     @Override
     public String toString() {
-        return "BufferPage{" +
-                "availableBuffers=" + availableBuffers +
-                ", cleanBuffers=" + cleanBuffers +
-                '}';
+        return "BufferPage{availableBuffers=" + availableBuffers + ", cleanBuffers=" + cleanBuffers + '}';
     }
 }

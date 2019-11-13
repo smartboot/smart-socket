@@ -91,7 +91,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
                     }
                 }
             }
-        }, "smart-socket:DaemonThread");
+        }, "smart-socket:watchdog");
         t.setDaemon(true);
         t.setPriority(1);
         t.start();
@@ -136,7 +136,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     /**
      * 执行异步队列中的任务
      */
-    void runRingBufferTask() {
+    private void runRingBufferTask() {
         if (cacheAioSessionQueue == null) {
             return;
         }
