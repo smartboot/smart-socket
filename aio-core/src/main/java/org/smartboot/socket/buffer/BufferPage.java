@@ -21,10 +21,7 @@ public final class BufferPage {
      * logger
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferPage.class);
-    /**
-     * 缓存回收周期
-     */
-    private static final int BUFFER_REUSE_CYCLE = 1000;
+
     /**
      * 当前空闲的虚拟Buffer
      */
@@ -44,9 +41,9 @@ public final class BufferPage {
     private ReentrantLock lock = new ReentrantLock();
 
     /**
-     * 上次内存申请时间
+     * 内存页是否处于空闲状态
      */
-    private long lastAllocateTime;
+    private boolean idle = true;
 
     /**
      * @param size   缓存页大小
@@ -76,7 +73,7 @@ public final class BufferPage {
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
-        lastAllocateTime = System.currentTimeMillis();
+        idle = false;
         VirtualBuffer cleanBuffer = cleanBuffers.poll();
         if (cleanBuffer != null && cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
             cleanBuffer.buffer().clear();
@@ -145,18 +142,19 @@ public final class BufferPage {
      * 尝试回收缓冲区
      */
     void tryClean() {
-        if (System.currentTimeMillis() - lastAllocateTime < BUFFER_REUSE_CYCLE || !lock.tryLock()) {
-            return;
-        }
-        try {
-            VirtualBuffer cleanBuffer;
-            while ((cleanBuffer = cleanBuffers.poll()) != null) {
-                clean0(cleanBuffer);
+        //下个周期依旧处于空闲则触发回收任务
+        if (!idle) {
+            idle = true;
+        } else if (lock.tryLock()) {
+            try {
+                VirtualBuffer cleanBuffer;
+                while ((cleanBuffer = cleanBuffers.poll()) != null) {
+                    clean0(cleanBuffer);
+                }
+            } finally {
+                lock.unlock();
             }
-        } finally {
-            lock.unlock();
         }
-
     }
 
     /**
