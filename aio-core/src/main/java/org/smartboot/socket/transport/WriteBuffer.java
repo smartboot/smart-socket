@@ -60,7 +60,7 @@ public class WriteBuffer extends OutputStream {
      * 当前WriteBuffer是否已关闭
      */
     private boolean closed = false;
-    private byte[] cacheByte = new byte[8];
+    private byte[] cacheByte;
     private FasterWrite fasterWrite;
 
     protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int writeQueueSize, FasterWrite fasterWrite) {
@@ -84,7 +84,9 @@ public class WriteBuffer extends OutputStream {
         writeByte((byte) b);
     }
 
+
     public void writeShort(short v) throws IOException {
+        initCacheBytes();
         cacheByte[0] = (byte) ((v >>> 8) & 0xFF);
         cacheByte[1] = (byte) ((v >>> 0) & 0xFF);
         write(cacheByte, 0, 2);
@@ -114,6 +116,7 @@ public class WriteBuffer extends OutputStream {
     }
 
     public void writeInt(int v) throws IOException {
+        initCacheBytes();
         cacheByte[0] = (byte) ((v >>> 24) & 0xFF);
         cacheByte[1] = (byte) ((v >>> 16) & 0xFF);
         cacheByte[2] = (byte) ((v >>> 8) & 0xFF);
@@ -169,6 +172,12 @@ public class WriteBuffer extends OutputStream {
     private void notifyWaiting() {
         isWaiting = false;
         waiting.signal();
+    }
+
+    private void initCacheBytes() {
+        if (cacheByte == null) {
+            cacheByte = new byte[8];
+        }
     }
 
     /**
