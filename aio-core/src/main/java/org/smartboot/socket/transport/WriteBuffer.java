@@ -294,6 +294,11 @@ public class WriteBuffer extends OutputStream {
             while (count == items.length) {
                 isWaiting = true;
                 notFull.await();
+                //防止因close诱发内存泄露
+                if (closed) {
+                    virtualBuffer.clean();
+                    return;
+                }
             }
             items[putIndex] = virtualBuffer;
             if (++putIndex == items.length) {
