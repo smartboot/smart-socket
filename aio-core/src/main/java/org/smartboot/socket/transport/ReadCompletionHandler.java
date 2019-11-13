@@ -141,8 +141,11 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             return;
         }
         TcpAioSession<T> aioSession;
+        Thread thread = Thread.currentThread();
         while ((aioSession = cacheAioSessionQueue.poll()) != null) {
+            aioSession.getThreadReference().set(thread);
             completed0(aioSession.getLastReadSize(), aioSession);
+            aioSession.getThreadReference().compareAndSet(thread, null);
         }
     }
 
