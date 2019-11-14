@@ -84,16 +84,17 @@ public final class BufferPage {
         try {
             if (cleanBuffer != null) {
                 clean0(cleanBuffer);
-            }
-            while ((cleanBuffer = cleanBuffers.poll()) != null) {
-                if (cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
-                    cleanBuffer.buffer().clear();
-                    cleanBuffer.buffer(cleanBuffer.buffer());
-                    return cleanBuffer;
-                } else {
-                    clean0(cleanBuffer);
+                while ((cleanBuffer = cleanBuffers.poll()) != null) {
+                    if (cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
+                        cleanBuffer.buffer().clear();
+                        cleanBuffer.buffer(cleanBuffer.buffer());
+                        return cleanBuffer;
+                    } else {
+                        clean0(cleanBuffer);
+                    }
                 }
             }
+
             int count = availableBuffers.size();
             VirtualBuffer bufferChunk = null;
             if (count == 1) {
@@ -196,7 +197,7 @@ public final class BufferPage {
         //下个周期依旧处于空闲则触发回收任务
         if (!idle) {
             idle = true;
-        } else if (lock.tryLock()) {
+        } else if (!cleanBuffers.isEmpty() && lock.tryLock()) {
             try {
                 VirtualBuffer cleanBuffer;
                 while ((cleanBuffer = cleanBuffers.poll()) != null) {
