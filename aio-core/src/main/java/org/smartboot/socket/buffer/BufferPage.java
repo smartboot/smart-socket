@@ -123,13 +123,42 @@ public final class BufferPage {
      */
     private VirtualBuffer fastAllocate(int size) {
         VirtualBuffer freeChunk = availableBuffers.get(0);
+        VirtualBuffer bufferChunk = allocate(size, freeChunk);
+        if (freeChunk == bufferChunk) {
+            availableBuffers.clear();
+        }
+        return bufferChunk;
+    }
+
+    /**
+     * 迭代申请
+     *
+     * @param size
+     * @return
+     */
+    private VirtualBuffer slowAllocate(int size) {
+        Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
+        VirtualBuffer bufferChunk = null;
+        while (iterator.hasNext()) {
+            VirtualBuffer freeChunk = iterator.next();
+            bufferChunk = allocate(size, freeChunk);
+            if (freeChunk == bufferChunk) {
+                iterator.remove();
+            }
+            if (bufferChunk != null) {
+                return bufferChunk;
+            }
+        }
+        return bufferChunk;
+    }
+
+    private VirtualBuffer allocate(int size, VirtualBuffer freeChunk) {
         final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
         if (remaining < size) {
             return null;
         }
         VirtualBuffer bufferChunk;
         if (remaining == size) {
-            availableBuffers.clear();
             buffer.limit(freeChunk.getParentLimit());
             buffer.position(freeChunk.getParentPosition());
             freeChunk.buffer(buffer.slice());
@@ -146,40 +175,6 @@ public final class BufferPage {
         return bufferChunk;
     }
 
-    /**
-     * 迭代申请
-     *
-     * @param size
-     * @return
-     */
-    private VirtualBuffer slowAllocate(int size) {
-        Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
-        VirtualBuffer bufferChunk = null;
-        while (iterator.hasNext()) {
-            VirtualBuffer freeChunk = iterator.next();
-            final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
-            if (remaining < size) {
-                continue;
-            }
-            if (remaining == size) {
-                iterator.remove();
-                buffer.limit(freeChunk.getParentLimit());
-                buffer.position(freeChunk.getParentPosition());
-                freeChunk.buffer(buffer.slice());
-                bufferChunk = freeChunk;
-            } else {
-                buffer.limit(freeChunk.getParentPosition() + size);
-                buffer.position(freeChunk.getParentPosition());
-                bufferChunk = new VirtualBuffer(this, buffer.slice(), buffer.position(), buffer.limit());
-                freeChunk.setParentPosition(buffer.limit());
-            }
-            if (bufferChunk.buffer().remaining() != size) {
-                throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
-            }
-            break;
-        }
-        return bufferChunk;
-    }
 
     /**
      * 内存回收
