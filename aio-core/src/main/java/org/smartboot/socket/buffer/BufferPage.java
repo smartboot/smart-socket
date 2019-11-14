@@ -94,29 +94,14 @@ public final class BufferPage {
                     clean0(cleanBuffer);
                 }
             }
-            Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
-            VirtualBuffer bufferChunk;
-            while (iterator.hasNext()) {
-                VirtualBuffer freeChunk = iterator.next();
-                final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
-                if (remaining < size) {
-                    continue;
-                }
-                if (remaining == size) {
-                    iterator.remove();
-                    buffer.limit(freeChunk.getParentLimit());
-                    buffer.position(freeChunk.getParentPosition());
-                    freeChunk.buffer(buffer.slice());
-                    bufferChunk = freeChunk;
-                } else {
-                    buffer.limit(freeChunk.getParentPosition() + size);
-                    buffer.position(freeChunk.getParentPosition());
-                    bufferChunk = new VirtualBuffer(this, buffer.slice(), buffer.position(), buffer.limit());
-                    freeChunk.setParentPosition(buffer.limit());
-                }
-                if (bufferChunk.buffer().remaining() != size) {
-                    throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
-                }
+            int count = availableBuffers.size();
+            VirtualBuffer bufferChunk = null;
+            if (count == 1) {
+                bufferChunk = fastAllocate(size);
+            } else if (count > 1) {
+                bufferChunk = slowAllocate(size);
+            }
+            if (bufferChunk != null) {
                 return bufferChunk;
             }
         } finally {
@@ -127,6 +112,72 @@ public final class BufferPage {
 //        }
         return new VirtualBuffer(null, allocate0(size, false), 0, 0);
 
+    }
+
+    /**
+     * 快速匹配
+     *
+     * @param size
+     * @return
+     */
+    private VirtualBuffer fastAllocate(int size) {
+        VirtualBuffer freeChunk = availableBuffers.get(0);
+        final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
+        if (remaining < size) {
+            return null;
+        }
+        VirtualBuffer bufferChunk;
+        if (remaining == size) {
+            availableBuffers.clear();
+            buffer.limit(freeChunk.getParentLimit());
+            buffer.position(freeChunk.getParentPosition());
+            freeChunk.buffer(buffer.slice());
+            bufferChunk = freeChunk;
+        } else {
+            buffer.limit(freeChunk.getParentPosition() + size);
+            buffer.position(freeChunk.getParentPosition());
+            bufferChunk = new VirtualBuffer(this, buffer.slice(), buffer.position(), buffer.limit());
+            freeChunk.setParentPosition(buffer.limit());
+        }
+        if (bufferChunk.buffer().remaining() != size) {
+            throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
+        }
+        return bufferChunk;
+    }
+
+    /**
+     * 迭代申请
+     *
+     * @param size
+     * @return
+     */
+    private VirtualBuffer slowAllocate(int size) {
+        Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
+        VirtualBuffer bufferChunk = null;
+        while (iterator.hasNext()) {
+            VirtualBuffer freeChunk = iterator.next();
+            final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
+            if (remaining < size) {
+                continue;
+            }
+            if (remaining == size) {
+                iterator.remove();
+                buffer.limit(freeChunk.getParentLimit());
+                buffer.position(freeChunk.getParentPosition());
+                freeChunk.buffer(buffer.slice());
+                bufferChunk = freeChunk;
+            } else {
+                buffer.limit(freeChunk.getParentPosition() + size);
+                buffer.position(freeChunk.getParentPosition());
+                bufferChunk = new VirtualBuffer(this, buffer.slice(), buffer.position(), buffer.limit());
+                freeChunk.setParentPosition(buffer.limit());
+            }
+            if (bufferChunk.buffer().remaining() != size) {
+                throw new RuntimeException("allocate " + size + ", buffer:" + bufferChunk);
+            }
+            break;
+        }
+        return bufferChunk;
     }
 
     /**
