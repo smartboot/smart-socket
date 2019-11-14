@@ -97,6 +97,7 @@ public final class BufferPage {
 
             int count = availableBuffers.size();
             VirtualBuffer bufferChunk = null;
+            //仅剩一个可用内存块的时候使用快速匹配算法
             if (count == 1) {
                 bufferChunk = fastAllocate(size);
             } else if (count > 1) {
@@ -138,7 +139,7 @@ public final class BufferPage {
      */
     private VirtualBuffer slowAllocate(int size) {
         Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
-        VirtualBuffer bufferChunk = null;
+        VirtualBuffer bufferChunk;
         while (iterator.hasNext()) {
             VirtualBuffer freeChunk = iterator.next();
             bufferChunk = allocate(size, freeChunk);
@@ -149,7 +150,7 @@ public final class BufferPage {
                 return bufferChunk;
             }
         }
-        return bufferChunk;
+        return null;
     }
 
     private VirtualBuffer allocate(int size, VirtualBuffer freeChunk) {
