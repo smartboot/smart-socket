@@ -91,7 +91,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
                     }
                 }
             }
-        }, "smart-socket:watchdog");
+        }, "smart-socket:watchman");
         t.setDaemon(true);
         t.setPriority(1);
         t.start();
