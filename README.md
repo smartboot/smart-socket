@@ -2,6 +2,9 @@
 smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、稳定性、接口设计各方面都达到极致。如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
 
 **官方QQ群：** 172299083🈵 、**830015805**（入群条件：***Star本项目***）
+
+# 请在[2019年度最受欢迎中国开源软件评选](https://www.oschina.net/project/top_cn_2019)中为smart-socket投上宝贵的一票
+
 ### 版本说明
 
 |  系列  | 最新版   |  文档  | 说明 |
