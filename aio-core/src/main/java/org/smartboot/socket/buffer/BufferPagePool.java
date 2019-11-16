@@ -34,6 +34,8 @@ public class BufferPagePool {
      */
     private AtomicInteger cursor = new AtomicInteger(0);
 
+    private AtomicInteger threadCursor = new AtomicInteger(0);
+
     /**
      * @param pageSize 内存页大小
      * @param poolSize 内存页个数
@@ -42,7 +44,7 @@ public class BufferPagePool {
     public BufferPagePool(final int pageSize, final int poolSize, final boolean isDirect) {
         bufferPageList = new BufferPage[poolSize];
         for (int i = 0; i < poolSize; i++) {
-            bufferPageList[i] = new BufferPage(pageSize, isDirect);
+            bufferPageList[i] = new BufferPage(this, pageSize, isDirect);
         }
         BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new TimerTask() {
             @Override
@@ -52,6 +54,14 @@ public class BufferPagePool {
                 }
             }
         }, 500, 1000, TimeUnit.MILLISECONDS);
+    }
+
+    public Thread newThread(Runnable target, String name) {
+        return new FastBufferThread(target, name, threadCursor.getAndIncrement());
+    }
+
+    BufferPage[] getBufferPageList() {
+        return bufferPageList;
     }
 
     /**

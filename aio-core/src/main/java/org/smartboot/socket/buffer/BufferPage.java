@@ -45,11 +45,14 @@ public final class BufferPage {
      */
     private boolean idle = true;
 
+    private BufferPagePool bufferPagePool;
+
     /**
      * @param size   缓存页大小
      * @param direct 是否使用堆外内存
      */
-    BufferPage(int size, boolean direct) {
+    BufferPage(BufferPagePool pagePool, int size, boolean direct) {
+        this.bufferPagePool = pagePool;
         availableBuffers = new LinkedList<>();
         this.buffer = allocate0(size, direct);
         availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
@@ -66,6 +69,7 @@ public final class BufferPage {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
+
     /**
      * 申请虚拟内存
      *
@@ -73,6 +77,22 @@ public final class BufferPage {
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
+        Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof FastBufferThread) {
+            BufferPage[] pages = bufferPagePool.getBufferPageList();
+            return pages[((FastBufferThread) currentThread).getThreadId() % pages.length].allocate0(size);
+        } else {
+            return allocate0(size);
+        }
+    }
+
+    /**
+     * 申请虚拟内存
+     *
+     * @param size 申请大小
+     * @return 虚拟内存对象
+     */
+    private VirtualBuffer allocate0(final int size) {
         idle = false;
         VirtualBuffer cleanBuffer = cleanBuffers.poll();
         if (cleanBuffer != null && cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
