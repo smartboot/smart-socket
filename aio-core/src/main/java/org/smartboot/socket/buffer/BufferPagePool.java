@@ -44,7 +44,7 @@ public class BufferPagePool {
     public BufferPagePool(final int pageSize, final int poolSize, final boolean isDirect) {
         bufferPageList = new BufferPage[poolSize];
         for (int i = 0; i < poolSize; i++) {
-            bufferPageList[i] = new BufferPage(this, pageSize, isDirect);
+            bufferPageList[i] = new BufferPage(bufferPageList, pageSize, isDirect);
         }
         BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new TimerTask() {
             @Override
@@ -57,11 +57,7 @@ public class BufferPagePool {
     }
 
     public Thread newThread(Runnable target, String name) {
-        return new FastBufferThread(target, name, threadCursor.getAndIncrement());
-    }
-
-    BufferPage[] getBufferPageList() {
-        return bufferPageList;
+        return new FastBufferThread(target, name, threadCursor.getAndIncrement() % bufferPageList.length);
     }
 
     /**

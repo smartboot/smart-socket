@@ -45,14 +45,14 @@ public final class BufferPage {
      */
     private boolean idle = true;
 
-    private BufferPagePool bufferPagePool;
+    private BufferPage[] poolPages;
 
     /**
      * @param size   缓存页大小
      * @param direct 是否使用堆外内存
      */
-    BufferPage(BufferPagePool pagePool, int size, boolean direct) {
-        this.bufferPagePool = pagePool;
+    BufferPage(BufferPage[] poolPages, int size, boolean direct) {
+        this.poolPages = poolPages;
         availableBuffers = new LinkedList<>();
         this.buffer = allocate0(size, direct);
         availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
@@ -79,8 +79,7 @@ public final class BufferPage {
     public VirtualBuffer allocate(final int size) {
         Thread currentThread = Thread.currentThread();
         if (currentThread instanceof FastBufferThread) {
-            BufferPage[] pages = bufferPagePool.getBufferPageList();
-            return pages[((FastBufferThread) currentThread).getThreadId() % pages.length].allocate0(size);
+            return poolPages[((FastBufferThread) currentThread).getIndex()].allocate0(size);
         } else {
             return allocate0(size);
         }
