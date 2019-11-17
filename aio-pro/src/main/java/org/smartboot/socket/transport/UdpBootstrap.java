@@ -98,7 +98,7 @@ public class UdpBootstrap<Request> implements Runnable {
     /**
      * 缓存页
      */
-    private BufferPage bufferPage = new BufferPagePool(1024, 1, true).allocateBufferPage();
+    private BufferPage bufferPage = new BufferPagePool(1024, 1, 512, true).allocateBufferPage();
 
     public UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
         config.setProtocol(protocol);

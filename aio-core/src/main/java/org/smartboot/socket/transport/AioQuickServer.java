@@ -124,23 +124,17 @@ public class AioQuickServer<T> {
      * @throws IOException
      */
     protected final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
-        //确保单核CPU默认初始化至少2个线程
-        if (config.getThreadNum() == 1) {
-            config.setThreadNum(2);
-        }
-        int threadNum = config.getThreadNum();
+        checkAndResetConfig();
+
         try {
 
-            aioReadCompletionHandler = new ReadCompletionHandler<>(new AtomicInteger(threadNum - 1));
+            aioReadCompletionHandler = new ReadCompletionHandler<>(new AtomicInteger(config.getThreadNum() - 1));
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
-            //内存页数量不可多于线程数，会造成内存浪费
-            if (config.getBufferPoolPageNum() > config.getThreadNum()) {
-                throw new RuntimeException("bufferPoolPageNum=" + config.getBufferPoolPageNum() + " can't greater than threadNum=" + config.getThreadNum());
-            }
+
             this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolChunkSize(), config.isBufferPoolDirect());
             this.aioSessionFunction = aioSessionFunction;
 
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(threadNum, new ThreadFactory() {
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
                 private byte index = 0;
 
                 @Override
@@ -186,32 +180,30 @@ public class AioQuickServer<T> {
                 }
             }, "smart-socket:AcceptThread");
             acceptThread.start();
-//            serverSocketChannel.accept(serverSocketChannel, new CompletionHandler<AsynchronousSocketChannel, AsynchronousServerSocketChannel>() {
-//                private NetMonitor<T> monitor = config.getMonitor();
-//
-//                @Override
-//                public void completed(final AsynchronousSocketChannel channel, AsynchronousServerSocketChannel serverSocketChannel) {
-//                    serverSocketChannel.accept(serverSocketChannel, this);
-//                    if (monitor == null || monitor.shouldAccept(channel)) {
-//                        createSession(channel);
-//                    } else {
-//                        config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-//                        LOGGER.warn("reject accept channel:{}", channel);
-//                        closeChannel(channel);
-//                    }
-//                }
-//
-//                @Override
-//                public void failed(Throwable exc, AsynchronousServerSocketChannel serverSocketChannel) {
-//                    LOGGER.error("smart-socket server accept fail", exc);
-//                }
-//            });
         } catch (IOException e) {
             shutdown();
             throw e;
         }
-        LOGGER.info("smart-socket server started on port {},threadNum:{}", config.getPort(), threadNum);
+        LOGGER.info("smart-socket server started on port {},threadNum:{}", config.getPort(), config.getThreadNum());
         LOGGER.info("smart-socket server config is {}", config);
+    }
+
+    /**
+     * 检查配置项
+     */
+    private void checkAndResetConfig() {
+        //确保单核CPU默认初始化至少2个线程
+        if (config.getThreadNum() == 1) {
+            config.setThreadNum(2);
+        }
+        //未指定内存页数量默认等同于线程数
+        if (config.getBufferPoolPageNum() < 0) {
+            config.setBufferPoolPageNum(config.getThreadNum());
+        }
+        //内存页数量不可多于线程数，会造成内存浪费
+        if (config.getBufferPoolPageNum() > config.getThreadNum()) {
+            throw new RuntimeException("bufferPoolPageNum=" + config.getBufferPoolPageNum() + " can't greater than threadNum=" + config.getThreadNum());
+        }
     }
 
     /**

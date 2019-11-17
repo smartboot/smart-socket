@@ -41,12 +41,12 @@ public class BufferPagePool {
 
     /**
      * @param pageSize 内存页大小
-     * @param poolSize 内存页个数
+     * @param pageNum 内存页个数
      * @param isDirect 是否使用直接缓冲区
      */
-    public BufferPagePool(final int pageSize, final int poolSize, final int chunkSize, final boolean isDirect) {
-        bufferPageList = new BufferPage[poolSize];
-        for (int i = 0; i < poolSize; i++) {
+    public BufferPagePool(final int pageSize, final int pageNum, final int chunkSize, final boolean isDirect) {
+        bufferPageList = new BufferPage[pageNum];
+        for (int i = 0; i < pageNum; i++) {
             bufferPageList[i] = new BufferPage(bufferPageList, pageSize, chunkSize, isDirect);
         }
         BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new TimerTask() {

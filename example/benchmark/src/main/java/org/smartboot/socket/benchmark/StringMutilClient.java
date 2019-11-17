@@ -23,7 +23,7 @@ public class StringMutilClient {
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
         System.setProperty("smart-socket.session.writeChunkSize", "" + (1024 * 1024));
 
-        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 32, 10, true);
+        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 32, 10, 1024, true);
         AbstractMessageProcessor processor = new AbstractMessageProcessor() {
             @Override
             public void process0(AioSession session, Object msg) {

@@ -89,7 +89,7 @@ final class IoServerConfig<T> {
     /**
      * 内存页个数
      */
-    private int bufferPoolPageNum;
+    private int bufferPoolPageNum = -1;
 
     /**
      * 内存块大小限制
@@ -216,7 +216,8 @@ final class IoServerConfig<T> {
     @Override
     public String toString() {
         return "IoServerConfig{" +
-                ", readBufferSize=" + readBufferSize +
+                "readBufferSize=" + readBufferSize +
+                ", writeQueueCapacity=" + writeQueueCapacity +
                 ", host='" + host + '\'' +
                 ", monitor=" + monitor +
                 ", port=" + port +
@@ -224,6 +225,11 @@ final class IoServerConfig<T> {
                 ", protocol=" + protocol +
                 ", bannerEnabled=" + bannerEnabled +
                 ", socketOptions=" + socketOptions +
+                ", threadNum=" + threadNum +
+                ", bufferPoolPageSize=" + bufferPoolPageSize +
+                ", bufferPoolPageNum=" + bufferPoolPageNum +
+                ", bufferPoolChunkSize=" + bufferPoolChunkSize +
+                ", bufferPoolDirect=" + bufferPoolDirect +
                 '}';
     }
 }

@@ -47,10 +47,12 @@ public class StringServer {
 
 
         AioQuickServer<String> server = new AioQuickServer<>(8888, new StringProtocol(), processor);
-        server.setReadBufferSize(1024 * 1024);
+        server.setReadBufferSize(1024 * 1024)
+                .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
+                .setBufferPoolPageSize(1024 * 1024 * 16)
+                .setBufferPoolChunkSize(4096);
         processor.addPlugin(new BufferPageMonitorPlugin(server, 6));
         processor.addPlugin(new MonitorPlugin(5));
-        server.setThreadNum(Runtime.getRuntime().availableProcessors()+1);
         server.start();
 
     }
