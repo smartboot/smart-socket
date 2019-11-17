@@ -87,7 +87,6 @@ public class AioQuickServer<T> {
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
         config.setThreadNum(Runtime.getRuntime().availableProcessors());
-        setBufferPoolPageSize(1024 * 1024);
     }
 
     /**
@@ -197,7 +196,7 @@ public class AioQuickServer<T> {
             config.setThreadNum(2);
         }
         //未指定内存页数量默认等同于线程数
-        if (config.getBufferPoolPageNum() < 0) {
+        if (config.getBufferPoolPageNum() <= 0) {
             config.setBufferPoolPageNum(config.getThreadNum());
         }
         //内存页数量不可多于线程数，会造成内存浪费

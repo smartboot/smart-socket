@@ -84,7 +84,7 @@ final class IoServerConfig<T> {
     /**
      * 内存页大小
      */
-    private int bufferPoolPageSize;
+    private int bufferPoolPageSize = 4096;
 
     /**
      * 内存页个数
@@ -94,7 +94,7 @@ final class IoServerConfig<T> {
     /**
      * 内存块大小限制
      */
-    private int bufferPoolChunkSize = 4096;
+    private int bufferPoolChunkSize = 128;
 
     /**
      * 是否使用直接缓冲区内存

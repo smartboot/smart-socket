@@ -85,7 +85,6 @@ public class AioQuickClient<T> {
         config.setPort(port);
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
-        setBufferPoolPageSize(1024 * 256);
     }
 
     /**
