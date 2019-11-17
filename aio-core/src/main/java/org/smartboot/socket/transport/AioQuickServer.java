@@ -204,6 +204,14 @@ public class AioQuickServer<T> {
         if (config.getBufferPoolPageNum() > config.getThreadNum()) {
             throw new RuntimeException("bufferPoolPageNum=" + config.getBufferPoolPageNum() + " can't greater than threadNum=" + config.getThreadNum());
         }
+        //内存块不可大于内存页
+        if (config.getBufferPoolChunkSize() > config.getBufferPoolPageSize()) {
+            throw new RuntimeException("bufferPoolChunkSize=" + config.getBufferPoolChunkSize() + " can't greater than bufferPoolPageSize=" + config.getBufferPoolPageSize());
+        }
+        //read缓冲区不可大于内存页
+        if (config.getReadBufferSize() > config.getBufferPoolPageSize()) {
+            throw new RuntimeException("readBufferSize=" + config.getReadBufferSize() + " can't greater than bufferPoolPageSize=" + config.getBufferPoolPageSize());
+        }
     }
 
     /**
