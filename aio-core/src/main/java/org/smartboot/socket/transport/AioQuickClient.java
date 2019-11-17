@@ -102,7 +102,7 @@ public class AioQuickClient<T> {
     public AioSession<T> start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         if (bufferPool == null) {
-            bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), 1, config.getBufferPoolChunkSize(), config.isBufferPoolDirect());
+            bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), 1, config.isBufferPoolDirect());
         }
         //set socket options
         if (config.getSocketOptions() != null) {

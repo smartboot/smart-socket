@@ -130,7 +130,7 @@ public class AioQuickServer<T> {
             aioReadCompletionHandler = new ReadCompletionHandler<>(new AtomicInteger(config.getThreadNum() - 1));
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
-            this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolChunkSize(), config.isBufferPoolDirect());
+            this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.isBufferPoolDirect());
             this.aioSessionFunction = aioSessionFunction;
 
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {

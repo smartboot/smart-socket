@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class UdpChannel<Request> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
     private BufferPage bufferPage;
-    private int writeQueueCapacity;
+    private IoServerConfig config;
     /**
      * 真实的UDP通道
      */
@@ -50,7 +50,7 @@ public final class UdpChannel<Request> {
      */
     private int writeBacklog = 2048;
 
-    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, int writeQueueCapacity, BufferPage bufferPage) {
+    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, IoServerConfig config, BufferPage bufferPage) {
         this.channel = channel;
         writeRingBuffer = new RingBuffer<>(writeBacklog, new EventFactory<UdpWriteEvent>() {
             @Override
@@ -65,7 +65,7 @@ public final class UdpChannel<Request> {
             }
         });
         this.selectionKey = selectionKey;
-        this.writeQueueCapacity = writeQueueCapacity;
+        this.config = config;
         this.bufferPage = bufferPage;
     }
 
@@ -179,7 +179,7 @@ public final class UdpChannel<Request> {
                     return null;
                 }
             };
-            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, writeQueueCapacity, null);
+            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, config, null);
             session = new UdpAioSession<>(this, remote, writeBuffer);
             udpAioSessionConcurrentHashMap.put(key, session);
         }

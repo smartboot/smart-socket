@@ -59,11 +59,18 @@ public class WriteBuffer extends OutputStream {
     private byte[] cacheByte;
     private FasterWrite fasterWrite;
 
-    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int writeQueueSize, FasterWrite fasterWrite) {
+    /**
+     * 默认内存块大小
+     */
+    private int chunkSize;
+
+
+    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, IoServerConfig config, FasterWrite fasterWrite) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
-        this.items = new VirtualBuffer[writeQueueSize];
+        this.items = new VirtualBuffer[config.getWriteQueueCapacity()];
         this.fasterWrite = fasterWrite == null ? new FasterWrite() : fasterWrite;
+        this.chunkSize = config.getBufferPoolChunkSize();
     }
 
     /**
@@ -94,7 +101,7 @@ public class WriteBuffer extends OutputStream {
      */
     public void writeByte(byte b) {
         if (writeInBuf == null) {
-            writeInBuf = bufferPage.allocate(bufferPage.getChunkSize());
+            writeInBuf = bufferPage.allocate(chunkSize);
         }
         writeInBuf.buffer().put(b);
         if (writeInBuf.buffer().hasRemaining()) {
@@ -138,7 +145,7 @@ public class WriteBuffer extends OutputStream {
             waitPreWriteFinish();
             do {
                 if (writeInBuf == null) {
-                    writeInBuf = bufferPage.allocate(Math.max(bufferPage.getChunkSize(), len - off));
+                    writeInBuf = bufferPage.allocate(Math.max(chunkSize, len - off));
                 }
                 ByteBuffer writeBuffer = writeInBuf.buffer();
                 int minSize = Math.min(writeBuffer.remaining(), len - off);

@@ -98,7 +98,7 @@ public class UdpBootstrap<Request> implements Runnable {
     /**
      * 缓存页
      */
-    private BufferPage bufferPage = new BufferPagePool(1024, 1, 512, true).allocateBufferPage();
+    private BufferPage bufferPage = new BufferPagePool(1024, 1, true).allocateBufferPage();
 
     public UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
         config.setProtocol(protocol);
@@ -148,7 +148,7 @@ public class UdpBootstrap<Request> implements Runnable {
             selector.wakeup();
         }
         SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
-        UdpChannel<Request> udpChannel = new UdpChannel<>(channel, selectionKey, config.getWriteQueueCapacity(), bufferPage);
+        UdpChannel<Request> udpChannel = new UdpChannel<>(channel, selectionKey, config, bufferPage);
         selectionKey.attach(udpChannel);
 
         //启动线程服务

@@ -44,16 +44,13 @@ public class BufferPagePool {
      * @param pageNum  内存页个数
      * @param isDirect 是否使用直接缓冲区
      */
-    public BufferPagePool(final int pageSize, final int pageNum, final int chunkSize, final boolean isDirect) {
-        if (pageSize <= chunkSize) {
-            throw new IllegalArgumentException("chunkSize=" + chunkSize + " can't greater than pageSize=" + pageSize);
-        }
+    public BufferPagePool(final int pageSize, final int pageNum, final boolean isDirect) {
         if (pageNum <= 0) {
             throw new IllegalArgumentException("pageNum must greater than 0");
         }
         bufferPageList = new BufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
-            bufferPageList[i] = new BufferPage(bufferPageList, pageSize, chunkSize, isDirect);
+            bufferPageList[i] = new BufferPage(bufferPageList, pageSize, isDirect);
         }
 
         BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new TimerTask() {
