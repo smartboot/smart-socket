@@ -48,14 +48,24 @@ public final class BufferPage {
     private BufferPage[] poolPages;
 
     /**
+     * 默认内存块大小
+     */
+    private int chunkSize;
+
+    /**
      * @param size   缓存页大小
      * @param direct 是否使用堆外内存
      */
-    BufferPage(BufferPage[] poolPages, int size, boolean direct) {
+    BufferPage(BufferPage[] poolPages, int size, final int chunkSize, boolean direct) {
         this.poolPages = poolPages;
+        this.chunkSize = chunkSize;
         availableBuffers = new LinkedList<>();
         this.buffer = allocate0(size, direct);
         availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
+    }
+
+    public int getChunkSize() {
+        return chunkSize;
     }
 
     /**

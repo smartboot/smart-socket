@@ -18,10 +18,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class WriteBuffer extends OutputStream {
     /**
-     * 输出缓存块大小
-     */
-    private static final int WRITE_CHUNK_SIZE = IoServerConfig.getIntProperty(IoServerConfig.Property.SESSION_WRITE_CHUNK_SIZE, 4096);
-    /**
      * 存储已就绪待输出的数据
      */
     private final VirtualBuffer[] items;
@@ -98,7 +94,7 @@ public class WriteBuffer extends OutputStream {
      */
     public void writeByte(byte b) {
         if (writeInBuf == null) {
-            writeInBuf = bufferPage.allocate(WRITE_CHUNK_SIZE);
+            writeInBuf = bufferPage.allocate(bufferPage.getChunkSize());
         }
         writeInBuf.buffer().put(b);
         if (writeInBuf.buffer().hasRemaining()) {
@@ -142,7 +138,7 @@ public class WriteBuffer extends OutputStream {
             waitPreWriteFinish();
             do {
                 if (writeInBuf == null) {
-                    writeInBuf = bufferPage.allocate(Math.max(WRITE_CHUNK_SIZE, len - off));
+                    writeInBuf = bufferPage.allocate(Math.max(bufferPage.getChunkSize(), len - off));
                 }
                 ByteBuffer writeBuffer = writeInBuf.buffer();
                 int minSize = Math.min(writeBuffer.remaining(), len - off);

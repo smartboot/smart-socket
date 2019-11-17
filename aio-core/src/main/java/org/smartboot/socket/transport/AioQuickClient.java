@@ -85,6 +85,7 @@ public class AioQuickClient<T> {
         config.setPort(port);
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
+        setBufferPoolPageSize(1024 * 256);
     }
 
     /**
@@ -102,7 +103,7 @@ public class AioQuickClient<T> {
     public AioSession<T> start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         if (bufferPool == null) {
-            bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.CLIENT_PAGE_SIZE, 1024 * 256), 1, IoServerConfig.getBoolProperty(IoServerConfig.Property.CLIENT_PAGE_IS_DIRECT, true));
+            bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), 1, config.getBufferPoolChunkSize(), config.isBufferPoolDirect());
         }
         //set socket options
         if (config.getSocketOptions() != null) {
@@ -223,6 +224,39 @@ public class AioQuickClient<T> {
      */
     public final AioQuickClient<T> setWriteQueueCapacity(int writeQueueCapacity) {
         config.setWriteQueueCapacity(writeQueueCapacity);
+        return this;
+    }
+
+    /**
+     * 设置单个内存页大小.多个内存页共同组成内存池
+     *
+     * @param bufferPoolPageSize 内存页大小
+     * @return
+     */
+    public final AioQuickClient<T> setBufferPoolPageSize(int bufferPoolPageSize) {
+        config.setBufferPoolPageSize(bufferPoolPageSize);
+        return this;
+    }
+
+    /**
+     * 限制写操作时从内存页中申请内存块的大小
+     *
+     * @param bufferPoolChunkSizeLimit 内存块大小限制
+     * @return
+     */
+    public final AioQuickClient<T> setBufferPoolChunkSize(int bufferPoolChunkSizeLimit) {
+        config.setBufferPoolChunkSize(bufferPoolChunkSizeLimit);
+        return this;
+    }
+
+    /**
+     * 设置内存池是否使用直接缓冲区,默认：true
+     *
+     * @param isDirect true:直接缓冲区,false:堆内缓冲区
+     * @return
+     */
+    public final AioQuickClient<T> setBufferPoolDirect(boolean isDirect) {
+        config.setBufferPoolDirect(isDirect);
         return this;
     }
 }

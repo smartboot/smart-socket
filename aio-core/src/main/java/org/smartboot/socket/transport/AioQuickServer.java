@@ -87,6 +87,7 @@ public class AioQuickServer<T> {
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
         config.setThreadNum(Runtime.getRuntime().availableProcessors());
+        setBufferPoolPageSize(1024 * 1024);
     }
 
     /**
@@ -132,9 +133,11 @@ public class AioQuickServer<T> {
 
             aioReadCompletionHandler = new ReadCompletionHandler<>(new AtomicInteger(threadNum - 1));
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
-            this.bufferPool = new BufferPagePool(IoServerConfig.getIntProperty(IoServerConfig.Property.SERVER_PAGE_SIZE, 1024 * 1024)
-                    , IoServerConfig.getIntProperty(IoServerConfig.Property.BUFFER_PAGE_NUM, threadNum)
-                    , IoServerConfig.getBoolProperty(IoServerConfig.Property.SERVER_PAGE_IS_DIRECT, true));
+            //内存页数量不可多于线程数，会造成内存浪费
+            if (config.getBufferPoolPageNum() > config.getThreadNum()) {
+                throw new RuntimeException("bufferPoolPageNum=" + config.getBufferPoolPageNum() + " can't greater than threadNum=" + config.getThreadNum());
+            }
+            this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolChunkSize(), config.isBufferPoolDirect());
             this.aioSessionFunction = aioSessionFunction;
 
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(threadNum, new ThreadFactory() {
@@ -337,6 +340,51 @@ public class AioQuickServer<T> {
             throw new InvalidParameterException("threadNum must >= 2");
         }
         config.setThreadNum(threadNum);
+        return this;
+    }
+
+    /**
+     * 设置单个内存页大小.多个内存页共同组成内存池
+     *
+     * @param bufferPoolPageSize 内存页大小
+     * @return
+     */
+    public final AioQuickServer<T> setBufferPoolPageSize(int bufferPoolPageSize) {
+        config.setBufferPoolPageSize(bufferPoolPageSize);
+        return this;
+    }
+
+    /**
+     * 设置内存页个数，多个内存页共同组成内存池。
+     *
+     * @param bufferPoolPageNum 内存页个数
+     * @return
+     */
+    public final AioQuickServer<T> setBufferPoolPageNum(int bufferPoolPageNum) {
+        config.setBufferPoolPageNum(bufferPoolPageNum);
+        return this;
+    }
+
+
+    /**
+     * 限制写操作时从内存页中申请内存块的大小
+     *
+     * @param bufferPoolChunkSizeLimit 内存块大小限制
+     * @return
+     */
+    public final AioQuickServer<T> setBufferPoolChunkSize(int bufferPoolChunkSizeLimit) {
+        config.setBufferPoolChunkSize(bufferPoolChunkSizeLimit);
+        return this;
+    }
+
+    /**
+     * 设置内存池是否使用直接缓冲区,默认：true
+     *
+     * @param isDirect true:直接缓冲区,false:堆内缓冲区
+     * @return
+     */
+    public final AioQuickServer<T> setBufferPoolDirect(boolean isDirect) {
+        config.setBufferPoolDirect(isDirect);
         return this;
     }
 }

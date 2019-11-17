@@ -81,23 +81,48 @@ final class IoServerConfig<T> {
      */
     private int threadNum = 1;
 
-    static int getIntProperty(String property, int defaultVal) {
-        String valString = System.getProperty(property);
-        if (valString != null) {
-            try {
-                return Integer.parseInt(valString);
-            } catch (NumberFormatException e) {
-            }
-        }
-        return defaultVal;
+    /**
+     * 内存页大小
+     */
+    private int bufferPoolPageSize;
+
+    /**
+     * 内存页个数
+     */
+    private int bufferPoolPageNum;
+
+    /**
+     * 内存块大小限制
+     */
+    private int bufferPoolChunkSize = 4096;
+
+    /**
+     * 是否使用直接缓冲区内存
+     */
+    private boolean bufferPoolDirect = true;
+
+    public int getBufferPoolPageSize() {
+        return bufferPoolPageSize;
     }
 
-    static boolean getBoolProperty(String property, boolean defaultVal) {
-        String valString = System.getProperty(property);
-        if (valString != null) {
-            return Boolean.parseBoolean(valString);
-        }
-        return defaultVal;
+    public void setBufferPoolPageSize(int bufferPoolPageSize) {
+        this.bufferPoolPageSize = bufferPoolPageSize;
+    }
+
+    public int getBufferPoolPageNum() {
+        return bufferPoolPageNum;
+    }
+
+    public void setBufferPoolPageNum(int bufferPoolPageNum) {
+        this.bufferPoolPageNum = bufferPoolPageNum;
+    }
+
+    public int getBufferPoolChunkSize() {
+        return bufferPoolChunkSize;
+    }
+
+    public void setBufferPoolChunkSize(int bufferPoolChunkSize) {
+        this.bufferPoolChunkSize = bufferPoolChunkSize;
     }
 
     public String getHost() {
@@ -180,6 +205,13 @@ final class IoServerConfig<T> {
         this.threadNum = threadNum;
     }
 
+    public boolean isBufferPoolDirect() {
+        return bufferPoolDirect;
+    }
+
+    public void setBufferPoolDirect(boolean bufferPoolDirect) {
+        this.bufferPoolDirect = bufferPoolDirect;
+    }
 
     @Override
     public String toString() {
@@ -193,18 +225,5 @@ final class IoServerConfig<T> {
                 ", bannerEnabled=" + bannerEnabled +
                 ", socketOptions=" + socketOptions +
                 '}';
-    }
-
-    /**
-     * smart-socket服务配置
-     */
-    interface Property {
-        String PROJECT_NAME = "smart-socket";
-        String SESSION_WRITE_CHUNK_SIZE = PROJECT_NAME + ".session.writeChunkSize";
-        String BUFFER_PAGE_NUM = PROJECT_NAME + ".bufferPool.pageNum";
-        String SERVER_PAGE_SIZE = PROJECT_NAME + ".server.pageSize";
-        String CLIENT_PAGE_SIZE = PROJECT_NAME + ".client.pageSize";
-        String SERVER_PAGE_IS_DIRECT = PROJECT_NAME + ".server.page.isDirect";
-        String CLIENT_PAGE_IS_DIRECT = PROJECT_NAME + ".client.page.isDirect";
     }
 }
