@@ -56,7 +56,7 @@ class TcpAioSession<T> extends AioSession<T> {
     /**
      * logger
      */
-    private static final Logger logger = LoggerFactory.getLogger(TcpAioSession.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TcpAioSession.class);
 
 
     /**
@@ -89,16 +89,79 @@ class TcpAioSession<T> extends AioSession<T> {
      * 输出信号量,防止并发write导致异常
      */
     private AtomicInteger semaphore = new AtomicInteger(1);
+    /**
+     * 读回调
+     */
     private ReadCompletionHandler<T> readCompletionHandler;
+    /**
+     * 写回调
+     */
     private WriteCompletionHandler<T> writeCompletionHandler;
+    /**
+     * 服务配置
+     */
     private IoServerConfig<T> ioServerConfig;
+    /**
+     * 同步输入流
+     */
     private InputStream inputStream;
+    /**
+     * 输出流
+     */
     private WriteBuffer byteBuf;
+    /**
+     * 是否处于数据输出中
+     */
     private boolean writing = false;
     /**
      * 最近一次读取到的字节数
      */
     private int lastReadSize;
+
+    /**
+     * 数据输出Function
+     */
+    private Function<WriteBuffer, Void> flushFunction = new Function<WriteBuffer, Void>() {
+        @Override
+        public Void apply(WriteBuffer var) {
+            if (semaphore.getAndDecrement() <= 0) {
+                semaphore.incrementAndGet();
+                return null;
+            }
+            TcpAioSession.this.writeBuffer = var.poll();
+            if (writeBuffer == null) {
+                semaphore.incrementAndGet();
+            } else {
+                writing = true;
+                continueWrite(writeBuffer);
+            }
+            return null;
+        }
+    };
+
+    /**
+     * 数据快速输出
+     */
+    private FasterWrite fasterWrite = new FasterWrite() {
+        @Override
+        public boolean tryAcquire() {
+            if (writing) {
+                return false;
+            }
+            if (semaphore.getAndDecrement() > 0) {
+                return true;
+            }
+            semaphore.incrementAndGet();
+            return false;
+        }
+
+        @Override
+        public void write(VirtualBuffer buffer) {
+            writing = true;
+            writeBuffer = buffer;
+            continueWrite(writeBuffer);
+        }
+    };
 
     /**
      * @param channel
@@ -114,42 +177,7 @@ class TcpAioSession<T> extends AioSession<T> {
         this.ioServerConfig = config;
 
         this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
-        byteBuf = new WriteBuffer(bufferPage, new Function<WriteBuffer, Void>() {
-            @Override
-            public Void apply(WriteBuffer var) {
-                if (semaphore.getAndDecrement() <= 0) {
-                    semaphore.incrementAndGet();
-                    return null;
-                }
-                TcpAioSession.this.writeBuffer = var.poll();
-                if (writeBuffer == null) {
-                    semaphore.incrementAndGet();
-                } else {
-                    writing = true;
-                    continueWrite(writeBuffer);
-                }
-                return null;
-            }
-        }, ioServerConfig, new FasterWrite() {
-            @Override
-            public boolean tryAcquire() {
-                if (writing) {
-                    return false;
-                }
-                if (semaphore.getAndDecrement() > 0) {
-                    return true;
-                }
-                semaphore.incrementAndGet();
-                return false;
-            }
-
-            @Override
-            public void write(VirtualBuffer buffer) {
-                writing = true;
-                writeBuffer = buffer;
-                continueWrite(writeBuffer);
-            }
-        });
+        byteBuf = new WriteBuffer(bufferPage, flushFunction, ioServerConfig, fasterWrite);
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
@@ -200,7 +228,7 @@ class TcpAioSession<T> extends AioSession<T> {
     /**
      * 内部方法：触发通道的读操作
      *
-     * @param buffer
+     * @param buffer 用于存放待读取数据的buffer
      */
     protected final void readFromChannel0(ByteBuffer buffer) {
         channel.read(buffer, this, readCompletionHandler);
@@ -208,11 +236,16 @@ class TcpAioSession<T> extends AioSession<T> {
 
     /**
      * 内部方法：触发通道的写操作
+     *
+     * @param buffer 待输出的buffer
      */
     protected final void writeToChannel0(ByteBuffer buffer) {
         channel.write(buffer, 0L, TimeUnit.MILLISECONDS, this, writeCompletionHandler);
     }
 
+    /**
+     * @return 输入流
+     */
     public final WriteBuffer writeBuffer() {
         return byteBuf;
     }
@@ -225,7 +258,7 @@ class TcpAioSession<T> extends AioSession<T> {
     public synchronized void close(boolean immediate) {
         //status == SESSION_STATUS_CLOSED说明close方法被重复调用
         if (status == SESSION_STATUS_CLOSED) {
-            logger.warn("ignore, session:{} is closed:", getSessionID());
+            LOGGER.warn("ignore, session:{} is closed:", getSessionID());
             return;
         }
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
@@ -241,17 +274,17 @@ class TcpAioSession<T> extends AioSession<T> {
             try {
                 channel.shutdownInput();
             } catch (IOException e) {
-                logger.debug(e.getMessage(), e);
+                LOGGER.debug(e.getMessage(), e);
             }
             try {
                 channel.shutdownOutput();
             } catch (IOException e) {
-                logger.debug(e.getMessage(), e);
+                LOGGER.debug(e.getMessage(), e);
             }
             try {
                 channel.close();
             } catch (IOException e) {
-                logger.debug("close session exception", e);
+                LOGGER.debug("close session exception", e);
             }
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
         } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && !byteBuf.hasData()) {
@@ -264,6 +297,8 @@ class TcpAioSession<T> extends AioSession<T> {
 
     /**
      * 获取当前Session的唯一标识
+     *
+     * @return sessionId
      */
     public final String getSessionID() {
         return "aioSession-" + hashCode();
@@ -271,6 +306,8 @@ class TcpAioSession<T> extends AioSession<T> {
 
     /**
      * 当前会话是否已失效
+     *
+     * @return 是否失效
      */
     public final boolean isInvalid() {
         return status != SESSION_STATUS_ENABLED;
@@ -279,6 +316,8 @@ class TcpAioSession<T> extends AioSession<T> {
 
     /**
      * 触发通道的读回调操作
+     *
+     * @param eof 输入流是否已关闭
      */
     void readFromChannel(boolean eof) {
         if (status == SESSION_STATUS_CLOSED) {
@@ -341,7 +380,9 @@ class TcpAioSession<T> extends AioSession<T> {
         continueRead();
     }
 
-
+    /**
+     * 触发读操作
+     */
     protected void continueRead() {
         NetMonitor<T> monitor = getServerConfig().getMonitor();
         if (monitor != null) {
@@ -350,6 +391,11 @@ class TcpAioSession<T> extends AioSession<T> {
         readFromChannel0(readBuffer.buffer());
     }
 
+    /**
+     * 触发写操作
+     *
+     * @param writeBuffer 存放待输出数据的buffer
+     */
     protected void continueWrite(VirtualBuffer writeBuffer) {
         NetMonitor<T> monitor = getServerConfig().getMonitor();
         if (monitor != null) {
@@ -367,6 +413,8 @@ class TcpAioSession<T> extends AioSession<T> {
     }
 
     /**
+     * @return 本地地址
+     * @throws IOException IO异常
      * @see AsynchronousSocketChannel#getLocalAddress()
      */
     public final InetSocketAddress getLocalAddress() throws IOException {
@@ -375,6 +423,8 @@ class TcpAioSession<T> extends AioSession<T> {
     }
 
     /**
+     * @return 远程地址
+     * @throws IOException IO异常
      * @see AsynchronousSocketChannel#getRemoteAddress()
      */
     public final InetSocketAddress getRemoteAddress() throws IOException {

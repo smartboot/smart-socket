@@ -250,7 +250,7 @@
 
         <!-- 每行字符数 -->
         <module name="LineLength">
-            <property name="max" value="200"/>
+            <property name="max" value="250"/>
         </module>
 
         <!-- Checks for long methods and constructors. max default 150行. max=300 设置长度300 -->

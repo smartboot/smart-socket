@@ -44,16 +44,23 @@ import java.util.concurrent.atomic.AtomicInteger;
  * </pre>
  * </p>
  *
+ * @param <T> 消息对象类型
  * @author 三刀
  * @version V1.0.0
  */
 public class AioQuickServer<T> {
+    /**
+     * logger
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(AioQuickServer.class);
     /**
      * Server端服务配置。
      * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
      */
     protected IoServerConfig<T> config = new IoServerConfig<>();
+    /**
+     * 内存池
+     */
     protected BufferPagePool bufferPool;
     /**
      * 读回调事件处理
@@ -63,8 +70,17 @@ public class AioQuickServer<T> {
      * 写回调事件处理
      */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler;
+    /**
+     * 连接会话实例化Function
+     */
     private Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction;
+    /**
+     * asynchronousServerSocketChannel
+     */
     private AsynchronousServerSocketChannel serverSocketChannel = null;
+    /**
+     * asynchronousChannelGroup
+     */
     private AsynchronousChannelGroup asynchronousChannelGroup;
     /**
      * accept处理线程
@@ -103,7 +119,7 @@ public class AioQuickServer<T> {
     /**
      * 启动Server端的AIO服务
      *
-     * @throws IOException
+     * @throws IOException IO异常
      */
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
@@ -120,7 +136,8 @@ public class AioQuickServer<T> {
     /**
      * 内部启动逻辑
      *
-     * @throws IOException
+     * @param aioSessionFunction 实例化会话的Function
+     * @throws IOException IO异常
      */
     protected final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
         checkAndResetConfig();
@@ -234,6 +251,11 @@ public class AioQuickServer<T> {
         }
     }
 
+    /**
+     * 关闭服务端通道
+     *
+     * @param channel AsynchronousSocketChannel
+     */
     private void closeChannel(AsynchronousSocketChannel channel) {
         try {
             channel.shutdownInput();
@@ -284,6 +306,7 @@ public class AioQuickServer<T> {
      * 设置读缓存区大小
      *
      * @param size 单位：byte
+     * @return 当前AioQuickServer对象
      */
     public final AioQuickServer<T> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
@@ -294,6 +317,7 @@ public class AioQuickServer<T> {
      * 是否启用控制台Banner打印
      *
      * @param bannerEnabled true:启用，false:禁用
+     * @return 当前AioQuickServer对象
      */
     public final AioQuickServer<T> setBannerEnabled(boolean bannerEnabled) {
         config.setBannerEnabled(bannerEnabled);
@@ -310,7 +334,8 @@ public class AioQuickServer<T> {
      *
      * @param socketOption 配置项
      * @param value        配置值
-     * @return
+     * @param <V>          配置项类型
+     * @return 当前AioQuickServer对象
      */
     public final <V> AioQuickServer<T> setOption(SocketOption<V> socketOption, V value) {
         config.setOption(socketOption, value);
@@ -320,8 +345,8 @@ public class AioQuickServer<T> {
     /**
      * 设置write缓冲区容量
      *
-     * @param writeQueueCapacity
-     * @return
+     * @param writeQueueCapacity 缓存区容量
+     * @return 当前AioQuickServer对象
      */
     public final AioQuickServer<T> setWriteQueueCapacity(int writeQueueCapacity) {
         config.setWriteQueueCapacity(writeQueueCapacity);
@@ -332,7 +357,7 @@ public class AioQuickServer<T> {
      * 设置服务工作线程数,设置数值必须大于等于2
      *
      * @param threadNum 线程数
-     * @return
+     * @return 当前AioQuickServer对象
      */
     public final AioQuickServer<T> setThreadNum(int threadNum) {
         if (threadNum <= 1) {
@@ -346,7 +371,7 @@ public class AioQuickServer<T> {
      * 设置单个内存页大小.多个内存页共同组成内存池
      *
      * @param bufferPoolPageSize 内存页大小
-     * @return
+     * @return 当前AioQuickServer对象
      */
     public final AioQuickServer<T> setBufferPoolPageSize(int bufferPoolPageSize) {
         config.setBufferPoolPageSize(bufferPoolPageSize);
@@ -357,7 +382,7 @@ public class AioQuickServer<T> {
      * 设置内存页个数，多个内存页共同组成内存池。
      *
      * @param bufferPoolPageNum 内存页个数
-     * @return
+     * @return 当前AioQuickServer对象
      */
     public final AioQuickServer<T> setBufferPoolPageNum(int bufferPoolPageNum) {
         config.setBufferPoolPageNum(bufferPoolPageNum);
@@ -369,7 +394,7 @@ public class AioQuickServer<T> {
      * 限制写操作时从内存页中申请内存块的大小
      *
      * @param bufferPoolChunkSizeLimit 内存块大小限制
-     * @return
+     * @return 当前AioQuickServer对象
      */
     public final AioQuickServer<T> setBufferPoolChunkSize(int bufferPoolChunkSizeLimit) {
         config.setBufferPoolChunkSize(bufferPoolChunkSizeLimit);
@@ -380,7 +405,7 @@ public class AioQuickServer<T> {
      * 设置内存池是否使用直接缓冲区,默认：true
      *
      * @param isDirect true:直接缓冲区,false:堆内缓冲区
-     * @return
+     * @return 当前AioQuickServer对象
      */
     public final AioQuickServer<T> setBufferPoolDirect(boolean isDirect) {
         config.setBufferPoolDirect(isDirect);
