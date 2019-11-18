@@ -43,6 +43,7 @@ import java.util.concurrent.ThreadFactory;
  * </pre>
  * </p>
  *
+ * @param <T> 消息对象类型
  * @author 三刀
  * @version V1.0.0
  */
@@ -58,6 +59,9 @@ public class AioQuickClient<T> {
      * @see TcpAioSession
      */
     protected TcpAioSession<T> session;
+    /**
+     * 内存池
+     */
     protected BufferPagePool bufferPool = null;
     /**
      * IO事件处理线程组。
@@ -97,6 +101,10 @@ public class AioQuickClient<T> {
      * </p>
      *
      * @param asynchronousChannelGroup IO事件处理线程组
+     * @return 建立连接后的会话对象
+     * @throws IOException          IOException
+     * @throws ExecutionException   ExecutionException
+     * @throws InterruptedException InterruptedException
      * @see AsynchronousSocketChannel#connect(SocketAddress)
      */
     public AioSession<T> start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
@@ -128,6 +136,10 @@ public class AioQuickClient<T> {
      * 本方法会构建线程数为2的{@code asynchronousChannelGroup}，并通过调用{@link AioQuickClient#start(AsynchronousChannelGroup)}启动服务。
      * </p>
      *
+     * @return 建立连接后的会话对象
+     * @throws IOException          IOException
+     * @throws ExecutionException   ExecutionException
+     * @throws InterruptedException InterruptedException
      * @see AioQuickClient#start(AsynchronousChannelGroup)
      */
     public final AioSession<T> start() throws IOException, ExecutionException, InterruptedException {
@@ -157,6 +169,11 @@ public class AioQuickClient<T> {
         showdown0(true);
     }
 
+    /**
+     * 停止client
+     *
+     * @param flag 是否立即停止
+     */
     private void showdown0(boolean flag) {
         if (session != null) {
             session.close(flag);
@@ -172,6 +189,7 @@ public class AioQuickClient<T> {
      * 设置读缓存区大小
      *
      * @param size 单位：byte
+     * @return 当前AIOQuickClient对象
      */
     public final AioQuickClient<T> setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
@@ -191,7 +209,8 @@ public class AioQuickClient<T> {
      *
      * @param socketOption 配置项
      * @param value        配置值
-     * @return
+     * @param <V>          泛型
+     * @return 当前AIOQuickClient对象
      */
     public final <V> AioQuickClient<T> setOption(SocketOption<V> socketOption, V value) {
         config.setOption(socketOption, value);
@@ -203,13 +222,17 @@ public class AioQuickClient<T> {
      *
      * @param local 若传null则由系统自动获取
      * @param port  若传0则由系统指定
-     * @return
+     * @return 当前AIOQuickClient对象
      */
     public final AioQuickClient<T> bindLocal(String local, int port) {
         localAddress = local == null ? new InetSocketAddress(port) : new InetSocketAddress(local, port);
         return this;
     }
 
+    /**
+     * @param bufferPool 内存池对象
+     * @return 当前AIOQuickClient对象
+     */
     public final AioQuickClient<T> setBufferPagePool(BufferPagePool bufferPool) {
         this.bufferPool = bufferPool;
         return this;
@@ -218,8 +241,8 @@ public class AioQuickClient<T> {
     /**
      * 设置write缓冲区容量
      *
-     * @param writeQueueCapacity
-     * @return
+     * @param writeQueueCapacity 缓冲区容量
+     * @return 当前AIOQuickClient对象
      */
     public final AioQuickClient<T> setWriteQueueCapacity(int writeQueueCapacity) {
         config.setWriteQueueCapacity(writeQueueCapacity);
@@ -230,7 +253,7 @@ public class AioQuickClient<T> {
      * 设置单个内存页大小.多个内存页共同组成内存池
      *
      * @param bufferPoolPageSize 内存页大小
-     * @return
+     * @return 当前AIOQuickClient对象
      */
     public final AioQuickClient<T> setBufferPoolPageSize(int bufferPoolPageSize) {
         config.setBufferPoolPageSize(bufferPoolPageSize);
@@ -241,7 +264,7 @@ public class AioQuickClient<T> {
      * 限制写操作时从内存页中申请内存块的大小
      *
      * @param bufferPoolChunkSizeLimit 内存块大小限制
-     * @return
+     * @return 当前AIOQuickClient对象
      */
     public final AioQuickClient<T> setBufferPoolChunkSize(int bufferPoolChunkSizeLimit) {
         config.setBufferPoolChunkSize(bufferPoolChunkSizeLimit);
@@ -252,7 +275,7 @@ public class AioQuickClient<T> {
      * 设置内存池是否使用直接缓冲区,默认：true
      *
      * @param isDirect true:直接缓冲区,false:堆内缓冲区
-     * @return
+     * @return 当前AIOQuickClient对象
      */
     public final AioQuickClient<T> setBufferPoolDirect(boolean isDirect) {
         config.setBufferPoolDirect(isDirect);

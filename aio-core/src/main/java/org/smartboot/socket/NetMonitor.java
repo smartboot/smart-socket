@@ -31,6 +31,7 @@ import java.nio.channels.AsynchronousSocketChannel;
  * </p>
  * <b>非必要情况下请勿使用该接口，未来可能会调整接口设计</b>
  *
+ * @param <T> 消息对象实体类型
  * @author 三刀
  * @version V1.0.0
  */
@@ -58,7 +59,7 @@ public interface NetMonitor<T> {
     /**
      * 即将开始读取数据
      *
-     * @param session
+     * @param session 当前会话对象
      */
     void beforeRead(AioSession<T> session);
 
@@ -73,7 +74,7 @@ public interface NetMonitor<T> {
     /**
      * 即将开始写数据
      *
-     * @param session
+     * @param session 当前会话对象
      */
     void beforeWrite(AioSession<T> session);
 

@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
  * 注意：框架本身的所有Socket链路复用同一个Protocol，请勿在其实现类的成员变量中存储特定链路的数据。
  * </b>
  *
+ * @param <T> 消息对象实体类型
  * @author 三刀
  * @version V1.0.0 2018/5/19
  */

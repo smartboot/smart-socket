@@ -34,7 +34,9 @@ final class IoServerConfig<T> {
             "/',__)/' _ ` _ `\\ /'_` )( '__)| |     /',__) /'_`\\  /'___)| , <   /'__`\\| |  \n" +
             "\\__, \\| ( ) ( ) |( (_| || |   | |_    \\__, \\( (_) )( (___ | |\\`\\ (  ___/| |_ \n" +
             "(____/(_) (_) (_)`\\__,_)(_)   `\\__)   (____/`\\___/'`\\____)(_) (_)`\\____)`\\__)";
-
+    /**
+     * 当前smart-socket版本号
+     */
     public static final String VERSION = "v1.4.6.rc-1";
 
     /**
@@ -101,42 +103,78 @@ final class IoServerConfig<T> {
      */
     private boolean bufferPoolDirect = true;
 
+    /**
+     * 获取内存页大小
+     *
+     * @return 内存页大小
+     */
     public int getBufferPoolPageSize() {
         return bufferPoolPageSize;
     }
 
+    /**
+     * 设置内存页大小
+     *
+     * @param bufferPoolPageSize 内存页大小
+     */
     public void setBufferPoolPageSize(int bufferPoolPageSize) {
         this.bufferPoolPageSize = bufferPoolPageSize;
     }
 
+    /**
+     * @return 内存页数量
+     */
     public int getBufferPoolPageNum() {
         return bufferPoolPageNum;
     }
 
+    /**
+     * @param bufferPoolPageNum 内存页数量
+     */
     public void setBufferPoolPageNum(int bufferPoolPageNum) {
         this.bufferPoolPageNum = bufferPoolPageNum;
     }
 
+    /**
+     * 获取默认内存块大小
+     *
+     * @return 内存块大小
+     */
     public int getBufferPoolChunkSize() {
         return bufferPoolChunkSize;
     }
 
+    /**
+     * @param bufferPoolChunkSize 内存块大小
+     */
     public void setBufferPoolChunkSize(int bufferPoolChunkSize) {
         this.bufferPoolChunkSize = bufferPoolChunkSize;
     }
 
+    /**
+     * @return 主机地址
+     */
     public String getHost() {
         return host;
     }
 
+    /**
+     * @param host 主机地址
+     */
     public void setHost(String host) {
         this.host = host;
     }
 
+    /**
+     * @return 端口号
+     */
     public int getPort() {
         return port;
     }
 
+    /**
+     * @param port 端口号
+     */
     public void setPort(int port) {
         this.port = port;
     }
@@ -157,6 +195,9 @@ final class IoServerConfig<T> {
         return processor;
     }
 
+    /**
+     * @param processor 消息处理器
+     */
     public void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
         this.monitor = (processor instanceof NetMonitor) ? (NetMonitor<T>) processor : null;
@@ -166,6 +207,9 @@ final class IoServerConfig<T> {
         return readBufferSize;
     }
 
+    /**
+     * @param readBufferSize 读缓冲大小
+     */
     public void setReadBufferSize(int readBufferSize) {
         this.readBufferSize = readBufferSize;
     }
@@ -182,6 +226,10 @@ final class IoServerConfig<T> {
         return socketOptions;
     }
 
+    /**
+     * @param socketOption socketOption名称
+     * @param f            socketOption值
+     */
     public void setOption(SocketOption socketOption, Object f) {
         if (socketOptions == null) {
             socketOptions = new HashMap<>(4);

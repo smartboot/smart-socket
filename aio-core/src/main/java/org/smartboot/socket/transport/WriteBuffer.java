@@ -29,12 +29,21 @@ public class WriteBuffer extends OutputStream {
      * Condition for waiting puts
      */
     private final Condition notFull = lock.newCondition();
+    /**
+     * 当缓冲队列已满时，触发线程阻塞条件
+     */
     private final Condition waiting = lock.newCondition();
     /**
      * 为当前 WriteBuffer 提供数据存放功能的缓存页
      */
     private final BufferPage bufferPage;
+    /**
+     * 缓冲区数据刷新Function
+     */
     private final Function<WriteBuffer, Void> function;
+    /**
+     * 当时是否符合wait条件
+     */
     private volatile boolean isWaiting = false;
     /**
      * items 读索引位
@@ -56,7 +65,13 @@ public class WriteBuffer extends OutputStream {
      * 当前WriteBuffer是否已关闭
      */
     private boolean closed = false;
+    /**
+     * 辅助8字节以内输出的缓存组数
+     */
     private byte[] cacheByte;
+    /**
+     * 数据快速输出
+     */
     private FasterWrite fasterWrite;
 
     /**
@@ -88,6 +103,12 @@ public class WriteBuffer extends OutputStream {
     }
 
 
+    /**
+     * 输出一个short类型的数据
+     *
+     * @param v short数值
+     * @throws IOException IO异常
+     */
     public void writeShort(short v) throws IOException {
         initCacheBytes();
         cacheByte[0] = (byte) ((v >>> 8) & 0xFF);
@@ -96,7 +117,7 @@ public class WriteBuffer extends OutputStream {
     }
 
     /**
-     * @param b
+     * @param b 待输出数值
      * @see #write(int)
      */
     public void writeByte(byte b) {
@@ -118,6 +139,12 @@ public class WriteBuffer extends OutputStream {
         function.apply(this);
     }
 
+    /**
+     * 输出int数值,占用4个字节
+     *
+     * @param v int数值
+     * @throws IOException IO异常
+     */
     public void writeInt(int v) throws IOException {
         initCacheBytes();
         cacheByte[0] = (byte) ((v >>> 24) & 0xFF);
@@ -177,6 +204,9 @@ public class WriteBuffer extends OutputStream {
         waiting.signal();
     }
 
+    /**
+     * 初始化8字节的缓存数值
+     */
     private void initCacheBytes() {
         if (cacheByte == null) {
             cacheByte = new byte[8];
@@ -282,6 +312,11 @@ public class WriteBuffer extends OutputStream {
     }
 
 
+    /**
+     * 是否存在待输出的数据
+     *
+     * @return true:有,false:无
+     */
     boolean hasData() {
         return count > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0);
     }

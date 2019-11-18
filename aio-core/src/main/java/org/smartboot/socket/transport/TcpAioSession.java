@@ -382,6 +382,11 @@ class TcpAioSession<T> extends AioSession<T> {
         return (InetSocketAddress) channel.getRemoteAddress();
     }
 
+    /**
+     * 断言当前会话是否可用
+     *
+     * @throws IOException IO异常
+     */
     private void assertChannel() throws IOException {
         if (status == SESSION_STATUS_CLOSED || channel == null) {
             throw new IOException("session is closed");
@@ -400,6 +405,9 @@ class TcpAioSession<T> extends AioSession<T> {
      * <p>
      * MessageProcessor采用异步处理消息的方式时，调用该方法可能会出现异常。
      * </p>
+     *
+     * @return 同步读操作的流对象
+     * @throws IOException io异常
      */
     public final InputStream getInputStream() throws IOException {
         return inputStream == null ? getInputStream(-1) : inputStream;
@@ -409,6 +417,8 @@ class TcpAioSession<T> extends AioSession<T> {
      * 获取已知长度的InputStream
      *
      * @param length InputStream长度
+     * @return 同步读操作的流对象
+     * @throws IOException io异常
      */
     public final InputStream getInputStream(int length) throws IOException {
         if (inputStream != null) {
@@ -425,11 +435,16 @@ class TcpAioSession<T> extends AioSession<T> {
         return inputStream;
     }
 
-
+    /**
+     * 同步读操作的InputStream
+     */
     private class InnerInputStream extends InputStream {
+        /**
+         * 当前InputSteam可读字节数
+         */
         private int remainLength;
 
-        public InnerInputStream(int length) {
+        InnerInputStream(int length) {
             this.remainLength = length >= 0 ? length : -1;
         }
 

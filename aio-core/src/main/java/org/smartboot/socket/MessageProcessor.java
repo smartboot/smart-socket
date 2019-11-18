@@ -17,6 +17,7 @@ import org.smartboot.socket.transport.AioSession;
  * 通过实现该接口，对完成解码的消息进行业务处理。
  * </p>
  *
+ * @param <T> 消息对象实体类型
  * @author 三刀
  * @version V1.0.0 2018/5/19
  */

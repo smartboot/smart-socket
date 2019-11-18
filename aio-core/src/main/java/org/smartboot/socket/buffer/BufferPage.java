@@ -45,6 +45,9 @@ public final class BufferPage {
      */
     private boolean idle = true;
 
+    /**
+     * 同组内存池中的各内存页
+     */
     private BufferPage[] poolPages;
 
 
@@ -139,8 +142,8 @@ public final class BufferPage {
     /**
      * 快速匹配
      *
-     * @param size
-     * @return
+     * @param size 申请内存大小
+     * @return 申请到的内存块, 若空间不足则范围null
      */
     private VirtualBuffer fastAllocate(int size) {
         VirtualBuffer freeChunk = availableBuffers.get(0);
@@ -154,8 +157,8 @@ public final class BufferPage {
     /**
      * 迭代申请
      *
-     * @param size
-     * @return
+     * @param size 申请内存大小
+     * @return 申请到的内存块, 若空间不足则范围null
      */
     private VirtualBuffer slowAllocate(int size) {
         Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
@@ -173,6 +176,13 @@ public final class BufferPage {
         return null;
     }
 
+    /**
+     * 从可用内存大块中申请所需的内存小块
+     *
+     * @param size      申请内存大小
+     * @param freeChunk 可用于申请的内存块
+     * @return 申请到的内存块, 若空间不足则范围null
+     */
     private VirtualBuffer allocate(int size, VirtualBuffer freeChunk) {
         final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
         if (remaining < size) {

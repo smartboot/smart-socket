@@ -6,7 +6,7 @@
 <module name="Checker">
 
     <property name="charset" value="UTF-8"/>
-    <property name="severity" value="warning"/>
+    <property name="severity" value="error"/>
 
     <!-- Checks for Size Violations.  -->
     <!-- 检查文件的长度（行） default max=2000 -->
@@ -132,27 +132,27 @@
 
         <!-- classes and interfaces -->
         <module name="TypeName">
-            <property name="format" value="(^[A-Z][a-zA-Z0-9]{0,19}$)"/>
+            <property name="format" value="(^[A-Z][a-zA-Z0-9]{0,29}$)"/>
         </module>
 
         <!-- methods -->
         <module name="MethodName">
-            <property name="format" value="(^[a-z][a-zA-Z0-9]{0,19}$)"/>
+            <property name="format" value="(^[a-z][a-zA-Z0-9]{0,29}$)"/>
         </module>
 
         <!-- non-static fields -->
         <module name="MemberName">
-            <property name="format" value="(^[a-z][a-z0-9][a-zA-Z0-9]{0,19}$)"/>
+            <property name="format" value="(^[a-z][a-z0-9][a-zA-Z0-9]{0,29}$)"/>
         </module>
 
         <!-- parameters -->
         <module name="ParameterName">
-            <property name="format" value="(^[a-z][a-zA-Z0-9_]{0,19}$)"/>
+            <property name="format" value="(^[a-z][a-zA-Z0-9_]{0,29}$)"/>
         </module>
 
         <!-- constants (static,  final fields) -->
         <module name="ConstantName">
-            <property name="format" value="(^[A-Z0-9_]{0,19}$)"/>
+            <property name="format" value="(^[A-Z0-9_]{0,29}$)"/>
         </module>
 
         <!-- 代码缩进   -->

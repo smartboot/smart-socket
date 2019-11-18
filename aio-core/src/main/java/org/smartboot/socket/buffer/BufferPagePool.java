@@ -63,6 +63,13 @@ public class BufferPagePool {
         }, 500, 1000, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * 申请FastBufferThread的线程对象,配合线程池申请会有更好的性能表现
+     *
+     * @param target Runnable
+     * @param name   线程名
+     * @return FastBufferThread线程对象
+     */
     public Thread newThread(Runnable target, String name) {
         return new FastBufferThread(target, name, threadCursor.getAndIncrement() % bufferPageList.length);
     }

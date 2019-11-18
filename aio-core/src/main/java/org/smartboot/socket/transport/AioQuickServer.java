@@ -177,7 +177,7 @@ public class AioQuickServer<T> {
 
                     }
                 }
-            }, "smart-socket:AcceptThread");
+            }, "smart-socket:acceptThread");
             acceptThread.start();
         } catch (IOException e) {
             shutdown();

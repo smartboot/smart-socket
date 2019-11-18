@@ -152,6 +152,12 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         } while ((aioSession = cacheAioSessionQueue.poll()) != null);
     }
 
+    /**
+     * 处理消息读回调事件
+     *
+     * @param result     已读消息字节数
+     * @param aioSession 当前触发读回调的会话
+     */
     private void completed0(final Integer result, final TcpAioSession<T> aioSession) {
         try {
             // 接收到的消息进行预处理

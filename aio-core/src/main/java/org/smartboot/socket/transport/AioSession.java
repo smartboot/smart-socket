@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousSocketChannel;
 
 /**
+ * @param <T> 消息对象类型
  * @author 三刀
  * @version V1.0 , 2019/8/25
  */
