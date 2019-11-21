@@ -155,7 +155,7 @@ public class AioQuickServer<T> {
 
                 @Override
                 public Thread newThread(Runnable r) {
-                    return bufferPool.newThread(r, "smart-socket:Thread-" + (++index));
+                    return bufferPool.newThread(r, "smart-socket:Worker-" + (++index));
                 }
             });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
@@ -191,7 +191,6 @@ public class AioQuickServer<T> {
                         } catch (Exception e) {
                             LOGGER.error("AcceptThread Exception", e);
                         }
-
                     }
                 }
             }, "smart-socket:acceptThread");
