@@ -60,7 +60,7 @@ public final class BufferPage {
         this.poolPages = poolPages;
         this.sharedBufferPage = sharedBufferPage;
         availableBuffers = new LinkedList<>();
-        this.buffer = allocate1(size, direct);
+        this.buffer = allocate0(size, direct);
         availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
     }
 
@@ -71,7 +71,7 @@ public final class BufferPage {
      * @param direct true:堆外缓冲区,false:堆内缓冲区
      * @return 缓冲区
      */
-    private ByteBuffer allocate1(int size, boolean direct) {
+    private ByteBuffer allocate0(int size, boolean direct) {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
@@ -86,18 +86,18 @@ public final class BufferPage {
         VirtualBuffer virtualBuffer = null;
         Thread currentThread = Thread.currentThread();
         if (poolPages != null && currentThread instanceof FastBufferThread) {
-            virtualBuffer = poolPages[((FastBufferThread) currentThread).getIndex()].allocate0(size, false);
+            virtualBuffer = poolPages[((FastBufferThread) currentThread).getIndex()].allocate0(size);
         } else {
-            virtualBuffer = allocate0(size, false);
+            virtualBuffer = allocate0(size);
         }
         if (virtualBuffer != null) {
             return virtualBuffer;
         }
         if (sharedBufferPage != null) {
-            virtualBuffer = sharedBufferPage.allocate0(size, true);
+            virtualBuffer = sharedBufferPage.allocate0(size);
         }
         if (virtualBuffer == null) {
-            virtualBuffer = new VirtualBuffer(null, allocate1(size, false), 0, 0);
+            virtualBuffer = new VirtualBuffer(null, allocate0(size, false), 0, 0);
             LOGGER.warn("bufferPage has no available space: " + size);
         }
         return virtualBuffer;
@@ -109,7 +109,7 @@ public final class BufferPage {
      * @param size 申请大小
      * @return 虚拟内存对象
      */
-    private VirtualBuffer allocate0(final int size, boolean tryLock) {
+    private VirtualBuffer allocate0(final int size) {
         idle = false;
         VirtualBuffer cleanBuffer = cleanBuffers.poll();
         if (cleanBuffer != null && cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
@@ -117,11 +117,7 @@ public final class BufferPage {
             cleanBuffer.buffer(cleanBuffer.buffer());
             return cleanBuffer;
         }
-        if (tryLock && !lock.tryLock()) {
-            return null;
-        } else {
-            lock.lock();
-        }
+        lock.lock();
         try {
             if (cleanBuffer != null) {
                 clean0(cleanBuffer);
