@@ -140,17 +140,10 @@ public final class BufferPage {
             } else if (count > 1) {
                 bufferChunk = slowAllocate(size);
             }
-            if (bufferChunk != null) {
-                return bufferChunk;
-            }
+            return bufferChunk;
         } finally {
             lock.unlock();
         }
-//        if(LOGGER.isDebugEnabled()) {
-
-//        }
-        return null;
-//        return new VirtualBuffer(null, allocate0(size, false), 0, 0);
     }
 
     /**
