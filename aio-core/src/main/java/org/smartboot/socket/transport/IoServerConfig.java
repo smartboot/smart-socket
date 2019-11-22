@@ -89,6 +89,11 @@ final class IoServerConfig<T> {
     private int bufferPoolPageSize = 4096;
 
     /**
+     * 共享缓存页大小
+     */
+    private int bufferPoolSharedPageSize = -1;
+
+    /**
      * 内存页个数
      */
     private int bufferPoolPageNum = -1;
@@ -111,6 +116,7 @@ final class IoServerConfig<T> {
     public int getBufferPoolPageSize() {
         return bufferPoolPageSize;
     }
+
 
     /**
      * 设置内存页大小
@@ -261,6 +267,14 @@ final class IoServerConfig<T> {
         this.bufferPoolDirect = bufferPoolDirect;
     }
 
+    public int getBufferPoolSharedPageSize() {
+        return bufferPoolSharedPageSize;
+    }
+
+    public void setBufferPoolSharedPageSize(int bufferPoolSharedPageSize) {
+        this.bufferPoolSharedPageSize = bufferPoolSharedPageSize;
+    }
+
     @Override
     public String toString() {
         return "IoServerConfig{" +
@@ -277,6 +291,7 @@ final class IoServerConfig<T> {
                 ", bufferPoolPageSize=" + bufferPoolPageSize +
                 ", bufferPoolPageNum=" + bufferPoolPageNum +
                 ", bufferPoolChunkSize=" + bufferPoolChunkSize +
+                ", bufferPoolSharedPageSize=" + bufferPoolSharedPageSize +
                 ", bufferPoolDirect=" + bufferPoolDirect +
                 '}';
     }

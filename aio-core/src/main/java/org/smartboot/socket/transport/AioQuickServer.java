@@ -147,7 +147,7 @@ public class AioQuickServer<T> {
             aioReadCompletionHandler = new ReadCompletionHandler<>(new AtomicInteger(config.getThreadNum() - 1));
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
-            this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.isBufferPoolDirect());
+            this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolSharedPageSize(), config.isBufferPoolDirect());
             this.aioSessionFunction = aioSessionFunction;
 
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
@@ -408,6 +408,17 @@ public class AioQuickServer<T> {
      */
     public final AioQuickServer<T> setBufferPoolDirect(boolean isDirect) {
         config.setBufferPoolDirect(isDirect);
+        return this;
+    }
+
+    /**
+     * 设置共享内存页大小
+     *
+     * @param bufferPoolSharedPageSize 共享内存页大小
+     * @return 当前AioQuickServer对象
+     */
+    public final AioQuickServer<T> setBufferPoolSharedPageSize(int bufferPoolSharedPageSize) {
+        config.setBufferPoolSharedPageSize(bufferPoolSharedPageSize);
         return this;
     }
 }

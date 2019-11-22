@@ -28,7 +28,12 @@ public class BufferPagePool {
     /**
      * 内存页组
      */
-    private BufferPage[] bufferPageList;
+    private BufferPage[] bufferPages;
+
+    /**
+     * 共享缓存页
+     */
+    private BufferPage sharedBufferPage;
     /**
      * 内存页游标
      */
@@ -40,24 +45,31 @@ public class BufferPagePool {
     private AtomicInteger threadCursor = new AtomicInteger(0);
 
     /**
-     * @param pageSize 内存页大小
-     * @param pageNum  内存页个数
-     * @param isDirect 是否使用直接缓冲区
+     * @param pageSize       内存页大小
+     * @param pageNum        内存页个数
+     * @param sharedPageSize 共享内存页大小
+     * @param isDirect       是否使用直接缓冲区
      */
-    public BufferPagePool(final int pageSize, final int pageNum, final boolean isDirect) {
+    public BufferPagePool(final int pageSize, final int pageNum, final int sharedPageSize, final boolean isDirect) {
         if (pageNum <= 0) {
             throw new IllegalArgumentException("pageNum must greater than 0");
         }
-        bufferPageList = new BufferPage[pageNum];
+        if (sharedPageSize > 0) {
+            sharedBufferPage = new BufferPage(null, null, sharedPageSize, isDirect);
+        }
+        bufferPages = new BufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
-            bufferPageList[i] = new BufferPage(bufferPageList, pageSize, isDirect);
+            bufferPages[i] = new BufferPage(bufferPages, sharedBufferPage, pageSize, isDirect);
         }
 
         BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new TimerTask() {
             @Override
             public void run() {
-                for (BufferPage bufferPage : bufferPageList) {
+                for (BufferPage bufferPage : bufferPages) {
                     bufferPage.tryClean();
+                }
+                if (sharedBufferPage != null) {
+                    sharedBufferPage.tryClean();
                 }
             }
         }, 500, 1000, TimeUnit.MILLISECONDS);
@@ -71,7 +83,7 @@ public class BufferPagePool {
      * @return FastBufferThread线程对象
      */
     public Thread newThread(Runnable target, String name) {
-        return new FastBufferThread(target, name, threadCursor.getAndIncrement() % bufferPageList.length);
+        return new FastBufferThread(target, name, threadCursor.getAndIncrement() % bufferPages.length);
     }
 
     /**
@@ -85,6 +97,6 @@ public class BufferPagePool {
         if (index < 0) {
             cursor.set(0);
         }
-        return bufferPageList[index % bufferPageList.length];
+        return bufferPages[index % bufferPages.length];
     }
 }

@@ -50,13 +50,15 @@ public final class BufferPage {
      */
     private BufferPage[] poolPages;
 
+    private BufferPage sharedBufferPage;
 
     /**
      * @param size   缓存页大小
      * @param direct 是否使用堆外内存
      */
-    BufferPage(BufferPage[] poolPages, int size, boolean direct) {
+    BufferPage(BufferPage[] poolPages, BufferPage sharedBufferPage, int size, boolean direct) {
         this.poolPages = poolPages;
+        this.sharedBufferPage = sharedBufferPage;
         availableBuffers = new LinkedList<>();
         this.buffer = allocate0(size, direct);
         availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
@@ -81,12 +83,24 @@ public final class BufferPage {
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
+        VirtualBuffer virtualBuffer = null;
         Thread currentThread = Thread.currentThread();
-        if (currentThread instanceof FastBufferThread) {
-            return poolPages[((FastBufferThread) currentThread).getIndex()].allocate0(size);
+        if (poolPages != null && currentThread instanceof FastBufferThread) {
+            virtualBuffer = poolPages[((FastBufferThread) currentThread).getIndex()].allocate0(size);
         } else {
-            return allocate0(size);
+            virtualBuffer = allocate0(size);
         }
+        if (virtualBuffer != null) {
+            return virtualBuffer;
+        }
+        if (sharedBufferPage != null) {
+            virtualBuffer = sharedBufferPage.allocate0(size);
+        }
+        if (virtualBuffer == null) {
+            virtualBuffer = new VirtualBuffer(null, allocate0(size, false), 0, 0);
+            LOGGER.warn("bufferPage has no available space: " + size);
+        }
+        return virtualBuffer;
     }
 
     /**
@@ -133,10 +147,10 @@ public final class BufferPage {
             lock.unlock();
         }
 //        if(LOGGER.isDebugEnabled()) {
-        LOGGER.warn("bufferPage has no available space: " + size);
-//        }
-        return new VirtualBuffer(null, allocate0(size, false), 0, 0);
 
+//        }
+        return null;
+//        return new VirtualBuffer(null, allocate0(size, false), 0, 0);
     }
 
     /**
