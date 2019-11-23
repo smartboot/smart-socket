@@ -45,6 +45,15 @@ public class BufferPagePool {
     private AtomicInteger threadCursor = new AtomicInteger(0);
 
     /**
+     * @param pageSize 内存页大小
+     * @param pageNum  内存页个数
+     * @param isDirect 是否使用直接缓冲区
+     */
+    public BufferPagePool(final int pageSize, final int pageNum, final boolean isDirect) {
+        this(pageSize, pageNum, -1, isDirect);
+    }
+
+    /**
      * @param pageSize       内存页大小
      * @param pageNum        内存页个数
      * @param sharedPageSize 共享内存页大小

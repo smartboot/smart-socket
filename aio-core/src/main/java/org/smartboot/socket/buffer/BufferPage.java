@@ -50,6 +50,9 @@ public final class BufferPage {
      */
     private BufferPage[] poolPages;
 
+    /**
+     * 共享内存页
+     */
     private BufferPage sharedBufferPage;
 
     /**

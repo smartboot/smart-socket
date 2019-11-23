@@ -49,7 +49,7 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin {
                             LOGGER.error("server maybe has not started!");
                             return;
                         }
-                        Field field = BufferPagePool.class.getDeclaredField("bufferPageList");
+                        Field field = BufferPagePool.class.getDeclaredField("bufferPages");
                         field.setAccessible(true);
                         BufferPage[] pages = (BufferPage[]) field.get(pagePool);
                         String logger = "";
