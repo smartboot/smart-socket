@@ -525,6 +525,45 @@ class TcpAioSession<T> extends AioSession<T> {
         }
 
         @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (b == null) {
+                throw new NullPointerException();
+            } else if (off < 0 || len < 0 || len > b.length - off) {
+                throw new IndexOutOfBoundsException();
+            } else if (len == 0) {
+                return 0;
+            }
+            if (remainLength == 0) {
+                return -1;
+            }
+            if (remainLength > 0 && remainLength < len) {
+                len = remainLength;
+            }
+            ByteBuffer readBuffer = TcpAioSession.this.readBuffer.buffer();
+            int size = 0;
+            while (len > 0) {
+                if (!readBuffer.hasRemaining()) {
+                    readBuffer.clear();
+                    try {
+                        if (channel.read(readBuffer).get() == -1) {
+                            break;
+                        }
+                        readBuffer.flip();
+                    } catch (Exception e) {
+                        throw new IOException(e);
+                    }
+                }
+                int readSize = readBuffer.remaining() < len ? readBuffer.remaining() : len;
+                readBuffer.get(b, off + size, readSize);
+                size += readSize;
+                len -= readSize;
+
+            }
+            remainLength -= size;
+            return size;
+        }
+
+        @Override
         public int available() throws IOException {
             return remainLength == 0 ? 0 : readBuffer.buffer().remaining();
         }
