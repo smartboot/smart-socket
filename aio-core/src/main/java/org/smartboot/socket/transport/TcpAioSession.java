@@ -22,8 +22,8 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -88,7 +88,7 @@ class TcpAioSession<T> extends AioSession<T> {
     /**
      * 输出信号量,防止并发write导致异常
      */
-    private AtomicInteger semaphore = new AtomicInteger(1);
+    private Semaphore semaphore = new Semaphore(1);
     /**
      * 读回调
      */
@@ -124,13 +124,12 @@ class TcpAioSession<T> extends AioSession<T> {
     private Function<WriteBuffer, Void> flushFunction = new Function<WriteBuffer, Void>() {
         @Override
         public Void apply(WriteBuffer var) {
-            if (semaphore.getAndDecrement() <= 0) {
-                semaphore.incrementAndGet();
+            if (!semaphore.tryAcquire()) {
                 return null;
             }
             TcpAioSession.this.writeBuffer = var.poll();
             if (writeBuffer == null) {
-                semaphore.incrementAndGet();
+                semaphore.release();
             } else {
                 writing = true;
                 continueWrite(writeBuffer);
@@ -148,11 +147,7 @@ class TcpAioSession<T> extends AioSession<T> {
             if (writing) {
                 return false;
             }
-            if (semaphore.getAndDecrement() > 0) {
-                return true;
-            }
-            semaphore.incrementAndGet();
-            return false;
+            return semaphore.tryAcquire();
         }
 
         @Override
@@ -207,7 +202,7 @@ class TcpAioSession<T> extends AioSession<T> {
             return;
         }
         writing = false;
-        semaphore.incrementAndGet();
+        semaphore.release();
         //此时可能是Closing或Closed状态
         if (status != SESSION_STATUS_ENABLED) {
             close();

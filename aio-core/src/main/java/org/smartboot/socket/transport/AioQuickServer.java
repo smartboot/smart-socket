@@ -25,9 +25,9 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * AIO服务端。
@@ -144,7 +144,7 @@ public class AioQuickServer<T> {
 
         try {
 
-            aioReadCompletionHandler = new ReadCompletionHandler<>(new AtomicInteger(config.getThreadNum() - 1));
+            aioReadCompletionHandler = new ReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
 
             this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolSharedPageSize(), config.isBufferPoolDirect());

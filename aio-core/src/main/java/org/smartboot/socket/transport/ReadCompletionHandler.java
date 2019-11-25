@@ -15,7 +15,7 @@ import org.smartboot.socket.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -34,7 +34,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     /**
      * 读回调资源信号量
      */
-    private AtomicInteger semaphore;
+    private Semaphore semaphore;
 
     /**
      * 读会话缓存队列
@@ -57,7 +57,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     ReadCompletionHandler() {
     }
 
-    ReadCompletionHandler(AtomicInteger semaphore) {
+    ReadCompletionHandler(Semaphore semaphore) {
         this.semaphore = semaphore;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
         Thread t = new Thread(new Runnable() {
@@ -110,7 +110,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             return;
         }
         try {
-            if (semaphore.getAndDecrement() > 0) {
+            if (semaphore.tryAcquire()) {
                 Thread thread = Thread.currentThread();
                 aioSession.getThreadReference().set(thread);
                 completed0(result, aioSession);
@@ -119,7 +119,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
                 return;
             }
         } finally {
-            semaphore.incrementAndGet();
+            semaphore.release();
         }
 
         cacheAioSessionQueue.offer(aioSession);
