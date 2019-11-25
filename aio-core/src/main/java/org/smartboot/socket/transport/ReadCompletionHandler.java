@@ -109,17 +109,14 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             completed0(result, aioSession);
             return;
         }
-        try {
-            if (semaphore.tryAcquire()) {
-                Thread thread = Thread.currentThread();
-                aioSession.getThreadReference().set(thread);
-                completed0(result, aioSession);
-                runRingBufferTask();
-                aioSession.getThreadReference().compareAndSet(thread, null);
-                return;
-            }
-        } finally {
+        if (semaphore.tryAcquire()) {
+            Thread thread = Thread.currentThread();
+            aioSession.getThreadReference().set(thread);
+            completed0(result, aioSession);
+            runRingBufferTask();
+            aioSession.getThreadReference().compareAndSet(thread, null);
             semaphore.release();
+            return;
         }
 
         cacheAioSessionQueue.offer(aioSession);
