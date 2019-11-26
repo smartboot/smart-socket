@@ -57,7 +57,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     ReadCompletionHandler() {
     }
 
-    ReadCompletionHandler(Semaphore semaphore) {
+    ReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
         Thread t = new Thread(new Runnable() {
@@ -91,7 +91,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
                     }
                 }
             }
-        }, "smart-socket:watchman");
+        }, "smart-socket:watcher");
         t.setDaemon(true);
         t.setPriority(1);
         t.start();
