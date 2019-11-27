@@ -351,6 +351,10 @@ class TcpAioSession<T> extends AioSession<T> {
             return;
         }
 
+        if (!writing && byteBuf != null) {
+            byteBuf.flush();
+        }
+
         //数据读取完毕
         if (readBuffer.remaining() == 0) {
             readBuffer.clear();
@@ -369,9 +373,6 @@ class TcpAioSession<T> extends AioSession<T> {
             throw exception;
         }
 
-        if (!writing && byteBuf != null) {
-            byteBuf.flush();
-        }
         continueRead();
     }
 
