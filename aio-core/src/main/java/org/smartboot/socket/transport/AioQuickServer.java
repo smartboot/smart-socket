@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AIO服务端。
@@ -239,6 +240,7 @@ public class AioQuickServer<T> {
         TcpAioSession<T> session = null;
         try {
             session = aioSessionFunction.apply(channel);
+            session.setThreadReference(new AtomicReference<Thread>());
             session.initSession();
         } catch (Exception e1) {
             LOGGER.error(e1.getMessage(), e1);

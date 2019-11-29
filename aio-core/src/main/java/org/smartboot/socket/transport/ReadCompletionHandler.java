@@ -16,7 +16,6 @@ import org.smartboot.socket.StateMachineEnum;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -100,9 +99,6 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
-        if (semaphore != null && aioSession.getThreadReference() == null) {
-            aioSession.setThreadReference(new AtomicReference<Thread>());
-        }
         if (semaphore == null || aioSession.getThreadReference().get() == Thread.currentThread()) {
             runRingBufferTask();
             completed0(result, aioSession);
