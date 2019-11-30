@@ -113,7 +113,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             semaphore.release();
             return;
         }
-
+        //线程资源不足,暂时积压任务
         aioSession.setLastReadSize(result);
         cacheAioSessionQueue.offer(aioSession);
         if (needNotify && lock.tryLock()) {
