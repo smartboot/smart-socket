@@ -563,19 +563,15 @@ class TcpAioSession<T> extends AioSession<T> {
             if (remainLength == 0) {
                 return 0;
             }
-            try {
-                if (synRead() == -1) {
-                    remainLength = 0;
-                    return remainLength;
-                }
-                ByteBuffer readBuffer = TcpAioSession.this.readBuffer.buffer();
-                if (remainLength < -1) {
-                    return readBuffer.remaining();
-                } else {
-                    return remainLength > readBuffer.remaining() ? readBuffer.remaining() : remainLength;
-                }
-            } catch (Exception e) {
-                throw new IOException(e);
+            if (synRead() == -1) {
+                remainLength = 0;
+                return remainLength;
+            }
+            ByteBuffer readBuffer = TcpAioSession.this.readBuffer.buffer();
+            if (remainLength < -1) {
+                return readBuffer.remaining();
+            } else {
+                return remainLength > readBuffer.remaining() ? readBuffer.remaining() : remainLength;
             }
         }
 
