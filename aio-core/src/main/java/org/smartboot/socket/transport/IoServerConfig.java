@@ -34,8 +34,10 @@ final class IoServerConfig<T> {
             "/',__)/' _ ` _ `\\ /'_` )( '__)| |     /',__) /'_`\\  /'___)| , <   /'__`\\| |  \n" +
             "\\__, \\| ( ) ( ) |( (_| || |   | |_    \\__, \\( (_) )( (___ | |\\`\\ (  ___/| |_ \n" +
             "(____/(_) (_) (_)`\\__,_)(_)   `\\__)   (____/`\\___/'`\\____)(_) (_)`\\____)`\\__)";
-
-    public static final String VERSION = "v1.4.5";
+    /**
+     * 当前smart-socket版本号
+     */
+    public static final String VERSION = "v1.4.6";
 
     /**
      * 消息体缓存大小,字节
@@ -81,37 +83,104 @@ final class IoServerConfig<T> {
      */
     private int threadNum = 1;
 
-    static int getIntProperty(String property, int defaultVal) {
-        String valString = System.getProperty(property);
-        if (valString != null) {
-            try {
-                return Integer.parseInt(valString);
-            } catch (NumberFormatException e) {
-            }
-        }
-        return defaultVal;
+    /**
+     * 内存页大小
+     */
+    private int bufferPoolPageSize = 4096;
+
+    /**
+     * 共享缓存页大小
+     */
+    private int bufferPoolSharedPageSize = -1;
+
+    /**
+     * 内存页个数
+     */
+    private int bufferPoolPageNum = -1;
+
+    /**
+     * 内存块大小限制
+     */
+    private int bufferPoolChunkSize = 128;
+
+    /**
+     * 是否使用直接缓冲区内存
+     */
+    private boolean bufferPoolDirect = true;
+
+    /**
+     * 获取内存页大小
+     *
+     * @return 内存页大小
+     */
+    public int getBufferPoolPageSize() {
+        return bufferPoolPageSize;
     }
 
-    static boolean getBoolProperty(String property, boolean defaultVal) {
-        String valString = System.getProperty(property);
-        if (valString != null) {
-            return Boolean.parseBoolean(valString);
-        }
-        return defaultVal;
+
+    /**
+     * 设置内存页大小
+     *
+     * @param bufferPoolPageSize 内存页大小
+     */
+    public void setBufferPoolPageSize(int bufferPoolPageSize) {
+        this.bufferPoolPageSize = bufferPoolPageSize;
     }
 
+    /**
+     * @return 内存页数量
+     */
+    public int getBufferPoolPageNum() {
+        return bufferPoolPageNum;
+    }
+
+    /**
+     * @param bufferPoolPageNum 内存页数量
+     */
+    public void setBufferPoolPageNum(int bufferPoolPageNum) {
+        this.bufferPoolPageNum = bufferPoolPageNum;
+    }
+
+    /**
+     * 获取默认内存块大小
+     *
+     * @return 内存块大小
+     */
+    public int getBufferPoolChunkSize() {
+        return bufferPoolChunkSize;
+    }
+
+    /**
+     * @param bufferPoolChunkSize 内存块大小
+     */
+    public void setBufferPoolChunkSize(int bufferPoolChunkSize) {
+        this.bufferPoolChunkSize = bufferPoolChunkSize;
+    }
+
+    /**
+     * @return 主机地址
+     */
     public String getHost() {
         return host;
     }
 
+    /**
+     * @param host 主机地址
+     */
     public void setHost(String host) {
         this.host = host;
     }
 
+    /**
+     * @return 端口号
+     */
     public int getPort() {
         return port;
     }
 
+    /**
+     * @param port 端口号
+     */
     public void setPort(int port) {
         this.port = port;
     }
@@ -132,6 +201,9 @@ final class IoServerConfig<T> {
         return processor;
     }
 
+    /**
+     * @param processor 消息处理器
+     */
     public void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
         this.monitor = (processor instanceof NetMonitor) ? (NetMonitor<T>) processor : null;
@@ -141,6 +213,9 @@ final class IoServerConfig<T> {
         return readBufferSize;
     }
 
+    /**
+     * @param readBufferSize 读缓冲大小
+     */
     public void setReadBufferSize(int readBufferSize) {
         this.readBufferSize = readBufferSize;
     }
@@ -157,6 +232,10 @@ final class IoServerConfig<T> {
         return socketOptions;
     }
 
+    /**
+     * @param socketOption socketOption名称
+     * @param f            socketOption值
+     */
     public void setOption(SocketOption socketOption, Object f) {
         if (socketOptions == null) {
             socketOptions = new HashMap<>(4);
@@ -180,11 +259,27 @@ final class IoServerConfig<T> {
         this.threadNum = threadNum;
     }
 
+    public boolean isBufferPoolDirect() {
+        return bufferPoolDirect;
+    }
+
+    public void setBufferPoolDirect(boolean bufferPoolDirect) {
+        this.bufferPoolDirect = bufferPoolDirect;
+    }
+
+    public int getBufferPoolSharedPageSize() {
+        return bufferPoolSharedPageSize;
+    }
+
+    public void setBufferPoolSharedPageSize(int bufferPoolSharedPageSize) {
+        this.bufferPoolSharedPageSize = bufferPoolSharedPageSize;
+    }
 
     @Override
     public String toString() {
         return "IoServerConfig{" +
-                ", readBufferSize=" + readBufferSize +
+                "readBufferSize=" + readBufferSize +
+                ", writeQueueCapacity=" + writeQueueCapacity +
                 ", host='" + host + '\'' +
                 ", monitor=" + monitor +
                 ", port=" + port +
@@ -192,19 +287,12 @@ final class IoServerConfig<T> {
                 ", protocol=" + protocol +
                 ", bannerEnabled=" + bannerEnabled +
                 ", socketOptions=" + socketOptions +
+                ", threadNum=" + threadNum +
+                ", bufferPoolPageSize=" + bufferPoolPageSize +
+                ", bufferPoolPageNum=" + bufferPoolPageNum +
+                ", bufferPoolChunkSize=" + bufferPoolChunkSize +
+                ", bufferPoolSharedPageSize=" + bufferPoolSharedPageSize +
+                ", bufferPoolDirect=" + bufferPoolDirect +
                 '}';
-    }
-
-    /**
-     * smart-socket服务配置
-     */
-    interface Property {
-        String PROJECT_NAME = "smart-socket";
-        String SESSION_WRITE_CHUNK_SIZE = PROJECT_NAME + ".session.writeChunkSize";
-        String BUFFER_PAGE_NUM = PROJECT_NAME + ".bufferPool.pageNum";
-        String SERVER_PAGE_SIZE = PROJECT_NAME + ".server.pageSize";
-        String CLIENT_PAGE_SIZE = PROJECT_NAME + ".client.pageSize";
-        String SERVER_PAGE_IS_DIRECT = PROJECT_NAME + ".server.page.isDirect";
-        String CLIENT_PAGE_IS_DIRECT = PROJECT_NAME + ".client.page.isDirect";
     }
 }

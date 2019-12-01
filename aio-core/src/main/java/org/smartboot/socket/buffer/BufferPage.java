@@ -46,10 +46,22 @@ public final class BufferPage {
     private boolean idle = true;
 
     /**
+     * 同组内存池中的各内存页
+     */
+    private BufferPage[] poolPages;
+
+    /**
+     * 共享内存页
+     */
+    private BufferPage sharedBufferPage;
+
+    /**
      * @param size   缓存页大小
      * @param direct 是否使用堆外内存
      */
-    BufferPage(int size, boolean direct) {
+    BufferPage(BufferPage[] poolPages, BufferPage sharedBufferPage, int size, boolean direct) {
+        this.poolPages = poolPages;
+        this.sharedBufferPage = sharedBufferPage;
         availableBuffers = new LinkedList<>();
         this.buffer = allocate0(size, direct);
         availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
@@ -66,6 +78,7 @@ public final class BufferPage {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
+
     /**
      * 申请虚拟内存
      *
@@ -73,6 +86,33 @@ public final class BufferPage {
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
+        VirtualBuffer virtualBuffer = null;
+        Thread currentThread = Thread.currentThread();
+        if (poolPages != null && currentThread instanceof FastBufferThread) {
+            virtualBuffer = poolPages[((FastBufferThread) currentThread).getIndex()].allocate0(size);
+        } else {
+            virtualBuffer = allocate0(size);
+        }
+        if (virtualBuffer != null) {
+            return virtualBuffer;
+        }
+        if (sharedBufferPage != null) {
+            virtualBuffer = sharedBufferPage.allocate0(size);
+        }
+        if (virtualBuffer == null) {
+            virtualBuffer = new VirtualBuffer(null, allocate0(size, false), 0, 0);
+            LOGGER.warn("bufferPage has no available space: " + size);
+        }
+        return virtualBuffer;
+    }
+
+    /**
+     * 申请虚拟内存
+     *
+     * @param size 申请大小
+     * @return 虚拟内存对象
+     */
+    private VirtualBuffer allocate0(final int size) {
         idle = false;
         VirtualBuffer cleanBuffer = cleanBuffers.poll();
         if (cleanBuffer != null && cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
@@ -103,24 +143,17 @@ public final class BufferPage {
             } else if (count > 1) {
                 bufferChunk = slowAllocate(size);
             }
-            if (bufferChunk != null) {
-                return bufferChunk;
-            }
+            return bufferChunk;
         } finally {
             lock.unlock();
         }
-//        if(LOGGER.isDebugEnabled()) {
-        LOGGER.warn("bufferPage has no available space: " + size);
-//        }
-        return new VirtualBuffer(null, allocate0(size, false), 0, 0);
-
     }
 
     /**
      * 快速匹配
      *
-     * @param size
-     * @return
+     * @param size 申请内存大小
+     * @return 申请到的内存块, 若空间不足则范围null
      */
     private VirtualBuffer fastAllocate(int size) {
         VirtualBuffer freeChunk = availableBuffers.get(0);
@@ -134,8 +167,8 @@ public final class BufferPage {
     /**
      * 迭代申请
      *
-     * @param size
-     * @return
+     * @param size 申请内存大小
+     * @return 申请到的内存块, 若空间不足则范围null
      */
     private VirtualBuffer slowAllocate(int size) {
         Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
@@ -153,6 +186,13 @@ public final class BufferPage {
         return null;
     }
 
+    /**
+     * 从可用内存大块中申请所需的内存小块
+     *
+     * @param size      申请内存大小
+     * @param freeChunk 可用于申请的内存块
+     * @return 申请到的内存块, 若空间不足则范围null
+     */
     private VirtualBuffer allocate(int size, VirtualBuffer freeChunk) {
         final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
         if (remaining < size) {

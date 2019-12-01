@@ -21,9 +21,7 @@ import java.util.concurrent.ThreadFactory;
 public class StringClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(StringClient.class);
 
-    public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
-//        System.setProperty("smart-socket.client.pageSize", (1024 * 1024 * 64) + "");
-        System.setProperty("smart-socket.session.writeChunkSize", "" + (1024 * 1024));
+    public static void main(String[] args) throws IOException {
 
         BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 32, 10, true);
         AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
@@ -67,7 +65,8 @@ public class StringClient {
             }
         });
         client.setBufferPagePool(bufferPagePool);
-        client.setWriteQueueCapacity(10);
+        client.setWriteQueueCapacity(10)
+                .setBufferPoolChunkSize(1024 * 1024);
         AioSession<String> session = client.start(asynchronousChannelGroup);
         WriteBuffer outputStream = session.writeBuffer();
 

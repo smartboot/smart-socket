@@ -22,6 +22,9 @@ import java.nio.channels.CompletionHandler;
  * @version V1.0.0
  */
 class WriteCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
+    /**
+     * logger
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteCompletionHandler.class);
 
     @Override

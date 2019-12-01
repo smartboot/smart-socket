@@ -18,10 +18,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class WriteBuffer extends OutputStream {
     /**
-     * 输出缓存块大小
-     */
-    private static final int WRITE_CHUNK_SIZE = IoServerConfig.getIntProperty(IoServerConfig.Property.SESSION_WRITE_CHUNK_SIZE, 4096);
-    /**
      * 存储已就绪待输出的数据
      */
     private final VirtualBuffer[] items;
@@ -33,12 +29,21 @@ public class WriteBuffer extends OutputStream {
      * Condition for waiting puts
      */
     private final Condition notFull = lock.newCondition();
+    /**
+     * 当缓冲队列已满时，触发线程阻塞条件
+     */
     private final Condition waiting = lock.newCondition();
     /**
      * 为当前 WriteBuffer 提供数据存放功能的缓存页
      */
     private final BufferPage bufferPage;
+    /**
+     * 缓冲区数据刷新Function
+     */
     private final Function<WriteBuffer, Void> function;
+    /**
+     * 当时是否符合wait条件
+     */
     private volatile boolean isWaiting = false;
     /**
      * items 读索引位
@@ -60,14 +65,27 @@ public class WriteBuffer extends OutputStream {
      * 当前WriteBuffer是否已关闭
      */
     private boolean closed = false;
+    /**
+     * 辅助8字节以内输出的缓存组数
+     */
     private byte[] cacheByte;
+    /**
+     * 数据快速输出
+     */
     private FasterWrite fasterWrite;
 
-    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int writeQueueSize, FasterWrite fasterWrite) {
+    /**
+     * 默认内存块大小
+     */
+    private int chunkSize;
+
+
+    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, IoServerConfig config, FasterWrite fasterWrite) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
-        this.items = new VirtualBuffer[writeQueueSize];
+        this.items = new VirtualBuffer[config.getWriteQueueCapacity()];
         this.fasterWrite = fasterWrite == null ? new FasterWrite() : fasterWrite;
+        this.chunkSize = config.getBufferPoolChunkSize();
     }
 
     /**
@@ -85,6 +103,12 @@ public class WriteBuffer extends OutputStream {
     }
 
 
+    /**
+     * 输出一个short类型的数据
+     *
+     * @param v short数值
+     * @throws IOException IO异常
+     */
     public void writeShort(short v) throws IOException {
         initCacheBytes();
         cacheByte[0] = (byte) ((v >>> 8) & 0xFF);
@@ -93,12 +117,12 @@ public class WriteBuffer extends OutputStream {
     }
 
     /**
-     * @param b
+     * @param b 待输出数值
      * @see #write(int)
      */
     public void writeByte(byte b) {
         if (writeInBuf == null) {
-            writeInBuf = bufferPage.allocate(WRITE_CHUNK_SIZE);
+            writeInBuf = bufferPage.allocate(chunkSize);
         }
         writeInBuf.buffer().put(b);
         if (writeInBuf.buffer().hasRemaining()) {
@@ -115,6 +139,12 @@ public class WriteBuffer extends OutputStream {
         function.apply(this);
     }
 
+    /**
+     * 输出int数值,占用4个字节
+     *
+     * @param v int数值
+     * @throws IOException IO异常
+     */
     public void writeInt(int v) throws IOException {
         initCacheBytes();
         cacheByte[0] = (byte) ((v >>> 24) & 0xFF);
@@ -142,7 +172,7 @@ public class WriteBuffer extends OutputStream {
             waitPreWriteFinish();
             do {
                 if (writeInBuf == null) {
-                    writeInBuf = bufferPage.allocate(Math.max(WRITE_CHUNK_SIZE, len - off));
+                    writeInBuf = bufferPage.allocate(Math.max(chunkSize, len - off));
                 }
                 ByteBuffer writeBuffer = writeInBuf.buffer();
                 int minSize = Math.min(writeBuffer.remaining(), len - off);
@@ -174,6 +204,9 @@ public class WriteBuffer extends OutputStream {
         waiting.signal();
     }
 
+    /**
+     * 初始化8字节的缓存数值
+     */
     private void initCacheBytes() {
         if (cacheByte == null) {
             cacheByte = new byte[8];
@@ -279,6 +312,11 @@ public class WriteBuffer extends OutputStream {
     }
 
 
+    /**
+     * 是否存在待输出的数据
+     *
+     * @return true:有,false:无
+     */
     boolean hasData() {
         return count > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0);
     }

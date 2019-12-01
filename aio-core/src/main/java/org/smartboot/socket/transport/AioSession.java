@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousSocketChannel;
 
 /**
+ * @param <T> 消息对象类型
  * @author 三刀
  * @version V1.0 , 2019/8/25
  */
@@ -45,7 +46,7 @@ public abstract class AioSession<T> {
     /**
      * 获取WriteBuffer用以数据输出
      *
-     * @return
+     * @return WriteBuffer
      */
     public abstract WriteBuffer writeBuffer();
 
@@ -66,6 +67,8 @@ public abstract class AioSession<T> {
 
     /**
      * 获取当前Session的唯一标识
+     *
+     * @return sessionId
      */
     public String getSessionID() {
         return "aioSession-" + hashCode();
@@ -73,6 +76,8 @@ public abstract class AioSession<T> {
 
     /**
      * 当前会话是否已失效
+     *
+     * @return 是否失效
      */
     public boolean isInvalid() {
         return status != SESSION_STATUS_ENABLED;
@@ -82,7 +87,8 @@ public abstract class AioSession<T> {
     /**
      * 获取附件对象
      *
-     * @return
+     * @param <T> 附件对象类型
+     * @return 附件
      */
     public final <T> T getAttachment() {
         return (T) attachment;
@@ -90,6 +96,9 @@ public abstract class AioSession<T> {
 
     /**
      * 存放附件，支持任意类型
+     *
+     * @param <T>        附件对象类型
+     * @param attachment 附件对象
      */
     public final <T> void setAttachment(T attachment) {
         this.attachment = attachment;
@@ -98,8 +107,8 @@ public abstract class AioSession<T> {
     /**
      * 获取当前会话的本地连接地址
      *
-     * @return
-     * @throws IOException
+     * @return 本地地址
+     * @throws IOException IO异常
      * @see AsynchronousSocketChannel#getLocalAddress()
      */
     public abstract InetSocketAddress getLocalAddress() throws IOException;
@@ -107,8 +116,8 @@ public abstract class AioSession<T> {
     /**
      * 获取当前会话的远程连接地址
      *
-     * @return
-     * @throws IOException
+     * @return 远程地址
+     * @throws IOException IO异常
      * @see AsynchronousSocketChannel#getRemoteAddress()
      */
     public abstract InetSocketAddress getRemoteAddress() throws IOException;
@@ -121,6 +130,9 @@ public abstract class AioSession<T> {
      * <p>
      * MessageProcessor采用异步处理消息的方式时，调用该方法可能会出现异常。
      * </p>
+     *
+     * @return 输入流
+     * @throws IOException IO异常
      */
     public InputStream getInputStream() throws IOException {
         throw new UnsupportedOperationException();
@@ -130,6 +142,8 @@ public abstract class AioSession<T> {
      * 获取已知长度的InputStream
      *
      * @param length InputStream长度
+     * @return 输入流
+     * @throws IOException IO异常
      */
     public InputStream getInputStream(int length) throws IOException {
         throw new UnsupportedOperationException();

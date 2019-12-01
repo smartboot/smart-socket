@@ -15,7 +15,7 @@ import org.smartboot.socket.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -34,7 +34,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     /**
      * 读回调资源信号量
      */
-    private AtomicInteger semaphore;
+    private Semaphore semaphore;
 
     /**
      * 读会话缓存队列
@@ -57,10 +57,10 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     ReadCompletionHandler() {
     }
 
-    ReadCompletionHandler(AtomicInteger semaphore) {
+    ReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
-        Thread t = new Thread(new Runnable() {
+        Thread watcherThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (true) {
@@ -91,16 +91,15 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
                     }
                 }
             }
-        }, "smart-socket:watchman");
-        t.setDaemon(true);
-        t.setPriority(1);
-        t.start();
+        }, "smart-socket:watcher");
+        watcherThread.setDaemon(true);
+        watcherThread.setPriority(1);
+        watcherThread.start();
     }
 
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
-        aioSession.setLastReadSize(result);
         if (semaphore != null && aioSession.getThreadReference() == null) {
             aioSession.setThreadReference(new AtomicReference<Thread>());
         }
@@ -109,19 +108,17 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             completed0(result, aioSession);
             return;
         }
-        try {
-            if (semaphore.getAndDecrement() > 0) {
-                Thread thread = Thread.currentThread();
-                aioSession.getThreadReference().set(thread);
-                completed0(result, aioSession);
-                runRingBufferTask();
-                aioSession.getThreadReference().compareAndSet(thread, null);
-                return;
-            }
-        } finally {
-            semaphore.incrementAndGet();
+        if (semaphore.tryAcquire()) {
+            Thread thread = Thread.currentThread();
+            aioSession.getThreadReference().set(thread);
+            completed0(result, aioSession);
+            runRingBufferTask();
+            aioSession.getThreadReference().compareAndSet(thread, null);
+            semaphore.release();
+            return;
         }
 
+        aioSession.setLastReadSize(result);
         cacheAioSessionQueue.offer(aioSession);
         if (needNotify && lock.tryLock()) {
             try {
@@ -152,6 +149,12 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         } while ((aioSession = cacheAioSessionQueue.poll()) != null);
     }
 
+    /**
+     * 处理消息读回调事件
+     *
+     * @param result     已读消息字节数
+     * @param aioSession 当前触发读回调的会话
+     */
     private void completed0(final Integer result, final TcpAioSession<T> aioSession) {
         try {
             // 接收到的消息进行预处理

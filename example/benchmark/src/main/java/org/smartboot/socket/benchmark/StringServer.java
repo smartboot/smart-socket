@@ -20,8 +20,6 @@ public class StringServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(StringServer.class);
 
     public static void main(String[] args) throws IOException {
-        System.setProperty("smart-socket.server.pageSize", (1024 * 1024 * 16) + "");
-        System.setProperty("smart-socket.session.writeChunkSize", "4096");
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
             public void process0(AioSession<String> session, String msg) {
@@ -47,10 +45,12 @@ public class StringServer {
 
 
         AioQuickServer<String> server = new AioQuickServer<>(8888, new StringProtocol(), processor);
-        server.setReadBufferSize(1024 * 1024);
+        server.setReadBufferSize(1024 * 1024)
+                .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
+                .setBufferPoolPageSize(1024 * 1024 * 16)
+                .setBufferPoolChunkSize(4096);
         processor.addPlugin(new BufferPageMonitorPlugin(server, 6));
         processor.addPlugin(new MonitorPlugin(5));
-        server.setThreadNum(Runtime.getRuntime().availableProcessors()+1);
         server.start();
 
     }
