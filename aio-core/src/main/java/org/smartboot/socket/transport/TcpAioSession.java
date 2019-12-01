@@ -73,14 +73,6 @@ class TcpAioSession<T> extends AioSession<T> {
      */
     protected VirtualBuffer writeBuffer;
     /**
-     * 会话当前状态
-     *
-     * @see TcpAioSession#SESSION_STATUS_CLOSED
-     * @see TcpAioSession#SESSION_STATUS_CLOSING
-     * @see TcpAioSession#SESSION_STATUS_ENABLED
-     */
-    protected byte status = SESSION_STATUS_ENABLED;
-    /**
      * read递归回调标识
      */
     private AtomicReference<Thread> threadReference = null;
