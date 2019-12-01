@@ -388,6 +388,27 @@ class TcpAioSession<T> extends AioSession<T> {
     }
 
     /**
+     * 同步读取数据
+     *
+     * @return
+     * @throws Exception
+     */
+    private int synRead() throws IOException {
+        ByteBuffer buffer = readBuffer.buffer();
+        if (buffer.remaining() > 0) {
+            return 0;
+        }
+        try {
+            buffer.clear();
+            int size = channel.read(buffer).get();
+            buffer.flip();
+            return size;
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
+
+    /**
      * 触发写操作
      *
      * @param writeBuffer 存放待输出数据的buffer
@@ -504,20 +525,10 @@ class TcpAioSession<T> extends AioSession<T> {
                 remainLength--;
                 return readBuffer.get();
             }
-            readBuffer.clear();
-
-            try {
-                int readSize = channel.read(readBuffer).get();
-                readBuffer.flip();
-                if (readSize == -1) {
-                    remainLength = 0;
-                    return -1;
-                } else {
-                    return read();
-                }
-            } catch (Exception e) {
-                throw new IOException(e);
+            if (synRead() == -1) {
+                remainLength = 0;
             }
+            return read();
         }
 
         @Override
@@ -537,23 +548,11 @@ class TcpAioSession<T> extends AioSession<T> {
             }
             ByteBuffer readBuffer = TcpAioSession.this.readBuffer.buffer();
             int size = 0;
-            while (len > 0) {
-                if (!readBuffer.hasRemaining()) {
-                    readBuffer.clear();
-                    try {
-                        if (channel.read(readBuffer).get() == -1) {
-                            break;
-                        }
-                        readBuffer.flip();
-                    } catch (Exception e) {
-                        throw new IOException(e);
-                    }
-                }
+            while (len > 0 && synRead() != -1) {
                 int readSize = readBuffer.remaining() < len ? readBuffer.remaining() : len;
                 readBuffer.get(b, off + size, readSize);
                 size += readSize;
                 len -= readSize;
-
             }
             remainLength -= size;
             return size;
@@ -565,16 +564,11 @@ class TcpAioSession<T> extends AioSession<T> {
                 return 0;
             }
             try {
-                ByteBuffer readBuffer = TcpAioSession.this.readBuffer.buffer();
-                int availBuffer = readBuffer.remaining();
-                if (availBuffer == 0) {
-                    readBuffer.clear();
-                    if (channel.read(readBuffer).get() == -1) {
-                        remainLength = 0;
-                        return remainLength;
-                    }
-                    readBuffer.flip();
+                if (synRead() == -1) {
+                    remainLength = 0;
+                    return remainLength;
                 }
+                ByteBuffer readBuffer = TcpAioSession.this.readBuffer.buffer();
                 if (remainLength < -1) {
                     return readBuffer.remaining();
                 } else {
