@@ -258,21 +258,7 @@ class TcpAioSession<T> extends AioSession<T> {
                 writeBuffer.clean();
                 writeBuffer = null;
             }
-            try {
-                channel.shutdownInput();
-            } catch (IOException e) {
-                LOGGER.debug(e.getMessage(), e);
-            }
-            try {
-                channel.shutdownOutput();
-            } catch (IOException e) {
-                LOGGER.debug(e.getMessage(), e);
-            }
-            try {
-                channel.close();
-            } catch (IOException e) {
-                LOGGER.debug("close session exception", e);
-            }
+            IOUtil.close(channel);
             ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
         } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && !byteBuf.hasData()) {
             close(true);

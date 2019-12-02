@@ -21,7 +21,10 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * AIO实现的客户端服务。
@@ -63,6 +66,8 @@ public class AioQuickClient<T> {
      * 内存池
      */
     protected BufferPagePool bufferPool = null;
+
+    private BufferPagePool innerBufferPool = null;
     /**
      * IO事件处理线程组。
      * <p>
@@ -75,6 +80,11 @@ public class AioQuickClient<T> {
      * 绑定本地地址
      */
     private SocketAddress localAddress;
+
+    /**
+     * 连接超时时间
+     */
+    private int connectTimeout;
 
     /**
      * 当前构造方法设置了启动Aio客户端的必要参数，基本实现开箱即用。
@@ -111,6 +121,7 @@ public class AioQuickClient<T> {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         if (bufferPool == null) {
             bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), 1, config.isBufferPoolDirect());
+            this.innerBufferPool = bufferPool;
         }
         //set socket options
         if (config.getSocketOptions() != null) {
@@ -122,7 +133,19 @@ public class AioQuickClient<T> {
         if (localAddress != null) {
             socketChannel.bind(localAddress);
         }
-        socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort())).get();
+        try {
+            Future<Void> future = socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort()));
+            if (connectTimeout > 0) {
+                future.get(connectTimeout, TimeUnit.MILLISECONDS);
+            } else {
+                future.get();
+            }
+
+        } catch (TimeoutException e) {
+            IOUtil.close(socketChannel);
+            shutdownNow();
+            throw new IOException(e);
+        }
         //连接成功则构造AIOSession对象
         session = new TcpAioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool.allocateBufferPage());
         session.initSession();
@@ -182,6 +205,9 @@ public class AioQuickClient<T> {
         //仅Client内部创建的ChannelGroup需要shutdown
         if (asynchronousChannelGroup != null) {
             asynchronousChannelGroup.shutdown();
+        }
+        if (innerBufferPool != null) {
+            innerBufferPool.release();
         }
     }
 
@@ -281,4 +307,17 @@ public class AioQuickClient<T> {
         config.setBufferPoolDirect(isDirect);
         return this;
     }
+
+    /**
+     * 客户端连接超时时间，单位:毫秒
+     *
+     * @param timeout 超时时间
+     * @return
+     */
+    public final AioQuickClient<T> connectTimeout(int timeout) {
+        this.connectTimeout = timeout;
+        return this;
+    }
+
+
 }
