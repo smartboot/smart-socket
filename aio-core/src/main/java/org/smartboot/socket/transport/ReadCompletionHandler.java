@@ -53,6 +53,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
      */
     private final Condition notEmpty = lock.newCondition();
 
+    private boolean running = true;
+
     ReadCompletionHandler() {
     }
 
@@ -62,7 +64,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         Thread watcherThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while (true) {
+                while (running) {
                     try {
                         TcpAioSession aioSession = cacheAioSessionQueue.poll();
                         if (aioSession != null) {
@@ -175,6 +177,16 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             aioSession.close(false);
         } catch (Exception e) {
             LOGGER.debug(e.getMessage(), e);
+        }
+    }
+
+    public void shutdown() {
+        running = false;
+        lock.lock();
+        try {
+            notEmpty.signal();
+        } finally {
+            lock.unlock();
         }
     }
 }

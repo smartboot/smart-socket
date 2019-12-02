@@ -301,6 +301,11 @@ public class AioQuickServer<T> {
         } catch (InterruptedException e) {
             LOGGER.error("shutdown exception", e);
         }
+        if (bufferPool != null) {
+            bufferPool.release();
+            bufferPool = null;
+        }
+        aioReadCompletionHandler.shutdown();
     }
 
     /**

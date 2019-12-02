@@ -2,6 +2,7 @@ package org.smartboot.socket.buffer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.nio.ch.DirectBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
@@ -282,6 +283,16 @@ public final class BufferPage {
             index++;
         }
         availableBuffers.add(cleanBuffer);
+    }
+
+    /**
+     * 释放内存
+     */
+    void release() {
+        if (buffer.isDirect()) {
+            LOGGER.debug("clean direct buffer");
+            ((DirectBuffer) buffer).cleaner().clean();
+        }
     }
 
     @Override
