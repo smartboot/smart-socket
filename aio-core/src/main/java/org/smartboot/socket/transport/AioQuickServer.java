@@ -26,7 +26,6 @@ import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -147,14 +146,7 @@ public class AioQuickServer<T> {
             this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolSharedPageSize(), config.isBufferPoolDirect());
             this.aioSessionFunction = aioSessionFunction;
 
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
-                private byte index = 0;
-
-                @Override
-                public Thread newThread(Runnable r) {
-                    return bufferPool.newThread(r, "smart-socket:Worker-" + (++index));
-                }
-            });
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
             //set socket options
             if (config.getSocketOptions() != null) {

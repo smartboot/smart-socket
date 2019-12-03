@@ -11,7 +11,7 @@ final class FastBufferThread extends Thread {
     private final int index;
 
     FastBufferThread(Runnable target, String name, int index) {
-        super(target, name);
+        super(target, name + index);
         this.index = index;
     }
 
