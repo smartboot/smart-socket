@@ -76,8 +76,8 @@ public class StringClient {
 
         byte[] data = "smart-socket".getBytes();
         while (true) {
-//            int num = (int) (Math.random() * 10) + 1;
-            int num = 4;
+            int num = (int) (Math.random() * 10) + 1;
+//            int num = 4;
             outputStream.writeInt(data.length * num);
             while (num-- > 0) {
                 outputStream.write(data);

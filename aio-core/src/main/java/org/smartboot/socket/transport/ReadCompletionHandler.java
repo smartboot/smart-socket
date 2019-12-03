@@ -102,8 +102,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         if (semaphore == null || aioSession.getThreadReference().get() == Thread.currentThread()) {
-            runRingBufferTask();
             completed0(result, aioSession);
+            runRingBufferTask();
             return;
         }
         if (semaphore.tryAcquire()) {
