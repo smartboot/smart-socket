@@ -29,6 +29,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * AIO服务端。
@@ -126,12 +127,7 @@ public class AioQuickServer<T> {
         if (config.isBannerEnabled()) {
             LOGGER.info(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
         }
-        start0(new Function<AsynchronousSocketChannel, TcpAioSession<T>>() {
-            @Override
-            public TcpAioSession<T> apply(AsynchronousSocketChannel channel) {
-                return new TcpAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage());
-            }
-        });
+        start0(channel -> new TcpAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage()));
     }
 
     /**

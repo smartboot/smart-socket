@@ -25,6 +25,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * AIO传输层会话。

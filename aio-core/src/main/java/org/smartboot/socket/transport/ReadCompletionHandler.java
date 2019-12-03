@@ -16,6 +16,7 @@ import org.smartboot.socket.StateMachineEnum;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -55,12 +56,15 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
 
     private boolean running = true;
 
+    private LongAdder longAdder;
+
     ReadCompletionHandler() {
     }
 
     ReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
+        longAdder = new LongAdder();
         Thread watcherThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -103,7 +107,6 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         if (semaphore == null || aioSession.getThreadReference().get() == Thread.currentThread()) {
             completed0(result, aioSession);
-            runRingBufferTask();
             return;
         }
         if (semaphore.tryAcquire()) {
@@ -139,12 +142,15 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         if (aioSession == null) {
             return;
         }
+        longAdder.increment();
+        long seq = longAdder.longValue();
+        int count = 16;
         Thread thread = Thread.currentThread();
         do {
             aioSession.getThreadReference().set(thread);
             completed0(aioSession.getLastReadSize(), aioSession);
             aioSession.getThreadReference().compareAndSet(thread, null);
-        } while ((aioSession = cacheAioSessionQueue.poll()) != null);
+        } while ((--count > 0 || seq >= longAdder.longValue()) && (aioSession = cacheAioSessionQueue.poll()) != null);
     }
 
     /**

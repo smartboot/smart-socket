@@ -8,8 +8,7 @@ import org.smartboot.socket.util.QuickTimerTask;
 
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * 服务器运行状态监控插件
@@ -26,46 +25,46 @@ public final class MonitorPlugin<T> implements Runnable, Plugin<T> {
     /**
      * 当前周期内消息 流量监控
      */
-    private AtomicLong inFlow = new AtomicLong(0);
+    private LongAdder inFlow = new LongAdder();
 
     /**
      * 当前周期内消息 流量监控
      */
-    private AtomicLong outFlow = new AtomicLong(0);
+    private LongAdder outFlow = new LongAdder();
 
     /**
      * 当前周期内处理失败消息数
      */
-    private AtomicLong processFailNum = new AtomicLong(0);
+    private LongAdder processFailNum = new LongAdder();
 
     /**
      * 当前周期内处理消息数
      */
-    private AtomicLong processMsgNum = new AtomicLong(0);
+    private LongAdder processMsgNum = new LongAdder();
 
 
-    private AtomicLong totleProcessMsgNum = new AtomicLong(0);
+    private LongAdder totleProcessMsgNum = new LongAdder();
 
     /**
      * 新建连接数
      */
-    private AtomicInteger newConnect = new AtomicInteger(0);
+    private LongAdder newConnect = new LongAdder();
 
     /**
      * 断链数
      */
-    private AtomicInteger disConnect = new AtomicInteger(0);
+    private LongAdder disConnect = new LongAdder();
 
     /**
      * 在线连接数
      */
-    private AtomicInteger onlineCount = new AtomicInteger(0);
+    private long onlineCount;
 
-    private AtomicInteger totalConnect = new AtomicInteger(0);
+    private LongAdder totalConnect = new LongAdder();
 
-    private AtomicInteger readCount = new AtomicInteger(0);
+    private LongAdder readCount = new LongAdder();
 
-    private AtomicInteger writeCount = new AtomicInteger(0);
+    private LongAdder writeCount = new LongAdder();
 
     public MonitorPlugin() {
         this(60);
@@ -80,8 +79,8 @@ public final class MonitorPlugin<T> implements Runnable, Plugin<T> {
 
     @Override
     public boolean preProcess(AioSession<T> session, T t) {
-        processMsgNum.incrementAndGet();
-        totleProcessMsgNum.incrementAndGet();
+        processMsgNum.increment();
+        totleProcessMsgNum.increment();
         return true;
     }
 
@@ -89,13 +88,13 @@ public final class MonitorPlugin<T> implements Runnable, Plugin<T> {
     public void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
         switch (stateMachineEnum) {
             case PROCESS_EXCEPTION:
-                processFailNum.incrementAndGet();
+                processFailNum.increment();
                 break;
             case NEW_SESSION:
-                newConnect.incrementAndGet();
+                newConnect.increment();
                 break;
             case SESSION_CLOSED:
-                disConnect.incrementAndGet();
+                disConnect.increment();
                 break;
             default:
                 //ignore other state
@@ -105,24 +104,31 @@ public final class MonitorPlugin<T> implements Runnable, Plugin<T> {
 
     @Override
     public void run() {
-        long curInFlow = inFlow.getAndSet(0);
-        long curOutFlow = outFlow.getAndSet(0);
-        long curDiscardNum = processFailNum.getAndSet(0);
-        long curProcessMsgNum = processMsgNum.getAndAdd(-processMsgNum.get());
-        int connectCount = newConnect.getAndAdd(-newConnect.get());
-        int disConnectCount = disConnect.getAndAdd(-disConnect.get());
-        logger.info("\r\n-----这" + seconds + "秒发生了什么----\r\ninflow:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
+        long curInFlow = getAndReset(inFlow);
+        long curOutFlow = getAndReset(outFlow);
+        long curDiscardNum = getAndReset(processFailNum);
+        long curProcessMsgNum = getAndReset(processMsgNum);
+        long connectCount = getAndReset(newConnect);
+        long disConnectCount = getAndReset(disConnect);
+        onlineCount += connectCount - disConnectCount;
+        logger.info("\r\n-----" + seconds + "seconds ----\r\ninflow:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\noutflow:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\nprocess fail:\t" + curDiscardNum
                 + "\r\nprocess success:\t" + curProcessMsgNum
-                + "\r\nprocess total:\t" + totleProcessMsgNum.get()
-                + "\r\nread count:\t" + readCount.getAndSet(0) + "\twrite count:\t" + writeCount.getAndSet(0)
+                + "\r\nprocess total:\t" + totleProcessMsgNum.longValue()
+                + "\r\nread count:\t" + getAndReset(readCount) + "\twrite count:\t" + getAndReset(writeCount)
                 + "\r\nconnect count:\t" + connectCount
                 + "\r\ndisconnect count:\t" + disConnectCount
-                + "\r\nonline count:\t" + onlineCount.addAndGet(connectCount - disConnectCount)
-                + "\r\nconnected total:\t" + totalConnect.addAndGet(connectCount)
+                + "\r\nonline count:\t" + onlineCount
+                + "\r\nconnected total:\t" + getAndReset(totalConnect)
                 + "\r\nRequests/sec:\t" + curProcessMsgNum * 1.0 / seconds
                 + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "(MB)");
+    }
+
+    private long getAndReset(LongAdder longAdder) {
+        long result = longAdder.longValue();
+        longAdder.add(-result);
+        return result;
     }
 
     @Override
@@ -136,21 +142,21 @@ public final class MonitorPlugin<T> implements Runnable, Plugin<T> {
         if (readSize == 0) {
             logger.error("readSize is 0");
         }
-        inFlow.addAndGet(readSize);
+        inFlow.add(readSize);
     }
 
     @Override
     public void beforeRead(AioSession<T> session) {
-        readCount.incrementAndGet();
+        readCount.increment();
     }
 
     @Override
     public void afterWrite(AioSession<T> session, int writeSize) {
-        outFlow.addAndGet(writeSize);
+        outFlow.add(writeSize);
     }
 
     @Override
     public void beforeWrite(AioSession<T> session) {
-        writeCount.incrementAndGet();
+        writeCount.increment();
     }
 }

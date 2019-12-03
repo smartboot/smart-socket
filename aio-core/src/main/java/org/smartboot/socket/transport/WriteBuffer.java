@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 
 /**
  * 包装当前会话分配到的虚拟Buffer,提供流式操作方式
