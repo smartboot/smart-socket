@@ -87,6 +87,11 @@ public class AioQuickServer<T> {
      * accept处理线程
      */
     private Thread acceptThread = null;
+
+    /**
+     * watcher线程
+     */
+    private Thread watcherThread;
     /**
      * accept线程运行状态
      */
@@ -160,36 +165,49 @@ public class AioQuickServer<T> {
             } else {
                 serverSocketChannel.bind(new InetSocketAddress(config.getPort()), 1000);
             }
-            acceptThread = new Thread(new Runnable() {
-                private NetMonitor<T> monitor = config.getMonitor();
 
-                @Override
-                public void run() {
-                    Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
-                    while (acceptRunning) {
-                        try {
-                            final AsynchronousSocketChannel channel = nextFuture.get();
-                            nextFuture = serverSocketChannel.accept();
-                            if (monitor == null || monitor.shouldAccept(channel)) {
-                                createSession(channel);
-                            } else {
-                                config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-                                LOGGER.warn("reject accept channel:{}", channel);
-                                closeChannel(channel);
-                            }
-                        } catch (Exception e) {
-                            LOGGER.error("AcceptThread Exception", e);
-                        }
-                    }
-                }
-            }, "smart-socket:acceptThread");
-            acceptThread.start();
+            startWatcherThread();
+            startAcceptThread();
         } catch (IOException e) {
             shutdown();
             throw e;
         }
         LOGGER.info("smart-socket server started on port {},threadNum:{}", config.getPort(), config.getThreadNum());
         LOGGER.info("smart-socket server config is {}", config);
+    }
+
+    private void startAcceptThread() {
+        acceptThread = new Thread(new Runnable() {
+            private NetMonitor<T> monitor = config.getMonitor();
+
+            @Override
+            public void run() {
+                Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
+                while (acceptRunning) {
+                    try {
+                        final AsynchronousSocketChannel channel = nextFuture.get();
+                        nextFuture = serverSocketChannel.accept();
+                        if (monitor == null || monitor.shouldAccept(channel)) {
+                            createSession(channel);
+                        } else {
+                            config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+                            LOGGER.warn("reject accept channel:{}", channel);
+                            closeChannel(channel);
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("accept Exception", e);
+                    }
+                }
+            }
+        }, "smart-socket:accept");
+        acceptThread.start();
+    }
+
+    private void startWatcherThread() {
+        watcherThread = new Thread(aioReadCompletionHandler, "smart-socket:watcher");
+        watcherThread.setDaemon(true);
+        watcherThread.setPriority(1);
+        watcherThread.start();
     }
 
     /**

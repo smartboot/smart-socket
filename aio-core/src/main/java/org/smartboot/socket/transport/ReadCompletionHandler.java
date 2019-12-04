@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author 三刀
  * @version V1.0.0
  */
-class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
+class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>>, Runnable {
     /**
      * logger
      */
@@ -66,41 +66,6 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     ReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
-        Thread watcherThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (running) {
-                    try {
-                        TcpAioSession<T> aioSession = cacheAioSessionQueue.poll();
-                        if (aioSession != null) {
-                            completed0(aioSession.getLastReadSize(), aioSession);
-                            synchronized (this) {
-                                this.wait(100);
-                            }
-                            continue;
-                        }
-                        if (!lock.tryLock()) {
-                            synchronized (this) {
-                                this.wait(100);
-                            }
-                            continue;
-                        }
-                        try {
-                            needNotify = true;
-                            notEmpty.await();
-                        } finally {
-                            lock.unlock();
-                        }
-
-                    } catch (InterruptedException e) {
-                        LOGGER.error("", e);
-                    }
-                }
-            }
-        }, "smart-socket:watcher");
-        watcherThread.setDaemon(true);
-        watcherThread.setPriority(1);
-        watcherThread.start();
     }
 
 
@@ -198,6 +163,37 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             notEmpty.signal();
         } finally {
             lock.unlock();
+        }
+    }
+
+    @Override
+    public void run() {
+        while (running) {
+            try {
+                TcpAioSession<T> aioSession = cacheAioSessionQueue.poll();
+                if (aioSession != null) {
+                    completed0(aioSession.getLastReadSize(), aioSession);
+                    synchronized (this) {
+                        this.wait(100);
+                    }
+                    continue;
+                }
+                if (!lock.tryLock()) {
+                    synchronized (this) {
+                        this.wait(100);
+                    }
+                    continue;
+                }
+                try {
+                    needNotify = true;
+                    notEmpty.await();
+                } finally {
+                    lock.unlock();
+                }
+
+            } catch (InterruptedException e) {
+                LOGGER.error("", e);
+            }
         }
     }
 }
