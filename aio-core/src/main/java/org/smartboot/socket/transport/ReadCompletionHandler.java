@@ -31,6 +31,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
      * logger
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
+
+    private static final int DEFAULT_LIEF_CYCLE = 16;
     /**
      * 读回调资源信号量
      */
@@ -56,7 +58,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
 
     private boolean running = true;
 
-    private LongAdder longAdder;
+    private LongAdder timeline = new LongAdder();
 
     ReadCompletionHandler() {
     }
@@ -64,13 +66,12 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     ReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
-        longAdder = new LongAdder();
         Thread watcherThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (running) {
                     try {
-                        TcpAioSession aioSession = cacheAioSessionQueue.poll();
+                        TcpAioSession<T> aioSession = cacheAioSessionQueue.poll();
                         if (aioSession != null) {
                             completed0(aioSession.getLastReadSize(), aioSession);
                             synchronized (this) {
@@ -142,15 +143,16 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         if (aioSession == null) {
             return;
         }
-        longAdder.increment();
-        long seq = longAdder.longValue();
-        int count = 16;
+        timeline.increment();
+        long startTime = timeline.longValue();
+        int lifeCycle = DEFAULT_LIEF_CYCLE;
         Thread thread = Thread.currentThread();
         do {
             aioSession.getThreadReference().set(thread);
             completed0(aioSession.getLastReadSize(), aioSession);
             aioSession.getThreadReference().compareAndSet(thread, null);
-        } while ((--count > 0 || seq >= longAdder.longValue()) && (aioSession = cacheAioSessionQueue.poll()) != null);
+        }
+        while ((--lifeCycle > 0 || startTime >= timeline.longValue()) && (aioSession = cacheAioSessionQueue.poll()) != null);
     }
 
     /**
@@ -186,7 +188,10 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         }
     }
 
-    public void shutdown() {
+    /**
+     * 停止内部线程
+     */
+    void shutdown() {
         running = false;
         lock.lock();
         try {
