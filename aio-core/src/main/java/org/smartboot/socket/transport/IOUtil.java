@@ -36,7 +36,7 @@ final class IOUtil {
         try {
             channel.close();
         } catch (IOException e) {
-            LOGGER.debug("close session exception", e);
+            LOGGER.debug("close channel exception", e);
         }
     }
 }
