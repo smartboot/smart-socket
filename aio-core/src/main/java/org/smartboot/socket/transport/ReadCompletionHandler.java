@@ -166,6 +166,9 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         }
     }
 
+    /**
+     * watcher线程,当存在待处理的读回调事件时，或许可以激活空闲状态的IO线程组
+     */
     @Override
     public void run() {
         while (running) {

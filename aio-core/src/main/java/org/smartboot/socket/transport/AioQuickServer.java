@@ -195,7 +195,7 @@ public class AioQuickServer<T> {
                             closeChannel(channel);
                         }
                     } catch (Exception e) {
-                        LOGGER.error("accept Exception", e);
+                        LOGGER.error("accept exception", e);
                     }
                 }
             }
