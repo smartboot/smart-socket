@@ -16,7 +16,6 @@ import org.smartboot.socket.StateMachineEnum;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -32,7 +31,6 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
 
-    private static final int DEFAULT_LIEF_CYCLE = 16;
     /**
      * 读回调资源信号量
      */
@@ -58,8 +56,6 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
 
     private boolean running = true;
 
-    private LongAdder timeline = new LongAdder();
-
     ReadCompletionHandler() {
     }
 
@@ -76,12 +72,17 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             return;
         }
         if (semaphore.tryAcquire()) {
-            Thread thread = Thread.currentThread();
-            aioSession.getThreadReference().set(thread);
-            completed0(result, aioSession);
-            runRingBufferTask();
-            aioSession.getThreadReference().compareAndSet(thread, null);
-            semaphore.release();
+            if (cacheAioSessionQueue.isEmpty()) {
+                aioSession.setReadSemaphore(semaphore);
+                completed0(result, aioSession);
+            } else {
+                Thread thread = Thread.currentThread();
+                aioSession.getThreadReference().set(thread);
+                completed0(result, aioSession);
+                runRingBufferTask();
+                aioSession.getThreadReference().compareAndSet(thread, null);
+                semaphore.release();
+            }
             return;
         }
         //线程资源不足,暂时积压任务
@@ -108,16 +109,13 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         if (aioSession == null) {
             return;
         }
-        timeline.increment();
-        long startTime = timeline.longValue();
-        int lifeCycle = DEFAULT_LIEF_CYCLE;
         Thread thread = Thread.currentThread();
         do {
             aioSession.getThreadReference().set(thread);
             completed0(aioSession.getLastReadSize(), aioSession);
             aioSession.getThreadReference().compareAndSet(thread, null);
         }
-        while ((--lifeCycle > 0 || startTime >= timeline.longValue()) && (aioSession = cacheAioSessionQueue.poll()) != null);
+        while ((aioSession = cacheAioSessionQueue.poll()) != null);
     }
 
     /**

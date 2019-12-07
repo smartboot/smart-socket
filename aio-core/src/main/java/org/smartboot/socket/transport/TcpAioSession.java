@@ -79,6 +79,11 @@ class TcpAioSession<T> extends AioSession<T> {
     private AtomicReference<Thread> threadReference = null;
 
     /**
+     * 读回调信号量
+     */
+    private Semaphore readSemaphore;
+
+    /**
      * 输出信号量,防止并发write导致异常
      */
     private Semaphore semaphore = new Semaphore(1);
@@ -213,6 +218,10 @@ class TcpAioSession<T> extends AioSession<T> {
         this.threadReference = threadReference;
     }
 
+    void setReadSemaphore(Semaphore readSemaphore) {
+        this.readSemaphore = readSemaphore;
+    }
+
     /**
      * 内部方法：触发通道的读操作
      *
@@ -318,6 +327,11 @@ class TcpAioSession<T> extends AioSession<T> {
             } catch (Exception e) {
                 messageProcessor.stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
+        }
+
+        if (readSemaphore != null) {
+            readSemaphore.release();
+            readSemaphore = null;
         }
 
 
