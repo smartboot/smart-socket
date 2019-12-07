@@ -13,7 +13,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 |  1.4  |  [1.4.6](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.4.6) |  《[smart-socket技术小册](https://smartboot.gitee.io/book/)》 |最新稳定版|
 |  1.4  |  1.4.7-SNAPSHOT |  《[smart-socket技术小册](https://smartboot.gitee.io/book/)》 |开发版|
 
-**特色：**
+### Feature
 1. 源码：代码量极少，可读性强。核心代码仅 1600 行左右，工程结构、包路径层次清晰。
 2. 学习：学习门槛低，二次开发只需实现 2 个接口（Protocol、MessageProcessor）。具备通信开发经验的几乎无学习成本，根据作者经验来看大家普遍面临的困难在于"通信协议"的概念理解以及编解码实现，而非通信框架本身。
 3. 使用：通过内存池（bufferPool）技术以及背压（back-pressure）机制，既能充分发挥机器性能，又能保证服务运行稳定性。
