@@ -73,17 +73,15 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
-        if (semaphore == null || aioSession.getThreadReference().get() == Thread.currentThread()) {
+//        if (semaphore == null || aioSession.getThreadReference().get() == Thread.currentThread()) {
+        if (semaphore == null) {
             completed0(result, aioSession);
             return;
         }
         if (semaphore.tryAcquire()) {
             aioSession.setReadSemaphore(semaphore);
             completed0(result, aioSession);
-            if (semaphore.tryAcquire()) {
-                runRingBufferTask();
-                semaphore.release();
-            }
+            runRingBufferTask();
             return;
         }
         //线程资源不足,暂时积压任务
@@ -103,23 +101,32 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
      * 执行异步队列中的任务
      */
     private void runRingBufferTask() {
-        if (cacheAioSessionQueue == null) {
+        if (cacheAioSessionQueue.isEmpty() || !semaphore.tryAcquire()) {
             return;
         }
-        TcpAioSession<T> aioSession = cacheAioSessionQueue.poll();
-        if (aioSession == null) {
+        TcpAioSession<T> curSession = cacheAioSessionQueue.poll();
+        if (curSession == null) {
+            semaphore.release();
             return;
         }
-        Thread thread = Thread.currentThread();
+        TcpAioSession<T> nextSession;
+//        Thread thread = Thread.currentThread();
         longAdder.increment();
         long step = longAdder.sum();
         int i = LIFE_CYCLE;
-        do {
-            aioSession.getThreadReference().set(thread);
-            completed0(aioSession.getLastReadSize(), aioSession);
-            aioSession.getThreadReference().compareAndSet(thread, null);
+        while (curSession != null) {
+            nextSession = (i >> 1 > 0 || step == longAdder.sum())
+                    ? cacheAioSessionQueue.poll() : null;
+            if (nextSession != null) {
+//                curSession.getThreadReference().set(thread);
+                completed0(curSession.getLastReadSize(), curSession);
+//                curSession.getThreadReference().compareAndSet(thread, null);
+            } else {
+                curSession.setReadSemaphore(semaphore);
+                completed0(curSession.getLastReadSize(), curSession);
+            }
+            curSession = nextSession;
         }
-        while ((i >> 1 > 0 || step == longAdder.sum()) && (aioSession = cacheAioSessionQueue.poll()) != null);
     }
 
     /**
