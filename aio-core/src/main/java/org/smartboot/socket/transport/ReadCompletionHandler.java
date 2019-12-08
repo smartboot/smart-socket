@@ -32,6 +32,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
 
+    private static final int LIFE_CYCLE = 1 << 8;
+
     /**
      * 读回调资源信号量
      */
@@ -111,13 +113,13 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         Thread thread = Thread.currentThread();
         longAdder.increment();
         long step = longAdder.sum();
-        int i = 16;
+        int i = LIFE_CYCLE;
         do {
             aioSession.getThreadReference().set(thread);
             completed0(aioSession.getLastReadSize(), aioSession);
             aioSession.getThreadReference().compareAndSet(thread, null);
         }
-        while ((--i > 0 || step >= longAdder.sum()) && (aioSession = cacheAioSessionQueue.poll()) != null);
+        while ((i >> 1 > 0 || step == longAdder.sum()) && (aioSession = cacheAioSessionQueue.poll()) != null);
     }
 
     /**
