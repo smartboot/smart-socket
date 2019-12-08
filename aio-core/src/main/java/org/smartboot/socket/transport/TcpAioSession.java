@@ -76,7 +76,7 @@ class TcpAioSession<T> extends AioSession<T> {
     /**
      * read递归回调标识
      */
-    private AtomicReference<Thread> threadReference = null;
+//    private AtomicReference<Thread> threadReference = null;
 
     /**
      * 读回调信号量
@@ -210,13 +210,13 @@ class TcpAioSession<T> extends AioSession<T> {
         }
     }
 
-    AtomicReference<Thread> getThreadReference() {
-        return threadReference;
-    }
-
-    void setThreadReference(AtomicReference<Thread> threadReference) {
-        this.threadReference = threadReference;
-    }
+//    AtomicReference<Thread> getThreadReference() {
+//        return threadReference;
+//    }
+//
+//    void setThreadReference(AtomicReference<Thread> threadReference) {
+//        this.threadReference = threadReference;
+//    }
 
     void setReadSemaphore(Semaphore readSemaphore) {
         this.readSemaphore = readSemaphore;

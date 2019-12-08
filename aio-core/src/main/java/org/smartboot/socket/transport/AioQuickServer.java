@@ -246,7 +246,7 @@ public class AioQuickServer<T> {
         TcpAioSession<T> session = null;
         try {
             session = aioSessionFunction.apply(channel);
-            session.setThreadReference(new AtomicReference<Thread>());
+//            session.setThreadReference(new AtomicReference<Thread>());
             session.initSession();
         } catch (Exception e1) {
             LOGGER.error(e1.getMessage(), e1);
