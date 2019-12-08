@@ -16,6 +16,7 @@ import org.smartboot.socket.StateMachineEnum;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -56,12 +57,15 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
 
     private boolean running = true;
 
+    private LongAdder longAdder;
+
     ReadCompletionHandler() {
     }
 
     ReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
+        longAdder = new LongAdder();
     }
 
 
@@ -72,15 +76,10 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             return;
         }
         if (semaphore.tryAcquire()) {
-            if (cacheAioSessionQueue.isEmpty()) {
-                aioSession.setReadSemaphore(semaphore);
-                completed0(result, aioSession);
-            } else {
-                Thread thread = Thread.currentThread();
-                aioSession.getThreadReference().set(thread);
-                completed0(result, aioSession);
+            aioSession.setReadSemaphore(semaphore);
+            completed0(result, aioSession);
+            if (semaphore.tryAcquire()) {
                 runRingBufferTask();
-                aioSession.getThreadReference().compareAndSet(thread, null);
                 semaphore.release();
             }
             return;
@@ -110,12 +109,15 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             return;
         }
         Thread thread = Thread.currentThread();
+        longAdder.increment();
+        long step = longAdder.sum();
+        int i = 16;
         do {
             aioSession.getThreadReference().set(thread);
             completed0(aioSession.getLastReadSize(), aioSession);
             aioSession.getThreadReference().compareAndSet(thread, null);
         }
-        while ((aioSession = cacheAioSessionQueue.poll()) != null);
+        while ((--i > 0 || step >= longAdder.sum()) && (aioSession = cacheAioSessionQueue.poll()) != null);
     }
 
     /**
