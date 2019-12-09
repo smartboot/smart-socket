@@ -271,9 +271,7 @@ public class WriteBuffer extends OutputStream {
                     buffer = writeInBuf;
                     writeInBuf = null;
                     buffer.buffer().flip();
-                    if (size == 0) {
-                        fastWrite = fasterWrite.tryAcquire();
-                    }
+                    fastWrite = fasterWrite.tryAcquire();
                     if (!fastWrite) {
                         this.put(buffer);
                         size++;
@@ -288,7 +286,6 @@ public class WriteBuffer extends OutputStream {
                 function.apply(this);
             }
         }
-
     }
 
     @Override
