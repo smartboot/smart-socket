@@ -110,21 +110,16 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             return;
         }
         TcpAioSession<T> nextSession;
-//        Thread thread = Thread.currentThread();
         longAdder.increment();
         long step = longAdder.sum();
         int i = LIFE_CYCLE;
         while (curSession != null) {
             nextSession = (i >> 1 > 0 || step == longAdder.sum())
                     ? cacheAioSessionQueue.poll() : null;
-            if (nextSession != null) {
-//                curSession.getThreadReference().set(thread);
-                completed0(curSession.getLastReadSize(), curSession);
-//                curSession.getThreadReference().compareAndSet(thread, null);
-            } else {
+            if (nextSession == null) {
                 curSession.setReadSemaphore(semaphore);
-                completed0(curSession.getLastReadSize(), curSession);
             }
+            completed0(curSession.getLastReadSize(), curSession);
             curSession = nextSession;
         }
     }
