@@ -16,7 +16,6 @@ import org.smartboot.socket.StateMachineEnum;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -31,8 +30,6 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
      * logger
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
-
-    private static final int LIFE_CYCLE = 1 << 8;
 
     /**
      * 读回调资源信号量
@@ -59,15 +56,12 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
 
     private boolean running = true;
 
-    private LongAdder longAdder;
-
     ReadCompletionHandler() {
     }
 
     ReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
-        longAdder = new LongAdder();
     }
 
 
@@ -110,20 +104,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             return;
         }
         TcpAioSession<T> nextSession;
-        longAdder.increment();
-        long step = longAdder.sum();
-        int i = LIFE_CYCLE;
         while (curSession != null) {
-            if ((i >>= 1) > 0) {
-                nextSession = cacheAioSessionQueue.poll();
-            } else if (step == longAdder.sum()) {
-                i = LIFE_CYCLE;
-                nextSession = cacheAioSessionQueue.poll();
-            } else {
-                nextSession = null;
-            }
-//            nextSession = (i >> 1 > 0 || step == longAdder.sum())
-//                    ? cacheAioSessionQueue.poll() : null;
+            nextSession = cacheAioSessionQueue.poll();
             if (nextSession == null) {
                 curSession.setReadSemaphore(semaphore);
             }
