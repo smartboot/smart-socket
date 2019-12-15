@@ -9,8 +9,6 @@
 package org.smartboot.socket.transport;
 
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
@@ -24,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -54,11 +51,6 @@ import java.util.function.Function;
  * @version V1.0.0
  */
 class TcpAioSession<T> extends AioSession<T> {
-    /**
-     * logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(TcpAioSession.class);
-
 
     /**
      * 底层通信channel对象
@@ -255,7 +247,7 @@ class TcpAioSession<T> extends AioSession<T> {
     public synchronized void close(boolean immediate) {
         //status == SESSION_STATUS_CLOSED说明close方法被重复调用
         if (status == SESSION_STATUS_CLOSED) {
-            LOGGER.warn("ignore, session:{} is closed:", getSessionID());
+            System.out.println("ignore, session:" + getSessionID() + " is closed:");
             return;
         }
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;

@@ -1,8 +1,5 @@
 package org.smartboot.socket.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.channels.AsynchronousSocketChannel;
 
@@ -11,10 +8,6 @@ import java.nio.channels.AsynchronousSocketChannel;
  * @version V1.0 , 2019/12/2
  */
 final class IOUtil {
-    /**
-     * logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(IOUtil.class);
 
     /**
      * @param channel 需要被关闭的通道
@@ -26,17 +19,17 @@ final class IOUtil {
         try {
             channel.shutdownInput();
         } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
+            e.printStackTrace();
         }
         try {
             channel.shutdownOutput();
         } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
+            e.printStackTrace();
         }
         try {
             channel.close();
         } catch (IOException e) {
-            LOGGER.debug("close channel exception", e);
+            e.printStackTrace();
         }
     }
 }

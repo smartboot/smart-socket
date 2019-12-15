@@ -1,8 +1,5 @@
 package org.smartboot.socket.buffer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -17,10 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class BufferPagePool {
 
-    /**
-     * logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferPagePool.class);
     /**
      * 守护线程在空闲时期回收内存资源
      */
@@ -57,7 +50,6 @@ public class BufferPagePool {
         @Override
         public void run() {
             if (enabled) {
-                LOGGER.debug("do buffer pool clean task");
                 for (BufferPage bufferPage : bufferPages) {
                     bufferPage.tryClean();
                 }
@@ -65,7 +57,6 @@ public class BufferPagePool {
                     sharedBufferPage.tryClean();
                 }
             } else {
-                LOGGER.debug("release buffer pool");
                 if (bufferPages != null) {
                     for (BufferPage page : bufferPages) {
                         page.release();

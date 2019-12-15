@@ -8,8 +8,6 @@
 
 package org.smartboot.socket.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 
@@ -26,10 +24,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * @version V1.0.0
  */
 class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>>, Runnable {
-    /**
-     * logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReadCompletionHandler.class);
 
     /**
      * 读回调资源信号量
@@ -138,12 +132,12 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         try {
             aioSession.getServerConfig().getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
         } catch (Exception e) {
-            LOGGER.debug(e.getMessage(), e);
+            e.printStackTrace();
         }
         try {
             aioSession.close(false);
         } catch (Exception e) {
-            LOGGER.debug(e.getMessage(), e);
+            e.printStackTrace();
         }
     }
 
@@ -189,7 +183,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
                 }
 
             } catch (InterruptedException e) {
-                LOGGER.error("", e);
+                e.printStackTrace();
             }
         }
     }

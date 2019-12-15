@@ -14,12 +14,6 @@
         <version>1.4.7-SNAPSHOT</version>
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
-    <dependencies>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-    </dependencies>
     <build>
         <plugins>
             <plugin>

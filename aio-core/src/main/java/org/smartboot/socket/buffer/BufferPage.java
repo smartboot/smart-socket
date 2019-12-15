@@ -1,7 +1,5 @@
 package org.smartboot.socket.buffer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sun.nio.ch.DirectBuffer;
 
 import java.nio.ByteBuffer;
@@ -18,10 +16,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * @version V1.0 , 2018/10/31
  */
 public final class BufferPage {
-    /**
-     * logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferPage.class);
 
     /**
      * 当前空闲的虚拟Buffer
@@ -102,7 +96,6 @@ public final class BufferPage {
         }
         if (virtualBuffer == null) {
             virtualBuffer = new VirtualBuffer(null, allocate0(size, false), 0, 0);
-            LOGGER.warn("bufferPage has no available space: " + size);
         }
         return virtualBuffer;
     }
@@ -290,7 +283,6 @@ public final class BufferPage {
      */
     void release() {
         if (buffer.isDirect()) {
-            LOGGER.debug("clean direct buffer");
             ((DirectBuffer) buffer).cleaner().clean();
         }
     }

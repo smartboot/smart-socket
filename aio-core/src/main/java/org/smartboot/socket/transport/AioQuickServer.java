@@ -8,8 +8,6 @@
 
 package org.smartboot.socket.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
@@ -27,7 +25,6 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -50,10 +47,6 @@ import java.util.function.Function;
  * @version V1.0.0
  */
 public class AioQuickServer<T> {
-    /**
-     * logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(AioQuickServer.class);
     /**
      * Server端服务配置。
      * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
@@ -129,7 +122,7 @@ public class AioQuickServer<T> {
      */
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
-            LOGGER.info(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
+            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
         }
         start0(channel -> new TcpAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage()));
     }
@@ -172,8 +165,8 @@ public class AioQuickServer<T> {
             shutdown();
             throw e;
         }
-        LOGGER.info("smart-socket server started on port {},threadNum:{}", config.getPort(), config.getThreadNum());
-        LOGGER.info("smart-socket server config is {}", config);
+        System.out.println("smart-socket server started on port " + config.getPort() + ",threadNum:" + config.getThreadNum());
+        System.out.println("smart-socket server config is " + config);
     }
 
     private void startAcceptThread() {
@@ -191,11 +184,10 @@ public class AioQuickServer<T> {
                             createSession(channel);
                         } else {
                             config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-                            LOGGER.warn("reject accept channel:{}", channel);
-                            closeChannel(channel);
+                            IOUtil.close(channel);
                         }
                     } catch (Exception e) {
-                        LOGGER.error("accept exception", e);
+                        e.printStackTrace();
                     }
                 }
             }
@@ -248,36 +240,13 @@ public class AioQuickServer<T> {
             session = aioSessionFunction.apply(channel);
 //            session.setThreadReference(new AtomicReference<Thread>());
             session.initSession();
-        } catch (Exception e1) {
-            LOGGER.error(e1.getMessage(), e1);
+        } catch (Exception e) {
+            e.printStackTrace();
             if (session == null) {
-                closeChannel(channel);
+                IOUtil.close(channel);
             } else {
                 session.close();
             }
-        }
-    }
-
-    /**
-     * 关闭服务端通道
-     *
-     * @param channel AsynchronousSocketChannel
-     */
-    private void closeChannel(AsynchronousSocketChannel channel) {
-        try {
-            channel.shutdownInput();
-        } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
-        }
-        try {
-            channel.shutdownOutput();
-        } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
-        }
-        try {
-            channel.close();
-        } catch (IOException e) {
-            LOGGER.debug("close channel exception", e);
         }
     }
 
@@ -292,20 +261,20 @@ public class AioQuickServer<T> {
                 serverSocketChannel = null;
             }
         } catch (IOException e) {
-            LOGGER.warn(e.getMessage(), e);
+            e.printStackTrace();
         }
 
         if (!asynchronousChannelGroup.isTerminated()) {
             try {
                 asynchronousChannelGroup.shutdownNow();
             } catch (IOException e) {
-                LOGGER.error("shutdown exception", e);
+                e.printStackTrace();
             }
         }
         try {
             asynchronousChannelGroup.awaitTermination(3, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            LOGGER.error("shutdown exception", e);
+            e.printStackTrace();
         }
         if (bufferPool != null) {
             bufferPool.release();
