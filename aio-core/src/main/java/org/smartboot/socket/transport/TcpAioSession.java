@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -68,12 +69,7 @@ class TcpAioSession<T> extends AioSession<T> {
     /**
      * read递归回调标识
      */
-//    private AtomicReference<Thread> threadReference = null;
-
-    /**
-     * 读回调信号量
-     */
-    private Semaphore readSemaphore;
+    private AtomicReference<Thread> threadReference = null;
 
     /**
      * 输出信号量,防止并发write导致异常
@@ -202,16 +198,12 @@ class TcpAioSession<T> extends AioSession<T> {
         }
     }
 
-//    AtomicReference<Thread> getThreadReference() {
-//        return threadReference;
-//    }
-//
-//    void setThreadReference(AtomicReference<Thread> threadReference) {
-//        this.threadReference = threadReference;
-//    }
+    AtomicReference<Thread> getThreadReference() {
+        return threadReference;
+    }
 
-    void setReadSemaphore(Semaphore readSemaphore) {
-        this.readSemaphore = readSemaphore;
+    void setThreadReference(AtomicReference<Thread> threadReference) {
+        this.threadReference = threadReference;
     }
 
     /**
@@ -320,12 +312,6 @@ class TcpAioSession<T> extends AioSession<T> {
                 messageProcessor.stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
         }
-
-        if (readSemaphore != null) {
-            readSemaphore.release();
-            readSemaphore = null;
-        }
-
 
         if (eof || status == SESSION_STATUS_CLOSING) {
             close(false);

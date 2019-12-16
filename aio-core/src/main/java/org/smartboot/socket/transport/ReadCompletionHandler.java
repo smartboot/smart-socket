@@ -14,6 +14,7 @@ import org.smartboot.socket.StateMachineEnum;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -29,12 +30,10 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
      * 读回调资源信号量
      */
     private Semaphore semaphore;
-
     /**
      * 读会话缓存队列
      */
     private ConcurrentLinkedQueue<TcpAioSession<T>> cacheAioSessionQueue;
-
     /**
      * 应该可以不用volatile
      */
@@ -47,7 +46,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
      * 非空条件
      */
     private final Condition notEmpty = lock.newCondition();
-
+    private LongAdder longAdder;
     private boolean running = true;
 
     ReadCompletionHandler() {
@@ -56,20 +55,23 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     ReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
+        longAdder = new LongAdder();
     }
 
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
-//        if (semaphore == null || aioSession.getThreadReference().get() == Thread.currentThread()) {
-        if (semaphore == null) {
+        if (semaphore == null || aioSession.getThreadReference().get() == Thread.currentThread()) {
             completed0(result, aioSession);
             return;
         }
         if (semaphore.tryAcquire()) {
-            aioSession.setReadSemaphore(semaphore);
+            Thread thread = Thread.currentThread();
+            aioSession.getThreadReference().set(thread);
             completed0(result, aioSession);
-            runRingBufferTask();
+            aioSession.getThreadReference().compareAndSet(thread, null);
+            runRingBufferTask(thread);
+            semaphore.release();
             return;
         }
         //线程资源不足,暂时积压任务
@@ -88,24 +90,20 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     /**
      * 执行异步队列中的任务
      */
-    private void runRingBufferTask() {
-        if (cacheAioSessionQueue.isEmpty() || !semaphore.tryAcquire()) {
-            return;
-        }
-        TcpAioSession<T> curSession = cacheAioSessionQueue.poll();
-        if (curSession == null) {
-            semaphore.release();
-            return;
-        }
-        TcpAioSession<T> nextSession;
-        while (curSession != null) {
-            nextSession = cacheAioSessionQueue.poll();
-            if (nextSession == null) {
-                curSession.setReadSemaphore(semaphore);
+    private void runRingBufferTask(final Thread thread) {
+        TcpAioSession<T> curSession = null;
+        longAdder.increment();
+        long curStep = longAdder.longValue();
+        int tryCount = 8;
+        while (--tryCount > 0 || curStep >= longAdder.sum()) {
+            if ((curSession = cacheAioSessionQueue.poll()) == null) {
+                break;
             }
+            curSession.getThreadReference().set(thread);
             completed0(curSession.getLastReadSize(), curSession);
-            curSession = nextSession;
+            curSession.getThreadReference().compareAndSet(thread, null);
         }
+        longAdder.decrement();
     }
 
     /**

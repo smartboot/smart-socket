@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -238,7 +239,7 @@ public class AioQuickServer<T> {
         TcpAioSession<T> session = null;
         try {
             session = aioSessionFunction.apply(channel);
-//            session.setThreadReference(new AtomicReference<Thread>());
+            session.setThreadReference(new AtomicReference<Thread>());
             session.initSession();
         } catch (Exception e) {
             e.printStackTrace();
