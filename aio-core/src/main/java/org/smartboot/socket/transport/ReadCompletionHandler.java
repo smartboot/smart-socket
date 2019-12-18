@@ -12,11 +12,6 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.LongAdder;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 读写事件回调处理类
@@ -24,95 +19,15 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author 三刀
  * @version V1.0.0
  */
-class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>>, Runnable {
-
-    /**
-     * 读回调资源信号量
-     */
-    private Semaphore semaphore;
-    /**
-     * 读会话缓存队列
-     */
-    private ConcurrentLinkedQueue<TcpAioSession<T>> cacheAioSessionQueue;
-    /**
-     * 应该可以不用volatile
-     */
-    private boolean needNotify = true;
-    /**
-     * 同步锁
-     */
-    private ReentrantLock lock = new ReentrantLock();
-    /**
-     * 非空条件
-     */
-    private final Condition notEmpty = lock.newCondition();
-    private LongAdder longAdder;
-    private boolean running = true;
-
-    ReadCompletionHandler() {
-    }
-
-    ReadCompletionHandler(final Semaphore semaphore) {
-        this.semaphore = semaphore;
-        this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
-        longAdder = new LongAdder();
-    }
-
-
-    @Override
-    public void completed(final Integer result, final TcpAioSession<T> aioSession) {
-        if (semaphore == null || aioSession.getThreadReference().get() == Thread.currentThread()) {
-            completed0(result, aioSession);
-            return;
-        }
-        if (semaphore.tryAcquire()) {
-            Thread thread = Thread.currentThread();
-            aioSession.getThreadReference().set(thread);
-            completed0(result, aioSession);
-            aioSession.getThreadReference().compareAndSet(thread, null);
-            runRingBufferTask(thread);
-            semaphore.release();
-            return;
-        }
-        //线程资源不足,暂时积压任务
-        aioSession.setLastReadSize(result);
-        cacheAioSessionQueue.offer(aioSession);
-        if (needNotify && lock.tryLock()) {
-            try {
-                needNotify = false;
-                notEmpty.signal();
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
-
-    /**
-     * 执行异步队列中的任务
-     */
-    private void runRingBufferTask(final Thread thread) {
-        TcpAioSession<T> curSession = null;
-        longAdder.increment();
-        long curStep = longAdder.longValue();
-        int tryCount = 8;
-        while (--tryCount > 0 || curStep >= longAdder.sum()) {
-            if ((curSession = cacheAioSessionQueue.poll()) == null) {
-                break;
-            }
-            curSession.getThreadReference().set(thread);
-            completed0(curSession.getLastReadSize(), curSession);
-            curSession.getThreadReference().compareAndSet(thread, null);
-        }
-        longAdder.decrement();
-    }
-
+class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
     /**
      * 处理消息读回调事件
      *
      * @param result     已读消息字节数
      * @param aioSession 当前触发读回调的会话
      */
-    private void completed0(final Integer result, final TcpAioSession<T> aioSession) {
+    @Override
+    public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         try {
             // 接收到的消息进行预处理
             NetMonitor<T> monitor = aioSession.getServerConfig().getMonitor();
@@ -125,8 +40,9 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         }
     }
 
+
     @Override
-    public void failed(Throwable exc, TcpAioSession<T> aioSession) {
+    public final void failed(Throwable exc, TcpAioSession<T> aioSession) {
         try {
             aioSession.getServerConfig().getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
         } catch (Exception e) {
@@ -139,50 +55,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
         }
     }
 
-    /**
-     * 停止内部线程
-     */
-    void shutdown() {
-        running = false;
-        lock.lock();
-        try {
-            notEmpty.signal();
-        } finally {
-            lock.unlock();
-        }
+    public void shutdown() {
+
     }
 
-    /**
-     * watcher线程,当存在待处理的读回调事件时，或许可以激活空闲状态的IO线程组
-     */
-    @Override
-    public void run() {
-        while (running) {
-            try {
-                TcpAioSession<T> aioSession = cacheAioSessionQueue.poll();
-                if (aioSession != null) {
-                    completed0(aioSession.getLastReadSize(), aioSession);
-                    synchronized (this) {
-                        this.wait(100);
-                    }
-                    continue;
-                }
-                if (!lock.tryLock()) {
-                    synchronized (this) {
-                        this.wait(100);
-                    }
-                    continue;
-                }
-                try {
-                    needNotify = true;
-                    notEmpty.await();
-                } finally {
-                    lock.unlock();
-                }
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 }

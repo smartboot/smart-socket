@@ -22,8 +22,11 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.security.InvalidParameterException;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -83,10 +86,6 @@ public class AioQuickServer<T> {
     private Thread acceptThread = null;
 
     /**
-     * watcher线程
-     */
-    private Thread watcherThread;
-    /**
      * accept线程运行状态
      */
     private volatile boolean acceptRunning = true;
@@ -138,14 +137,21 @@ public class AioQuickServer<T> {
         checkAndResetConfig();
 
         try {
-
-            aioReadCompletionHandler = new ReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
-
             this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolSharedPageSize(), config.isBufferPoolDirect());
             this.aioSessionFunction = aioSessionFunction;
 
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
+            if (Runtime.getRuntime().availableProcessors() >= 16) {
+                ExecutorService executorService = new ThreadPoolExecutor(config.getThreadNum(), config.getThreadNum(), 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+                        r -> bufferPool.newThread(r, "smart-socket:Worker-"));
+                aioReadCompletionHandler = new MultiCPUCompletionHandler<>(executorService);
+                asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors() >> 1, r -> bufferPool.newThread(r, "smart-socket:IO-"));
+            } else {
+                aioReadCompletionHandler = new LittleCPUCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
+                asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
+            }
+
+
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
             //set socket options
             if (config.getSocketOptions() != null) {
@@ -160,7 +166,6 @@ public class AioQuickServer<T> {
                 serverSocketChannel.bind(new InetSocketAddress(config.getPort()), 1000);
             }
 
-            startWatcherThread();
             startAcceptThread();
         } catch (IOException e) {
             shutdown();
@@ -194,13 +199,6 @@ public class AioQuickServer<T> {
             }
         }, "smart-socket:accept");
         acceptThread.start();
-    }
-
-    private void startWatcherThread() {
-        watcherThread = new Thread(aioReadCompletionHandler, "smart-socket:watcher");
-        watcherThread.setDaemon(true);
-        watcherThread.setPriority(1);
-        watcherThread.start();
     }
 
     /**
