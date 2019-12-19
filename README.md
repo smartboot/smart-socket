@@ -5,6 +5,8 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 
 **官方QQ群：** 172299083🈵 、**830015805**（入群条件：***Star本项目***，非技术人员请勿扰，感谢）
 
+# 一款国产Servlet容器正在紧张研发中，如果您熟悉Servlet规范，对Tomcat、Undertow等源码有一定的了解，欢迎加入一起研发 [项目抢先看](https://gitee.com/smartboot/smart-http/tree/smart-servlet/)#
+
 ### 版本说明
 
 |  系列  | 版本   |  文档  | 说明 |
