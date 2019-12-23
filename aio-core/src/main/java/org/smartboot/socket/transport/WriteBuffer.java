@@ -342,7 +342,7 @@ public class WriteBuffer extends OutputStream {
                     return;
                 }
             }
-            if (writeOutBuf == null) {
+            while (writeOutBuf == null) {
                 if (count > 0) {
                     writeOutBuf = items[takeIndex];
                     items[takeIndex] = null;
