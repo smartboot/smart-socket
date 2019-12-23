@@ -62,6 +62,12 @@ public class WriteBuffer extends OutputStream {
      * 暂存当前业务正在输出的数据,输出完毕后会存放到items中
      */
     private VirtualBuffer writeInBuf;
+
+    /**
+     * 暂存当前待输出的数据
+     */
+    private volatile VirtualBuffer writeOutBuf;
+
     /**
      * 当前WriteBuffer是否已关闭
      */
@@ -261,7 +267,7 @@ public class WriteBuffer extends OutputStream {
             throw new RuntimeException("OutputStream has closed");
         }
         int size = this.count;
-        if (size > 0) {
+        if (size > 0 || writeOutBuf != null) {
             function.apply(this);
         } else if (writeInBuf != null && writeInBuf.buffer().position() > 0 && lock.tryLock()) {
             boolean fastWrite = false;
@@ -336,6 +342,22 @@ public class WriteBuffer extends OutputStream {
                     return;
                 }
             }
+            if (writeOutBuf == null) {
+                if (count > 0) {
+                    writeOutBuf = items[takeIndex];
+                    items[takeIndex] = null;
+                    if (++takeIndex == items.length) {
+                        takeIndex = 0;
+                    }
+                    if (count-- == items.length) {
+                        notFull.signal();
+                    }
+                } else {
+                    writeOutBuf = virtualBuffer;
+                    return;
+                }
+            }
+
             items[putIndex] = virtualBuffer;
             if (++putIndex == items.length) {
                 putIndex = 0;
@@ -352,8 +374,18 @@ public class WriteBuffer extends OutputStream {
      * @return 待输出的VirtualBuffer
      */
     VirtualBuffer poll() {
+        if (writeOutBuf != null) {
+            VirtualBuffer virtualBuffer = writeOutBuf;
+            writeOutBuf = null;
+            return virtualBuffer;
+        }
         lock.lock();
         try {
+            if (writeOutBuf != null) {
+                VirtualBuffer virtualBuffer = writeOutBuf;
+                writeOutBuf = null;
+                return virtualBuffer;
+            }
             if (count == 0) {
                 return null;
             }
@@ -364,6 +396,14 @@ public class WriteBuffer extends OutputStream {
             }
             if (count-- == items.length) {
                 notFull.signal();
+            }
+            if (count > 0) {
+                writeOutBuf = items[takeIndex];
+                items[takeIndex] = null;
+                if (++takeIndex == items.length) {
+                    takeIndex = 0;
+                }
+                count--;
             }
             return x;
         } finally {
