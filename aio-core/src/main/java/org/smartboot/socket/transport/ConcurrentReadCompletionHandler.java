@@ -29,7 +29,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
     /**
      * 读会话缓存队列
      */
-    private ConcurrentLinkedQueue<TcpAioSession<T>> cacheAioSessionQueue;
+    private ConcurrentLinkedQueue<TcpAioSession<T>> cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
     /**
      * 应该可以不用volatile
      */
@@ -47,7 +47,6 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
-        this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
         Thread watcherThread = new Thread(this, "smart-socket:watcher");
         watcherThread.setDaemon(true);
         watcherThread.setPriority(1);
