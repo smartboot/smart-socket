@@ -48,6 +48,7 @@ public class StringServer {
         server.setReadBufferSize(1024 * 1024)
                 .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
                 .setBufferPoolPageSize(1024 * 1024 * 16)
+                .setWriteQueueCapacity(512)
                 .setBufferPoolChunkSize(4096);
         processor.addPlugin(new BufferPageMonitorPlugin(server, 6));
         processor.addPlugin(new MonitorPlugin(5));

@@ -20,7 +20,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author 三刀
  * @version V1.0.0
  */
-final class LittleCPUCompletionHandler<T> extends ReadCompletionHandler<T> implements Runnable {
+final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> implements Runnable {
 
     /**
      * 读回调资源信号量
@@ -45,7 +45,7 @@ final class LittleCPUCompletionHandler<T> extends ReadCompletionHandler<T> imple
     private AtomicLong cursor = new AtomicLong();
     private boolean running = true;
 
-    LittleCPUCompletionHandler(final Semaphore semaphore) {
+    ConcurrentReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
         this.cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
         Thread watcherThread = new Thread(this, "smart-socket:watcher");
@@ -58,20 +58,21 @@ final class LittleCPUCompletionHandler<T> extends ReadCompletionHandler<T> imple
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         if (aioSession.getThreadReference().get() == Thread.currentThread()) {
+            TcpAioSession<T> nextSession = cacheAioSessionQueue.poll();
+            if (nextSession != null) {
+                this.completed0(nextSession);
+            }
             super.completed(result, aioSession);
             return;
         }
+        aioSession.setLastReadSize(result);
         if (semaphore.tryAcquire()) {
-            Thread thread = Thread.currentThread();
-            aioSession.getThreadReference().set(thread);
-            super.completed(result, aioSession);
-            aioSession.getThreadReference().compareAndSet(thread, null);
-            runRingBufferTask(thread);
+            this.completed0(aioSession);
+            runRingBufferTask();
             semaphore.release();
             return;
         }
         //线程资源不足,暂时积压任务
-        aioSession.setLastReadSize(result);
         cacheAioSessionQueue.offer(aioSession);
         if (needNotify && lock.tryLock()) {
             try {
@@ -86,19 +87,23 @@ final class LittleCPUCompletionHandler<T> extends ReadCompletionHandler<T> imple
     /**
      * 执行异步队列中的任务
      */
-    private void runRingBufferTask(final Thread thread) {
-        TcpAioSession<T> curSession = null;
+    private void runRingBufferTask() {
+        TcpAioSession<T> session = null;
         long curStep = cursor.incrementAndGet();
         int tryCount = 8;
         while (--tryCount > 0 || curStep >= cursor.get()) {
-            if ((curSession = cacheAioSessionQueue.poll()) == null) {
+            if ((session = cacheAioSessionQueue.poll()) == null) {
                 break;
             }
-            curSession.getThreadReference().set(thread);
-            super.completed(curSession.getLastReadSize(), curSession);
-            curSession.getThreadReference().compareAndSet(thread, null);
+            this.completed0(session);
         }
         cursor.decrementAndGet();
+    }
+
+    private void completed0(TcpAioSession<T> session) {
+        session.getThreadReference().set(Thread.currentThread());
+        super.completed(session.getLastReadSize(), session);
+        session.getThreadReference().compareAndSet(Thread.currentThread(), null);
     }
 
     /**

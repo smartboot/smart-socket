@@ -125,26 +125,6 @@ class TcpAioSession<T> extends AioSession<T> {
     };
 
     /**
-     * 数据快速输出
-     */
-    private FasterWrite fasterWrite = new FasterWrite() {
-        @Override
-        public boolean tryAcquire() {
-            if (writing) {
-                return false;
-            }
-            return semaphore.tryAcquire();
-        }
-
-        @Override
-        public void write(VirtualBuffer buffer) {
-            writing = true;
-            writeBuffer = buffer;
-            continueWrite(writeBuffer);
-        }
-    };
-
-    /**
      * @param channel
      * @param config
      * @param readCompletionHandler
@@ -158,7 +138,7 @@ class TcpAioSession<T> extends AioSession<T> {
         this.ioServerConfig = config;
 
         this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
-        byteBuf = new WriteBuffer(bufferPage, flushFunction, ioServerConfig, fasterWrite);
+        byteBuf = new WriteBuffer(bufferPage, flushFunction, ioServerConfig);
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }

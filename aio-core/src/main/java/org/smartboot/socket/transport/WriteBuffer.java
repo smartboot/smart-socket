@@ -76,10 +76,6 @@ public class WriteBuffer extends OutputStream {
      * 辅助8字节以内输出的缓存组数
      */
     private byte[] cacheByte;
-    /**
-     * 数据快速输出
-     */
-    private FasterWrite fasterWrite;
 
     /**
      * 默认内存块大小
@@ -87,11 +83,10 @@ public class WriteBuffer extends OutputStream {
     private int chunkSize;
 
 
-    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, IoServerConfig config, FasterWrite fasterWrite) {
+    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, IoServerConfig config) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
         this.items = new VirtualBuffer[config.getWriteQueueCapacity()];
-        this.fasterWrite = fasterWrite == null ? new FasterWrite() : fasterWrite;
         this.chunkSize = config.getBufferPoolChunkSize();
     }
 
@@ -270,25 +265,19 @@ public class WriteBuffer extends OutputStream {
         if (size > 0 || writeOutBuf != null) {
             function.apply(this);
         } else if (writeInBuf != null && writeInBuf.buffer().position() > 0 && lock.tryLock()) {
-            boolean fastWrite = false;
             VirtualBuffer buffer = null;
             try {
                 if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
                     buffer = writeInBuf;
                     writeInBuf = null;
                     buffer.buffer().flip();
-                    fastWrite = fasterWrite.tryAcquire();
-                    if (!fastWrite) {
-                        this.put(buffer);
-                        size++;
-                    }
+                    this.put(buffer);
+                    size++;
                 }
             } finally {
                 lock.unlock();
             }
-            if (fastWrite) {
-                fasterWrite.write(buffer);
-            } else if (size > 0) {
+            if (size > 0) {
                 function.apply(this);
             }
         }
@@ -349,9 +338,7 @@ public class WriteBuffer extends OutputStream {
                     if (++takeIndex == items.length) {
                         takeIndex = 0;
                     }
-                    if (count-- == items.length) {
-                        notFull.signal();
-                    }
+                    count--;
                 } else {
                     writeOutBuf = virtualBuffer;
                     return;

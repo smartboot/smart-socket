@@ -22,11 +22,8 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.security.InvalidParameterException;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -141,15 +138,8 @@ public class AioQuickServer<T> {
             this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolSharedPageSize(), config.isBufferPoolDirect());
             this.aioSessionFunction = aioSessionFunction;
 
-//            if (Runtime.getRuntime().availableProcessors() >= 16) {
-//                ExecutorService executorService = new ThreadPoolExecutor(config.getThreadNum(), config.getThreadNum(), 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-//                        r -> bufferPool.newThread(r, "smart-socket:Worker-"));
-//                aioReadCompletionHandler = new MultiCPUCompletionHandler<>(executorService);
-//                asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors() >> 1, r -> bufferPool.newThread(r, "smart-socket:IO-"));
-//            } else {
-                aioReadCompletionHandler = new LittleCPUCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
-                asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
-//            }
+            aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
 
 
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
