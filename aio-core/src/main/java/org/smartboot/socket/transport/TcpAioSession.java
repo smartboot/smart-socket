@@ -319,7 +319,7 @@ class TcpAioSession<T> extends AioSession<T> {
 
         //读缓冲区已满
         if (!readBuffer.hasRemaining()) {
-            RuntimeException exception = new RuntimeException("readBuffer has no remaining");
+            RuntimeException exception = new RuntimeException("readBuffer overflow");
             messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, exception);
             throw exception;
         }
