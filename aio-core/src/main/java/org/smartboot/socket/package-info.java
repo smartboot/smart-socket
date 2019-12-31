@@ -1,3 +1,12 @@
+/*******************************************************************************
+ * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: package-info.java
+ * Date: 2019-12-31
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
+
 /**
  * 定义用户进行通信开发所需实现的接口。
  *

@@ -1,3 +1,12 @@
+/*******************************************************************************
+ * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: FixedLengthProtocol.java
+ * Date: 2019-12-31
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
+
 package com.smartboot.socket.decoder;
 
 import org.smartboot.socket.Protocol;

@@ -1,4 +1,13 @@
 <?xml version="1.0"?>
+<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ~ Copyright (c) 2017-2019, org.smartboot. All rights reserved.
+  ~ project name: smart-socket
+  ~ file name: pom.xml
+  ~ Date: 2019-12-31
+  ~ Author: sandao (zhengjunweimail@163.com)
+  ~
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
 <project
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
         xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">

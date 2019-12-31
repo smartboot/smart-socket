@@ -1,10 +1,11 @@
-/*
- * Copyright (c) 2018, org.smartboot. All rights reserved.
+/*******************************************************************************
+ * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: SSLService.java
- * Date: 2018-01-01
- * Author: sandao
- */
+ * file name: SslService.java
+ * Date: 2019-12-31
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
 
 package org.smartboot.socket.extension.ssl;
 
