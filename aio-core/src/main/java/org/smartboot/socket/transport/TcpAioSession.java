@@ -226,7 +226,6 @@ class TcpAioSession<T> extends AioSession<T> {
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
             byteBuf.close();
-            byteBuf = null;
             readBuffer.clean();
             readBuffer = null;
             if (writeBuffer != null) {
@@ -303,7 +302,7 @@ class TcpAioSession<T> extends AioSession<T> {
             return;
         }
 
-        if (!writing && byteBuf != null) {
+        if (!writing) {
             byteBuf.flush();
         }
 
