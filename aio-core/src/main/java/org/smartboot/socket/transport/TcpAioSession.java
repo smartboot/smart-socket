@@ -96,10 +96,7 @@ class TcpAioSession<T> extends AioSession<T> {
      * 输出流
      */
     private WriteBuffer byteBuf;
-    /**
-     * 是否处于数据输出中
-     */
-    private boolean writing = false;
+
     /**
      * 最近一次读取到的字节数
      */
@@ -118,7 +115,6 @@ class TcpAioSession<T> extends AioSession<T> {
             if (writeBuffer == null) {
                 semaphore.release();
             } else {
-                writing = true;
                 continueWrite(writeBuffer);
             }
             return null;
@@ -168,7 +164,6 @@ class TcpAioSession<T> extends AioSession<T> {
             continueWrite(writeBuffer);
             return;
         }
-        writing = false;
         semaphore.release();
         //此时可能是Closing或Closed状态
         if (status != SESSION_STATUS_ENABLED) {
@@ -302,7 +297,7 @@ class TcpAioSession<T> extends AioSession<T> {
             return;
         }
 
-        if (!writing) {
+        if (semaphore.availablePermits() > 0) {
             byteBuf.flush();
         }
 
