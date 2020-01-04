@@ -78,15 +78,6 @@ public class AioQuickServer<T> {
      * asynchronousChannelGroup
      */
     private AsynchronousChannelGroup asynchronousChannelGroup;
-    /**
-     * accept处理线程
-     */
-    private Thread acceptThread = null;
-
-    /**
-     * accept线程运行状态
-     */
-    private volatile boolean acceptRunning = true;
 
     /**
      * 设置服务端启动必要参数配置
@@ -266,7 +257,6 @@ public class AioQuickServer<T> {
      * 停止服务端
      */
     public final void shutdown() {
-        acceptRunning = false;
         try {
             if (serverSocketChannel != null) {
                 serverSocketChannel.close();
