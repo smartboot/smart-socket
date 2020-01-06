@@ -35,7 +35,10 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             if (monitor != null) {
                 monitor.afterRead(aioSession, result);
             }
-            aioSession.readFromChannel(result == -1);
+            //触发读回调
+            aioSession.readCompleted(result == -1);
+            //继续读取下一批数据
+            aioSession.continueRead();
         } catch (Exception e) {
             failed(e, aioSession);
         }

@@ -29,7 +29,7 @@ class WriteCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSess
             if (monitor != null) {
                 monitor.afterWrite(aioSession, result);
             }
-            aioSession.writeToChannel();
+            aioSession.writeCompleted();
         } catch (Exception e) {
             failed(e, aioSession);
         }

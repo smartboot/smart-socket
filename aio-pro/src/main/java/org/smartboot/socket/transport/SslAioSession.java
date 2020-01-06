@@ -57,13 +57,13 @@ class SslAioSession<T> extends TcpAioSession<T> {
     }
 
     @Override
-    void writeToChannel() {
+    void writeCompleted() {
         checkInitialized();
         if (netWriteBuffer != null && netWriteBuffer.hasRemaining()) {
             writeToChannel0(netWriteBuffer);
             return;
         }
-        super.writeToChannel();
+        super.writeCompleted();
     }
 
 
@@ -109,10 +109,10 @@ class SslAioSession<T> extends TcpAioSession<T> {
     }
 
     @Override
-    void readFromChannel(boolean eof) {
+    void readCompleted(boolean eof) {
         checkInitialized();
         doUnWrap();
-        super.readFromChannel(eof);
+        super.readCompleted(eof);
     }
 
     @Override

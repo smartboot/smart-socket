@@ -67,10 +67,6 @@ class TcpAioSession<T> extends AioSession<T> {
      * 写缓冲
      */
     protected VirtualBuffer writeBuffer;
-    /**
-     * read递归回调标识
-     */
-    private AtomicReference<Thread> threadReference = null;
 
     /**
      * 输出信号量,防止并发write导致异常
@@ -152,7 +148,7 @@ class TcpAioSession<T> extends AioSession<T> {
      * 触发AIO的写操作,
      * <p>需要调用控制同步</p>
      */
-    void writeToChannel() {
+    void writeCompleted() {
         if (writeBuffer == null) {
             writeBuffer = byteBuf.poll();
         } else if (!writeBuffer.buffer().hasRemaining()) {
@@ -172,14 +168,6 @@ class TcpAioSession<T> extends AioSession<T> {
             //也许此时有新的消息通过write方法添加到writeCacheQueue中
             byteBuf.flush();
         }
-    }
-
-    AtomicReference<Thread> getThreadReference() {
-        return threadReference;
-    }
-
-    void setThreadReference(AtomicReference<Thread> threadReference) {
-        this.threadReference = threadReference;
     }
 
     /**
@@ -261,7 +249,7 @@ class TcpAioSession<T> extends AioSession<T> {
      *
      * @param eof 输入流是否已关闭
      */
-    void readFromChannel(boolean eof) {
+    void readCompleted(boolean eof) {
         if (status == SESSION_STATUS_CLOSED) {
             return;
         }
@@ -319,13 +307,16 @@ class TcpAioSession<T> extends AioSession<T> {
             throw exception;
         }
 
-        continueRead();
+//        continueRead();
     }
 
     /**
      * 触发读操作
      */
     protected void continueRead() {
+        if (isInvalid()) {
+            return;
+        }
         NetMonitor<T> monitor = getServerConfig().getMonitor();
         if (monitor != null) {
             monitor.beforeRead(this);

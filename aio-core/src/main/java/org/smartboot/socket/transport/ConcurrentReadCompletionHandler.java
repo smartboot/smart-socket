@@ -9,6 +9,10 @@
 
 package org.smartboot.socket.transport;
 
+import org.smartboot.socket.NetMonitor;
+
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
@@ -45,6 +49,13 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
     private final Condition notEmpty = lock.newCondition();
     private AtomicLong cursor = new AtomicLong();
     private boolean running = true;
+    private ThreadLocal<List<TcpAioSession<T>>> sessionsThreadLocal = new ThreadLocal<List<TcpAioSession<T>>>() {
+        @Override
+        protected List<TcpAioSession<T>> initialValue() {
+            return new LinkedList<>();
+        }
+    };
+
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
@@ -57,19 +68,38 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
-        if (aioSession.getThreadReference().get() == Thread.currentThread()) {
-            TcpAioSession<T> nextSession = cacheAioSessionQueue.poll();
-            if (nextSession != null) {
-                this.completed0(nextSession);
-            }
-            super.completed(result, aioSession);
-            return;
-        }
         aioSession.setLastReadSize(result);
         if (semaphore.tryAcquire()) {
             this.completed0(aioSession);
-            runRingBufferTask();
+            //执行缓存中的任务
+            TcpAioSession<T> cacheSession = null;
+            long curStep = cursor.incrementAndGet();
+            int tryCount = 8;
+            List<TcpAioSession<T>> sessionList = sessionsThreadLocal.get();
+            while (--tryCount > 0 || curStep >= cursor.get()) {
+                if ((cacheSession = cacheAioSessionQueue.poll()) == null) {
+                    break;
+                }
+                this.completed0(cacheSession);
+                if (!cacheSession.isInvalid()) {
+                    sessionList.add(cacheSession);
+                }
+            }
+            cursor.decrementAndGet();
             semaphore.release();
+            try {
+                aioSession.continueRead();
+            } catch (Exception e) {
+                failed(e, cacheSession);
+            }
+            while (sessionList.size() > 0) {
+                cacheSession = sessionList.remove(0);
+                try {
+                    cacheSession.continueRead();
+                } catch (Exception e) {
+                    failed(e, cacheSession);
+                }
+            }
             return;
         }
         //线程资源不足,暂时积压任务
@@ -84,26 +114,19 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
         }
     }
 
-    /**
-     * 执行异步队列中的任务
-     */
-    private void runRingBufferTask() {
-        TcpAioSession<T> session = null;
-        long curStep = cursor.incrementAndGet();
-        int tryCount = 8;
-        while (--tryCount > 0 || curStep >= cursor.get()) {
-            if ((session = cacheAioSessionQueue.poll()) == null) {
-                break;
-            }
-            this.completed0(session);
-        }
-        cursor.decrementAndGet();
-    }
 
     private void completed0(TcpAioSession<T> session) {
-        session.getThreadReference().set(Thread.currentThread());
-        super.completed(session.getLastReadSize(), session);
-        session.getThreadReference().compareAndSet(Thread.currentThread(), null);
+        try {
+            // 接收到的消息进行预处理
+            NetMonitor<T> monitor = session.getServerConfig().getMonitor();
+            if (monitor != null) {
+                monitor.afterRead(session, session.getLastReadSize());
+            }
+            //触发读回调
+            session.readCompleted(session.getLastReadSize() == -1);
+        } catch (Exception e) {
+            failed(e, session);
+        }
     }
 
     /**
