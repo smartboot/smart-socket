@@ -67,18 +67,18 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             this.completed0(aioSession);
             //执行缓存中的任务
             TcpAioSession<T> cacheSession = null;
-            long curStep = cursor.incrementAndGet();
-            int tryCount = 8;
-            while (--tryCount > 0 || curStep >= cursor.get()) {
-                if ((cacheSession = cacheAioSessionQueue.poll()) == null) {
-                    break;
-                }
-                this.completed0(cacheSession);
-                if (!cacheSession.isInvalid()) {
+            if (!cacheAioSessionQueue.isEmpty()) {
+                long curStep = cursor.incrementAndGet();
+                int tryCount = 8;
+                while (--tryCount > 0 || curStep >= cursor.get()) {
+                    if ((cacheSession = cacheAioSessionQueue.poll()) == null) {
+                        break;
+                    }
+                    this.completed0(cacheSession);
                     willReadAioSessionQueue.offer(cacheSession);
                 }
+                cursor.decrementAndGet();
             }
-            cursor.decrementAndGet();
             semaphore.release();
             try {
                 aioSession.continueRead();
