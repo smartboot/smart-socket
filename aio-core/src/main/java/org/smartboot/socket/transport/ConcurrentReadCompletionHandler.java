@@ -11,8 +11,6 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.NetMonitor;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,6 +33,8 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
      * 读会话缓存队列
      */
     private ConcurrentLinkedQueue<TcpAioSession<T>> cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
+
+    private ConcurrentLinkedQueue<TcpAioSession<T>> willReadAioSessionQueue = new ConcurrentLinkedQueue<>();
     /**
      * 应该可以不用volatile
      */
@@ -49,12 +49,6 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
     private final Condition notEmpty = lock.newCondition();
     private AtomicLong cursor = new AtomicLong();
     private boolean running = true;
-    private ThreadLocal<List<TcpAioSession<T>>> sessionsThreadLocal = new ThreadLocal<List<TcpAioSession<T>>>() {
-        @Override
-        protected List<TcpAioSession<T>> initialValue() {
-            return new LinkedList<>();
-        }
-    };
 
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
@@ -75,14 +69,13 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             TcpAioSession<T> cacheSession = null;
             long curStep = cursor.incrementAndGet();
             int tryCount = 8;
-            List<TcpAioSession<T>> sessionList = sessionsThreadLocal.get();
             while (--tryCount > 0 || curStep >= cursor.get()) {
                 if ((cacheSession = cacheAioSessionQueue.poll()) == null) {
                     break;
                 }
                 this.completed0(cacheSession);
                 if (!cacheSession.isInvalid()) {
-                    sessionList.add(cacheSession);
+                    willReadAioSessionQueue.offer(cacheSession);
                 }
             }
             cursor.decrementAndGet();
@@ -90,10 +83,9 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             try {
                 aioSession.continueRead();
             } catch (Exception e) {
-                failed(e, cacheSession);
+                failed(e, aioSession);
             }
-            while (sessionList.size() > 0) {
-                cacheSession = sessionList.remove(0);
+            while ((cacheSession = willReadAioSessionQueue.poll()) != null) {
                 try {
                     cacheSession.continueRead();
                 } catch (Exception e) {
