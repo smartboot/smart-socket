@@ -64,8 +64,9 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         aioSession.setLastReadSize(result);
         if (semaphore.tryAcquire()) {
+            //处理当前读回调任务
             this.completed0(aioSession);
-            //执行缓存中的任务
+            //执行缓存中的读回调任务
             TcpAioSession<T> cacheSession = null;
             if (!cacheAioSessionQueue.isEmpty()) {
                 long curStep = cursor.incrementAndGet();
@@ -80,6 +81,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
                 cursor.decrementAndGet();
             }
             semaphore.release();
+            //注册下一轮读事件
             try {
                 aioSession.continueRead();
             } catch (Exception e) {
