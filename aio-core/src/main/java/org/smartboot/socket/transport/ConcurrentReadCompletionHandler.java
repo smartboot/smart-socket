@@ -11,9 +11,9 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.NetMonitor;
 
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -34,7 +34,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
      */
     private ConcurrentLinkedQueue<TcpAioSession<T>> cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
 
-    private ConcurrentLinkedQueue<TcpAioSession<T>> willReadAioSessionQueue = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedDeque<TcpAioSession<T>> willReadAioSessionQueue = new ConcurrentLinkedDeque<>();
     /**
      * 应该可以不用volatile
      */
@@ -47,9 +47,9 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
      * 非空条件
      */
     private final Condition notEmpty = lock.newCondition();
-    private AtomicLong cursor = new AtomicLong();
     private boolean running = true;
 
+    private ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
@@ -62,31 +62,24 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
-        aioSession.setLastReadSize(result);
+        if (threadLocal.get() == null) {
+            threadLocal.set(this);
+        } else {
+            super.completed(result, aioSession);
+            return;
+        }
         if (semaphore.tryAcquire()) {
             //处理当前读回调任务
-            this.completed0(aioSession);
+            super.completed(result, aioSession);
             //执行缓存中的读回调任务
             TcpAioSession<T> cacheSession = null;
-            if (!cacheAioSessionQueue.isEmpty()) {
-                long curStep = cursor.incrementAndGet();
-                int tryCount = 8;
-                while (--tryCount > 0 || curStep >= cursor.get()) {
-                    if ((cacheSession = cacheAioSessionQueue.poll()) == null) {
-                        break;
-                    }
-                    this.completed0(cacheSession);
-                    willReadAioSessionQueue.offer(cacheSession);
-                }
-                cursor.decrementAndGet();
+            while ((cacheSession = cacheAioSessionQueue.poll()) != null) {
+                this.completed0(cacheSession);
+                willReadAioSessionQueue.offer(cacheSession);
             }
             semaphore.release();
+            threadLocal.set(null);
             //注册下一轮读事件
-            try {
-                aioSession.continueRead();
-            } catch (Exception e) {
-                failed(e, aioSession);
-            }
             while ((cacheSession = willReadAioSessionQueue.poll()) != null) {
                 try {
                     cacheSession.continueRead();
@@ -96,6 +89,8 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             }
             return;
         }
+        threadLocal.set(null);
+        aioSession.setLastReadSize(result);
         //线程资源不足,暂时积压任务
         cacheAioSessionQueue.offer(aioSession);
         if (needNotify && lock.tryLock()) {
