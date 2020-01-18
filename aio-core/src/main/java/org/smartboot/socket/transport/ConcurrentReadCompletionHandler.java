@@ -58,13 +58,12 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
-        if (threadLocal.get() == null) {
-            threadLocal.set(this);
-        } else {
+        if (threadLocal.get() != null) {
             super.completed(result, aioSession);
             return;
         }
         if (semaphore.tryAcquire()) {
+            threadLocal.set(this);
             //处理当前读回调任务
             super.completed(result, aioSession);
             //执行缓存中的读回调任务
@@ -76,7 +75,6 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             threadLocal.set(null);
             return;
         }
-        threadLocal.set(null);
         aioSession.setLastReadSize(result);
         //线程资源不足,暂时积压任务
         cacheAioSessionQueue.offer(aioSession);
