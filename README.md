@@ -42,7 +42,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 ### 感谢
 - 感谢码云提供的代码托管和 Pages 服务。
 - 感谢 JetBrains 为 smart-socket 提供的 IDEA License。
-- 感谢为 smart-socket 捐赠的每一位朋友。
+- 感谢为 smart-socket [捐赠](https://smartboot.gitee.io/book/donation.html)的每一位朋友。
 - 感谢正在使用及为 smart-socket 作推广的朋友。
 
 ### 参考文献
