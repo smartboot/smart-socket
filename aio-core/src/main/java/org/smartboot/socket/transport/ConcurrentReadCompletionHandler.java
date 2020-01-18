@@ -101,6 +101,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
                 lock.unlock();
             }
         }
+        Thread.yield();
     }
 
 
