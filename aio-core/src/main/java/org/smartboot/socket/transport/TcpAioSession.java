@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -307,16 +306,13 @@ class TcpAioSession<T> extends AioSession<T> {
             throw exception;
         }
 
-//        continueRead();
+        continueRead();
     }
 
     /**
      * 触发读操作
      */
     protected void continueRead() {
-        if (isInvalid()) {
-            return;
-        }
         NetMonitor<T> monitor = getServerConfig().getMonitor();
         if (monitor != null) {
             monitor.beforeRead(this);

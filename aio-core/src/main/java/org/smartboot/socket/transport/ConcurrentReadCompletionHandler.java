@@ -9,9 +9,6 @@
 
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.NetMonitor;
-
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Condition;
@@ -34,7 +31,6 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
      */
     private ConcurrentLinkedQueue<TcpAioSession<T>> cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
 
-    private ConcurrentLinkedDeque<TcpAioSession<T>> willReadAioSessionQueue = new ConcurrentLinkedDeque<>();
     /**
      * 应该可以不用volatile
      */
@@ -74,19 +70,10 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             //执行缓存中的读回调任务
             TcpAioSession<T> cacheSession = null;
             while ((cacheSession = cacheAioSessionQueue.poll()) != null) {
-                this.completed0(cacheSession);
-                willReadAioSessionQueue.offer(cacheSession);
+                super.completed(cacheSession.getLastReadSize(), cacheSession);
             }
             semaphore.release();
             threadLocal.set(null);
-            //注册下一轮读事件
-            while ((cacheSession = willReadAioSessionQueue.poll()) != null) {
-                try {
-                    cacheSession.continueRead();
-                } catch (Exception e) {
-                    failed(e, cacheSession);
-                }
-            }
             return;
         }
         threadLocal.set(null);
@@ -102,21 +89,6 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             }
         }
         Thread.yield();
-    }
-
-
-    private void completed0(TcpAioSession<T> session) {
-        try {
-            // 接收到的消息进行预处理
-            NetMonitor<T> monitor = session.getServerConfig().getMonitor();
-            if (monitor != null) {
-                monitor.afterRead(session, session.getLastReadSize());
-            }
-            //触发读回调
-            session.readCompleted(session.getLastReadSize() == -1);
-        } catch (Exception e) {
-            failed(e, session);
-        }
     }
 
     /**
