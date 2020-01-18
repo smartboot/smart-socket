@@ -38,7 +38,7 @@ final class IoServerConfig<T> {
     /**
      * 当前smart-socket版本号
      */
-    public static final String VERSION = "v1.4.7.20200111-SNAPSHOT";
+    public static final String VERSION = "v1.4.7.20200118-SNAPSHOT";
 
     /**
      * 消息体缓存大小,字节
@@ -61,6 +61,12 @@ final class IoServerConfig<T> {
      * 服务器端口号
      */
     private int port = 8888;
+
+    /**
+     * 服务端backlog
+     */
+    private int backlog = 1000;
+
     /**
      * 消息处理器
      */
@@ -274,6 +280,14 @@ final class IoServerConfig<T> {
 
     public void setBufferPoolSharedPageSize(int bufferPoolSharedPageSize) {
         this.bufferPoolSharedPageSize = bufferPoolSharedPageSize;
+    }
+
+    public int getBacklog() {
+        return backlog;
+    }
+
+    public void setBacklog(int backlog) {
+        this.backlog = backlog;
     }
 
     @Override

@@ -142,9 +142,9 @@ public class AioQuickServer<T> {
             }
             //bind host
             if (config.getHost() != null) {
-                serverSocketChannel.bind(new InetSocketAddress(config.getHost(), config.getPort()), 1000);
+                serverSocketChannel.bind(new InetSocketAddress(config.getHost(), config.getPort()), config.getBacklog());
             } else {
-                serverSocketChannel.bind(new InetSocketAddress(config.getPort()), 1000);
+                serverSocketChannel.bind(new InetSocketAddress(config.getPort()), config.getBacklog());
             }
 
             startAcceptThread();
@@ -403,4 +403,16 @@ public class AioQuickServer<T> {
         config.setBufferPoolSharedPageSize(bufferPoolSharedPageSize);
         return this;
     }
+
+    /**
+     * 设置 backlog 大小
+     *
+     * @param backlog backlog大小
+     * @return 当前AioQuickServer对象
+     */
+    public final AioQuickServer<T> setBacklog(int backlog) {
+        config.setBacklog(backlog);
+        return this;
+    }
+
 }
