@@ -190,10 +190,11 @@ public class AioQuickServer<T> {
                     AsynchronousSocketChannel channel = null;
                     try {
                         channel = nextFuture.get();
-                        nextFuture = serverSocketChannel.accept();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         config.getProcessor().stateEvent(null, StateMachineEnum.ACCEPT_EXCEPTION, e);
                     }
+                    nextFuture = serverSocketChannel.accept();
                     if (channel != null) {
                         createSession(channel);
                     }
