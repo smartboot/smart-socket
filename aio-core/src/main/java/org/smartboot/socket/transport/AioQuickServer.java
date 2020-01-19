@@ -10,7 +10,6 @@
 package org.smartboot.socket.transport;
 
 import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
@@ -183,23 +182,20 @@ public class AioQuickServer<T> {
 //        });
 
         Thread acceptThread = new Thread(new Runnable() {
-            private NetMonitor<T> monitor = config.getMonitor();
 
             @Override
             public void run() {
                 Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
                 while (acceptRunning) {
+                    AsynchronousSocketChannel channel = null;
                     try {
-                        final AsynchronousSocketChannel channel = nextFuture.get();
+                        channel = nextFuture.get();
                         nextFuture = serverSocketChannel.accept();
-                        if (monitor == null || monitor.shouldAccept(channel)) {
-                            createSession(channel);
-                        } else {
-                            config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-                            IOUtil.close(channel);
-                        }
                     } catch (Exception e) {
-                        config.getProcessor().stateEvent(null, StateMachineEnum.ACCEPT_EXCEPTION, null);
+                        config.getProcessor().stateEvent(null, StateMachineEnum.ACCEPT_EXCEPTION, e);
+                    }
+                    if (channel != null) {
+                        createSession(channel);
                     }
                 }
             }
@@ -243,8 +239,13 @@ public class AioQuickServer<T> {
         //连接成功则构造AIOSession对象
         TcpAioSession<T> session = null;
         try {
-            session = aioSessionFunction.apply(channel);
-            session.initSession();
+            if (config.getMonitor() == null || config.getMonitor().shouldAccept(channel)) {
+                session = aioSessionFunction.apply(channel);
+                session.initSession();
+            } else {
+                config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+                IOUtil.close(channel);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             if (session == null) {
