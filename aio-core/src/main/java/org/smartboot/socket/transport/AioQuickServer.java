@@ -187,14 +187,19 @@ public class AioQuickServer<T> {
             public void run() {
                 Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
                 while (acceptRunning) {
+                    AsynchronousSocketChannel channel = null;
                     try {
-                        AsynchronousSocketChannel channel = nextFuture.get();
-                        createSession(channel);
+                        channel = nextFuture.get();
                     } catch (Exception e) {
                         e.printStackTrace();
                         config.getProcessor().stateEvent(null, StateMachineEnum.ACCEPT_EXCEPTION, e);
+                    } finally {
+                        nextFuture = serverSocketChannel.accept();
                     }
-                    nextFuture = serverSocketChannel.accept();
+                    if (channel != null) {
+                        createSession(channel);
+                    }
+
                 }
             }
         }, "smart-socket:accept");
