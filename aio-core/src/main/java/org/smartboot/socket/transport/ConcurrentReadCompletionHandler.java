@@ -11,6 +11,7 @@ package org.smartboot.socket.transport;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -45,6 +46,8 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
     private final Condition notEmpty = lock.newCondition();
     private boolean running = true;
 
+    private LongAdder longAdder = new LongAdder();
+
     private ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
@@ -69,6 +72,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             //执行缓存中的读回调任务
             TcpAioSession<T> cacheSession = null;
             while ((cacheSession = cacheAioSessionQueue.poll()) != null) {
+                longAdder.decrement();
                 super.completed(cacheSession.getLastReadSize(), cacheSession);
             }
             semaphore.release();
@@ -78,6 +82,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
         aioSession.setLastReadSize(result);
         //线程资源不足,暂时积压任务
         cacheAioSessionQueue.offer(aioSession);
+        longAdder.increment();
         if (needNotify && lock.tryLock()) {
             try {
                 needNotify = false;
@@ -86,7 +91,9 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
                 lock.unlock();
             }
         }
-        Thread.yield();
+        if (longAdder.intValue() > 64) {
+            Thread.yield();
+        }
     }
 
     /**
@@ -111,6 +118,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             try {
                 TcpAioSession<T> aioSession = cacheAioSessionQueue.poll();
                 if (aioSession != null) {
+                    longAdder.decrement();
                     super.completed(aioSession.getLastReadSize(), aioSession);
                     synchronized (this) {
                         this.wait(100);
