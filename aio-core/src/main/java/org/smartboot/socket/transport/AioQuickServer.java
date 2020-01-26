@@ -23,9 +23,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -134,12 +132,12 @@ public class AioQuickServer<T> {
             this.aioSessionFunction = aioSessionFunction;
 
             aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
-//            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
-            ThreadPoolExecutor executor = new ThreadPoolExecutor(config.getThreadNum(), config.getThreadNum(),
-                    0L, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<Runnable>(),
-                    r -> bufferPool.newThread(r, "smart-socket:Worker-"));
-            asynchronousChannelGroup = AsynchronousChannelGroup.withCachedThreadPool(executor, 1);
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
+//            ThreadPoolExecutor executor = new ThreadPoolExecutor(config.getThreadNum(), config.getThreadNum(),
+//                    0L, TimeUnit.MILLISECONDS,
+//                    new LinkedBlockingQueue<Runnable>(),
+//                    r -> bufferPool.newThread(r, "smart-socket:Worker-"));
+//            asynchronousChannelGroup = AsynchronousChannelGroup.withCachedThreadPool(executor, 1);
 
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
             //set socket options
