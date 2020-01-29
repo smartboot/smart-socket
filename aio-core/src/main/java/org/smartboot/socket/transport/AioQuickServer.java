@@ -133,11 +133,6 @@ public class AioQuickServer<T> {
 
             aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
-//            ThreadPoolExecutor executor = new ThreadPoolExecutor(config.getThreadNum(), config.getThreadNum(),
-//                    0L, TimeUnit.MILLISECONDS,
-//                    new LinkedBlockingQueue<Runnable>(),
-//                    r -> bufferPool.newThread(r, "smart-socket:Worker-"));
-//            asynchronousChannelGroup = AsynchronousChannelGroup.withCachedThreadPool(executor, 1);
 
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
             //set socket options
