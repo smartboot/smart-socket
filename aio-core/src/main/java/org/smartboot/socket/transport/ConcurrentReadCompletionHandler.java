@@ -62,11 +62,6 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         if (threadLocal.get() != null) {
-            TcpAioSession<T> cacheSession = cacheAioSessionQueue.poll();
-            if (cacheSession != null) {
-                longAdder.decrement();
-                super.completed(cacheSession.getLastReadSize(), cacheSession);
-            }
             super.completed(result, aioSession);
             return;
         }
