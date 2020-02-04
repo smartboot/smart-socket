@@ -9,11 +9,12 @@
 
 package org.smartboot.socket.transport;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 读写事件回调处理类
@@ -21,41 +22,23 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author 三刀
  * @version V1.0.0
  */
-final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> implements Runnable {
+final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> {
 
     /**
      * 读回调资源信号量
      */
     private Semaphore semaphore;
-    /**
-     * 读会话缓存队列
-     */
-    private ConcurrentLinkedQueue<TcpAioSession<T>> cacheAioSessionQueue = new ConcurrentLinkedQueue<>();
-
-    /**
-     * 应该可以不用volatile
-     */
-    private boolean needNotify = true;
-    /**
-     * 同步锁
-     */
-    private ReentrantLock lock = new ReentrantLock();
-    /**
-     * 非空条件
-     */
-    private final Condition notEmpty = lock.newCondition();
-    private boolean running = true;
 
     private LongAdder longAdder = new LongAdder();
 
     private ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
 
+    private LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<Runnable>();
+    private ExecutorService executorService = new ThreadPoolExecutor(4, 4,
+            0L, TimeUnit.MILLISECONDS, taskQueue);
+
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
-        Thread watcherThread = new Thread(this, "smart-socket:watcher");
-        watcherThread.setDaemon(true);
-        watcherThread.setPriority(1);
-        watcherThread.start();
     }
 
 
@@ -69,78 +52,30 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             threadLocal.set(this);
             //处理当前读回调任务
             super.completed(result, aioSession);
-            //执行缓存中的读回调任务
-            TcpAioSession<T> cacheSession = null;
-            while ((cacheSession = cacheAioSessionQueue.poll()) != null) {
-                longAdder.decrement();
-                super.completed(cacheSession.getLastReadSize(), cacheSession);
+            Runnable runnable;
+            while ((runnable = taskQueue.poll()) != null) {
+                runnable.run();
             }
             semaphore.release();
             threadLocal.set(null);
             return;
         }
-        aioSession.setLastReadSize(result);
         //线程资源不足,暂时积压任务
-        cacheAioSessionQueue.offer(aioSession);
         longAdder.increment();
-        if (needNotify && lock.tryLock()) {
-            try {
-                needNotify = false;
-                notEmpty.signal();
-            } finally {
-                lock.unlock();
-            }
-        }
         if (longAdder.intValue() > 64) {
             Thread.yield();
         }
+        executorService.execute(() -> {
+            ConcurrentReadCompletionHandler.super.completed(result, aioSession);
+            longAdder.decrement();
+        });
+
     }
 
     /**
      * 停止内部线程
      */
     public void shutdown() {
-        running = false;
-        lock.lock();
-        try {
-            notEmpty.signal();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * watcher线程,当存在待处理的读回调事件时，或许可以激活空闲状态的IO线程组
-     */
-    @Override
-    public void run() {
-        while (running) {
-            try {
-                TcpAioSession<T> aioSession = cacheAioSessionQueue.poll();
-                if (aioSession != null) {
-                    longAdder.decrement();
-                    super.completed(aioSession.getLastReadSize(), aioSession);
-                    synchronized (this) {
-                        this.wait(100);
-                    }
-                    continue;
-                }
-                if (!lock.tryLock()) {
-                    synchronized (this) {
-                        this.wait(100);
-                    }
-                    continue;
-                }
-                try {
-                    needNotify = true;
-                    notEmpty.await();
-                } finally {
-                    lock.unlock();
-                }
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        executorService.shutdown();
     }
 }

@@ -93,11 +93,6 @@ class TcpAioSession<T> extends AioSession<T> {
     private WriteBuffer byteBuf;
 
     /**
-     * 最近一次读取到的字节数
-     */
-    private int lastReadSize;
-
-    /**
      * 数据输出Function
      */
     private Function<WriteBuffer, Void> flushFunction = new Function<WriteBuffer, Void>() {
@@ -352,14 +347,6 @@ class TcpAioSession<T> extends AioSession<T> {
             monitor.beforeWrite(this);
         }
         writeToChannel0(writeBuffer.buffer());
-    }
-
-    int getLastReadSize() {
-        return lastReadSize;
-    }
-
-    void setLastReadSize(int lastReadSize) {
-        this.lastReadSize = lastReadSize;
     }
 
     /**
