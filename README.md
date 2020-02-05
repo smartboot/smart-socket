@@ -7,7 +7,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 
 ## 本群严谨广告推销，请某云的销售朋友勿扰，给技术人员留一片净土。你们发的广告我会在第一时间清理并将你请出去，所以真的没必要。
 ## 因深受某云广告骚扰，调整下入群规则：
-- 使用smart-socketd的用户：请在[issues](https://gitee.com/smartboot/smart-socket/issues/IHV69)中完成案例登记，并在加群时反馈。
+- 使用smart-socket的用户：请在[issues](https://gitee.com/smartboot/smart-socket/issues/IHV69)中完成案例登记，并在加群：830015805 时反馈。
 - 学习smart-socket的用户：付费入群：172299083，待确认为真实用户后可找群主退费，销售朋友入此群概不退费。
 
 ### 版本说明
