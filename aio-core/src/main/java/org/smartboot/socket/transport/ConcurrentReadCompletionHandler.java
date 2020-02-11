@@ -14,7 +14,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.LongAdder;
 
 /**
  * 读写事件回调处理类
@@ -29,12 +28,10 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
      */
     private Semaphore semaphore;
 
-    private LongAdder longAdder = new LongAdder();
-
     private ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
 
     private LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<Runnable>();
-    private ExecutorService executorService = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors(),
+    private ExecutorService executorService = new ThreadPoolExecutor(0, 1,
             60L, TimeUnit.SECONDS, taskQueue);
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
@@ -52,22 +49,13 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             threadLocal.set(this);
             //处理当前读回调任务
             super.completed(result, aioSession);
-            Runnable runnable;
-            while ((runnable = taskQueue.poll()) != null) {
-                runnable.run();
-            }
             semaphore.release();
             threadLocal.set(null);
             return;
         }
         //线程资源不足,暂时积压任务
-        longAdder.increment();
-        if (longAdder.intValue() > 64) {
-            Thread.yield();
-        }
         executorService.execute(() -> {
             ConcurrentReadCompletionHandler.super.completed(result, aioSession);
-            longAdder.decrement();
         });
 
     }
