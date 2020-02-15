@@ -20,9 +20,9 @@ import java.net.SocketOption;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
-import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -158,48 +158,45 @@ public class AioQuickServer<T> {
     }
 
     private void startAcceptThread() {
-//        serverSocketChannel.accept(config.getMonitor(), new CompletionHandler<AsynchronousSocketChannel, NetMonitor<T>>() {
-//            @Override
-//            public void completed(AsynchronousSocketChannel channel, NetMonitor<T> monitor) {
-//                try {
-//                    serverSocketChannel.accept(monitor, this);
-//                    if (monitor == null || monitor.shouldAccept(channel)) {
-//                        createSession(channel);
-//                    } else {
-//                        config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-//                        IOUtil.close(channel);
-//                    }
-//                } catch (Throwable throwable) {
-//                    failed(throwable, monitor);
-//                }
-//            }
-//
-//            @Override
-//            public void failed(Throwable exc, NetMonitor<T> attachment) {
-//                exc.printStackTrace();
-//            }
-//        });
-
-        Thread acceptThread = new Thread(new Runnable() {
+        serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
+            @Override
+            public void completed(AsynchronousSocketChannel channel, Void attachment) {
+                try {
+                    serverSocketChannel.accept(attachment, this);
+                } catch (Throwable throwable) {
+                    config.getProcessor().stateEvent(null, StateMachineEnum.ACCEPT_EXCEPTION, throwable);
+                    failed(throwable, attachment);
+                    serverSocketChannel.accept(attachment, this);
+                }
+                createSession(channel);
+            }
 
             @Override
-            public void run() {
-                Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
-                while (acceptRunning) {
-                    try {
-                        AsynchronousSocketChannel channel = nextFuture.get();
-                        nextFuture = serverSocketChannel.accept();
-                        createSession(channel);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        config.getProcessor().stateEvent(null, StateMachineEnum.ACCEPT_EXCEPTION, e);
-                        nextFuture = serverSocketChannel.accept();
-                    }
-                }
+            public void failed(Throwable exc, Void attachment) {
+                exc.printStackTrace();
             }
-        }, "smart-socket:accept");
-        acceptThread.setDaemon(true);
-        acceptThread.start();
+        });
+
+//        Thread acceptThread = new Thread(new Runnable() {
+//
+//            @Override
+//            public void run() {
+//                Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
+//                while (acceptRunning) {
+//                    try {
+//                        AsynchronousSocketChannel channel = nextFuture.get();
+//                        nextFuture = serverSocketChannel.accept();
+//                        createSession(channel);
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                        config.getProcessor().stateEvent(null, StateMachineEnum.ACCEPT_EXCEPTION, e);
+//                        nextFuture = serverSocketChannel.accept();
+//                    }
+//                }
+//            }
+//        }, "smart-socket:accept");
+//        acceptThread.setDaemon(true);
+//        acceptThread.start();
     }
 
     /**
