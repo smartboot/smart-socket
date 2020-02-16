@@ -30,7 +30,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
 
     private ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
 
-    private ExecutorService executorService = new ThreadPoolExecutor(0, 1,
+    private ExecutorService executorService = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors(),
             60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
