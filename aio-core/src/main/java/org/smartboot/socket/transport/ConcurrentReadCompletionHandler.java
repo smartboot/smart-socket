@@ -30,7 +30,8 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
 
     private ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
 
-    private ExecutorService executorService = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors(),
+    private LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
+    private ExecutorService executorService = new ThreadPoolExecutor(0, 1,
             60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
@@ -48,6 +49,11 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             threadLocal.set(this);
             //处理当前读回调任务
             super.completed(result, aioSession);
+            int i = 8;
+            Runnable task;
+            while (i-- > 0 && (task = taskQueue.poll()) != null) {
+                task.run();
+            }
             semaphore.release();
             threadLocal.set(null);
             return;
