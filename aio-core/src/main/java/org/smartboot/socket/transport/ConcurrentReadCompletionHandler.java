@@ -49,9 +49,8 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             threadLocal.set(this);
             //处理当前读回调任务
             super.completed(result, aioSession);
-            int i = 8;
             Runnable task;
-            while (i-- > 0 && (task = taskQueue.poll()) != null) {
+            while ((task = taskQueue.poll()) != null) {
                 task.run();
             }
             semaphore.release();
