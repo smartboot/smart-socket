@@ -1,7 +1,15 @@
+/*******************************************************************************
+ * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: BufferPage.java
+ * Date: 2019-12-31
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
+
 package org.smartboot.socket.buffer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import sun.nio.ch.DirectBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
@@ -17,10 +25,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * @version V1.0 , 2018/10/31
  */
 public final class BufferPage {
-    /**
-     * logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferPage.class);
 
     /**
      * 当前空闲的虚拟Buffer
@@ -101,7 +105,6 @@ public final class BufferPage {
         }
         if (virtualBuffer == null) {
             virtualBuffer = new VirtualBuffer(null, allocate0(size, false), 0, 0);
-            LOGGER.warn("bufferPage has no available space: " + size);
         }
         return virtualBuffer;
     }
@@ -282,6 +285,15 @@ public final class BufferPage {
             index++;
         }
         availableBuffers.add(cleanBuffer);
+    }
+
+    /**
+     * 释放内存
+     */
+    void release() {
+        if (buffer.isDirect()) {
+            ((DirectBuffer) buffer).cleaner().clean();
+        }
     }
 
     @Override

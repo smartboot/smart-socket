@@ -1,10 +1,11 @@
-/*
- * Copyright (c) 2018, org.smartboot. All rights reserved.
+/*******************************************************************************
+ * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: StateMachineEnum.java
- * Date: 2018-03-12
- * Author: sandao
- */
+ * Date: 2019-12-31
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
 
 package org.smartboot.socket;
 
@@ -78,6 +79,11 @@ public enum StateMachineEnum {
     /**
      * 拒绝接受连接,仅Server端有效
      */
-    REJECT_ACCEPT
+    REJECT_ACCEPT,
+
+    /**
+     * 服务端接受连接异常
+     */
+    ACCEPT_EXCEPTION,
 
 }

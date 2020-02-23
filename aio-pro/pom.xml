@@ -1,4 +1,13 @@
 <?xml version="1.0"?>
+<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ~ Copyright (c) 2017-2019, org.smartboot. All rights reserved.
+  ~ project name: smart-socket
+  ~ file name: pom.xml
+  ~ Date: 2019-12-31
+  ~ Author: sandao (zhengjunweimail@163.com)
+  ~
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
+
 <project
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
         xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -11,13 +20,17 @@
     <parent>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
-        <version>1.4.6</version>
+        <version>1.4.8</version>
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
     <dependencies>
         <dependency>
             <groupId>org.smartboot.socket</groupId>
             <artifactId>aio-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
     </dependencies>
 </project>

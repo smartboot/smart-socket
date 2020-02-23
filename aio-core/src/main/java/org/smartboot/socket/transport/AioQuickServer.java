@@ -1,17 +1,15 @@
-/*
- * Copyright (c) 2017, org.smartboot. All rights reserved.
+/*******************************************************************************
+ * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: AioQuickServer.java
- * Date: 2017-11-25
- * Author: sandao
- */
+ * Date: 2019-12-31
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
 
 package org.smartboot.socket.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
@@ -22,12 +20,12 @@ import java.net.SocketOption;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
-import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * AIO服务端。
@@ -49,10 +47,6 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0.0
  */
 public class AioQuickServer<T> {
-    /**
-     * logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(AioQuickServer.class);
     /**
      * Server端服务配置。
      * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
@@ -82,14 +76,9 @@ public class AioQuickServer<T> {
      * asynchronousChannelGroup
      */
     private AsynchronousChannelGroup asynchronousChannelGroup;
-    /**
-     * accept处理线程
-     */
-    private Thread acceptThread = null;
-    /**
-     * accept线程运行状态
-     */
-    private volatile boolean acceptRunning = true;
+
+    private boolean acceptRunning = true;
+
 
     /**
      * 设置服务端启动必要参数配置
@@ -123,14 +112,9 @@ public class AioQuickServer<T> {
      */
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
-            LOGGER.info(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
+            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
         }
-        start0(new Function<AsynchronousSocketChannel, TcpAioSession<T>>() {
-            @Override
-            public TcpAioSession<T> apply(AsynchronousSocketChannel channel) {
-                return new TcpAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage());
-            }
-        });
+        start0(channel -> new TcpAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage()));
     }
 
     /**
@@ -143,21 +127,13 @@ public class AioQuickServer<T> {
         checkAndResetConfig();
 
         try {
-
-            aioReadCompletionHandler = new ReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
-
             this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolSharedPageSize(), config.isBufferPoolDirect());
             this.aioSessionFunction = aioSessionFunction;
 
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
-                private byte index = 0;
+            aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
 
-                @Override
-                public Thread newThread(Runnable r) {
-                    return bufferPool.newThread(r, "smart-socket:Worker-" + (++index));
-                }
-            });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
             //set socket options
             if (config.getSocketOptions() != null) {
@@ -167,40 +143,60 @@ public class AioQuickServer<T> {
             }
             //bind host
             if (config.getHost() != null) {
-                serverSocketChannel.bind(new InetSocketAddress(config.getHost(), config.getPort()), 1000);
+                serverSocketChannel.bind(new InetSocketAddress(config.getHost(), config.getPort()), config.getBacklog());
             } else {
-                serverSocketChannel.bind(new InetSocketAddress(config.getPort()), 1000);
+                serverSocketChannel.bind(new InetSocketAddress(config.getPort()), config.getBacklog());
             }
-            acceptThread = new Thread(new Runnable() {
-                private NetMonitor<T> monitor = config.getMonitor();
 
-                @Override
-                public void run() {
-                    Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
-                    while (acceptRunning) {
-                        try {
-                            final AsynchronousSocketChannel channel = nextFuture.get();
-                            nextFuture = serverSocketChannel.accept();
-                            if (monitor == null || monitor.shouldAccept(channel)) {
-                                createSession(channel);
-                            } else {
-                                config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
-                                LOGGER.warn("reject accept channel:{}", channel);
-                                closeChannel(channel);
-                            }
-                        } catch (Exception e) {
-                            LOGGER.error("AcceptThread Exception", e);
-                        }
-                    }
-                }
-            }, "smart-socket:acceptThread");
-            acceptThread.start();
+            startAcceptThread();
         } catch (IOException e) {
             shutdown();
             throw e;
         }
-        LOGGER.info("smart-socket server started on port {},threadNum:{}", config.getPort(), config.getThreadNum());
-        LOGGER.info("smart-socket server config is {}", config);
+        System.out.println("smart-socket server started on port " + config.getPort() + ",threadNum:" + config.getThreadNum());
+        System.out.println("smart-socket server config is " + config);
+    }
+
+    private void startAcceptThread() {
+        serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
+            @Override
+            public void completed(AsynchronousSocketChannel channel, Void attachment) {
+                try {
+                    serverSocketChannel.accept(attachment, this);
+                } catch (Throwable throwable) {
+                    config.getProcessor().stateEvent(null, StateMachineEnum.ACCEPT_EXCEPTION, throwable);
+                    failed(throwable, attachment);
+                    serverSocketChannel.accept(attachment, this);
+                }
+                createSession(channel);
+            }
+
+            @Override
+            public void failed(Throwable exc, Void attachment) {
+                exc.printStackTrace();
+            }
+        });
+
+//        Thread acceptThread = new Thread(new Runnable() {
+//
+//            @Override
+//            public void run() {
+//                Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
+//                while (acceptRunning) {
+//                    try {
+//                        AsynchronousSocketChannel channel = nextFuture.get();
+//                        nextFuture = serverSocketChannel.accept();
+//                        createSession(channel);
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                        config.getProcessor().stateEvent(null, StateMachineEnum.ACCEPT_EXCEPTION, e);
+//                        nextFuture = serverSocketChannel.accept();
+//                    }
+//                }
+//            }
+//        }, "smart-socket:accept");
+//        acceptThread.setDaemon(true);
+//        acceptThread.start();
     }
 
     /**
@@ -238,38 +234,20 @@ public class AioQuickServer<T> {
         //连接成功则构造AIOSession对象
         TcpAioSession<T> session = null;
         try {
-            session = aioSessionFunction.apply(channel);
-            session.initSession();
-        } catch (Exception e1) {
-            LOGGER.error(e1.getMessage(), e1);
+            if (config.getMonitor() == null || config.getMonitor().shouldAccept(channel)) {
+                session = aioSessionFunction.apply(channel);
+                session.initSession();
+            } else {
+                config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
+                IOUtil.close(channel);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
             if (session == null) {
-                closeChannel(channel);
+                IOUtil.close(channel);
             } else {
                 session.close();
             }
-        }
-    }
-
-    /**
-     * 关闭服务端通道
-     *
-     * @param channel AsynchronousSocketChannel
-     */
-    private void closeChannel(AsynchronousSocketChannel channel) {
-        try {
-            channel.shutdownInput();
-        } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
-        }
-        try {
-            channel.shutdownOutput();
-        } catch (IOException e) {
-            LOGGER.debug(e.getMessage(), e);
-        }
-        try {
-            channel.close();
-        } catch (IOException e) {
-            LOGGER.debug("close channel exception", e);
         }
     }
 
@@ -284,21 +262,26 @@ public class AioQuickServer<T> {
                 serverSocketChannel = null;
             }
         } catch (IOException e) {
-            LOGGER.warn(e.getMessage(), e);
+            e.printStackTrace();
         }
 
         if (!asynchronousChannelGroup.isTerminated()) {
             try {
                 asynchronousChannelGroup.shutdownNow();
             } catch (IOException e) {
-                LOGGER.error("shutdown exception", e);
+                e.printStackTrace();
             }
         }
         try {
             asynchronousChannelGroup.awaitTermination(3, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            LOGGER.error("shutdown exception", e);
+            e.printStackTrace();
         }
+        if (bufferPool != null) {
+            bufferPool.release();
+            bufferPool = null;
+        }
+        aioReadCompletionHandler.shutdown();
     }
 
     /**
@@ -421,4 +404,16 @@ public class AioQuickServer<T> {
         config.setBufferPoolSharedPageSize(bufferPoolSharedPageSize);
         return this;
     }
+
+    /**
+     * 设置 backlog 大小
+     *
+     * @param backlog backlog大小
+     * @return 当前AioQuickServer对象
+     */
+    public final AioQuickServer<T> setBacklog(int backlog) {
+        config.setBacklog(backlog);
+        return this;
+    }
+
 }

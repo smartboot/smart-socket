@@ -1,10 +1,11 @@
-/*
- * Copyright (c) 2017, org.smartboot. All rights reserved.
+/*******************************************************************************
+ * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: QuickTimerTask.java
- * Date: 2017-11-25
- * Author: sandao
- */
+ * Date: 2019-12-31
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
 
 
 package org.smartboot.socket.util;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -42,8 +44,8 @@ public abstract class QuickTimerTask implements Runnable {
         SCHEDULED_EXECUTOR_SERVICE.shutdown();
     }
 
-    public static void scheduleAtFixedRate(Runnable command, long initialDelay, long period) {
-        SCHEDULED_EXECUTOR_SERVICE.scheduleAtFixedRate(command, initialDelay, period, TimeUnit.MILLISECONDS);
+    public static ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period) {
+        return SCHEDULED_EXECUTOR_SERVICE.scheduleAtFixedRate(command, initialDelay, period, TimeUnit.MILLISECONDS);
     }
 
 

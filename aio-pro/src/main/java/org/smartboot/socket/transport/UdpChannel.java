@@ -1,3 +1,12 @@
+/*******************************************************************************
+ * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: UdpChannel.java
+ * Date: 2019-12-31
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
+
 package org.smartboot.socket.transport;
 
 import org.slf4j.Logger;
@@ -14,6 +23,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * @author 三刀
@@ -179,7 +189,7 @@ public final class UdpChannel<Request> {
                     return null;
                 }
             };
-            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, config, null);
+            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, config);
             session = new UdpAioSession<>(this, remote, writeBuffer);
             udpAioSessionConcurrentHashMap.put(key, session);
         }

@@ -1,10 +1,11 @@
-/*
- * Copyright (c) 2017, org.smartboot. All rights reserved.
+/*******************************************************************************
+ * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
  * project name: smart-socket
- * file name: SSLAioSession.java
- * Date: 2017-12-19
- * Author: sandao
- */
+ * file name: SslAioSession.java
+ * Date: 2019-12-31
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
 
 package org.smartboot.socket.transport;
 
@@ -56,13 +57,13 @@ class SslAioSession<T> extends TcpAioSession<T> {
     }
 
     @Override
-    void writeToChannel() {
+    void writeCompleted() {
         checkInitialized();
         if (netWriteBuffer != null && netWriteBuffer.hasRemaining()) {
             writeToChannel0(netWriteBuffer);
             return;
         }
-        super.writeToChannel();
+        super.writeCompleted();
     }
 
 
@@ -108,10 +109,10 @@ class SslAioSession<T> extends TcpAioSession<T> {
     }
 
     @Override
-    void readFromChannel(boolean eof) {
+    void readCompleted(boolean eof) {
         checkInitialized();
         doUnWrap();
-        super.readFromChannel(eof);
+        super.readCompleted(eof);
     }
 
     @Override

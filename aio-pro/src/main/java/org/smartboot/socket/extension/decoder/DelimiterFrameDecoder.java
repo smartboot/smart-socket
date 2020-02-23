@@ -1,10 +1,11 @@
-/*
- * Copyright (c) 2017, org.smartboot. All rights reserved.
+/*******************************************************************************
+ * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: DelimiterFrameDecoder.java
- * Date: 2017-11-25
- * Author: sandao
- */
+ * Date: 2019-12-31
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
 
 package org.smartboot.socket.extension.decoder;
 

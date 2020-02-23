@@ -15,14 +15,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.smartboot.socket</groupId>
     <artifactId>smart-socket-parent</artifactId>
-    <version>1.4.6</version>
+    <version>1.4.8</version>
 
     <packaging>pom</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.29</slf4j.version>
-        <aio.version>1.4.6</aio.version>
+        <aio.version>1.4.8</aio.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -106,8 +106,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
@@ -157,7 +157,7 @@
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
-                        <!--<phase>verify</phase>-->
+<!--                        <phase>verify</phase>-->
                         <phase>deploy</phase>
                         <goals>
                             <goal>sign</goal>
