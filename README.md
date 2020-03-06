@@ -60,7 +60,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
     ```
 - 测试结果
 
-    |  客户端  | Requests/sec   |  Transfer/sec  |
+    |  连接数  | Requests/sec   |  Transfer/sec  |
     | -- | -- | -- |
     | 1024 | 738570.77 | 102.84MB|
 
