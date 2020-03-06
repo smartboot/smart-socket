@@ -15,7 +15,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 |  系列  | 版本   |  文档  | 说明 |
 | -- | -- | -- | -- |
 |  1.3  |  [1.3.25](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.3.25)  |  暂停维护  | 企业级，已稳定运行在众多企业的生产环境上 |
-|  1.4  |  [1.4.8](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.4.8) |  《[smart-socket技术小册](https://smartboot.gitee.io/book/)》 |最新稳定版|
+|  1.4  |  [1.4.7-SNAPSHOT](https://mvnrepository.com/artifact/org.smartboot.socket/aio-core/1.4.7-SNAPSHOT) |  《[smart-socket技术小册](https://smartboot.gitee.io/book/)》 |最新稳定版|
 |  1.4  |  1.4.7-SNAPSHOT |  《[smart-socket技术小册](https://smartboot.gitee.io/book/)》 |开发版，仅供学习交流，切勿在生产环境使用|
 
 ### Feature
@@ -47,6 +47,21 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 - 感谢 JetBrains 为 smart-socket 提供的 IDEA License。
 - 感谢为 smart-socket [捐赠](https://smartboot.gitee.io/book/donation.html)的每一位朋友。
 - 感谢正在使用及为 smart-socket 作推广的朋友。
+
+## 性能测试
+- 环境准备
+    1. 测试项目：[smart-http](https://gitee.com/smartboot/smart-http) 
+    2. 通信协议：Http
+    3. 压测工具：[wrk](https://github.com/wg/wrk)
+    4. 测试机：MacBook Pro, 2.9Ghz i5, 4核8G内存
+    5. 测试命令：
+    ```
+    wrk -H 'Host: 10.0.0.1' -H 'Accept: text/plain,text/html;q=0.9,application/xhtml+xml;q=0.9,application/xml;q=0.8,*/*;q=0.7' -H 'Connection: keep-alive' --latency -d 15 -c 1024 --timeout 8 -t 4 http://127.0.0.1:8080/plaintext -s pipeline.lua -- 16
+    ```
+- 测试结果
+|  客户端  | Requests/sec   |  Transfer/sec  |
+| -- | -- | -- | -- |
+| 1024 | 738570.77 | 102.84MB|
 
 ### 参考文献
 - https://jfarcand.wordpress.com/2008/11/25/tricks-and-tips-with-aio-part-1-the-frightening-thread-pool/
