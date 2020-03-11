@@ -32,7 +32,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
 
     private LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
     private ExecutorService executorService = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors(),
-            60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+            60L, TimeUnit.SECONDS, taskQueue);
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;
@@ -56,6 +56,9 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             semaphore.release();
             threadLocal.set(null);
             return;
+        }
+        if (taskQueue.size() > 64) {
+            Thread.yield();
         }
         //线程资源不足,暂时积压任务
         executorService.execute(() -> {
