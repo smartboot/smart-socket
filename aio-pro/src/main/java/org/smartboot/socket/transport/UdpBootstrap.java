@@ -17,6 +17,7 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
+import org.smartboot.socket.util.DecoderException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -86,6 +87,7 @@ public class UdpBootstrap<Request> {
     private ArrayBlockingQueue<SelectionKey> selectionKeys = new ArrayBlockingQueue<>(MAX_EVENT);
 
     private UdpDispatcher[] workerGroup;
+
 
     /**
      * 缓存页
@@ -301,9 +303,10 @@ public class UdpBootstrap<Request> {
                 throw e;
             }
             if (request == null) {
-                System.out.println("decode null");
+                config.getProcessor().stateEvent(aioSession, StateMachineEnum.DECODE_EXCEPTION, new DecoderException("decode result is null"));
                 return;
             }
+            LOGGER.info("receive:{} from:{}", request, remote);
 
             //任务分发
             int hashCode = remote.hashCode();

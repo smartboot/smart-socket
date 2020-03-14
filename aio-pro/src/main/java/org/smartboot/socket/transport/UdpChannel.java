@@ -69,6 +69,7 @@ public final class UdpChannel<Request> {
             writeRingBuffer.offer(new ResponseTask(remote, virtualBuffer));
             return;
         }
+
         int size = channel.send(virtualBuffer.buffer(), remote);
         if (size > 0) {
             virtualBuffer.clean();
@@ -83,6 +84,7 @@ public final class UdpChannel<Request> {
             ResponseTask responseTask;
             if (failWriteEvent == null) {
                 responseTask = writeRingBuffer.poll();
+                LOGGER.info("poll from writeBuffer");
             } else {
                 responseTask = failWriteEvent;
                 failWriteEvent = null;
@@ -118,12 +120,7 @@ public final class UdpChannel<Request> {
      * @return
      */
     UdpAioSession<Request> createAndCacheSession(final SocketAddress remote) {
-        if (!(remote instanceof InetSocketAddress)) {
-            throw new UnsupportedOperationException();
-
-        }
-        InetSocketAddress address = (InetSocketAddress) remote;
-        String key = address.getHostName() + ":" + address.getPort();
+        String key = getSessionKey(remote);
         UdpAioSession<Request> session = udpAioSessionConcurrentHashMap.get(key);
         if (session != null) {
             return session;
@@ -150,6 +147,21 @@ public final class UdpChannel<Request> {
             udpAioSessionConcurrentHashMap.put(key, session);
         }
         return session;
+    }
+
+    private String getSessionKey(final SocketAddress remote) {
+        if (!(remote instanceof InetSocketAddress)) {
+            throw new UnsupportedOperationException();
+
+        }
+        InetSocketAddress address = (InetSocketAddress) remote;
+        return address.getHostName() + ":" + address.getPort();
+    }
+
+    void removeSession(final SocketAddress remote) {
+        String key = getSessionKey(remote);
+        UdpAioSession udpAioSession = udpAioSessionConcurrentHashMap.remove(key);
+        LOGGER.info("remove session:{}", udpAioSession);
     }
 
     /**

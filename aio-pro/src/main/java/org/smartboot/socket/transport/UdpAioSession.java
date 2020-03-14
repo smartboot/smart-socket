@@ -43,6 +43,7 @@ final class UdpAioSession<T> extends AioSession<T> {
     public void close(boolean immediate) {
         writeBuffer.close();
         udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
+        udpChannel.removeSession(remote);
     }
 
     @Override
