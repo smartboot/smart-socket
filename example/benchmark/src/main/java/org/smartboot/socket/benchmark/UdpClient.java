@@ -87,7 +87,7 @@ public class UdpClient {
             }).start();
 
         }
-//        Thread.sleep(1000);
-//        bootstrap.shutdown();
+        Thread.sleep(1000);
+        bootstrap.shutdown();
     }
 }

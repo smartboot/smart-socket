@@ -43,26 +43,7 @@ public class UdpBootstrap<Request> {
      * logger
      */
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpBootstrap.class);
-    /**
-     * 状态：初始
-     */
-    private static final byte STATUS_INIT = 0;
-    /**
-     * 状态：初始
-     */
-    private static final byte STATUS_STARTING = 1;
-    /**
-     * 状态：运行中
-     */
-    private static final byte STATUS_RUNNING = STATUS_STARTING << 1;
-    /**
-     * 状态：停止中
-     */
-    private static final byte STATUS_STOPPING = STATUS_RUNNING << 1;
-    /**
-     * 状态：已停止
-     */
-    private static final byte STATUS_STOPPED = STATUS_STOPPING << 1;
+
     private final static int MAX_EVENT = 512;
     /**
      * 服务ID
@@ -73,7 +54,7 @@ public class UdpBootstrap<Request> {
     /**
      * 服务状态
      */
-    private volatile byte status = STATUS_INIT;
+    private volatile Status status = Status.STATUS_INIT;
     /**
      * 多路复用器
      */
@@ -138,7 +119,7 @@ public class UdpBootstrap<Request> {
             channel.socket().bind(host == null ? new InetSocketAddress(port) : new InetSocketAddress(host, port));
         }
 
-        if (status == STATUS_RUNNING) {
+        if (status == Status.STATUS_RUNNING) {
             selector.wakeup();
         }
         SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
@@ -146,17 +127,17 @@ public class UdpBootstrap<Request> {
         selectionKey.attach(udpChannel);
 
         //启动线程服务
-        if (status == STATUS_INIT) {
+        if (status == Status.STATUS_INIT) {
             initThreadServer();
         }
         return udpChannel;
     }
 
     private synchronized void initThreadServer() {
-        if (status != STATUS_INIT) {
+        if (status != Status.STATUS_INIT) {
             return;
         }
-        updateServiceStatus(STATUS_RUNNING);
+        updateServiceStatus(Status.STATUS_RUNNING);
         int uid = UdpBootstrap.UID++;
 
         //启动worker线程组
@@ -224,7 +205,7 @@ public class UdpBootstrap<Request> {
         }
     }
 
-    private void updateServiceStatus(final byte status) {
+    private void updateServiceStatus(final Status status) {
         this.status = status;
 //        notifyWhenUpdateStatus(status);
     }
@@ -238,7 +219,7 @@ public class UdpBootstrap<Request> {
     private SelectionKey poll() throws IOException {
         try {
             while (true) {
-                if (status != STATUS_RUNNING) {
+                if (status != Status.STATUS_RUNNING) {
                     LOGGER.info("current status is :{}, will shutdown", status);
                     return EXECUTE_TASK_OR_SHUTDOWN;
                 }
@@ -246,8 +227,8 @@ public class UdpBootstrap<Request> {
                 if (selectionKeys.isEmpty()) {
                     selector.select();
                 }
-                if (status != STATUS_RUNNING) {
-                    LOGGER.info("current status is :{}, will shutdown");
+                if (status != Status.STATUS_RUNNING) {
+                    LOGGER.info("current status is :{}, will shutdown", status);
                     return EXECUTE_TASK_OR_SHUTDOWN;
                 }
                 Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
@@ -306,7 +287,7 @@ public class UdpBootstrap<Request> {
                 config.getProcessor().stateEvent(aioSession, StateMachineEnum.DECODE_EXCEPTION, new DecoderException("decode result is null"));
                 return;
             }
-            LOGGER.info("receive:{} from:{}", request, remote);
+//            LOGGER.info("receive:{} from:{}", request, remote);
 
             //任务分发
             int hashCode = remote.hashCode();
@@ -319,7 +300,7 @@ public class UdpBootstrap<Request> {
     }
 
     public void shutdown() {
-        status = STATUS_STOPPING;
+        status = Status.STATUS_STOPPING;
         selector.wakeup();
 
         for (UdpDispatcher dispatcher : workerGroup) {
@@ -346,6 +327,29 @@ public class UdpBootstrap<Request> {
     public final UdpBootstrap<Request> setThreadNum(int num) {
         this.config.setThreadNum(num);
         return this;
+    }
+
+    enum Status {
+        /**
+         * 状态：初始
+         */
+        STATUS_INIT,
+        /**
+         * 状态：初始
+         */
+        STATUS_STARTING,
+        /**
+         * 状态：运行中
+         */
+        STATUS_RUNNING,
+        /**
+         * 状态：停止中
+         */
+        STATUS_STOPPING,
+        /**
+         * 状态：已停止
+         */
+        STATUS_STOPPED;
     }
 
     class NullSelectionKey extends SelectionKey {
