@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
@@ -139,7 +140,7 @@ public class UdpBootstrap<Request> {
             selector.wakeup();
         }
         SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
-        UdpChannel<Request> udpChannel = new UdpChannel<>(channel, selectionKey, config.getBufferPoolChunkSize(), bufferPage);
+        UdpChannel<Request> udpChannel = new UdpChannel<>(channel, selectionKey, config, bufferPage);
         selectionKey.attach(udpChannel);
 
         //启动线程服务
@@ -282,17 +283,23 @@ public class UdpBootstrap<Request> {
         while (true) {
             //接收数据
             ByteBuffer buffer = readBuffer.buffer();
+            buffer.clear();
             SocketAddress remote = channel.getChannel().receive(buffer);
             if (remote == null) {
-                buffer.clear();
                 return;
             }
             buffer.flip();
             UdpAioSession<Request> aioSession = channel.createAndCacheSession(remote);
 
+            Request request = null;
             //解码
-            Request request = config.getProtocol().decode(buffer, aioSession);
-            buffer.clear();
+            try {
+                request = config.getProtocol().decode(buffer, aioSession);
+            } catch (Exception e) {
+                config.getProcessor().stateEvent(aioSession, StateMachineEnum.DECODE_EXCEPTION, e);
+                aioSession.close();
+                throw e;
+            }
             if (request == null) {
                 System.out.println("decode null");
                 return;

@@ -9,6 +9,8 @@
 
 package org.smartboot.socket.transport;
 
+import org.smartboot.socket.StateMachineEnum;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -29,6 +31,7 @@ final class UdpAioSession<T> extends AioSession<T> {
         this.udpChannel = udpChannel;
         this.remote = remote;
         this.writeBuffer = writeBuffer;
+        udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
 
     @Override
@@ -39,6 +42,7 @@ final class UdpAioSession<T> extends AioSession<T> {
     @Override
     public void close(boolean immediate) {
         writeBuffer.close();
+        udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
     }
 
     @Override

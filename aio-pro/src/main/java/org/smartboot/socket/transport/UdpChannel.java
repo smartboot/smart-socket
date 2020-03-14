@@ -33,6 +33,7 @@ import java.util.function.Function;
  */
 public final class UdpChannel<Request> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
+    IoServerConfig config;
     private BufferPage bufferPage;
     /**
      * 真实的UDP通道
@@ -48,14 +49,13 @@ public final class UdpChannel<Request> {
      */
     private LinkedBlockingQueue<ResponseTask> writeRingBuffer;
     private ResponseTask failWriteEvent;
-    private int bufferSize;
 
-    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, int bufferSize, BufferPage bufferPage) {
+    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, IoServerConfig config, BufferPage bufferPage) {
         this.channel = channel;
         writeRingBuffer = new LinkedBlockingQueue<>();
         this.selectionKey = selectionKey;
         this.bufferPage = bufferPage;
-        this.bufferSize = bufferSize;
+        this.config = config;
     }
 
     /**
@@ -145,7 +145,7 @@ public final class UdpChannel<Request> {
 
                 return null;
             };
-            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, bufferSize, 1);
+            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, config.getBufferPoolChunkSize(), 1);
             session = new UdpAioSession<>(this, remote, writeBuffer);
             udpAioSessionConcurrentHashMap.put(key, session);
         }
