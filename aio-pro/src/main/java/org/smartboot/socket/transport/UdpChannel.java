@@ -180,6 +180,11 @@ public final class UdpChannel<Request> {
         } catch (IOException e) {
             LOGGER.error("", e);
         }
+        //内存回收
+        ResponseTask task;
+        while ((task = writeRingBuffer.poll()) != null) {
+            task.response.clean();
+        }
     }
 
     DatagramChannel getChannel() {

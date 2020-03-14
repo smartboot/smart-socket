@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package com.smartboot.socket.udp;
+package org.smartboot.socket.benchmark;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;

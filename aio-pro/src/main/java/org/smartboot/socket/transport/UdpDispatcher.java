@@ -9,6 +9,8 @@
 
 package org.smartboot.socket.transport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 
 import java.util.concurrent.BlockingQueue;
@@ -21,6 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @version V1.0 , 2020/3/13
  */
 class UdpDispatcher<T> implements Runnable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UdpDispatcher.class);
     public final RequestTask<T> EXECUTE_TASK_OR_SHUTDOWN = new RequestTask<>(null, null);
     private BlockingQueue<RequestTask<T>> taskQueue = new LinkedBlockingQueue<>();
     private MessageProcessor<T> processor;
@@ -35,7 +38,7 @@ class UdpDispatcher<T> implements Runnable {
             while (true) {
                 RequestTask<T> unit = taskQueue.take();
                 if (unit == EXECUTE_TASK_OR_SHUTDOWN) {
-                    System.err.println("终止当前dispatcher:" + this);
+                    LOGGER.info("stop dispatcher thread");
                     break;
                 }
                 processor.process(unit.session, unit.request);

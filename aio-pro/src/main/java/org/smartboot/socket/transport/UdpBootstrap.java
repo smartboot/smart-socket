@@ -188,7 +188,7 @@ public class UdpBootstrap<Request> {
                                 continue;
                             }
                             if (key == EXECUTE_TASK_OR_SHUTDOWN) {
-                                System.err.println("终止当前线程:" + this);
+                                LOGGER.info("stop thread");
                                 break;
                             }
 
@@ -226,10 +226,17 @@ public class UdpBootstrap<Request> {
 //        notifyWhenUpdateStatus(status);
     }
 
+    /**
+     * 获取待处理的Key
+     *
+     * @return
+     * @throws IOException
+     */
     private SelectionKey poll() throws IOException {
         try {
             while (true) {
                 if (status != STATUS_RUNNING) {
+                    LOGGER.info("current status is :{}, will shutdown", status);
                     return EXECUTE_TASK_OR_SHUTDOWN;
                 }
                 Set<SelectionKey> selectionKeys = selector.selectedKeys();
@@ -237,6 +244,7 @@ public class UdpBootstrap<Request> {
                     selector.select();
                 }
                 if (status != STATUS_RUNNING) {
+                    LOGGER.info("current status is :{}, will shutdown");
                     return EXECUTE_TASK_OR_SHUTDOWN;
                 }
                 Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
