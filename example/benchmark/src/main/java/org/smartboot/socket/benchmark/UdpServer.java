@@ -13,18 +13,16 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.UdpBootstrap;
-import org.smartboot.socket.transport.UdpChannel;
 import org.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 /**
  * @author 三刀
  * @version V1.0 , 2019/8/16
  */
-public class UdpDemo {
+public class UdpServer {
     public static void main(String[] args) throws IOException, InterruptedException {
 
         //服务端
@@ -61,34 +59,5 @@ public class UdpDemo {
         bootstrap.setReadBufferSize(1024);
         bootstrap.open(9999);
         System.out.println("启动成功");
-
-        //客户端
-        int i = 10;
-        final SocketAddress remote = new InetSocketAddress("localhost", 9999);
-        while (i-- > 0) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        int count = 10;
-                        UdpChannel<String> channel = bootstrap.open();
-                        AioSession<String> aioSession = channel.connect(remote);
-                        WriteBuffer writeBuffer = aioSession.writeBuffer();
-                        byte[] msg = "HelloWorld".getBytes();
-                        while (count-- > 0) {
-                            writeBuffer.writeInt(msg.length);
-                            writeBuffer.write(msg);
-                            writeBuffer.flush();
-                        }
-                        System.out.println("发送完毕");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-
-        }
-        Thread.sleep(100);
-        bootstrap.shutdown();
     }
 }
