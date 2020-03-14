@@ -26,40 +26,36 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Function;
 
 /**
+ * 封装UDP底层真实渠道对象,并提供通信及会话管理
+ *
  * @author 三刀
  * @version V1.0 , 2019/8/18
  */
 public final class UdpChannel<Request> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
     private BufferPage bufferPage;
-    private IoServerConfig config;
     /**
      * 真实的UDP通道
      */
     private DatagramChannel channel;
-
     private SelectionKey selectionKey;
-
     /**
      * 与当前UDP通道对接的会话
      */
     private ConcurrentHashMap<String, UdpAioSession<Request>> udpAioSessionConcurrentHashMap = new ConcurrentHashMap<>();
-
-
     /**
      * 待输出消息
      */
     private LinkedBlockingQueue<ResponseTask> writeRingBuffer;
-
     private ResponseTask failWriteEvent;
+    private int bufferSize;
 
-
-    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, IoServerConfig config, BufferPage bufferPage) {
+    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, int bufferSize, BufferPage bufferPage) {
         this.channel = channel;
         writeRingBuffer = new LinkedBlockingQueue<>();
         this.selectionKey = selectionKey;
-        this.config = config;
         this.bufferPage = bufferPage;
+        this.bufferSize = bufferSize;
     }
 
     /**
@@ -149,10 +145,7 @@ public final class UdpChannel<Request> {
 
                 return null;
             };
-            IoServerConfig config = new IoServerConfig();
-            config.setWriteQueueCapacity(1);
-            config.setBufferPoolChunkSize(this.config.getBufferPoolChunkSize());
-            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, config);
+            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, bufferSize, 1);
             session = new UdpAioSession<>(this, remote, writeBuffer);
             udpAioSessionConcurrentHashMap.put(key, session);
         }

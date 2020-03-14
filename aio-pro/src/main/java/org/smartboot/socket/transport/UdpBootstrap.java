@@ -139,7 +139,7 @@ public class UdpBootstrap<Request> {
             selector.wakeup();
         }
         SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
-        UdpChannel<Request> udpChannel = new UdpChannel<>(channel, selectionKey, config, bufferPage);
+        UdpChannel<Request> udpChannel = new UdpChannel<>(channel, selectionKey, config.getBufferPoolChunkSize(), bufferPage);
         selectionKey.attach(udpChannel);
 
         //启动线程服务
