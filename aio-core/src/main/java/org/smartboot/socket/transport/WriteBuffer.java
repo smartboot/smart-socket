@@ -132,21 +132,23 @@ public class WriteBuffer extends OutputStream {
      * @see #write(int)
      */
     public void writeByte(byte b) {
-        if (writeInBuf == null) {
-            writeInBuf = bufferPage.allocate(chunkSize);
-        }
-        writeInBuf.buffer().put(b);
-        if (writeInBuf.buffer().hasRemaining()) {
-            return;
-        }
-        writeInBuf.buffer().flip();
         lock.lock();
         try {
+            if (writeInBuf == null) {
+                writeInBuf = bufferPage.allocate(chunkSize);
+            }
+            writeInBuf.buffer().put(b);
+            if (writeInBuf.buffer().hasRemaining()) {
+                return;
+            }
+            writeInBuf.buffer().flip();
+
             this.put(writeInBuf);
+            writeInBuf = null;
         } finally {
             lock.unlock();
         }
-        writeInBuf = null;
+
         function.apply(this);
     }
 
