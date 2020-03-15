@@ -17,6 +17,7 @@ import org.smartboot.socket.buffer.VirtualBuffer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -70,7 +71,7 @@ public final class UdpChannel<Request> {
             return;
         }
 
-        int size = channel.send(virtualBuffer.buffer(), remote);
+        int size = send(virtualBuffer.buffer(), remote);
         if (size > 0) {
             virtualBuffer.clean();
         } else {
@@ -93,7 +94,7 @@ public final class UdpChannel<Request> {
                 selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
                 return;
             }
-            int size = channel.send(responseTask.response.buffer(), responseTask.remote);
+            int size = send(responseTask.response.buffer(), responseTask.remote);
             if (size > 0) {
                 responseTask.response.clean();
             } else {
@@ -101,6 +102,18 @@ public final class UdpChannel<Request> {
                 selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
             }
         }
+    }
+
+    private int send(ByteBuffer byteBuffer, SocketAddress remote) throws IOException {
+        AioSession aioSession = udpAioSessionConcurrentHashMap.get(getSessionKey(remote));
+        if (config.getMonitor() != null) {
+            config.getMonitor().beforeWrite(aioSession);
+        }
+        int size = channel.send(byteBuffer, remote);
+        if (config.getMonitor() != null) {
+            config.getMonitor().afterWrite(aioSession, size);
+        }
+        return size;
     }
 
     /**

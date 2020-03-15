@@ -272,8 +272,10 @@ public class UdpBootstrap<Request> {
                 return;
             }
             buffer.flip();
-            UdpAioSession<Request> aioSession = channel.createAndCacheSession(remote);
 
+            UdpAioSession<Request> aioSession = channel.createAndCacheSession(remote);
+            config.getMonitor().beforeRead(aioSession);
+            config.getMonitor().afterRead(aioSession, buffer.remaining());
             Request request = null;
             //解码
             try {

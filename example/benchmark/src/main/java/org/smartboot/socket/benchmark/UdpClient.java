@@ -9,8 +9,9 @@
 
 package org.smartboot.socket.benchmark;
 
-import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.extension.plugins.MonitorPlugin;
+import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.UdpBootstrap;
 import org.smartboot.socket.transport.UdpChannel;
@@ -26,11 +27,9 @@ import java.net.SocketAddress;
  */
 public class UdpClient {
     public static void main(String[] args) throws IOException, InterruptedException {
-
-        //服务端
-        final UdpBootstrap<String> bootstrap = new UdpBootstrap<String>(new StringProtocol(), new MessageProcessor<String>() {
+        AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
-            public void process(AioSession<String> channel, String msg) {
+            public void process0(AioSession channel, String msg) {
                 try {
                     InetSocketAddress remoteAddress = channel.getRemoteAddress();
                     if (remoteAddress.getPort() == 9999) {
@@ -46,19 +45,21 @@ public class UdpClient {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
             }
 
             @Override
-            public void stateEvent(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+            public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 if (throwable != null) {
                     throwable.printStackTrace();
                 }
             }
-        });
+        };
+        //服务端
+        final UdpBootstrap<String> bootstrap = new UdpBootstrap<String>(new StringProtocol(), processor);
         int threadNum = Runtime.getRuntime().availableProcessors();
         bootstrap.setThreadNum(threadNum);
         bootstrap.setReadBufferSize(1024);
+        processor.addPlugin(new MonitorPlugin(5));
 
         //客户端
         int i = 10;
