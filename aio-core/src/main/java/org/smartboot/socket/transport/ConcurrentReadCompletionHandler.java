@@ -57,7 +57,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             threadLocal.set(null);
             return;
         }
-        if (taskQueue.size() > 64) {
+        if (taskQueue.size() > 256) {
             Thread.yield();
         }
         //线程资源不足,暂时积压任务
