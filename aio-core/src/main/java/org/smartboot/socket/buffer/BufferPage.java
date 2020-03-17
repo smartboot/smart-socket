@@ -59,6 +59,8 @@ public final class BufferPage {
      */
     private BufferPage sharedBufferPage;
 
+    private Thread ownerThread = Thread.currentThread();
+
     /**
      * @param size   缓存页大小
      * @param direct 是否使用堆外内存
@@ -92,7 +94,7 @@ public final class BufferPage {
     public VirtualBuffer allocate(final int size) {
         VirtualBuffer virtualBuffer = null;
         Thread currentThread = Thread.currentThread();
-        if (poolPages != null && currentThread instanceof FastBufferThread) {
+        if (poolPages != null && currentThread instanceof FastBufferThread && currentThread == ownerThread) {
             virtualBuffer = poolPages[((FastBufferThread) currentThread).getIndex()].allocate0(size);
         } else {
             virtualBuffer = allocate0(size);
