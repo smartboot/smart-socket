@@ -38,7 +38,7 @@ class UdpDispatcher<T> implements Runnable {
             while (true) {
                 RequestTask<T> unit = taskQueue.take();
                 if (unit == EXECUTE_TASK_OR_SHUTDOWN) {
-                    LOGGER.info("shutdown thread:{}");
+                    LOGGER.info("shutdown thread:{}", Thread.currentThread());
                     break;
                 }
                 processor.process(unit.session, unit.request);
