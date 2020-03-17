@@ -23,7 +23,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Semaphore;
 import java.util.function.Function;
 
 /**
@@ -48,12 +49,14 @@ public final class UdpChannel<Request> {
     /**
      * 待输出消息
      */
-    private LinkedBlockingQueue<ResponseTask> writeRingBuffer;
+    private ConcurrentLinkedQueue<ResponseTask> responseTasks;
     private ResponseTask failWriteEvent;
+
+    private Semaphore writeSemaphore = new Semaphore(1);
 
     UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, IoServerConfig config, BufferPage bufferPage) {
         this.channel = channel;
-        writeRingBuffer = new LinkedBlockingQueue<>();
+        responseTasks = new ConcurrentLinkedQueue<>();
         this.selectionKey = selectionKey;
         this.bufferPage = bufferPage;
         this.config = config;
@@ -66,16 +69,13 @@ public final class UdpChannel<Request> {
      * @throws InterruptedException
      */
     private void write(VirtualBuffer virtualBuffer, SocketAddress remote) throws IOException {
-        if (!writeRingBuffer.isEmpty() || failWriteEvent != null) {
-            writeRingBuffer.offer(new ResponseTask(remote, virtualBuffer));
+        if (writeSemaphore.tryAcquire() && responseTasks.isEmpty() && send(virtualBuffer.buffer(), remote) > 0) {
+            virtualBuffer.clean();
+            writeSemaphore.release();
             return;
         }
-
-        int size = send(virtualBuffer.buffer(), remote);
-        if (size > 0) {
-            virtualBuffer.clean();
-        } else {
-            writeRingBuffer.offer(new ResponseTask(remote, virtualBuffer));
+        responseTasks.offer(new ResponseTask(remote, virtualBuffer));
+        if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) == 0) {
             selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
         }
     }
@@ -84,22 +84,27 @@ public final class UdpChannel<Request> {
         while (true) {
             ResponseTask responseTask;
             if (failWriteEvent == null) {
-                responseTask = writeRingBuffer.poll();
+                responseTask = responseTasks.poll();
                 LOGGER.info("poll from writeBuffer");
             } else {
                 responseTask = failWriteEvent;
                 failWriteEvent = null;
             }
             if (responseTask == null) {
-                selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
+                writeSemaphore.release();
+                if (responseTasks.isEmpty()) {
+                    selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
+                    if (!responseTasks.isEmpty()) {
+                        selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
+                    }
+                }
                 return;
             }
-            int size = send(responseTask.response.buffer(), responseTask.remote);
-            if (size > 0) {
+            if (send(responseTask.response.buffer(), responseTask.remote) > 0) {
                 responseTask.response.clean();
             } else {
                 failWriteEvent = responseTask;
-                selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
+                break;
             }
         }
     }
@@ -200,7 +205,7 @@ public final class UdpChannel<Request> {
         }
         //内存回收
         ResponseTask task;
-        while ((task = writeRingBuffer.poll()) != null) {
+        while ((task = responseTasks.poll()) != null) {
             task.response.clean();
         }
     }

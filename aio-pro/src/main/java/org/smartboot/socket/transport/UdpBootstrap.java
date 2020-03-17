@@ -24,7 +24,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
@@ -45,12 +44,14 @@ public class UdpBootstrap<Request> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpBootstrap.class);
 
     private final static int MAX_EVENT = 512;
+
+    private final static int MAX_READ_TIMES = 16;
     /**
      * 服务ID
      */
     private static int UID;
-    private final SelectionKey NEED_TO_POLL = new NullSelectionKey();
-    private final SelectionKey EXECUTE_TASK_OR_SHUTDOWN = new NullSelectionKey();
+    private final SelectionKey NEED_TO_POLL = new UdpNullSelectionKey();
+    private final SelectionKey EXECUTE_TASK_OR_SHUTDOWN = new UdpNullSelectionKey();
     /**
      * 服务状态
      */
@@ -168,11 +169,11 @@ public class UdpBootstrap<Request> {
                                     }
                                 }
                             } catch (InterruptedException e) {
-                                e.printStackTrace();
+                                LOGGER.info("InterruptedException", e);
                                 continue;
                             }
                             if (key == EXECUTE_TASK_OR_SHUTDOWN) {
-                                LOGGER.info("stop thread");
+                                LOGGER.info("stop thread:{}" + Thread.currentThread());
                                 break;
                             }
 
@@ -188,7 +189,8 @@ public class UdpBootstrap<Request> {
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
-                            } else if (key.isWritable()) {
+                            }
+                            if (key.isWritable()) {
                                 try {
                                     udpChannel.flush();
                                 } catch (IOException e) {
@@ -263,10 +265,13 @@ public class UdpBootstrap<Request> {
      * @throws IOException
      */
     private void doRead(VirtualBuffer readBuffer, UdpChannel channel) throws IOException {
-        while (true) {
+        int count = MAX_READ_TIMES;
+        while (count-- > 0) {
             //接收数据
             ByteBuffer buffer = readBuffer.buffer();
             buffer.clear();
+            //The datagram's source address,
+            // or null if this channel is in non-blocking mode and no datagram was immediately available
             SocketAddress remote = channel.getChannel().receive(buffer);
             if (remote == null) {
                 return;
@@ -285,6 +290,7 @@ public class UdpBootstrap<Request> {
                 aioSession.close();
                 throw e;
             }
+            //理论上每个UDP包都是一个完整的消息
             if (request == null) {
                 config.getProcessor().stateEvent(aioSession, StateMachineEnum.DECODE_EXCEPTION, new DecoderException("decode result is null"));
                 return;
@@ -352,44 +358,6 @@ public class UdpBootstrap<Request> {
          * 状态：已停止
          */
         STATUS_STOPPED;
-    }
-
-    class NullSelectionKey extends SelectionKey {
-
-        @Override
-        public SelectableChannel channel() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Selector selector() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isValid() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void cancel() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int interestOps() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public SelectionKey interestOps(int ops) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int readyOps() {
-            throw new UnsupportedOperationException();
-        }
     }
 }
 
