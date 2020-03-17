@@ -25,7 +25,10 @@ import java.util.concurrent.locks.ReentrantLock;
  * @version V1.0 , 2018/10/31
  */
 public final class BufferPage {
-
+    /**
+     * 实例化当前内存页的线程对象
+     */
+    private final Thread ownerThread = Thread.currentThread();
     /**
      * 当前空闲的虚拟Buffer
      */
@@ -34,7 +37,6 @@ public final class BufferPage {
      * 待回收的虚拟Buffer
      */
     private ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<>();
-
     /**
      * 当前缓存页的物理缓冲区
      */
@@ -43,23 +45,18 @@ public final class BufferPage {
      * 条件锁
      */
     private ReentrantLock lock = new ReentrantLock();
-
     /**
      * 内存页是否处于空闲状态
      */
     private boolean idle = true;
-
     /**
      * 同组内存池中的各内存页
      */
     private BufferPage[] poolPages;
-
     /**
      * 共享内存页
      */
     private BufferPage sharedBufferPage;
-
-    private Thread ownerThread = Thread.currentThread();
 
     /**
      * @param size   缓存页大小
