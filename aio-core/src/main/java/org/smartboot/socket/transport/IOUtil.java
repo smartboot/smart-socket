@@ -21,7 +21,7 @@ final class IOUtil {
     /**
      * 是否windows系统
      */
-    public static final boolean OS_WINDOWS = System.getProperty("os.name").toLowerCase().startsWith("windows");
+//    public static final boolean OS_WINDOWS = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
     /**
      * @param channel 需要被关闭的通道
