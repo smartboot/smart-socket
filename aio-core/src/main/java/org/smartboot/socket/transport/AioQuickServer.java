@@ -64,6 +64,8 @@ public class AioQuickServer<T> {
      * 写回调事件处理
      */
     protected WriteCompletionHandler<T> aioWriteCompletionHandler;
+    private BufferPagePool innerBufferPool = null;
+
     /**
      * 连接会话实例化Function
      */
@@ -125,7 +127,11 @@ public class AioQuickServer<T> {
 
         try {
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
-            this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolSharedPageSize(), config.isBufferPoolDirect());
+            if (bufferPool == null) {
+                this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolSharedPageSize(), config.isBufferPoolDirect());
+                this.innerBufferPool = bufferPool;
+            }
+
             this.aioSessionFunction = aioSessionFunction;
 
             aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
@@ -273,9 +279,8 @@ public class AioQuickServer<T> {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if (bufferPool != null) {
-            bufferPool.release();
-            bufferPool = null;
+        if (innerBufferPool != null) {
+            innerBufferPool.release();
         }
         aioReadCompletionHandler.shutdown();
     }
@@ -412,4 +417,12 @@ public class AioQuickServer<T> {
         return this;
     }
 
+    /**
+     * @param bufferPool 内存池对象
+     * @return 当前AioQuickServer对象
+     */
+    public final AioQuickServer<T> setBufferPagePool(BufferPagePool bufferPool) {
+        this.bufferPool = bufferPool;
+        return this;
+    }
 }
