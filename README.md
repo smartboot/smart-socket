@@ -3,7 +3,7 @@ smart-socket是一款国产开源的Java AIO框架，追求代码量、性能、
 如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；
 如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
 
-接下来我们会逐渐向市场推出一些商业化产品，有需要的个人或企业可关注[这里](https://www.yuque.com/smartboot/rwbqo6)
+**接下来我们会逐渐向市场推出一些商业化产品，有需要的个人或企业可关注[这里](https://www.yuque.com/smartboot/rwbqo6)**
 
 **官方QQ群：** 172299083🈵 、**830015805**（入群条件：***Star本项目***，非技术人员请勿扰，感谢）
 
