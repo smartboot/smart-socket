@@ -126,7 +126,7 @@ public class AioQuickServer<T> {
         checkAndResetConfig();
 
         try {
-            aioWriteCompletionHandler = new WriteCompletionHandler<>();
+            aioWriteCompletionHandler = new ConcurrentWriteCompletionHandler<>(new Semaphore(config.getThreadNum() >> 1));
             if (bufferPool == null) {
                 this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolSharedPageSize(), config.isBufferPoolDirect());
                 this.innerBufferPool = bufferPool;
