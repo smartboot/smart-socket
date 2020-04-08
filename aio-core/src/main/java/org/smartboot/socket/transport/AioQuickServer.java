@@ -317,17 +317,6 @@ public class AioQuickServer<T> {
     }
 
     /**
-     * 设置write缓冲区容量
-     *
-     * @param writeBufferCapacity 缓存区容量
-     * @return 当前AioQuickServer对象
-     */
-    public final AioQuickServer<T> setWriteBufferCapacity(int writeBufferCapacity) {
-        config.setWriteBufferCapacity(writeBufferCapacity);
-        return this;
-    }
-
-    /**
      * 设置服务工作线程数,设置数值必须大于等于2
      *
      * @param threadNum 线程数
@@ -343,13 +332,15 @@ public class AioQuickServer<T> {
 
 
     /**
-     * 限制写操作时从内存页中申请内存块的大小
+     * 设置输出缓冲区容量
      *
-     * @param writeBufferSize 内存块大小限制
+     * @param bufferSize     单个内存块大小
+     * @param bufferCapacity 内存块数量上限
      * @return 当前AioQuickServer对象
      */
-    public final AioQuickServer<T> setWriteBufferSize(int writeBufferSize) {
-        config.setWriteBufferSize(writeBufferSize);
+    public final AioQuickServer<T> setWriteBuffer(int bufferSize, int bufferCapacity) {
+        config.setWriteBufferSize(bufferSize);
+        config.setWriteBufferCapacity(bufferCapacity);
         return this;
     }
 

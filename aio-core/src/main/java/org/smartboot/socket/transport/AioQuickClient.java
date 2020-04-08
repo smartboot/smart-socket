@@ -288,25 +288,15 @@ public class AioQuickClient<T> {
     }
 
     /**
-     * 设置write缓冲区容量
+     * 设置输出缓冲区容量
      *
-     * @param writeBufferCapacity 缓冲区容量
+     * @param bufferSize     单个内存块大小
+     * @param bufferCapacity 内存块数量上限
      * @return 当前AIOQuickClient对象
      */
-    public final AioQuickClient<T> setWriteBufferCapacity(int writeBufferCapacity) {
-        config.setWriteBufferCapacity(writeBufferCapacity);
-        return this;
-    }
-
-
-    /**
-     * 限制写操作时从内存页中申请内存块的大小
-     *
-     * @param writeBufferSize 内存块大小限制
-     * @return 当前AIOQuickClient对象
-     */
-    public final AioQuickClient<T> setWriteBufferSize(int writeBufferSize) {
-        config.setWriteBufferSize(writeBufferSize);
+    public final AioQuickClient<T> setWriteBuffer(int bufferSize, int bufferCapacity) {
+        config.setWriteBufferSize(bufferSize);
+        config.setWriteBufferCapacity(bufferCapacity);
         return this;
     }
 

@@ -69,8 +69,7 @@ public class StringClient {
     public void test(AsynchronousChannelGroup asynchronousChannelGroup, BufferPagePool bufferPagePool, AbstractMessageProcessor<String> processor) throws InterruptedException, ExecutionException, IOException {
         AioQuickClient<String> client = new AioQuickClient<>("localhost", 8888, new StringProtocol(), processor);
         client.setBufferPagePool(bufferPagePool);
-        client.setWriteBufferCapacity(10)
-                .setWriteBufferSize(1024 * 1024);
+        client.setWriteBuffer(1024 * 1024, 10);
         AioSession<String> session = client.start(asynchronousChannelGroup);
         WriteBuffer outputStream = session.writeBuffer();
 
