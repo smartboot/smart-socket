@@ -160,7 +160,7 @@ public final class UdpChannel<Request> {
 
                 return null;
             };
-            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, config.getBufferPoolChunkSize(), 1);
+            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, config.getWriteBufferSize(), 1);
             session = new UdpAioSession<>(this, remote, writeBuffer);
             udpAioSessionConcurrentHashMap.put(key, session);
         }

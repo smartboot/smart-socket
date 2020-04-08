@@ -12,6 +12,7 @@ package org.smartboot.socket.transport;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
+import org.smartboot.socket.buffer.BufferFactory;
 
 import java.net.SocketOption;
 import java.util.HashMap;
@@ -38,17 +39,20 @@ final class IoServerConfig<T> {
     /**
      * 当前smart-socket版本号
      */
-    public static final String VERSION = "v1.4.10.20200402-SNAPSHOT";
+    public static final String VERSION = "v1.4.10.20200406-SNAPSHOT";
 
     /**
      * 消息体缓存大小,字节
      */
     private int readBufferSize = 512;
-
+    /**
+     * 内存块大小限制
+     */
+    private int writeBufferSize = 128;
     /**
      * Write缓存区容量
      */
-    private int writeQueueCapacity = 512;
+    private int writeBufferCapacity = 16;
     /**
      * 远程服务器IP
      */
@@ -91,77 +95,25 @@ final class IoServerConfig<T> {
     private int threadNum = 1;
 
     /**
-     * 内存页大小
+     * 内存池工厂
      */
-    private int bufferPoolPageSize = 4096;
+    private BufferFactory bufferFactory = BufferFactory.DISABLED_BUFFER_FACTORY;
 
-    /**
-     * 共享缓存页大小
-     */
-    private int bufferPoolSharedPageSize = -1;
-
-    /**
-     * 内存页个数
-     */
-    private int bufferPoolPageNum = -1;
-
-    /**
-     * 内存块大小限制
-     */
-    private int bufferPoolChunkSize = 128;
-
-    /**
-     * 是否使用直接缓冲区内存
-     */
-    private boolean bufferPoolDirect = true;
-
-    /**
-     * 获取内存页大小
-     *
-     * @return 内存页大小
-     */
-    public int getBufferPoolPageSize() {
-        return bufferPoolPageSize;
-    }
-
-
-    /**
-     * 设置内存页大小
-     *
-     * @param bufferPoolPageSize 内存页大小
-     */
-    public void setBufferPoolPageSize(int bufferPoolPageSize) {
-        this.bufferPoolPageSize = bufferPoolPageSize;
-    }
-
-    /**
-     * @return 内存页数量
-     */
-    public int getBufferPoolPageNum() {
-        return bufferPoolPageNum;
-    }
-
-    /**
-     * @param bufferPoolPageNum 内存页数量
-     */
-    public void setBufferPoolPageNum(int bufferPoolPageNum) {
-        this.bufferPoolPageNum = bufferPoolPageNum;
-    }
 
     /**
      * 获取默认内存块大小
      *
      * @return 内存块大小
      */
-    public int getBufferPoolChunkSize() {
-        return bufferPoolChunkSize;
+    public int getWriteBufferSize() {
+        return writeBufferSize;
     }
 
     /**
-     * @param bufferPoolChunkSize 内存块大小
+     * @param writeBufferSize 内存块大小
      */
-    public void setBufferPoolChunkSize(int bufferPoolChunkSize) {
-        this.bufferPoolChunkSize = bufferPoolChunkSize;
+    public void setWriteBufferSize(int writeBufferSize) {
+        this.writeBufferSize = writeBufferSize;
     }
 
     /**
@@ -250,12 +202,12 @@ final class IoServerConfig<T> {
         socketOptions.put(socketOption, f);
     }
 
-    public int getWriteQueueCapacity() {
-        return writeQueueCapacity;
+    public int getWriteBufferCapacity() {
+        return writeBufferCapacity;
     }
 
-    public void setWriteQueueCapacity(int writeQueueCapacity) {
-        this.writeQueueCapacity = writeQueueCapacity;
+    public void setWriteBufferCapacity(int writeBufferCapacity) {
+        this.writeBufferCapacity = writeBufferCapacity;
     }
 
     public int getThreadNum() {
@@ -266,20 +218,12 @@ final class IoServerConfig<T> {
         this.threadNum = threadNum;
     }
 
-    public boolean isBufferPoolDirect() {
-        return bufferPoolDirect;
+    public BufferFactory getBufferFactory() {
+        return bufferFactory;
     }
 
-    public void setBufferPoolDirect(boolean bufferPoolDirect) {
-        this.bufferPoolDirect = bufferPoolDirect;
-    }
-
-    public int getBufferPoolSharedPageSize() {
-        return bufferPoolSharedPageSize;
-    }
-
-    public void setBufferPoolSharedPageSize(int bufferPoolSharedPageSize) {
-        this.bufferPoolSharedPageSize = bufferPoolSharedPageSize;
+    public void setBufferFactory(BufferFactory bufferFactory) {
+        this.bufferFactory = bufferFactory;
     }
 
     public int getBacklog() {
@@ -294,7 +238,7 @@ final class IoServerConfig<T> {
     public String toString() {
         return "IoServerConfig{" +
                 "readBufferSize=" + readBufferSize +
-                ", writeQueueCapacity=" + writeQueueCapacity +
+                ", writeQueueCapacity=" + writeBufferCapacity +
                 ", host='" + host + '\'' +
                 ", monitor=" + monitor +
                 ", port=" + port +
@@ -303,11 +247,7 @@ final class IoServerConfig<T> {
                 ", bannerEnabled=" + bannerEnabled +
                 ", socketOptions=" + socketOptions +
                 ", threadNum=" + threadNum +
-                ", bufferPoolPageSize=" + bufferPoolPageSize +
-                ", bufferPoolPageNum=" + bufferPoolPageNum +
-                ", bufferPoolChunkSize=" + bufferPoolChunkSize +
-                ", bufferPoolSharedPageSize=" + bufferPoolSharedPageSize +
-                ", bufferPoolDirect=" + bufferPoolDirect +
+                ", writeBufferSize=" + writeBufferSize +
                 '}';
     }
 }

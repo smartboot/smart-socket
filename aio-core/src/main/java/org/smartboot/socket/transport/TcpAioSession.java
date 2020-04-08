@@ -125,7 +125,7 @@ class TcpAioSession<T> extends AioSession<T> {
         this.ioServerConfig = config;
 
         this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
-        byteBuf = new WriteBuffer(bufferPage, flushFunction, ioServerConfig.getBufferPoolChunkSize(), ioServerConfig.getWriteQueueCapacity());
+        byteBuf = new WriteBuffer(bufferPage, flushFunction, ioServerConfig.getWriteBufferSize(), ioServerConfig.getWriteBufferCapacity());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }

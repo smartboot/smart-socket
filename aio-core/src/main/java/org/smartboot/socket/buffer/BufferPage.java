@@ -24,7 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author 三刀
  * @version V1.0 , 2018/10/31
  */
-public final class BufferPage {
+public class BufferPage {
     /**
      * 实例化当前内存页的线程对象
      */
