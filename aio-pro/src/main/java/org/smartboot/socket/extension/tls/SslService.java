@@ -7,10 +7,8 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.extension.ssl;
+package org.smartboot.socket.extension.tls;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -22,14 +20,16 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * TLS/SSL服务
@@ -37,28 +37,49 @@ import java.security.cert.X509Certificate;
  * @author 三刀
  * @version V1.0 , 2018/1/1
  */
-public class SslService {
+public final class SslService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SslService.class);
+    private static final Logger logger = Logger.getLogger("ssl");
 
     private SSLContext sslContext;
 
-    private SslConfig config;
+    private TlsConfig config;
 
-    private HandshakeCompletion handshakeCompletion = new HandshakeCompletion(this);
+    private CompletionHandler<Integer, HandshakeModel> handshakeCompletionHandler = new CompletionHandler<Integer, HandshakeModel>() {
+        @Override
+        public void completed(Integer result, HandshakeModel attachment) {
+            if (result == -1) {
+                attachment.setEof(true);
+            }
+            synchronized (attachment) {
+                doHandshake(attachment);
+            }
+        }
 
-    public SslService(SslConfig config) {
+        @Override
+        public void failed(Throwable exc, HandshakeModel attachment) {
+            try {
+                attachment.getSocketChannel().close();
+                attachment.getSslEngine().closeOutbound();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            exc.printStackTrace();
+        }
+    };
+
+    public SslService(TlsConfig config) {
         init(config);
     }
 
-    private void init(SslConfig config) {
+    private void init(TlsConfig config) {
         try {
             this.config = config;
             KeyManager[] keyManagers = null;
             if (config.getKeyFile() != null) {
                 KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
                 KeyStore ks = KeyStore.getInstance("JKS");
-                ks.load(new FileInputStream(config.getKeyFile()), config.getKeystorePassword().toCharArray());
+                ks.load(config.getKeyFile(), config.getKeystorePassword().toCharArray());
                 kmf.init(ks, config.getKeyPassword().toCharArray());
                 keyManagers = kmf.getKeyManagers();
             }
@@ -66,7 +87,7 @@ public class SslService {
             TrustManager[] trustManagers;
             if (config.getTrustFile() != null) {
                 KeyStore ts = KeyStore.getInstance("JKS");
-                ts.load(new FileInputStream(config.getTrustFile()), config.getTrustPassword().toCharArray());
+                ts.load(config.getTrustFile(), config.getTrustPassword().toCharArray());
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
                 tmf.init(ts);
                 trustManagers = tmf.getTrustManagers();
@@ -94,7 +115,7 @@ public class SslService {
         }
     }
 
-    public HandshakeModel createSSLEngine(AsynchronousSocketChannel socketChannel) {
+    HandshakeModel createSSLEngine(AsynchronousSocketChannel socketChannel) {
         try {
             HandshakeModel handshakeModel = new HandshakeModel();
             SSLEngine sslEngine = sslContext.createSSLEngine();
@@ -121,7 +142,6 @@ public class SslService {
             handshakeModel.setAppReadBuffer(ByteBuffer.allocate(1));
             handshakeModel.setNetReadBuffer(ByteBuffer.allocate(1));
             sslEngine.beginHandshake();
-
 
             handshakeModel.setSocketChannel(socketChannel);
             return handshakeModel;
@@ -150,13 +170,13 @@ public class SslService {
 
             //握手阶段网络断链
             if (handshakeModel.isEof()) {
-                logger.warn("the ssl handshake is terminated");
+                logger.info("the ssl handshake is terminated");
                 handshakeModel.setFinished(true);
                 return;
             }
             while (!handshakeModel.isFinished()) {
                 handshakeStatus = engine.getHandshakeStatus();
-                if (logger.isDebugEnabled()) {
+                if (logger.isLoggable(Level.FINER)) {
                     logger.info("握手状态:" + handshakeStatus);
                 }
                 switch (handshakeStatus) {
@@ -168,7 +188,7 @@ public class SslService {
                             netReadBuffer.compact();
                         } else {
                             netReadBuffer.clear();
-                            handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletion);
+                            handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletionHandler);
                             return;
                         }
 
@@ -189,7 +209,7 @@ public class SslService {
                                 // Will occur either when no data was read from the peer or when the netReadBuffer buffer was too small to hold all peer's data.
                                 netReadBuffer = handleBufferUnderflow(engine.getSession(), netReadBuffer);
                                 handshakeModel.setNetReadBuffer(netReadBuffer);
-                                handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletion);
+                                handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletionHandler);
                                 return;
                             default:
                                 throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
@@ -197,8 +217,8 @@ public class SslService {
                         break;
                     case NEED_WRAP:
                         if (netWriteBuffer.hasRemaining()) {
-                            logger.warn("数据未输出完毕...");
-                            handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletion);
+                            logger.fine("数据未输出完毕...");
+                            handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletionHandler);
                             return;
                         }
                         netWriteBuffer.clear();
@@ -210,10 +230,10 @@ public class SslService {
                                 if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
                                     handshakeModel.setFinished(true);
                                 }
-                                handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletion);
+                                handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletionHandler);
                                 return;
                             case BUFFER_OVERFLOW:
-                                logger.warn("NEED_WRAP BUFFER_OVERFLOW");
+                                logger.warning("NEED_WRAP BUFFER_OVERFLOW");
                                 netWriteBuffer = enlargePacketBuffer(engine.getSession(), netWriteBuffer);
                                 if (netWriteBuffer.position() > 0) {
                                     netWriteBuffer.compact();
@@ -231,7 +251,7 @@ public class SslService {
                                     // At this point the handshake status will probably be NEED_UNWRAP so we make sure that netReadBuffer is clear to read.
                                     netReadBuffer.clear();
                                 } catch (Exception e) {
-                                    logger.error("Failed to send server's CLOSE message due to socket channel's failure.");
+                                    logger.fine("Failed to send server's CLOSE message due to socket channel's failure.");
                                 }
                                 break;
                             default:
@@ -255,7 +275,7 @@ public class SslService {
                         throw new IllegalStateException("Invalid SSL status: " + handshakeStatus);
                 }
             }
-            logger.debug("握手完毕");
+            logger.finest("握手完毕");
             handshakeModel.getHandshakeCallback().callback();
 
         } catch (Exception e) {
@@ -270,15 +290,15 @@ public class SslService {
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
-            logger.error("", e);
+            e.printStackTrace();
         }
     }
 
-    protected ByteBuffer enlargePacketBuffer(SSLSession session, ByteBuffer buffer) {
+    private ByteBuffer enlargePacketBuffer(SSLSession session, ByteBuffer buffer) {
         return enlargeBuffer(buffer, session.getPacketBufferSize());
     }
 
-    protected ByteBuffer enlargeApplicationBuffer(SSLEngine engine, ByteBuffer buffer) {
+    private ByteBuffer enlargeApplicationBuffer(SSLEngine engine, ByteBuffer buffer) {
         return enlargeBuffer(buffer, engine.getSession().getApplicationBufferSize());
     }
 
@@ -291,7 +311,7 @@ public class SslService {
      * @param sessionProposedCapacity - the minimum size of the new buffer, proposed by {@link SSLSession}.
      * @return A new buffer with a larger capacity.
      */
-    protected ByteBuffer enlargeBuffer(ByteBuffer buffer, int sessionProposedCapacity) {
+    private ByteBuffer enlargeBuffer(ByteBuffer buffer, int sessionProposedCapacity) {
         if (sessionProposedCapacity > buffer.capacity()) {
             buffer = ByteBuffer.allocate(sessionProposedCapacity);
         } else {
@@ -300,7 +320,7 @@ public class SslService {
         return buffer;
     }
 
-    protected ByteBuffer handleBufferUnderflow(SSLSession session, ByteBuffer buffer) {
+    private ByteBuffer handleBufferUnderflow(SSLSession session, ByteBuffer buffer) {
         if (session.getPacketBufferSize() < buffer.limit()) {
             return buffer;
         } else {
@@ -310,5 +330,4 @@ public class SslService {
             return replaceBuffer;
         }
     }
-
 }

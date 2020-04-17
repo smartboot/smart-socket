@@ -45,9 +45,9 @@ public interface NetMonitor<T> {
      * </p>
      *
      * @param channel 当前已经建立连接的通道对象
-     * @return true:接受该连接,false:拒绝该连接
+     * @return 非null:接受该连接,null:拒绝该连接
      */
-    boolean shouldAccept(AsynchronousSocketChannel channel);
+    AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel);
 
     /**
      * 监控触发本次读回调Session的已读数据字节数

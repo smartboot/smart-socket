@@ -15,7 +15,6 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.util.QuickTimerTask;
 
-import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -25,7 +24,7 @@ import java.util.concurrent.atomic.LongAdder;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public final class MonitorPlugin<T> implements Runnable, Plugin<T> {
+public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(MonitorPlugin.class);
     /**
      * 任务执行频率
@@ -138,11 +137,6 @@ public final class MonitorPlugin<T> implements Runnable, Plugin<T> {
         long result = longAdder.longValue();
         longAdder.add(-result);
         return result;
-    }
-
-    @Override
-    public boolean shouldAccept(AsynchronousSocketChannel channel) {
-        return true;
     }
 
     @Override

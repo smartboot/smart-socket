@@ -7,35 +7,30 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.extension.ssl;
+package org.smartboot.socket.extension.tls;
+
+import java.io.InputStream;
 
 /**
  * @author 三刀
  * @version V1.0 , 2018/1/1
  */
-public class SslConfig {
+public class TlsConfig {
     /**
      * 配置引擎在握手时使用客户端（或服务器）模式
      */
     private boolean clientMode;
-    private String keyFile;
+    private InputStream keyFile;
 
     private String keystorePassword;
 
     private String keyPassword;
-    private String trustFile;
+    private InputStream trustFile;
 
     private String trustPassword;
 
     private ClientAuth clientAuth = ClientAuth.NONE;
 
-    public String getKeyFile() {
-        return keyFile;
-    }
-
-    public void setKeyFile(String keyFile) {
-        this.keyFile = keyFile;
-    }
 
     public String getKeystorePassword() {
         return keystorePassword;
@@ -53,11 +48,19 @@ public class SslConfig {
         this.keyPassword = keyPassword;
     }
 
-    public String getTrustFile() {
+    public InputStream getKeyFile() {
+        return keyFile;
+    }
+
+    public void setKeyFile(InputStream keyFile) {
+        this.keyFile = keyFile;
+    }
+
+    public InputStream getTrustFile() {
         return trustFile;
     }
 
-    public void setTrustFile(String trustFile) {
+    public void setTrustFile(InputStream trustFile) {
         this.trustFile = trustFile;
     }
 
@@ -84,4 +87,5 @@ public class SslConfig {
     public void setClientAuth(ClientAuth clientAuth) {
         this.clientAuth = clientAuth;
     }
+
 }

@@ -30,8 +30,8 @@ public abstract class AbstractPlugin<T> implements Plugin<T> {
     }
 
     @Override
-    public boolean shouldAccept(AsynchronousSocketChannel channel) {
-        return true;
+    public AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
+        return channel;
     }
 
     @Override

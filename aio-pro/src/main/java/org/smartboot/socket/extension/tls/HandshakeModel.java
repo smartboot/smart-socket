@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.extension.ssl;
+package org.smartboot.socket.extension.tls;
 
 import javax.net.ssl.SSLEngine;
 import java.nio.ByteBuffer;
@@ -17,7 +17,7 @@ import java.nio.channels.AsynchronousSocketChannel;
  * @author 三刀
  * @version V1.0 , 2018/1/2
  */
-public class HandshakeModel {
+class HandshakeModel {
 
     private AsynchronousSocketChannel socketChannel;
     private SSLEngine sslEngine;

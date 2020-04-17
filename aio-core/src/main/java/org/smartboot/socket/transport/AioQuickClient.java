@@ -52,22 +52,22 @@ import java.util.concurrent.TimeoutException;
  * @author 三刀
  * @version V1.0.0
  */
-public class AioQuickClient<T> {
+public final class AioQuickClient<T> {
     /**
      * 客户端服务配置。
      * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
      */
-    protected IoServerConfig<T> config = new IoServerConfig<>();
+    private IoServerConfig<T> config = new IoServerConfig<>();
     /**
      * 网络连接的会话对象
      *
      * @see TcpAioSession
      */
-    protected TcpAioSession<T> session;
+    private TcpAioSession<T> session;
     /**
      * 内存池
      */
-    protected BufferPagePool bufferPool = null;
+    private BufferPagePool bufferPool = null;
 
     private BufferPagePool innerBufferPool = null;
     /**
@@ -148,8 +148,17 @@ public class AioQuickClient<T> {
             shutdownNow();
             throw new IOException(e);
         }
+        AsynchronousSocketChannel connectedChannel = socketChannel;
+        if (config.getMonitor() != null) {
+            connectedChannel = config.getMonitor().shouldAccept(socketChannel);
+        }
+        if (connectedChannel == null) {
+            IOUtil.close(socketChannel);
+            shutdownNow();
+            throw new RuntimeException("NetMonitor refuse channel");
+        }
         //连接成功则构造AIOSession对象
-        session = new TcpAioSession<T>(socketChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool.allocateBufferPage());
+        session = new TcpAioSession<T>(connectedChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool.allocateBufferPage());
         session.initSession();
         return session;
     }
@@ -310,6 +319,5 @@ public class AioQuickClient<T> {
         this.connectTimeout = timeout;
         return this;
     }
-
 
 }
