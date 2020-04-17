@@ -9,9 +9,11 @@
 
 package org.smartboot.socket.extension.plugins;
 
+import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.ssl.SslAsynchronousSocketChannel;
 import org.smartboot.socket.extension.ssl.SslService;
 
+import java.io.InputStream;
 import java.nio.channels.AsynchronousSocketChannel;
 
 /**
@@ -20,10 +22,21 @@ import java.nio.channels.AsynchronousSocketChannel;
  * @author 三刀
  * @version V1.0 , 2020/4/17
  */
-abstract class SslPlugin<T> extends AbstractPlugin<T> {
-    protected SslService sslService;
+public final class SslPlugin<T> extends AbstractPlugin<T> {
+    private SslService sslService;
 
-    SslPlugin() {
+    public SslPlugin() {
+        this(null, null);
+    }
+
+    public SslPlugin(InputStream trustInputStream, String trustPassword) {
+        sslService = new SslService(true, null);
+        sslService.initTrust(trustInputStream, trustPassword);
+    }
+
+    public SslPlugin(InputStream keyStoreInputStream, String keyStorePassword, String keyPassword, ClientAuth clientAuth) {
+        sslService = new SslService(false, clientAuth);
+        sslService.initKeyStore(keyStoreInputStream, keyStorePassword, keyPassword);
     }
 
     @Override

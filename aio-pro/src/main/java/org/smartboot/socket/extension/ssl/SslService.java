@@ -21,6 +21,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
@@ -44,7 +45,9 @@ public final class SslService {
 
     private SSLContext sslContext;
 
-    private SslConfig config;
+    private boolean isClient;
+
+    private ClientAuth clientAuth;
 
     private CompletionHandler<Integer, HandshakeModel> handshakeCompletionHandler = new CompletionHandler<Integer, HandshakeModel>() {
         @Override
@@ -69,32 +72,34 @@ public final class SslService {
         }
     };
 
-    public SslService(SslConfig config) {
-        config.setClientMode(true);
-        init(config);
+    public SslService(boolean isClient, ClientAuth clientAuth) {
+        this.isClient = isClient;
+        this.clientAuth = clientAuth;
     }
 
-    public SslService(ClientAuth clientAuth, SslConfig config) {
-        config.setClientAuth(clientAuth);
-        init(config);
-    }
-
-    private void init(SslConfig config) {
+    public void initKeyStore(InputStream keyStoreInputStream, String keyStorePassword, String keyPassword) {
         try {
-            this.config = config;
-            KeyManager[] keyManagers = null;
-            if (config.getKeyFile() != null) {
-                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-                KeyStore ks = KeyStore.getInstance("JKS");
-                ks.load(config.getKeyFile(), config.getKeystorePassword().toCharArray());
-                kmf.init(ks, config.getKeyPassword().toCharArray());
-                keyManagers = kmf.getKeyManagers();
-            }
 
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(keyStoreInputStream, keyStorePassword.toCharArray());
+            kmf.init(ks, keyPassword.toCharArray());
+            KeyManager[] keyManagers = kmf.getKeyManagers();
+
+            sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(keyManagers, null, new SecureRandom());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void initTrust(InputStream trustInputStream, String trustPassword) {
+        try {
             TrustManager[] trustManagers;
-            if (config.getTrustFile() != null) {
+            if (trustInputStream != null) {
                 KeyStore ts = KeyStore.getInstance("JKS");
-                ts.load(config.getTrustFile(), config.getTrustPassword().toCharArray());
+                ts.load(trustInputStream, trustPassword.toCharArray());
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
                 tmf.init(ts);
                 trustManagers = tmf.getTrustManagers();
@@ -115,10 +120,10 @@ public final class SslService {
                 }};
             }
             sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(keyManagers, trustManagers, new SecureRandom());
+            sslContext.init(null, trustManagers, new SecureRandom());
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -127,9 +132,9 @@ public final class SslService {
             HandshakeModel handshakeModel = new HandshakeModel();
             SSLEngine sslEngine = sslContext.createSSLEngine();
             SSLSession session = sslEngine.getSession();
-            sslEngine.setUseClientMode(config.isClientMode());
-            if (!config.isClientMode()) {
-                switch (config.getClientAuth()) {
+            sslEngine.setUseClientMode(isClient);
+            if (clientAuth != null) {
+                switch (clientAuth) {
                     case OPTIONAL:
                         sslEngine.setWantClientAuth(true);
                         break;
@@ -139,7 +144,7 @@ public final class SslService {
                     case NONE:
                         break;
                     default:
-                        throw new Error("Unknown auth " + config.getClientAuth());
+                        throw new Error("Unknown auth " + clientAuth);
                 }
             }
             handshakeModel.setSslEngine(sslEngine);
