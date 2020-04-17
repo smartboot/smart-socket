@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.extension.tls;
+package org.smartboot.socket.extension.ssl;
 
 import java.io.InputStream;
 
@@ -15,7 +15,7 @@ import java.io.InputStream;
  * @author 三刀
  * @version V1.0 , 2018/1/1
  */
-public class TlsConfig {
+public class SslConfig {
     /**
      * 配置引擎在握手时使用客户端（或服务器）模式
      */
@@ -72,19 +72,19 @@ public class TlsConfig {
         this.trustPassword = trustPassword;
     }
 
-    public boolean isClientMode() {
+    boolean isClientMode() {
         return clientMode;
     }
 
-    public void setClientMode(boolean clientMode) {
+    void setClientMode(boolean clientMode) {
         this.clientMode = clientMode;
     }
 
-    public ClientAuth getClientAuth() {
+    ClientAuth getClientAuth() {
         return clientAuth;
     }
 
-    public void setClientAuth(ClientAuth clientAuth) {
+    void setClientAuth(ClientAuth clientAuth) {
         this.clientAuth = clientAuth;
     }
 

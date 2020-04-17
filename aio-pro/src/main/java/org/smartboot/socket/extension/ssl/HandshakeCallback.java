@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.extension.tls;
+package org.smartboot.socket.extension.ssl;
 
 /**
  * @author 三刀

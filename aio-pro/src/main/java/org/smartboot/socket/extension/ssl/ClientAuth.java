@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.extension.tls;
+package org.smartboot.socket.extension.ssl;
 
 /**
  * 配置引擎请求客户端验证。此选项只对服务器模式的引擎有用

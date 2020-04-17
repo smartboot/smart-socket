@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.extension.tls;
+package org.smartboot.socket.extension.ssl;
 
 import javax.net.ssl.SSLEngine;
 import java.nio.ByteBuffer;

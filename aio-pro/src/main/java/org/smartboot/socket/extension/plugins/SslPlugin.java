@@ -9,25 +9,25 @@
 
 package org.smartboot.socket.extension.plugins;
 
-import org.smartboot.socket.extension.tls.SslService;
-import org.smartboot.socket.extension.tls.TlsAsynchronousSocketChannel;
-import org.smartboot.socket.extension.tls.TlsConfig;
+import org.smartboot.socket.extension.ssl.SslAsynchronousSocketChannel;
+import org.smartboot.socket.extension.ssl.SslService;
 
 import java.nio.channels.AsynchronousSocketChannel;
 
 /**
+ * SSL/TLS通信插件
+ *
  * @author 三刀
  * @version V1.0 , 2020/4/17
  */
-public class TlsPlugin<T> extends AbstractPlugin<T> {
-    private SslService sslService;
+abstract class SslPlugin<T> extends AbstractPlugin<T> {
+    protected SslService sslService;
 
-    public TlsPlugin(TlsConfig sslConfig) {
-        sslService = new SslService(sslConfig);
+    SslPlugin() {
     }
 
     @Override
-    public AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
-        return new TlsAsynchronousSocketChannel(channel, sslService, 4096);
+    public final AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
+        return new SslAsynchronousSocketChannel(channel, sslService, 4096);
     }
 }

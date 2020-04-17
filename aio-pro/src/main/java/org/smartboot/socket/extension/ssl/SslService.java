@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.extension.tls;
+package org.smartboot.socket.extension.ssl;
 
 
 import javax.net.ssl.KeyManager;
@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 
 /**
  * TLS/SSL服务
+ * keytool -genkey -validity 36000 -alias www.smartboot.org -keyalg RSA -keystore server.keystore
  *
  * @author 三刀
  * @version V1.0 , 2018/1/1
@@ -43,7 +44,7 @@ public final class SslService {
 
     private SSLContext sslContext;
 
-    private TlsConfig config;
+    private SslConfig config;
 
     private CompletionHandler<Integer, HandshakeModel> handshakeCompletionHandler = new CompletionHandler<Integer, HandshakeModel>() {
         @Override
@@ -68,11 +69,17 @@ public final class SslService {
         }
     };
 
-    public SslService(TlsConfig config) {
+    public SslService(SslConfig config) {
+        config.setClientMode(true);
         init(config);
     }
 
-    private void init(TlsConfig config) {
+    public SslService(ClientAuth clientAuth, SslConfig config) {
+        config.setClientAuth(clientAuth);
+        init(config);
+    }
+
+    private void init(SslConfig config) {
         try {
             this.config = config;
             KeyManager[] keyManagers = null;

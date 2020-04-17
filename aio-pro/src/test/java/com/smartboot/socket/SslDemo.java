@@ -9,9 +9,10 @@
 
 package com.smartboot.socket;
 
-import org.smartboot.socket.extension.plugins.TlsPlugin;
-import org.smartboot.socket.extension.tls.ClientAuth;
-import org.smartboot.socket.extension.tls.TlsConfig;
+import org.smartboot.socket.extension.plugins.SslClientPlugin;
+import org.smartboot.socket.extension.plugins.SslServerPlugin;
+import org.smartboot.socket.extension.ssl.ClientAuth;
+import org.smartboot.socket.extension.ssl.SslConfig;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;
@@ -28,26 +29,24 @@ public class SslDemo {
         IntegerServerProcessor serverProcessor = new IntegerServerProcessor();
         AioQuickServer sslQuickServer = new AioQuickServer(8080, new IntegerProtocol(), serverProcessor);
 
-        TlsConfig serverConfig = new TlsConfig();
-        serverConfig.setClientAuth(ClientAuth.NONE);
+        SslConfig serverConfig = new SslConfig();
         serverConfig.setKeyPassword("123456");
         serverConfig.setKeyFile(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"));
         serverConfig.setKeystorePassword("123456");
         serverConfig.setTrustFile(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"));
         serverConfig.setTrustPassword("123456");
-        serverProcessor.addPlugin(new TlsPlugin(serverConfig));
+        serverProcessor.addPlugin(new SslServerPlugin(ClientAuth.NONE, serverConfig));
         sslQuickServer.start();
 
         IntegerClientProcessor clientProcessor = new IntegerClientProcessor();
         AioQuickClient sslQuickClient = new AioQuickClient("localhost", 8080, new IntegerProtocol(), clientProcessor);
-        TlsConfig clientConfig = new TlsConfig();
-        clientConfig.setClientMode(true);
+        SslConfig clientConfig = new SslConfig();
         clientConfig.setKeyPassword("123456");
         clientConfig.setKeyFile(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"));
         clientConfig.setKeystorePassword("123456");
         clientConfig.setTrustFile(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"));
         clientConfig.setTrustPassword("123456");
-        clientProcessor.addPlugin(new TlsPlugin(clientConfig));
+        clientProcessor.addPlugin(new SslClientPlugin(clientConfig));
         AioSession aioSession = sslQuickClient.start();
         aioSession.writeBuffer().writeInt(1);
         aioSession.writeBuffer().flush();

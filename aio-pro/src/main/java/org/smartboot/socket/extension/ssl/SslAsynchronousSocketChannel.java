@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.extension.tls;
+package org.smartboot.socket.extension.ssl;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -24,12 +24,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
- * keytool -genkey -validity 36000 -alias www.smartboot.org -keyalg RSA -keystore server.keystore
+ *
  *
  * @author 三刀
  * @version V1.0 , 2020/4/16
  */
-public class TlsAsynchronousSocketChannel extends AsynchronousSocketChannel {
+public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private static final Logger logger = Logger.getLogger("ssl");
     private AsynchronousSocketChannel asynchronousSocketChannel;
     private ByteBuffer netWriteBuffer;
@@ -48,7 +48,7 @@ public class TlsAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     private boolean handshake = true;
 
-    public TlsAsynchronousSocketChannel(AsynchronousSocketChannel asynchronousSocketChannel, SslService sslService, int readBufferSize) {
+    public SslAsynchronousSocketChannel(AsynchronousSocketChannel asynchronousSocketChannel, SslService sslService, int readBufferSize) {
         super(null);
         this.handshakeModel = sslService.createSSLEngine(asynchronousSocketChannel);
         this.sslService = sslService;
@@ -112,13 +112,13 @@ public class TlsAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 @Override
                 public void callback() {
                     handshake = false;
-                    synchronized (TlsAsynchronousSocketChannel.this) {
+                    synchronized (SslAsynchronousSocketChannel.this) {
                         //释放内存
                         handshakeModel = null;
-                        TlsAsynchronousSocketChannel.this.notifyAll();
+                        SslAsynchronousSocketChannel.this.notifyAll();
                     }
                     System.out.println(System.currentTimeMillis() - cur);
-                    TlsAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
+                    SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
                 }
             });
             //触发握手
