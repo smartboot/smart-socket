@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
+import org.smartboot.socket.extension.plugins.SslPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
@@ -40,6 +41,7 @@ public class StringClient {
             }
         };
         processor.addPlugin(new MonitorPlugin(5));
+        processor.addPlugin(new SslPlugin());
         AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {

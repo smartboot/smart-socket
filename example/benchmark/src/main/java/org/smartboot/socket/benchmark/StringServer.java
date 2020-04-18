@@ -6,7 +6,9 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.plugins.BufferPageMonitorPlugin;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
+import org.smartboot.socket.extension.plugins.SslPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
+import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.WriteBuffer;
@@ -52,6 +54,7 @@ public class StringServer {
                 .setWriteBuffer(4096, 512);
         processor.addPlugin(new BufferPageMonitorPlugin(server, 6));
         processor.addPlugin(new MonitorPlugin(5));
+        processor.addPlugin(new SslPlugin(StringServer.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456", ClientAuth.NONE));
         server.start();
 
     }
