@@ -46,15 +46,17 @@ public class StringServer {
             }
         };
 
-
+        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors() + 1, true);
         AioQuickServer<String> server = new AioQuickServer<>(8888, new StringProtocol(), processor);
         server.setReadBufferSize(1024 * 1024)
                 .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
-                .setBufferFactory(() -> new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors() + 1, true))
+                .setBufferFactory(() -> bufferPagePool)
                 .setWriteBuffer(4096, 512);
         processor.addPlugin(new BufferPageMonitorPlugin(server, 6));
         processor.addPlugin(new MonitorPlugin(5));
-        processor.addPlugin(new SslPlugin(StringServer.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456", ClientAuth.NONE));
+        SslPlugin sslPlugin = new SslPlugin(4096, bufferPagePool);
+        sslPlugin.initForServer(StringServer.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456", ClientAuth.NONE);
+        processor.addPlugin(sslPlugin);
         server.start();
 
     }

@@ -9,6 +9,7 @@
 
 package org.smartboot.socket.extension.plugins;
 
+import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.ssl.SslAsynchronousSocketChannel;
 import org.smartboot.socket.extension.ssl.SslService;
@@ -24,23 +25,40 @@ import java.nio.channels.AsynchronousSocketChannel;
  */
 public final class SslPlugin<T> extends AbstractPlugin<T> {
     private SslService sslService;
+    private BufferPagePool bufferPagePool;
+    private int readBufferSize;
+    private boolean init = false;
 
-    public SslPlugin() {
-        this(null, null);
+    public SslPlugin(int readBufferSize, BufferPagePool bufferPagePool) {
+        this.readBufferSize = readBufferSize;
+        this.bufferPagePool = bufferPagePool;
     }
 
-    public SslPlugin(InputStream trustInputStream, String trustPassword) {
-        sslService = new SslService(true, null);
-        sslService.initTrust(trustInputStream, trustPassword);
-    }
-
-    public SslPlugin(InputStream keyStoreInputStream, String keyStorePassword, String keyPassword, ClientAuth clientAuth) {
+    public void initForServer(InputStream keyStoreInputStream, String keyStorePassword, String keyPassword, ClientAuth clientAuth) {
+        initCheck();
         sslService = new SslService(false, clientAuth);
         sslService.initKeyStore(keyStoreInputStream, keyStorePassword, keyPassword);
     }
 
+    public void initForClient() {
+        initForClient(null, null);
+    }
+
+    public void initForClient(InputStream trustInputStream, String trustPassword) {
+        initCheck();
+        sslService = new SslService(true, null);
+        sslService.initTrust(trustInputStream, trustPassword);
+    }
+
+    private void initCheck() {
+        if (init) {
+            throw new RuntimeException("plugin is already init");
+        }
+        init = true;
+    }
+
     @Override
     public final AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
-        return new SslAsynchronousSocketChannel(channel, sslService, 4096);
+        return new SslAsynchronousSocketChannel(channel, sslService, readBufferSize, bufferPagePool.allocateBufferPage());
     }
 }

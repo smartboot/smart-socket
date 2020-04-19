@@ -26,13 +26,16 @@ public class SslDemo {
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         IntegerServerProcessor serverProcessor = new IntegerServerProcessor();
         AioQuickServer sslQuickServer = new AioQuickServer(8080, new IntegerProtocol(), serverProcessor);
-
-        serverProcessor.addPlugin(new SslPlugin(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456", ClientAuth.OPTIONAL));
+        SslPlugin sslServerPlugin = new SslPlugin(4096, null);
+        sslServerPlugin.initForServer(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456", ClientAuth.OPTIONAL);
+        serverProcessor.addPlugin(sslServerPlugin);
         sslQuickServer.start();
 
         IntegerClientProcessor clientProcessor = new IntegerClientProcessor();
         AioQuickClient sslQuickClient = new AioQuickClient("localhost", 8080, new IntegerProtocol(), clientProcessor);
-        clientProcessor.addPlugin(new SslPlugin(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"), "123456"));
+        SslPlugin sslPlugin = new SslPlugin(4096, null);
+        sslPlugin.initForClient(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"), "123456");
+        clientProcessor.addPlugin(sslPlugin);
 //        clientProcessor.addPlugin(new SslPlugin());
         AioSession aioSession = sslQuickClient.start();
         aioSession.writeBuffer().writeInt(1);

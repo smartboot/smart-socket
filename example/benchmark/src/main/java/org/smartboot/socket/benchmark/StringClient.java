@@ -41,7 +41,9 @@ public class StringClient {
             }
         };
         processor.addPlugin(new MonitorPlugin(5));
-        processor.addPlugin(new SslPlugin());
+        SslPlugin sslPlugin = new SslPlugin(4096, bufferPagePool);
+        sslPlugin.initForClient();
+        processor.addPlugin(sslPlugin);
         AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
