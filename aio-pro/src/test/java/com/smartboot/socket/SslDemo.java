@@ -26,14 +26,14 @@ public class SslDemo {
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         IntegerServerProcessor serverProcessor = new IntegerServerProcessor();
         AioQuickServer sslQuickServer = new AioQuickServer(8080, new IntegerProtocol(), serverProcessor);
-        SslPlugin sslServerPlugin = new SslPlugin(4096, null);
+        SslPlugin sslServerPlugin = new SslPlugin(null);
         sslServerPlugin.initForServer(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456", ClientAuth.OPTIONAL);
         serverProcessor.addPlugin(sslServerPlugin);
         sslQuickServer.start();
 
         IntegerClientProcessor clientProcessor = new IntegerClientProcessor();
         AioQuickClient sslQuickClient = new AioQuickClient("localhost", 8080, new IntegerProtocol(), clientProcessor);
-        SslPlugin sslPlugin = new SslPlugin(4096, null);
+        SslPlugin sslPlugin = new SslPlugin(null);
         sslPlugin.initForClient(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"), "123456");
         clientProcessor.addPlugin(sslPlugin);
 //        clientProcessor.addPlugin(new SslPlugin());

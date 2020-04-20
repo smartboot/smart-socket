@@ -54,7 +54,7 @@ public class StringServer {
                 .setWriteBuffer(4096, 512);
         processor.addPlugin(new BufferPageMonitorPlugin(server, 6));
         processor.addPlugin(new MonitorPlugin(5));
-        SslPlugin sslPlugin = new SslPlugin(4096, bufferPagePool);
+        SslPlugin sslPlugin = new SslPlugin(bufferPagePool);
         sslPlugin.initForServer(StringServer.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456", ClientAuth.NONE);
         processor.addPlugin(sslPlugin);
         server.start();

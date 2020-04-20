@@ -26,11 +26,9 @@ import java.nio.channels.AsynchronousSocketChannel;
 public final class SslPlugin<T> extends AbstractPlugin<T> {
     private SslService sslService;
     private BufferPagePool bufferPagePool;
-    private int readBufferSize;
     private boolean init = false;
 
-    public SslPlugin(int readBufferSize, BufferPagePool bufferPagePool) {
-        this.readBufferSize = readBufferSize;
+    public SslPlugin(BufferPagePool bufferPagePool) {
         this.bufferPagePool = bufferPagePool;
     }
 
@@ -59,6 +57,6 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
 
     @Override
     public final AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
-        return new SslAsynchronousSocketChannel(channel, sslService, readBufferSize, bufferPagePool.allocateBufferPage());
+        return new SslAsynchronousSocketChannel(channel, sslService, bufferPagePool.allocateBufferPage());
     }
 }
