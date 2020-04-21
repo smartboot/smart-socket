@@ -299,7 +299,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
             while (result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
-//                        logger.info("doWrap BUFFER_OVERFLOW");
+//                        logger.info("doWrap BUFFER_OVERFLOW"+writeBuffer.limit());
                         netBuffer.clear();
                         writeBuffer.limit(writeBuffer.position() + ((writeBuffer.limit() - writeBuffer.position() >> 1)));
                         break;
@@ -344,8 +344,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
         sslEngine.closeOutbound();
         netWriteBuffer.clean();
         netReadBuffer.clean();
-        if (appReadBuffer != null) {
-            appReadBuffer.clean();
-        }
+        appReadBuffer.clean();
     }
 }
