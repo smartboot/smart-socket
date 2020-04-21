@@ -51,14 +51,13 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     public SslAsynchronousSocketChannel(AsynchronousSocketChannel asynchronousSocketChannel, SslService sslService, BufferPage bufferPage) {
         super(null);
-        this.handshakeModel = sslService.createSSLEngine(asynchronousSocketChannel);
+        this.handshakeModel = sslService.createSSLEngine(asynchronousSocketChannel, bufferPage);
         this.sslService = sslService;
         this.asynchronousSocketChannel = asynchronousSocketChannel;
         this.sslEngine = handshakeModel.getSslEngine();
-        this.netWriteBuffer = bufferPage.allocate(sslEngine.getSession().getPacketBufferSize());
-        this.netReadBuffer = bufferPage.allocate(sslEngine.getSession().getPacketBufferSize());
-        this.appReadBuffer = bufferPage.allocate(sslEngine.getSession().getApplicationBufferSize());
-        appReadBuffer.buffer().position(appReadBuffer.buffer().limit());
+        this.netWriteBuffer = handshakeModel.getNetWriteBuffer();
+        this.netReadBuffer = handshakeModel.getNetReadBuffer();
+        this.appReadBuffer = handshakeModel.getAppReadBuffer();
     }
 
     @Override
@@ -115,7 +114,11 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     handshake = false;
                     synchronized (SslAsynchronousSocketChannel.this) {
                         //释放内存
+                        handshakeModel.getAppWriteBuffer().clean();
                         handshakeModel = null;
+                        netReadBuffer.buffer().clear();
+                        netWriteBuffer.buffer().clear();
+                        appReadBuffer.buffer().clear().flip();
                         SslAsynchronousSocketChannel.this.notifyAll();
                     }
                     SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
