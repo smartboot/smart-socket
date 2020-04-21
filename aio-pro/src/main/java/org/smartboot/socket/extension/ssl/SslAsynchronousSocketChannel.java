@@ -34,10 +34,9 @@ import java.util.logging.Logger;
 public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private static final Logger logger = Logger.getLogger("ssl");
     private final VirtualBuffer netWriteBuffer;
-    private final BufferPage bufferPage;
     private final VirtualBuffer netReadBuffer;
-    private AsynchronousSocketChannel asynchronousSocketChannel;
-    private VirtualBuffer appReadBuffer;
+    private final VirtualBuffer appReadBuffer;
+    private final AsynchronousSocketChannel asynchronousSocketChannel;
     private SSLEngine sslEngine = null;
     /**
      * 完成握手置null
@@ -52,13 +51,14 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     public SslAsynchronousSocketChannel(AsynchronousSocketChannel asynchronousSocketChannel, SslService sslService, BufferPage bufferPage) {
         super(null);
-        this.bufferPage = bufferPage;
         this.handshakeModel = sslService.createSSLEngine(asynchronousSocketChannel);
         this.sslService = sslService;
         this.asynchronousSocketChannel = asynchronousSocketChannel;
         this.sslEngine = handshakeModel.getSslEngine();
         this.netWriteBuffer = bufferPage.allocate(sslEngine.getSession().getPacketBufferSize());
         this.netReadBuffer = bufferPage.allocate(sslEngine.getSession().getPacketBufferSize());
+        this.appReadBuffer = bufferPage.allocate(sslEngine.getSession().getApplicationBufferSize());
+        appReadBuffer.buffer().position(appReadBuffer.buffer().limit());
     }
 
     @Override
@@ -125,42 +125,40 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
             sslService.doHandshake(handshakeModel);
             return;
         }
-        if (appReadBuffer != null) {
+        ByteBuffer appBuffer = appReadBuffer.buffer();
+        if (appBuffer.hasRemaining()) {
             int pos = dst.position();
-            if (appReadBuffer.buffer().remaining() > dst.remaining()) {
-                byte[] bytes = new byte[dst.remaining()];
-                appReadBuffer.buffer().get(bytes);
-                dst.put(bytes);
+            if (appBuffer.remaining() > dst.remaining()) {
+                int limit = appBuffer.limit();
+                appBuffer.limit(appBuffer.position() + dst.remaining());
+                dst.put(appBuffer);
+                appBuffer.limit(limit);
             } else {
-                dst.put(appReadBuffer.buffer());
-            }
-            if (!appReadBuffer.buffer().hasRemaining()) {
-                appReadBuffer.clean();
-                appReadBuffer = null;
+                dst.put(appBuffer);
             }
             handler.completed(dst.position() - pos, attachment);
             return;
         }
+
         asynchronousSocketChannel.read(netReadBuffer.buffer(), timeout, unit, attachment, new CompletionHandler<Integer, A>() {
             @Override
             public void completed(Integer result, A attachment) {
                 int pos = dst.position();
-                appReadBuffer = bufferPage.allocate(1024);
+                ByteBuffer appBuffer = appReadBuffer.buffer();
+                appBuffer.clear();
                 doUnWrap();
-                appReadBuffer.buffer().flip();
-                if (appReadBuffer.buffer().remaining() > dst.remaining()) {
-                    byte[] bytes = new byte[dst.remaining()];
-                    appReadBuffer.buffer().get(bytes);
-                    dst.put(bytes);
-                } else if (appReadBuffer.buffer().hasRemaining()) {
-                    dst.put(appReadBuffer.buffer());
+                appBuffer.flip();
+                if (appBuffer.remaining() > dst.remaining()) {
+                    int limit = appBuffer.limit();
+                    appBuffer.limit(appBuffer.position() + dst.remaining());
+                    dst.put(appBuffer);
+                    appBuffer.limit(limit);
+                } else if (appBuffer.hasRemaining()) {
+                    dst.put(appBuffer);
                 } else if (result > 0) {
+                    appBuffer.compact();
                     asynchronousSocketChannel.read(netReadBuffer.buffer(), timeout, unit, attachment, this);
                     return;
-                }
-                if (!appReadBuffer.buffer().hasRemaining()) {
-                    appReadBuffer.clean();
-                    appReadBuffer = null;
                 }
 
                 handler.completed(result != -1 ? dst.position() - pos : result, attachment);
@@ -183,16 +181,17 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
             while (!closed && result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
+                        logger.severe("BUFFER_OVERFLOW error");
                         // Could attempt to drain the dst buffer of any already obtained
                         // data, but we'll just increase it to the size needed.
-                        int appSize = appBuffer.capacity() * 2 < sslEngine.getSession().getApplicationBufferSize() ? appBuffer.capacity() * 2 : sslEngine.getSession().getApplicationBufferSize();
-//                        logger.info("doUnWrap BUFFER_OVERFLOW:" + appSize + ", pos:" + appBuffer.position());
-                        VirtualBuffer b = bufferPage.allocate(appSize + appBuffer.position());
-                        appBuffer.flip();
-                        b.buffer().put(appBuffer);
-                        appReadBuffer.clean();
-                        appReadBuffer = b;
-                        appBuffer = appReadBuffer.buffer();
+//                        int appSize = appBuffer.capacity() * 2 < sslEngine.getSession().getApplicationBufferSize() ? appBuffer.capacity() * 2 : sslEngine.getSession().getApplicationBufferSize();
+////                        logger.info("doUnWrap BUFFER_OVERFLOW:" + appSize + ", pos:" + appBuffer.position());
+//                        VirtualBuffer b = bufferPage.allocate(appSize + appBuffer.position());
+//                        appBuffer.flip();
+//                        b.buffer().put(appBuffer);
+//                        appReadBuffer.clean();
+//                        appReadBuffer = b;
+//                        appBuffer = appReadBuffer.buffer();
                         // retry the operation.
                         break;
                     case BUFFER_UNDERFLOW:
