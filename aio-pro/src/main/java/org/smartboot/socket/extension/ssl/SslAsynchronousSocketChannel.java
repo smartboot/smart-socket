@@ -162,9 +162,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     appReadBuffer.clean();
                     appReadBuffer = null;
                 }
-                if (dst.position() == pos) {
-                    System.out.println("haha");
-                }
+
                 handler.completed(result != -1 ? dst.position() - pos : result, attachment);
             }
 
