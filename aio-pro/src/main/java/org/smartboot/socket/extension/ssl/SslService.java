@@ -241,9 +241,9 @@ public final class SslService {
                             case BUFFER_UNDERFLOW:
                                 throw new SSLException("Buffer underflow occured after a wrap. I don't think we should ever get here.");
                             case CLOSED:
+                                logger.warn("closed");
                                 try {
                                     netWriteBuffer.flip();
-                                    // At this point the handshake status will probably be NEED_UNWRAP so we make sure that netReadBuffer is clear to read.
                                     netReadBuffer.clear();
                                 } catch (Exception e) {
                                     logger.warn("Failed to send server's CLOSE message due to socket channel's failure.");

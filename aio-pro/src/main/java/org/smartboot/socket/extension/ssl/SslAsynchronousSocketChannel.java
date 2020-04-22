@@ -189,28 +189,10 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
                         logger.warn("BUFFER_OVERFLOW error");
-                        // Could attempt to drain the dst buffer of any already obtained
-                        // data, but we'll just increase it to the size needed.
-//                        int appSize = appBuffer.capacity() * 2 < sslEngine.getSession().getApplicationBufferSize() ? appBuffer.capacity() * 2 : sslEngine.getSession().getApplicationBufferSize();
-////                        logger.info("doUnWrap BUFFER_OVERFLOW:" + appSize + ", pos:" + appBuffer.position());
-//                        VirtualBuffer b = bufferPage.allocate(appSize + appBuffer.position());
-//                        appBuffer.flip();
-//                        b.buffer().put(appBuffer);
-//                        appReadBuffer.clean();
-//                        appReadBuffer = b;
-//                        appBuffer = appReadBuffer.buffer();
-                        // retry the operation.
                         break;
                     case BUFFER_UNDERFLOW:
-                        // Resize buffer if needed.
                         if (netBuffer.limit() == netBuffer.capacity()) {
                             logger.warn("BUFFER_UNDERFLOW error");
-//                            int netSize = netBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? netBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
-//                            logger.warning("BUFFER_UNDERFLOW:" + netSize);
-//                            VirtualBuffer b1 = bufferPage.allocate(netSize);
-//                            b1.buffer().put(netBuffer);
-//                            netReadBuffer.clean();
-//                            netReadBuffer = b1;
                         } else {
                             if (logger.isDebugEnabled()) {
                                 logger.debug("BUFFER_UNDERFLOW,continue read:" + netBuffer);
@@ -222,8 +204,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
                                 netBuffer.limit(netBuffer.capacity());
                             }
                         }
-                        // Obtain more inbound network data for src,
-                        // then retry the operation.
                         return;
                     case CLOSED:
                         logger.warn("doUnWrap Result:" + result.getStatus());
@@ -231,7 +211,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
                         break;
                     default:
                         logger.warn("doUnWrap Result:" + result.getStatus());
-                        // other cases: CLOSED, OK.
                 }
                 result = sslEngine.unwrap(netBuffer, appBuffer);
             }
