@@ -48,6 +48,10 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private SslService sslService;
 
     private boolean handshake = true;
+    /**
+     * 自适应的输出长度
+     */
+    private int adaptiveWriteSize = -1;
 
     public SslAsynchronousSocketChannel(AsynchronousSocketChannel asynchronousSocketChannel, SslService sslService, BufferPage bufferPage) {
         super(null);
@@ -281,13 +285,17 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
             ByteBuffer netBuffer = netWriteBuffer.buffer();
             netBuffer.compact();
             int limit = writeBuffer.limit();
+            if (adaptiveWriteSize > 0 && writeBuffer.remaining() > adaptiveWriteSize) {
+                writeBuffer.limit(writeBuffer.position() + adaptiveWriteSize);
+            }
             SSLEngineResult result = sslEngine.wrap(writeBuffer, netBuffer);
             while (result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
-                        logger.info("doWrap BUFFER_OVERFLOW " + writeBuffer.limit());
                         netBuffer.clear();
                         writeBuffer.limit(writeBuffer.position() + ((writeBuffer.limit() - writeBuffer.position() >> 1)));
+                        adaptiveWriteSize = writeBuffer.remaining();
+//                        logger.info("doWrap BUFFER_OVERFLOW maybeSize:{}", maybeWriteSize);
                         break;
                     case BUFFER_UNDERFLOW:
                         logger.info("doWrap BUFFER_UNDERFLOW");
