@@ -9,6 +9,8 @@
 
 package org.smartboot.socket.extension.ssl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
@@ -24,15 +26,13 @@ import java.nio.channels.CompletionHandler;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author 三刀
  * @version V1.0 , 2020/4/16
  */
 public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
-    private static final Logger logger = Logger.getLogger("ssl");
+    private static final Logger logger = LoggerFactory.getLogger(SslAsynchronousSocketChannel.class);
     private final VirtualBuffer netWriteBuffer;
     private final VirtualBuffer netReadBuffer;
     private final VirtualBuffer appReadBuffer;
@@ -188,7 +188,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
             while (!closed && result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
-                        logger.severe("BUFFER_OVERFLOW error");
+                        logger.warn("BUFFER_OVERFLOW error");
                         // Could attempt to drain the dst buffer of any already obtained
                         // data, but we'll just increase it to the size needed.
 //                        int appSize = appBuffer.capacity() * 2 < sslEngine.getSession().getApplicationBufferSize() ? appBuffer.capacity() * 2 : sslEngine.getSession().getApplicationBufferSize();
@@ -204,7 +204,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     case BUFFER_UNDERFLOW:
                         // Resize buffer if needed.
                         if (netBuffer.limit() == netBuffer.capacity()) {
-                            logger.severe("BUFFER_UNDERFLOW error");
+                            logger.warn("BUFFER_UNDERFLOW error");
 //                            int netSize = netBuffer.capacity() * 2 < sslEngine.getSession().getPacketBufferSize() ? netBuffer.capacity() * 2 : sslEngine.getSession().getPacketBufferSize();
 //                            logger.warning("BUFFER_UNDERFLOW:" + netSize);
 //                            VirtualBuffer b1 = bufferPage.allocate(netSize);
@@ -212,8 +212,8 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
 //                            netReadBuffer.clean();
 //                            netReadBuffer = b1;
                         } else {
-                            if (logger.isLoggable(Level.FINEST)) {
-                                logger.finest("BUFFER_UNDERFLOW,continue read:" + netBuffer);
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("BUFFER_UNDERFLOW,continue read:" + netBuffer);
                             }
                             if (netBuffer.position() > 0) {
                                 netBuffer.compact();
@@ -226,11 +226,11 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
                         // then retry the operation.
                         return;
                     case CLOSED:
-                        logger.warning("doUnWrap Result:" + result.getStatus());
+                        logger.warn("doUnWrap Result:" + result.getStatus());
                         closed = true;
                         break;
                     default:
-                        logger.warning("doUnWrap Result:" + result.getStatus());
+                        logger.warn("doUnWrap Result:" + result.getStatus());
                         // other cases: CLOSED, OK.
                 }
                 result = sslEngine.unwrap(netBuffer, appBuffer);
@@ -306,7 +306,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
             while (result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
-//                        logger.info("doWrap BUFFER_OVERFLOW"+writeBuffer.limit());
+                        logger.info("doWrap BUFFER_OVERFLOW " + writeBuffer.limit());
                         netBuffer.clear();
                         writeBuffer.limit(writeBuffer.position() + ((writeBuffer.limit() - writeBuffer.position() >> 1)));
                         break;
@@ -314,7 +314,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
                         logger.info("doWrap BUFFER_UNDERFLOW");
                         break;
                     default:
-                        logger.severe("doWrap Result:" + result.getStatus());
+                        logger.warn("doWrap Result:" + result.getStatus());
                 }
                 result = sslEngine.wrap(writeBuffer, netBuffer);
             }
@@ -347,10 +347,16 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     @Override
     public void close() throws IOException {
-        asynchronousSocketChannel.close();
-        sslEngine.closeOutbound();
         netWriteBuffer.clean();
         netReadBuffer.clean();
         appReadBuffer.clean();
+        try {
+            sslEngine.closeInbound();
+        } catch (SSLException e) {
+            logger.warn("ignore closeInbound exception: {}", e.getMessage());
+        }
+        sslEngine.closeOutbound();
+        asynchronousSocketChannel.close();
+
     }
 }

@@ -10,6 +10,8 @@
 package org.smartboot.socket.extension.ssl;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 
 import javax.net.ssl.KeyManager;
@@ -22,7 +24,6 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -31,8 +32,6 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * TLS/SSL服务
@@ -43,7 +42,7 @@ import java.util.logging.Logger;
  */
 public final class SslService {
 
-    private static final Logger logger = Logger.getLogger("ssl");
+    private static final Logger logger = LoggerFactory.getLogger(SslService.class);
 
     private SSLContext sslContext;
 
@@ -65,7 +64,6 @@ public final class SslService {
         @Override
         public void failed(Throwable exc, HandshakeModel attachment) {
             attachment.setEof(true);
-            attachment.setFinished(true);
             attachment.getHandshakeCallback().callback();
         }
     };
@@ -181,13 +179,12 @@ public final class SslService {
             //握手阶段网络断链
             if (handshakeModel.isEof()) {
                 logger.info("the ssl handshake is terminated");
-                handshakeModel.setFinished(true);
                 handshakeModel.getHandshakeCallback().callback();
                 return;
             }
             while (!handshakeModel.isFinished()) {
                 handshakeStatus = engine.getHandshakeStatus();
-                if (logger.isLoggable(Level.FINER)) {
+                if (logger.isDebugEnabled()) {
                     logger.info("握手状态:" + handshakeStatus);
                 }
                 switch (handshakeStatus) {
@@ -211,11 +208,11 @@ public final class SslService {
                             case OK:
                                 break;
                             case BUFFER_OVERFLOW:
-                                logger.severe("doHandshake BUFFER_OVERFLOW");
+                                logger.warn("doHandshake BUFFER_OVERFLOW");
                                 break;
                             //两种情况会触发BUFFER_UNDERFLOW,1:读到的数据不够,2:netReadBuffer空间太小
                             case BUFFER_UNDERFLOW:
-                                logger.severe("doHandshake BUFFER_UNDERFLOW");
+                                logger.warn("doHandshake BUFFER_UNDERFLOW");
                                 return;
                             default:
                                 throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
@@ -223,7 +220,7 @@ public final class SslService {
                         break;
                     case NEED_WRAP:
                         if (netWriteBuffer.hasRemaining()) {
-                            logger.fine("数据未输出完毕...");
+                            logger.info("数据未输出完毕...");
                             handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletionHandler);
                             return;
                         }
@@ -239,7 +236,7 @@ public final class SslService {
                                 handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletionHandler);
                                 return;
                             case BUFFER_OVERFLOW:
-                                logger.warning("NEED_WRAP BUFFER_OVERFLOW");
+                                logger.warn("NEED_WRAP BUFFER_OVERFLOW");
                                 break;
                             case BUFFER_UNDERFLOW:
                                 throw new SSLException("Buffer underflow occured after a wrap. I don't think we should ever get here.");
@@ -249,7 +246,7 @@ public final class SslService {
                                     // At this point the handshake status will probably be NEED_UNWRAP so we make sure that netReadBuffer is clear to read.
                                     netReadBuffer.clear();
                                 } catch (Exception e) {
-                                    logger.fine("Failed to send server's CLOSE message due to socket channel's failure.");
+                                    logger.warn("Failed to send server's CLOSE message due to socket channel's failure.");
                                 }
                                 break;
                             default:
@@ -266,29 +263,21 @@ public final class SslService {
                         logger.info("HandshakeFinished");
                         break;
                     case NOT_HANDSHAKING:
-                        logger.info("NOT_HANDSHAKING");
-                        System.exit(-1);
+                        logger.error("NOT_HANDSHAKING");
                         break;
                     default:
                         throw new IllegalStateException("Invalid SSL status: " + handshakeStatus);
                 }
             }
-            logger.finest("握手完毕");
+            if (logger.isDebugEnabled()) {
+                logger.debug("握手完毕");
+            }
             handshakeModel.getHandshakeCallback().callback();
 
         } catch (Exception e) {
-            try {
-                handshakeModel.getSslEngine().closeInbound();
-            } catch (SSLException e1) {
-                e1.printStackTrace();
-            }
-            handshakeModel.getSslEngine().closeOutbound();
-            try {
-                handshakeModel.getSocketChannel().close();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-            e.printStackTrace();
+            logger.warn("ignore doHandshake exception: {}", e.getMessage());
+            handshakeModel.setEof(true);
+            handshakeModel.getHandshakeCallback().callback();
         }
     }
 
