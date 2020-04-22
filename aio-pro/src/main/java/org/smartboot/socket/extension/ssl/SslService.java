@@ -64,13 +64,9 @@ public final class SslService {
 
         @Override
         public void failed(Throwable exc, HandshakeModel attachment) {
-            try {
-                attachment.getSocketChannel().close();
-                attachment.getSslEngine().closeOutbound();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            exc.printStackTrace();
+            attachment.setEof(true);
+            attachment.setFinished(true);
+            attachment.getHandshakeCallback().callback();
         }
     };
 

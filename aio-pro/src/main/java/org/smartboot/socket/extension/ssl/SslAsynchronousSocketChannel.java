@@ -115,13 +115,17 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     synchronized (SslAsynchronousSocketChannel.this) {
                         //释放内存
                         handshakeModel.getAppWriteBuffer().clean();
-                        handshakeModel = null;
                         netReadBuffer.buffer().clear();
                         netWriteBuffer.buffer().clear();
                         appReadBuffer.buffer().clear().flip();
                         SslAsynchronousSocketChannel.this.notifyAll();
                     }
-                    SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
+                    if (handshakeModel.isEof()) {
+                        handler.completed(-1, attachment);
+                    } else {
+                        SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
+                    }
+                    handshakeModel = null;
                 }
             });
             //触发握手

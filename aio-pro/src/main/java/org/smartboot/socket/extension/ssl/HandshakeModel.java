@@ -12,7 +12,6 @@ package org.smartboot.socket.extension.ssl;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
 import javax.net.ssl.SSLEngine;
-import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 
 /**
@@ -40,36 +39,33 @@ class HandshakeModel {
         this.socketChannel = socketChannel;
     }
 
+    public VirtualBuffer getAppWriteBuffer() {
+        return appWriteBuffer;
+    }
 
     public void setAppWriteBuffer(VirtualBuffer appWriteBuffer) {
         this.appWriteBuffer = appWriteBuffer;
-    }
-
-    public VirtualBuffer getAppWriteBuffer() {
-        return appWriteBuffer;
     }
 
     public VirtualBuffer getNetWriteBuffer() {
         return netWriteBuffer;
     }
 
-    public VirtualBuffer getAppReadBuffer() {
-        return appReadBuffer;
-    }
-
-    public VirtualBuffer getNetReadBuffer() {
-        return netReadBuffer;
-    }
-
     public void setNetWriteBuffer(VirtualBuffer netWriteBuffer) {
         this.netWriteBuffer = netWriteBuffer;
     }
 
+    public VirtualBuffer getAppReadBuffer() {
+        return appReadBuffer;
+    }
 
     public void setAppReadBuffer(VirtualBuffer appReadBuffer) {
         this.appReadBuffer = appReadBuffer;
     }
 
+    public VirtualBuffer getNetReadBuffer() {
+        return netReadBuffer;
+    }
 
     public void setNetReadBuffer(VirtualBuffer netReadBuffer) {
         this.netReadBuffer = netReadBuffer;
@@ -106,4 +102,5 @@ class HandshakeModel {
     public void setEof(boolean eof) {
         this.eof = eof;
     }
+
 }
