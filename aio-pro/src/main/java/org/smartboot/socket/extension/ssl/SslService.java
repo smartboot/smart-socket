@@ -212,17 +212,10 @@ public final class SslService {
                                 break;
                             case BUFFER_OVERFLOW:
                                 logger.severe("doHandshake BUFFER_OVERFLOW");
-                                // Will occur when appReadBuffer's capacity is smaller than the data derived from netReadBuffer's unwrap.
-//                                appReadBuffer = enlargeApplicationBuffer(engine, appReadBuffer);
-//                                handshakeModel.setAppReadBuffer(appReadBuffer);
                                 break;
                             //两种情况会触发BUFFER_UNDERFLOW,1:读到的数据不够,2:netReadBuffer空间太小
                             case BUFFER_UNDERFLOW:
                                 logger.severe("doHandshake BUFFER_UNDERFLOW");
-                                // Will occur either when no data was read from the peer or when the netReadBuffer buffer was too small to hold all peer's data.
-//                                netReadBuffer = handleBufferUnderflow(engine.getSession(), netReadBuffer);
-//                                handshakeModel.setNetReadBuffer(netReadBuffer);
-//                                handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletionHandler);
                                 return;
                             default:
                                 throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
@@ -247,14 +240,6 @@ public final class SslService {
                                 return;
                             case BUFFER_OVERFLOW:
                                 logger.warning("NEED_WRAP BUFFER_OVERFLOW");
-//                                netWriteBuffer = enlargePacketBuffer(engine.getSession(), netWriteBuffer);
-//                                if (netWriteBuffer.position() > 0) {
-//                                    netWriteBuffer.compact();
-//                                } else {
-//                                    netWriteBuffer.position(netWriteBuffer.limit());
-//                                    netWriteBuffer.limit(netWriteBuffer.capacity());
-//                                }
-//                                handshakeModel.setNetWriteBuffer(netWriteBuffer);
                                 break;
                             case BUFFER_UNDERFLOW:
                                 throw new SSLException("Buffer underflow occured after a wrap. I don't think we should ever get here.");
@@ -307,40 +292,4 @@ public final class SslService {
         }
     }
 
-    private ByteBuffer enlargePacketBuffer(SSLSession session, ByteBuffer buffer) {
-        return enlargeBuffer(buffer, session.getPacketBufferSize());
-    }
-
-    private ByteBuffer enlargeApplicationBuffer(SSLEngine engine, ByteBuffer buffer) {
-        return enlargeBuffer(buffer, engine.getSession().getApplicationBufferSize());
-    }
-
-    /**
-     * Compares <code>sessionProposedCapacity<code> with buffer's capacity. If buffer's capacity is smaller,
-     * returns a buffer with the proposed capacity. If it's equal or larger, returns a buffer
-     * with capacity twice the size of the initial one.
-     *
-     * @param buffer                  - the buffer to be enlarged.
-     * @param sessionProposedCapacity - the minimum size of the new buffer, proposed by {@link SSLSession}.
-     * @return A new buffer with a larger capacity.
-     */
-    private ByteBuffer enlargeBuffer(ByteBuffer buffer, int sessionProposedCapacity) {
-        if (sessionProposedCapacity > buffer.capacity()) {
-            buffer = ByteBuffer.allocate(sessionProposedCapacity);
-        } else {
-            buffer = ByteBuffer.allocate(buffer.capacity() * 2);
-        }
-        return buffer;
-    }
-
-    private ByteBuffer handleBufferUnderflow(SSLSession session, ByteBuffer buffer) {
-        if (session.getPacketBufferSize() < buffer.limit()) {
-            return buffer;
-        } else {
-            ByteBuffer replaceBuffer = enlargePacketBuffer(session, buffer);
-            buffer.flip();
-            replaceBuffer.put(buffer);
-            return replaceBuffer;
-        }
-    }
 }
