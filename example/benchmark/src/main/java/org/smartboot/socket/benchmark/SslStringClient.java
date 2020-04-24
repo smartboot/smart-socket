@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
+import org.smartboot.socket.extension.plugins.SslPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
@@ -19,8 +20,8 @@ import java.util.concurrent.ThreadFactory;
  * @author 三刀
  * @version V1.0 , 2018/11/23
  */
-public class StringClient {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StringClient.class);
+public class SslStringClient {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SslStringClient.class);
 
 
     public static void main(String[] args) throws IOException {
@@ -40,6 +41,9 @@ public class StringClient {
             }
         };
         processor.addPlugin(new MonitorPlugin(5));
+        SslPlugin sslPlugin = new SslPlugin(bufferPagePool);
+        sslPlugin.initForClient();
+        processor.addPlugin(sslPlugin);
         AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -51,7 +55,7 @@ public class StringClient {
                 @Override
                 public void run() {
                     try {
-                        new StringClient().test(asynchronousChannelGroup, bufferPagePool, processor);
+                        new SslStringClient().test(asynchronousChannelGroup, bufferPagePool, processor);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     } catch (ExecutionException e) {
