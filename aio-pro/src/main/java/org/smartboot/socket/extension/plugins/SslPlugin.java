@@ -9,6 +9,7 @@
 
 package org.smartboot.socket.extension.plugins;
 
+import org.smartboot.socket.buffer.BufferFactory;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.ssl.SslAsynchronousSocketChannel;
@@ -27,6 +28,10 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
     private SslService sslService;
     private BufferPagePool bufferPagePool;
     private boolean init = false;
+
+    public SslPlugin() {
+        this.bufferPagePool = BufferFactory.DISABLED_BUFFER_FACTORY.create();
+    }
 
     public SslPlugin(BufferPagePool bufferPagePool) {
         this.bufferPagePool = bufferPagePool;

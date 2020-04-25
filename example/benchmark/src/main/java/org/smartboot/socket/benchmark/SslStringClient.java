@@ -41,7 +41,7 @@ public class SslStringClient {
             }
         };
         processor.addPlugin(new MonitorPlugin(5));
-        SslPlugin sslPlugin = new SslPlugin(bufferPagePool);
+        SslPlugin sslPlugin = new SslPlugin();
         sslPlugin.initForClient();
         processor.addPlugin(sslPlugin);
         AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
