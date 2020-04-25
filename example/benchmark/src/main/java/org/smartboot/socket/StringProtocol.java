@@ -1,6 +1,14 @@
-package org.smartboot.socket.benchmark;
+/*******************************************************************************
+ * Copyright (c) 2017-2020, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: StringProtocol.java
+ * Date: 2020-04-25
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
 
-import org.smartboot.socket.Protocol;
+package org.smartboot.socket;
+
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
@@ -10,6 +18,7 @@ import java.nio.ByteBuffer;
  * @version V1.0 , 2018/11/23
  */
 public class StringProtocol implements Protocol<String> {
+
     @Override
     public String decode(ByteBuffer readBuffer, AioSession<String> session) {
         int remaining = readBuffer.remaining();

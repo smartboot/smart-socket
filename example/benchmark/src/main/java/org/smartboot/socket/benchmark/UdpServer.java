@@ -10,7 +10,7 @@
 package org.smartboot.socket.benchmark;
 
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.extension.plugins.BufferPageMonitorPlugin;
+import org.smartboot.socket.StringProtocol;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.transport.AioSession;
