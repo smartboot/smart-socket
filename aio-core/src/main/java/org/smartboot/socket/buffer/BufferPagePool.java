@@ -9,6 +9,7 @@
 
 package org.smartboot.socket.buffer;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -34,11 +35,10 @@ public class BufferPagePool {
             return thread;
         }
     });
-
     /**
      * 内存页组
      */
-    private BufferPage[] bufferPages;
+    protected BufferPage[] bufferPages;
     /**
      * 共享缓存页
      */
@@ -55,7 +55,7 @@ public class BufferPagePool {
     /**
      * 内存回收任务
      */
-    private ScheduledFuture future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
+    protected ScheduledFuture future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
         @Override
         public void run() {
             if (enabled) {
@@ -97,9 +97,6 @@ public class BufferPagePool {
      * @param isDirect       是否使用直接缓冲区
      */
     public BufferPagePool(final int pageSize, final int pageNum, final int sharedPageSize, final boolean isDirect) {
-        if (pageNum <= 0) {
-            throw new IllegalArgumentException("pageNum must greater than 0");
-        }
         if (sharedPageSize > 0) {
             sharedBufferPage = new BufferPage(null, null, sharedPageSize, isDirect);
         }
@@ -148,4 +145,21 @@ public class BufferPagePool {
     public void release() {
         enabled = false;
     }
+
+    final static class NoneBufferPagePool extends BufferPagePool {
+
+        NoneBufferPagePool() {
+            super(0, 0, false);
+            bufferPages = new BufferPage[1];
+            bufferPages[0] = new BufferPage(null, null, 0, false) {
+                @Override
+                public VirtualBuffer allocate(int size) {
+                    return new VirtualBuffer(null, ByteBuffer.allocate(size), 0, 0);
+                }
+            };
+            future.cancel(false);
+        }
+    }
+
 }
+

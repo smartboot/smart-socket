@@ -51,47 +51,45 @@ import java.util.function.Function;
  * @author 三刀
  * @version V1.0.0
  */
-class TcpAioSession<T> extends AioSession<T> {
+final class TcpAioSession<T> extends AioSession<T> {
 
     /**
      * 底层通信channel对象
      */
-    protected AsynchronousSocketChannel channel;
+    private final AsynchronousSocketChannel channel;
     /**
      * 读缓冲。
      * <p>大小取决于AioQuickClient/AioQuickServer设置的setReadBufferSize</p>
      */
-    protected VirtualBuffer readBuffer;
+    private final VirtualBuffer readBuffer;
     /**
-     * 写缓冲
+     * 输出流
      */
-    protected VirtualBuffer writeBuffer;
-
+    private final WriteBuffer byteBuf;
     /**
      * 输出信号量,防止并发write导致异常
      */
-    private Semaphore semaphore = new Semaphore(1);
+    private final Semaphore semaphore = new Semaphore(1);
     /**
      * 读回调
      */
-    private ReadCompletionHandler<T> readCompletionHandler;
+    private final ReadCompletionHandler<T> readCompletionHandler;
     /**
      * 写回调
      */
-    private WriteCompletionHandler<T> writeCompletionHandler;
+    private final WriteCompletionHandler<T> writeCompletionHandler;
     /**
      * 服务配置
      */
-    private IoServerConfig<T> ioServerConfig;
+    private final IoServerConfig<T> ioServerConfig;
+    /**
+     * 写缓冲
+     */
+    private VirtualBuffer writeBuffer;
     /**
      * 同步输入流
      */
     private InputStream inputStream;
-    /**
-     * 输出流
-     */
-    private WriteBuffer byteBuf;
-
     /**
      * 数据输出Function
      */
@@ -125,7 +123,7 @@ class TcpAioSession<T> extends AioSession<T> {
         this.ioServerConfig = config;
 
         this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
-        byteBuf = new WriteBuffer(bufferPage, flushFunction, ioServerConfig);
+        byteBuf = new WriteBuffer(bufferPage, flushFunction, ioServerConfig.getWriteBufferSize(), ioServerConfig.getWriteBufferCapacity());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
@@ -169,7 +167,7 @@ class TcpAioSession<T> extends AioSession<T> {
      *
      * @param buffer 用于存放待读取数据的buffer
      */
-    protected final void readFromChannel0(ByteBuffer buffer) {
+    private final void readFromChannel0(ByteBuffer buffer) {
         channel.read(buffer, this, readCompletionHandler);
     }
 
@@ -178,7 +176,7 @@ class TcpAioSession<T> extends AioSession<T> {
      *
      * @param buffer 待输出的buffer
      */
-    protected final void writeToChannel0(ByteBuffer buffer) {
+    private final void writeToChannel0(ByteBuffer buffer) {
         channel.write(buffer, 0L, TimeUnit.MILLISECONDS, this, writeCompletionHandler);
     }
 
@@ -204,7 +202,6 @@ class TcpAioSession<T> extends AioSession<T> {
         if (immediate) {
             byteBuf.close();
             readBuffer.clean();
-            readBuffer = null;
             if (writeBuffer != null) {
                 writeBuffer.clean();
                 writeBuffer = null;
@@ -307,7 +304,7 @@ class TcpAioSession<T> extends AioSession<T> {
     /**
      * 触发读操作
      */
-    protected void continueRead() {
+    private void continueRead() {
         NetMonitor<T> monitor = getServerConfig().getMonitor();
         if (monitor != null) {
             monitor.beforeRead(this);
@@ -341,7 +338,7 @@ class TcpAioSession<T> extends AioSession<T> {
      *
      * @param writeBuffer 存放待输出数据的buffer
      */
-    protected void continueWrite(VirtualBuffer writeBuffer) {
+    private void continueWrite(VirtualBuffer writeBuffer) {
         NetMonitor<T> monitor = getServerConfig().getMonitor();
         if (monitor != null) {
             monitor.beforeWrite(this);

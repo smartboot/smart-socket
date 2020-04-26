@@ -56,15 +56,15 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
     }
 
     @Override
-    public final boolean shouldAccept(AsynchronousSocketChannel channel) {
-        boolean accept;
+    public final AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
+        AsynchronousSocketChannel acceptChannel = channel;
         for (Plugin<T> plugin : plugins) {
-            accept = plugin.shouldAccept(channel);
-            if (!accept) {
-                return accept;
+            acceptChannel = plugin.shouldAccept(acceptChannel);
+            if (acceptChannel == null) {
+                return null;
             }
         }
-        return true;
+        return acceptChannel;
     }
 
     @Override

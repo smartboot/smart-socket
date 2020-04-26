@@ -9,23 +9,24 @@
 
 package org.smartboot.socket.extension.ssl;
 
+import org.smartboot.socket.buffer.VirtualBuffer;
+
 import javax.net.ssl.SSLEngine;
-import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 
 /**
  * @author 三刀
  * @version V1.0 , 2018/1/2
  */
-public class HandshakeModel {
+class HandshakeModel {
 
     private AsynchronousSocketChannel socketChannel;
     private SSLEngine sslEngine;
-    private ByteBuffer appWriteBuffer;
-    private ByteBuffer netWriteBuffer;
-    private ByteBuffer appReadBuffer;
+    private VirtualBuffer appWriteBuffer;
+    private VirtualBuffer netWriteBuffer;
+    private VirtualBuffer appReadBuffer;
 
-    private ByteBuffer netReadBuffer;
+    private VirtualBuffer netReadBuffer;
     private HandshakeCallback handshakeCallback;
     private boolean eof;
     private boolean finished;
@@ -38,35 +39,35 @@ public class HandshakeModel {
         this.socketChannel = socketChannel;
     }
 
-    public ByteBuffer getAppWriteBuffer() {
+    public VirtualBuffer getAppWriteBuffer() {
         return appWriteBuffer;
     }
 
-    public void setAppWriteBuffer(ByteBuffer appWriteBuffer) {
+    public void setAppWriteBuffer(VirtualBuffer appWriteBuffer) {
         this.appWriteBuffer = appWriteBuffer;
     }
 
-    public ByteBuffer getNetWriteBuffer() {
+    public VirtualBuffer getNetWriteBuffer() {
         return netWriteBuffer;
     }
 
-    public void setNetWriteBuffer(ByteBuffer netWriteBuffer) {
+    public void setNetWriteBuffer(VirtualBuffer netWriteBuffer) {
         this.netWriteBuffer = netWriteBuffer;
     }
 
-    public ByteBuffer getAppReadBuffer() {
+    public VirtualBuffer getAppReadBuffer() {
         return appReadBuffer;
     }
 
-    public void setAppReadBuffer(ByteBuffer appReadBuffer) {
+    public void setAppReadBuffer(VirtualBuffer appReadBuffer) {
         this.appReadBuffer = appReadBuffer;
     }
 
-    public ByteBuffer getNetReadBuffer() {
+    public VirtualBuffer getNetReadBuffer() {
         return netReadBuffer;
     }
 
-    public void setNetReadBuffer(ByteBuffer netReadBuffer) {
+    public void setNetReadBuffer(VirtualBuffer netReadBuffer) {
         this.netReadBuffer = netReadBuffer;
     }
 
@@ -101,4 +102,5 @@ public class HandshakeModel {
     public void setEof(boolean eof) {
         this.eof = eof;
     }
+
 }

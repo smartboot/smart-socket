@@ -3,6 +3,7 @@ package org.smartboot.socket.benchmark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.StringProtocol;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.transport.AioQuickClient;
@@ -50,7 +51,7 @@ public class StringMutilClient {
 //        });
         AioQuickClient<String> client = new AioQuickClient<>("localhost", 8888, new StringProtocol(), processor);
         client.setBufferPagePool(bufferPagePool);
-        client.setWriteQueueCapacity(20);
+        client.setWriteBuffer(512, 20);
         AioSession<String> session = client.start();
         for (int i = 0; i < 10; i++) {
             new Thread() {

@@ -12,6 +12,7 @@ package org.smartboot.socket.transport;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.buffer.BufferFactory;
 import org.smartboot.socket.buffer.BufferPagePool;
 
 import java.io.IOException;
@@ -46,24 +47,26 @@ import java.util.function.Function;
  * @author 三刀
  * @version V1.0.0
  */
-public class AioQuickServer<T> {
+public final class AioQuickServer<T> {
     /**
      * Server端服务配置。
      * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
      */
-    protected IoServerConfig<T> config = new IoServerConfig<>();
+    private final IoServerConfig<T> config = new IoServerConfig<>();
     /**
      * 内存池
      */
-    protected BufferPagePool bufferPool;
+    private BufferPagePool bufferPool;
     /**
      * 读回调事件处理
      */
-    protected ReadCompletionHandler<T> aioReadCompletionHandler;
+    private ReadCompletionHandler<T> aioReadCompletionHandler;
     /**
      * 写回调事件处理
      */
-    protected WriteCompletionHandler<T> aioWriteCompletionHandler;
+    private WriteCompletionHandler<T> aioWriteCompletionHandler;
+    private BufferPagePool innerBufferPool = null;
+
     /**
      * 连接会话实例化Function
      */
@@ -76,9 +79,6 @@ public class AioQuickServer<T> {
      * asynchronousChannelGroup
      */
     private AsynchronousChannelGroup asynchronousChannelGroup;
-
-    private boolean acceptRunning = true;
-
 
     /**
      * 设置服务端启动必要参数配置
@@ -123,17 +123,19 @@ public class AioQuickServer<T> {
      * @param aioSessionFunction 实例化会话的Function
      * @throws IOException IO异常
      */
-    protected final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
+    private final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
         checkAndResetConfig();
 
         try {
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
-            this.bufferPool = new BufferPagePool(config.getBufferPoolPageSize(), config.getBufferPoolPageNum(), config.getBufferPoolSharedPageSize(), config.isBufferPoolDirect());
+            if (bufferPool == null) {
+                this.bufferPool = config.getBufferFactory().create();
+                this.innerBufferPool = bufferPool;
+            }
             this.aioSessionFunction = aioSessionFunction;
 
             aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
-
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
             //set socket options
             if (config.getSocketOptions() != null) {
@@ -207,22 +209,6 @@ public class AioQuickServer<T> {
         if (config.getThreadNum() == 1) {
             config.setThreadNum(2);
         }
-        //未指定内存页数量默认等同于线程数
-        if (config.getBufferPoolPageNum() <= 0) {
-            config.setBufferPoolPageNum(config.getThreadNum());
-        }
-        //内存页数量不可多于线程数，会造成内存浪费
-        if (config.getBufferPoolPageNum() > config.getThreadNum()) {
-            throw new RuntimeException("bufferPoolPageNum=" + config.getBufferPoolPageNum() + " can't greater than threadNum=" + config.getThreadNum());
-        }
-        //内存块不可大于内存页
-        if (config.getBufferPoolChunkSize() > config.getBufferPoolPageSize()) {
-            throw new RuntimeException("bufferPoolChunkSize=" + config.getBufferPoolChunkSize() + " can't greater than bufferPoolPageSize=" + config.getBufferPoolPageSize());
-        }
-        //read缓冲区不可大于内存页
-        if (config.getReadBufferSize() > config.getBufferPoolPageSize()) {
-            throw new RuntimeException("readBufferSize=" + config.getReadBufferSize() + " can't greater than bufferPoolPageSize=" + config.getBufferPoolPageSize());
-        }
     }
 
     /**
@@ -233,9 +219,13 @@ public class AioQuickServer<T> {
     private void createSession(AsynchronousSocketChannel channel) {
         //连接成功则构造AIOSession对象
         TcpAioSession<T> session = null;
+        AsynchronousSocketChannel acceptChannel = channel;
         try {
-            if (config.getMonitor() == null || config.getMonitor().shouldAccept(channel)) {
-                session = aioSessionFunction.apply(channel);
+            if (config.getMonitor() != null) {
+                acceptChannel = config.getMonitor().shouldAccept(channel);
+            }
+            if (acceptChannel != null) {
+                session = aioSessionFunction.apply(acceptChannel);
                 session.initSession();
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
@@ -255,7 +245,6 @@ public class AioQuickServer<T> {
      * 停止服务端
      */
     public final void shutdown() {
-        acceptRunning = false;
         try {
             if (serverSocketChannel != null) {
                 serverSocketChannel.close();
@@ -277,9 +266,8 @@ public class AioQuickServer<T> {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if (bufferPool != null) {
-            bufferPool.release();
-            bufferPool = null;
+        if (innerBufferPool != null) {
+            innerBufferPool.release();
         }
         aioReadCompletionHandler.shutdown();
     }
@@ -325,17 +313,6 @@ public class AioQuickServer<T> {
     }
 
     /**
-     * 设置write缓冲区容量
-     *
-     * @param writeQueueCapacity 缓存区容量
-     * @return 当前AioQuickServer对象
-     */
-    public final AioQuickServer<T> setWriteQueueCapacity(int writeQueueCapacity) {
-        config.setWriteQueueCapacity(writeQueueCapacity);
-        return this;
-    }
-
-    /**
      * 设置服务工作线程数,设置数值必须大于等于2
      *
      * @param threadNum 线程数
@@ -349,59 +326,17 @@ public class AioQuickServer<T> {
         return this;
     }
 
-    /**
-     * 设置单个内存页大小.多个内存页共同组成内存池
-     *
-     * @param bufferPoolPageSize 内存页大小
-     * @return 当前AioQuickServer对象
-     */
-    public final AioQuickServer<T> setBufferPoolPageSize(int bufferPoolPageSize) {
-        config.setBufferPoolPageSize(bufferPoolPageSize);
-        return this;
-    }
 
     /**
-     * 设置内存页个数，多个内存页共同组成内存池。
+     * 设置输出缓冲区容量
      *
-     * @param bufferPoolPageNum 内存页个数
+     * @param bufferSize     单个内存块大小
+     * @param bufferCapacity 内存块数量上限
      * @return 当前AioQuickServer对象
      */
-    public final AioQuickServer<T> setBufferPoolPageNum(int bufferPoolPageNum) {
-        config.setBufferPoolPageNum(bufferPoolPageNum);
-        return this;
-    }
-
-
-    /**
-     * 限制写操作时从内存页中申请内存块的大小
-     *
-     * @param bufferPoolChunkSizeLimit 内存块大小限制
-     * @return 当前AioQuickServer对象
-     */
-    public final AioQuickServer<T> setBufferPoolChunkSize(int bufferPoolChunkSizeLimit) {
-        config.setBufferPoolChunkSize(bufferPoolChunkSizeLimit);
-        return this;
-    }
-
-    /**
-     * 设置内存池是否使用直接缓冲区,默认：true
-     *
-     * @param isDirect true:直接缓冲区,false:堆内缓冲区
-     * @return 当前AioQuickServer对象
-     */
-    public final AioQuickServer<T> setBufferPoolDirect(boolean isDirect) {
-        config.setBufferPoolDirect(isDirect);
-        return this;
-    }
-
-    /**
-     * 设置共享内存页大小
-     *
-     * @param bufferPoolSharedPageSize 共享内存页大小
-     * @return 当前AioQuickServer对象
-     */
-    public final AioQuickServer<T> setBufferPoolSharedPageSize(int bufferPoolSharedPageSize) {
-        config.setBufferPoolSharedPageSize(bufferPoolSharedPageSize);
+    public final AioQuickServer<T> setWriteBuffer(int bufferSize, int bufferCapacity) {
+        config.setWriteBufferSize(bufferSize);
+        config.setWriteBufferCapacity(bufferCapacity);
         return this;
     }
 
@@ -416,4 +351,33 @@ public class AioQuickServer<T> {
         return this;
     }
 
+    /**
+     * 设置内存池。
+     * 通过该方法设置的内存池，在AioQuickServer执行shutdown时不会触发内存池的释放。
+     * 该方法适用于多个AioQuickServer、AioQuickClient共享内存池的场景。
+     * <b>在启用内存池的情况下会有更好的性能表现</b>
+     *
+     * @param bufferPool 内存池对象
+     * @return 当前AioQuickServer对象
+     */
+    public final AioQuickServer<T> setBufferPagePool(BufferPagePool bufferPool) {
+        this.bufferPool = bufferPool;
+        this.config.setBufferFactory(BufferFactory.DISABLED_BUFFER_FACTORY);
+        return this;
+    }
+
+    /**
+     * 设置内存池的构造工厂。
+     * 通过工厂形式生成的内存池会强绑定到当前AioQuickServer对象，
+     * 在AioQuickServer执行shutdown时会释放内存池。
+     * <b>在启用内存池的情况下会有更好的性能表现</b>
+     *
+     * @param bufferFactory 内存池工厂
+     * @return 当前AioQuickServer对象
+     */
+    public final AioQuickServer<T> setBufferFactory(BufferFactory bufferFactory) {
+        this.config.setBufferFactory(bufferFactory);
+        this.bufferPool = null;
+        return this;
+    }
 }

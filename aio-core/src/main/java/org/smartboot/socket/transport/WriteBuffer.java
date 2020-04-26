@@ -92,11 +92,11 @@ public class WriteBuffer extends OutputStream {
     private int chunkSize;
 
 
-    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, IoServerConfig config) {
+    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int chunkSize, int capacity) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
-        this.items = new VirtualBuffer[config.getWriteQueueCapacity()];
-        this.chunkSize = config.getBufferPoolChunkSize();
+        this.items = new VirtualBuffer[capacity];
+        this.chunkSize = chunkSize;
     }
 
     /**
@@ -132,21 +132,23 @@ public class WriteBuffer extends OutputStream {
      * @see #write(int)
      */
     public void writeByte(byte b) {
-        if (writeInBuf == null) {
-            writeInBuf = bufferPage.allocate(chunkSize);
-        }
-        writeInBuf.buffer().put(b);
-        if (writeInBuf.buffer().hasRemaining()) {
-            return;
-        }
-        writeInBuf.buffer().flip();
         lock.lock();
         try {
+            if (writeInBuf == null) {
+                writeInBuf = bufferPage.allocate(chunkSize);
+            }
+            writeInBuf.buffer().put(b);
+            if (writeInBuf.buffer().hasRemaining()) {
+                return;
+            }
+            writeInBuf.buffer().flip();
+
             this.put(writeInBuf);
+            writeInBuf = null;
         } finally {
             lock.unlock();
         }
-        writeInBuf = null;
+
         function.apply(this);
     }
 

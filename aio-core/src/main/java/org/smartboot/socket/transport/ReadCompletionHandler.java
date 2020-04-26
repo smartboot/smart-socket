@@ -51,6 +51,8 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             e.printStackTrace();
         }
         try {
+            //兼容性处理，windows要强制关闭,其他系统优雅关闭
+            //aioSession.close(IOUtil.OS_WINDOWS);
             aioSession.close(false);
         } catch (Exception e) {
             e.printStackTrace();

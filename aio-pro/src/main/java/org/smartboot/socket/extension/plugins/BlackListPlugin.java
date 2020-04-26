@@ -28,7 +28,7 @@ public final class BlackListPlugin<T> extends AbstractPlugin<T> {
     private ConcurrentLinkedQueue<BlackListRule> ipBlackList = new ConcurrentLinkedQueue<>();
 
     @Override
-    public boolean shouldAccept(AsynchronousSocketChannel channel) {
+    public AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
         InetSocketAddress inetSocketAddress = null;
         try {
             inetSocketAddress = (InetSocketAddress) channel.getRemoteAddress();
@@ -36,14 +36,14 @@ public final class BlackListPlugin<T> extends AbstractPlugin<T> {
             LOGGER.error("get remote address error.", e);
         }
         if (inetSocketAddress == null) {
-            return true;
+            return channel;
         }
         for (BlackListRule rule : ipBlackList) {
             if (!rule.access(inetSocketAddress)) {
-                return false;
+                return null;
             }
         }
-        return true;
+        return channel;
     }
 
     /**

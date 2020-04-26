@@ -31,8 +31,8 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
     private ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
 
     private LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
-    private ExecutorService executorService = new ThreadPoolExecutor(0, Runtime.getRuntime().availableProcessors(),
-            60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+    private ExecutorService executorService = new ThreadPoolExecutor(1, 1,
+            60L, TimeUnit.SECONDS, taskQueue);
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
         this.semaphore = semaphore;

@@ -13,7 +13,7 @@ package org.smartboot.socket.extension.ssl;
  * @author 三刀
  * @version V1.0 , 2018/1/2
  */
-public interface HandshakeCallback {
+interface HandshakeCallback {
     /**
      * 握手回调
      */
