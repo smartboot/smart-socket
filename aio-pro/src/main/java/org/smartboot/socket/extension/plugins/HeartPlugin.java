@@ -139,7 +139,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
             LOGGER.info("sesssion:{} 因心跳超时时间为:{},终止启动心跳监测任务", session, heartRate);
             return;
         }
-        LOGGER.info("session:{}注册心跳任务,超时时间:{}", session, heartRate);
+        LOGGER.debug("session:{}注册心跳任务,超时时间:{}", session, heartRate);
         QuickTimerTask.SCHEDULED_EXECUTOR_SERVICE.schedule(new TimerTask() {
             @Override
             public void run() {
