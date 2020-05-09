@@ -9,10 +9,6 @@
 
 package org.smartboot.socket.transport;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
@@ -35,7 +31,6 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
     private ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
 
     private LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
-    private Map<Thread, List<Task>> taskMap = new HashMap<>();
     private ExecutorService executorService = new ThreadPoolExecutor(1, 1,
             60L, TimeUnit.SECONDS, taskQueue);
 
@@ -46,46 +41,26 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
-        List<Task> tasks = taskMap.get(Thread.currentThread());
         if (threadLocal.get() != null) {
-            Task task;
-            while (tasks != null && tasks.size() > 0 && (task = tasks.remove(0)) != null) {
-                if (task.semaphore0.availablePermits() > 0) {
-                    task.run();
-                    break;
-                }
-            }
             super.completed(result, aioSession);
             return;
         }
-
         if (semaphore.tryAcquire()) {
             threadLocal.set(this);
             //处理当前读回调任务
             super.completed(result, aioSession);
             Runnable task;
-            while (tasks != null && tasks.size() > 0 && (task = tasks.remove(0)) != null) {
+            while ((task = taskQueue.poll()) != null) {
                 task.run();
             }
             semaphore.release();
             threadLocal.set(null);
             return;
         }
-        if (tasks == null) {
-            tasks = new LinkedList<>();
-            taskMap.put(Thread.currentThread(), tasks);
-        }
-        Task task = new Task() {
-            @Override
-            public void run() {
-                if (semaphore0.tryAcquire()) {
-                    ConcurrentReadCompletionHandler.super.completed(result, aioSession);
-                }
-            }
-        };
-        tasks.add(task);
         //线程资源不足,暂时积压任务
-        executorService.execute(task);
+        executorService.execute(() -> {
+            ConcurrentReadCompletionHandler.super.completed(result, aioSession);
+        });
 
     }
 
@@ -94,9 +69,5 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
      */
     public void shutdown() {
         executorService.shutdown();
-    }
-
-    abstract class Task implements Runnable {
-        Semaphore semaphore0 = new Semaphore(1);
     }
 }
