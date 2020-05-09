@@ -145,8 +145,6 @@ public final class AioQuickClient<T> {
                 connectedChannel = config.getMonitor().shouldAccept(socketChannel);
             }
             if (connectedChannel == null) {
-                IOUtil.close(socketChannel);
-                shutdownNow();
                 throw new RuntimeException("NetMonitor refuse channel");
             }
             //连接成功则构造AIOSession对象
