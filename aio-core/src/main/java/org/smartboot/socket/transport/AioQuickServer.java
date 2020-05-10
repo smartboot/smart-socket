@@ -25,6 +25,7 @@ import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -135,7 +136,14 @@ public final class AioQuickServer<T> {
             this.aioSessionFunction = aioSessionFunction;
 
             aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), r -> bufferPool.newThread(r, "smart-socket:Worker-"));
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+                private byte index = 0;
+
+                @Override
+                public Thread newThread(Runnable r) {
+                    return bufferPool.newThread(r, "smart-socket:Thread-" + (++index) + "-");
+                }
+            });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
             //set socket options
             if (config.getSocketOptions() != null) {

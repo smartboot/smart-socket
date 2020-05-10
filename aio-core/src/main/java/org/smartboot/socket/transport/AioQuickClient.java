@@ -22,11 +22,9 @@ import java.net.SocketOption;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * AIO实现的客户端服务。
@@ -114,28 +112,27 @@ public final class AioQuickClient<T> {
      *
      * @param asynchronousChannelGroup IO事件处理线程组
      * @return 建立连接后的会话对象
-     * @throws IOException          IOException
-     * @throws ExecutionException   ExecutionException
-     * @throws InterruptedException InterruptedException
+     * @throws IOException IOException
      * @see AsynchronousSocketChannel#connect(SocketAddress)
      */
-    public AioSession<T> start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException, ExecutionException, InterruptedException {
-        AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
-        if (bufferPool == null) {
-            bufferPool = config.getBufferFactory().create();
-            this.innerBufferPool = bufferPool;
-        }
-        //set socket options
-        if (config.getSocketOptions() != null) {
-            for (Map.Entry<SocketOption<Object>, Object> entry : config.getSocketOptions().entrySet()) {
-                socketChannel.setOption(entry.getKey(), entry.getValue());
-            }
-        }
-        //bind host
-        if (localAddress != null) {
-            socketChannel.bind(localAddress);
-        }
+    public AioSession<T> start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
+        AsynchronousSocketChannel socketChannel = null;
         try {
+            socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+            if (bufferPool == null) {
+                bufferPool = config.getBufferFactory().create();
+                this.innerBufferPool = bufferPool;
+            }
+            //set socket options
+            if (config.getSocketOptions() != null) {
+                for (Map.Entry<SocketOption<Object>, Object> entry : config.getSocketOptions().entrySet()) {
+                    socketChannel.setOption(entry.getKey(), entry.getValue());
+                }
+            }
+            //bind host
+            if (localAddress != null) {
+                socketChannel.bind(localAddress);
+            }
             Future<Void> future = socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort()));
             if (connectTimeout > 0) {
                 future.get(connectTimeout, TimeUnit.MILLISECONDS);
@@ -143,24 +140,24 @@ public final class AioQuickClient<T> {
                 future.get();
             }
 
-        } catch (TimeoutException e) {
-            IOUtil.close(socketChannel);
+            AsynchronousSocketChannel connectedChannel = socketChannel;
+            if (config.getMonitor() != null) {
+                connectedChannel = config.getMonitor().shouldAccept(socketChannel);
+            }
+            if (connectedChannel == null) {
+                throw new RuntimeException("NetMonitor refuse channel");
+            }
+            //连接成功则构造AIOSession对象
+            session = new TcpAioSession<T>(connectedChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool.allocateBufferPage());
+            session.initSession();
+            return session;
+        } catch (Exception e) {
+            if (socketChannel != null) {
+                IOUtil.close(socketChannel);
+            }
             shutdownNow();
             throw new IOException(e);
         }
-        AsynchronousSocketChannel connectedChannel = socketChannel;
-        if (config.getMonitor() != null) {
-            connectedChannel = config.getMonitor().shouldAccept(socketChannel);
-        }
-        if (connectedChannel == null) {
-            IOUtil.close(socketChannel);
-            shutdownNow();
-            throw new RuntimeException("NetMonitor refuse channel");
-        }
-        //连接成功则构造AIOSession对象
-        session = new TcpAioSession<T>(connectedChannel, config, new ReadCompletionHandler<T>(), new WriteCompletionHandler<T>(), bufferPool.allocateBufferPage());
-        session.initSession();
-        return session;
     }
 
     /**
@@ -171,12 +168,10 @@ public final class AioQuickClient<T> {
      * </p>
      *
      * @return 建立连接后的会话对象
-     * @throws IOException          IOException
-     * @throws ExecutionException   ExecutionException
-     * @throws InterruptedException InterruptedException
+     * @throws IOException IOException
      * @see AioQuickClient#start(AsynchronousChannelGroup)
      */
-    public final AioSession<T> start() throws IOException, ExecutionException, InterruptedException {
+    public final AioSession<T> start() throws IOException {
         this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
