@@ -34,7 +34,11 @@ smart-socket是一款国产开源的Java AIO框架，支持 TPC、UDP、SSL/TLS�
 
 ### 企业用户
 > 如果您所在的公司使用了 smart-socket 并愿意在此处展现给大众，欢迎留言反馈。格式：公司名+项目简述
-![](https://images.gitee.com/uploads/images/2020/0530/155642_46fd55ee_351975.png)
+
+| 公司 |  项目简介 |
+|---|---|
+| <img src="//img.hicdn.cn/fed/images/20191219/87c5cfa435f429242446ca633f2561e2.png" alt="">  | 搜索平台分布式任务调度  |
+
 
 ### 感谢
 - 感谢码云提供的代码托管和 Pages 服务。
