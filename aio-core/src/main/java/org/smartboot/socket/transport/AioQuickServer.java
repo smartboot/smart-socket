@@ -9,6 +9,7 @@
 
 package org.smartboot.socket.transport;
 
+import org.smartboot.aio.EnhanceAsynchronousChannelProvider;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
@@ -25,7 +26,6 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -127,7 +127,6 @@ public final class AioQuickServer<T> {
      */
     private final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
         checkAndResetConfig();
-
         try {
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
             if (bufferPool == null) {
@@ -136,8 +135,9 @@ public final class AioQuickServer<T> {
             }
             this.aioSessionFunction = aioSessionFunction;
 
-            aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+//            aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
+            aioReadCompletionHandler = new ReadCompletionHandler<>();
+            asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider().openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
                 private byte index = 0;
 
                 @Override
@@ -172,6 +172,7 @@ public final class AioQuickServer<T> {
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
             @Override
             public void completed(AsynchronousSocketChannel channel, Void attachment) {
+                createSession(channel);
                 try {
                     serverSocketChannel.accept(attachment, this);
                 } catch (Throwable throwable) {
@@ -179,7 +180,6 @@ public final class AioQuickServer<T> {
                     failed(throwable, attachment);
                     serverSocketChannel.accept(attachment, this);
                 }
-                createSession(channel);
             }
 
             @Override
