@@ -9,7 +9,6 @@
 
 package org.smartboot.socket.transport;
 
-import org.smartboot.aio.EnhanceAsynchronousChannelProvider;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
@@ -26,6 +25,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -50,6 +50,8 @@ import java.util.function.Function;
  * @version V1.0.0
  */
 public final class AioQuickServer<T> {
+    private static final String AIO_ENHANCE_PROVIDER = "org.smartboot.aio.EnhanceAsynchronousChannelProvider";
+    private static final String ASYNCHRONOUS_CHANNEL_PROVIDER = "java.nio.channels.spi.AsynchronousChannelProvider";
     /**
      * Server端服务配置。
      * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
@@ -127,6 +129,7 @@ public final class AioQuickServer<T> {
      */
     private final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
         checkAndResetConfig();
+        System.setProperty(ASYNCHRONOUS_CHANNEL_PROVIDER, AIO_ENHANCE_PROVIDER);
         try {
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
             if (bufferPool == null) {
@@ -134,10 +137,12 @@ public final class AioQuickServer<T> {
                 this.innerBufferPool = bufferPool;
             }
             this.aioSessionFunction = aioSessionFunction;
-
-//            aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
-            aioReadCompletionHandler = new ReadCompletionHandler<>();
-            asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider().openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
+            if (AIO_ENHANCE_PROVIDER.equals(System.getProperty(ASYNCHRONOUS_CHANNEL_PROVIDER))) {
+                aioReadCompletionHandler = new ReadCompletionHandler<>();
+            } else {
+                aioReadCompletionHandler = new ConcurrentReadCompletionHandler<>(new Semaphore(config.getThreadNum() - 1));
+            }
+            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
                 private byte index = 0;
 
                 @Override
