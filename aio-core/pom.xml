@@ -23,13 +23,6 @@
         <version>1.4.12-SNAPSHOT</version>
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
-    <dependencies>
-        <dependency>
-            <groupId>org.smartboot.aio</groupId>
-            <artifactId>aio-enhance</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
     <build>
         <plugins>
             <plugin>
