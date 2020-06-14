@@ -129,7 +129,6 @@ public final class AioQuickServer<T> {
      */
     private final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
         checkAndResetConfig();
-        System.setProperty(ASYNCHRONOUS_CHANNEL_PROVIDER, AIO_ENHANCE_PROVIDER);
         try {
             aioWriteCompletionHandler = new WriteCompletionHandler<>();
             if (bufferPool == null) {
