@@ -42,6 +42,11 @@
                 <artifactId>slf4j-simple</artifactId>
                 <version>1.7.21</version>
             </dependency>
+            <dependency>
+                <groupId>org.smartboot.aio</groupId>
+                <artifactId>aio-enhance</artifactId>
+                <version>1.0.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
