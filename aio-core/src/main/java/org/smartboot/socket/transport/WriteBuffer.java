@@ -52,6 +52,10 @@ public class WriteBuffer extends OutputStream {
      */
     private final Function<WriteBuffer, Void> function;
     /**
+     * 默认内存块大小
+     */
+    private final int chunkSize;
+    /**
      * 当时是否符合wait条件
      */
     private volatile boolean isWaiting = false;
@@ -71,12 +75,10 @@ public class WriteBuffer extends OutputStream {
      * 暂存当前业务正在输出的数据,输出完毕后会存放到items中
      */
     private VirtualBuffer writeInBuf;
-
     /**
      * 暂存当前待输出的数据
      */
     private volatile VirtualBuffer writeOutBuf;
-
     /**
      * 当前WriteBuffer是否已关闭
      */
@@ -85,11 +87,6 @@ public class WriteBuffer extends OutputStream {
      * 辅助8字节以内输出的缓存组数
      */
     private byte[] cacheByte;
-
-    /**
-     * 默认内存块大小
-     */
-    private int chunkSize;
 
 
     protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int chunkSize, int capacity) {
@@ -104,12 +101,11 @@ public class WriteBuffer extends OutputStream {
      * <br/>
      * 而使用该接口时容易传入非byte范围内的数据，接口定义与实际使用出现歧义的可能性较大，故建议废弃该方法，选用{@link WriteBuffer#writeByte(byte)}。
      *
-     * @param b
-     * @throws IOException 如果发生 I/O 错误
+     * @param b 输出字节
      * @deprecated
      */
     @Override
-    public void write(int b) throws IOException {
+    public void write(int b) {
         writeByte((byte) b);
     }
 
@@ -123,7 +119,7 @@ public class WriteBuffer extends OutputStream {
     public void writeShort(short v) throws IOException {
         initCacheBytes();
         cacheByte[0] = (byte) ((v >>> 8) & 0xFF);
-        cacheByte[1] = (byte) ((v >>> 0) & 0xFF);
+        cacheByte[1] = (byte) (v & 0xFF);
         write(cacheByte, 0, 2);
     }
 
@@ -163,7 +159,7 @@ public class WriteBuffer extends OutputStream {
         cacheByte[0] = (byte) ((v >>> 24) & 0xFF);
         cacheByte[1] = (byte) ((v >>> 16) & 0xFF);
         cacheByte[2] = (byte) ((v >>> 8) & 0xFF);
-        cacheByte[3] = (byte) ((v >>> 0) & 0xFF);
+        cacheByte[3] = (byte) (v & 0xFF);
         write(cacheByte, 0, 4);
     }
 
@@ -276,7 +272,7 @@ public class WriteBuffer extends OutputStream {
         if (size > 0 || writeOutBuf != null) {
             function.apply(this);
         } else if (writeInBuf != null && writeInBuf.buffer().position() > 0 && lock.tryLock()) {
-            VirtualBuffer buffer = null;
+            VirtualBuffer buffer;
             try {
                 if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
                     buffer = writeInBuf;

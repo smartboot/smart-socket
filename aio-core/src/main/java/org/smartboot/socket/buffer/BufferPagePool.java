@@ -12,7 +12,6 @@ package org.smartboot.socket.buffer;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,14 +26,19 @@ public class BufferPagePool {
     /**
      * 守护线程在空闲时期回收内存资源
      */
-    private static final ScheduledThreadPoolExecutor BUFFER_POOL_CLEAN = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r, "BufferPoolClean");
-            thread.setDaemon(true);
-            return thread;
-        }
+    private static final ScheduledThreadPoolExecutor BUFFER_POOL_CLEAN = new ScheduledThreadPoolExecutor(1, r -> {
+        Thread thread = new Thread(r, "BufferPoolClean");
+        thread.setDaemon(true);
+        return thread;
     });
+    /**
+     * 内存页游标
+     */
+    private final AtomicInteger cursor = new AtomicInteger(0);
+    /**
+     * 线程游标
+     */
+    private final AtomicInteger threadCursor = new AtomicInteger(0);
     /**
      * 内存页组
      */
@@ -43,19 +47,11 @@ public class BufferPagePool {
      * 共享缓存页
      */
     private BufferPage sharedBufferPage;
-    /**
-     * 内存页游标
-     */
-    private AtomicInteger cursor = new AtomicInteger(0);
-    /**
-     * 线程游标
-     */
-    private AtomicInteger threadCursor = new AtomicInteger(0);
     private boolean enabled = true;
     /**
      * 内存回收任务
      */
-    protected ScheduledFuture future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
+    protected ScheduledFuture<?> future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
         @Override
         public void run() {
             if (enabled) {

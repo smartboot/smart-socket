@@ -118,7 +118,7 @@ public final class AioQuickServer<T> {
         if (config.isBannerEnabled()) {
             System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
         }
-        start0(channel -> new TcpAioSession<T>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage()));
+        start0(channel -> new TcpAioSession<>(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage()));
     }
 
     /**
@@ -127,7 +127,7 @@ public final class AioQuickServer<T> {
      * @param aioSessionFunction 实例化会话的Function
      * @throws IOException IO异常
      */
-    private final void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
+    private void start0(Function<AsynchronousSocketChannel, TcpAioSession<T>> aioSessionFunction) throws IOException {
         checkAndResetConfig();
         try {
             aioWriteCompletionHandler = new WriteCompletionHandler<>();

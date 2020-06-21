@@ -90,12 +90,23 @@ final class TcpAioSession<T> extends AioSession<T> {
      * 同步输入流
      */
     private InputStream inputStream;
+
     /**
-     * 数据输出Function
+     * @param channel                Socket通道
+     * @param config                 配置项
+     * @param readCompletionHandler  读回调
+     * @param writeCompletionHandler 写回调
+     * @param bufferPage             绑定内存页
      */
-    private Function<WriteBuffer, Void> flushFunction = new Function<WriteBuffer, Void>() {
-        @Override
-        public Void apply(WriteBuffer var) {
+    TcpAioSession(AsynchronousSocketChannel channel, final IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, BufferPage bufferPage) {
+        this.channel = channel;
+        this.readCompletionHandler = readCompletionHandler;
+        this.writeCompletionHandler = writeCompletionHandler;
+        this.ioServerConfig = config;
+
+        this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
+
+        Function<WriteBuffer, Void> flushFunction = var -> {
             if (!semaphore.tryAcquire()) {
                 return null;
             }
@@ -106,23 +117,7 @@ final class TcpAioSession<T> extends AioSession<T> {
                 continueWrite(writeBuffer);
             }
             return null;
-        }
-    };
-
-    /**
-     * @param channel
-     * @param config
-     * @param readCompletionHandler
-     * @param writeCompletionHandler
-     * @param bufferPage             是否服务端Session
-     */
-    TcpAioSession(AsynchronousSocketChannel channel, final IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, BufferPage bufferPage) {
-        this.channel = channel;
-        this.readCompletionHandler = readCompletionHandler;
-        this.writeCompletionHandler = writeCompletionHandler;
-        this.ioServerConfig = config;
-
-        this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
+        };
         byteBuf = new WriteBuffer(bufferPage, flushFunction, ioServerConfig.getWriteBufferSize(), ioServerConfig.getWriteBufferCapacity());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
@@ -167,7 +162,7 @@ final class TcpAioSession<T> extends AioSession<T> {
      *
      * @param buffer 用于存放待读取数据的buffer
      */
-    private final void readFromChannel0(ByteBuffer buffer) {
+    private void readFromChannel0(ByteBuffer buffer) {
         channel.read(buffer, this, readCompletionHandler);
     }
 
@@ -176,7 +171,7 @@ final class TcpAioSession<T> extends AioSession<T> {
      *
      * @param buffer 待输出的buffer
      */
-    private final void writeToChannel0(ByteBuffer buffer) {
+    private void writeToChannel0(ByteBuffer buffer) {
         channel.write(buffer, 0L, TimeUnit.MILLISECONDS, this, writeCompletionHandler);
     }
 
@@ -248,7 +243,7 @@ final class TcpAioSession<T> extends AioSession<T> {
         readBuffer.flip();
         final MessageProcessor<T> messageProcessor = ioServerConfig.getProcessor();
         while (readBuffer.hasRemaining() && status == SESSION_STATUS_ENABLED) {
-            T dataEntry = null;
+            T dataEntry;
             try {
                 dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this);
             } catch (Exception e) {
@@ -314,9 +309,6 @@ final class TcpAioSession<T> extends AioSession<T> {
 
     /**
      * 同步读取数据
-     *
-     * @return
-     * @throws Exception
      */
     private int synRead() throws IOException {
         ByteBuffer buffer = readBuffer.buffer();
@@ -408,9 +400,6 @@ final class TcpAioSession<T> extends AioSession<T> {
         if (inputStream != null) {
             throw new IOException("pre inputStream has not closed");
         }
-        if (inputStream != null) {
-            return inputStream;
-        }
         synchronized (this) {
             if (inputStream == null) {
                 inputStream = new InnerInputStream(length);
@@ -466,7 +455,7 @@ final class TcpAioSession<T> extends AioSession<T> {
             ByteBuffer readBuffer = TcpAioSession.this.readBuffer.buffer();
             int size = 0;
             while (len > 0 && synRead() != -1) {
-                int readSize = readBuffer.remaining() < len ? readBuffer.remaining() : len;
+                int readSize = Math.min(readBuffer.remaining(), len);
                 readBuffer.get(b, off + size, readSize);
                 size += readSize;
                 len -= readSize;
@@ -488,12 +477,12 @@ final class TcpAioSession<T> extends AioSession<T> {
             if (remainLength < -1) {
                 return readBuffer.remaining();
             } else {
-                return remainLength > readBuffer.remaining() ? readBuffer.remaining() : remainLength;
+                return Math.min(remainLength, readBuffer.remaining());
             }
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             if (TcpAioSession.this.inputStream == InnerInputStream.this) {
                 TcpAioSession.this.inputStream = null;
             }

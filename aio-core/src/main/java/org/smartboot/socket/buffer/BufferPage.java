@@ -30,33 +30,33 @@ public class BufferPage {
      */
     private final Thread ownerThread = Thread.currentThread();
     /**
-     * 当前空闲的虚拟Buffer
+     * 共享内存页
      */
-    private List<VirtualBuffer> availableBuffers;
+    private final BufferPage sharedBufferPage;
     /**
-     * 待回收的虚拟Buffer
+     * 同组内存池中的各内存页
      */
-    private ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<>();
-    /**
-     * 当前缓存页的物理缓冲区
-     */
-    private ByteBuffer buffer;
+    private final BufferPage[] poolPages;
     /**
      * 条件锁
      */
-    private ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
+    /**
+     * 当前缓存页的物理缓冲区
+     */
+    private final ByteBuffer buffer;
+    /**
+     * 待回收的虚拟Buffer
+     */
+    private final ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<>();
+    /**
+     * 当前空闲的虚拟Buffer
+     */
+    private final List<VirtualBuffer> availableBuffers;
     /**
      * 内存页是否处于空闲状态
      */
     private boolean idle = true;
-    /**
-     * 同组内存池中的各内存页
-     */
-    private BufferPage[] poolPages;
-    /**
-     * 共享内存页
-     */
-    private BufferPage sharedBufferPage;
 
     /**
      * @param size   缓存页大小
@@ -89,7 +89,7 @@ public class BufferPage {
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
-        VirtualBuffer virtualBuffer = null;
+        VirtualBuffer virtualBuffer;
         Thread currentThread = Thread.currentThread();
         if (poolPages != null && currentThread instanceof FastBufferThread && currentThread == ownerThread) {
             virtualBuffer = poolPages[((FastBufferThread) currentThread).getIndex()].allocate0(size);
