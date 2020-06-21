@@ -278,7 +278,7 @@ public class UdpBootstrap<Request> {
             }
             buffer.flip();
 
-            UdpAioSession<Request> aioSession = channel.createAndCacheSession(remote);
+            UdpAioSession aioSession = channel.createAndCacheSession(remote);
             config.getMonitor().beforeRead(aioSession);
             config.getMonitor().afterRead(aioSession, buffer.remaining());
             Request request = null;

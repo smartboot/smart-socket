@@ -114,7 +114,7 @@ public final class AioQuickClient<T> {
      * @throws IOException IOException
      * @see AsynchronousSocketChannel#connect(SocketAddress)
      */
-    public AioSession<T> start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
+    public AioSession start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
         AsynchronousSocketChannel socketChannel = null;
         try {
             socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
@@ -170,7 +170,7 @@ public final class AioQuickClient<T> {
      * @throws IOException IOException
      * @see AioQuickClient#start(AsynchronousChannelGroup)
      */
-    public final AioSession<T> start() throws IOException {
+    public final AioSession start() throws IOException {
         this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, Thread::new);
         return start(asynchronousChannelGroup);
     }

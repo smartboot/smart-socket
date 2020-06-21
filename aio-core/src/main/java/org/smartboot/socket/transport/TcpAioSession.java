@@ -51,7 +51,7 @@ import java.util.function.Function;
  * @author 三刀
  * @version V1.0.0
  */
-final class TcpAioSession<T> extends AioSession<T> {
+final class TcpAioSession<T> extends AioSession {
 
     /**
      * 底层通信channel对象
@@ -300,7 +300,7 @@ final class TcpAioSession<T> extends AioSession<T> {
      * 触发读操作
      */
     private void continueRead() {
-        NetMonitor<T> monitor = getServerConfig().getMonitor();
+        NetMonitor monitor = getServerConfig().getMonitor();
         if (monitor != null) {
             monitor.beforeRead(this);
         }
@@ -331,7 +331,7 @@ final class TcpAioSession<T> extends AioSession<T> {
      * @param writeBuffer 存放待输出数据的buffer
      */
     private void continueWrite(VirtualBuffer writeBuffer) {
-        NetMonitor<T> monitor = getServerConfig().getMonitor();
+        NetMonitor monitor = getServerConfig().getMonitor();
         if (monitor != null) {
             monitor.beforeWrite(this);
         }

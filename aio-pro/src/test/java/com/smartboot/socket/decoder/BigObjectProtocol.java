@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
 public class BigObjectProtocol implements Protocol<BigObject> {
 
     @Override
-    public BigObject decode(ByteBuffer readBuffer, AioSession<BigObject> session) {
+    public BigObject decode(ByteBuffer readBuffer, AioSession session) {
         if (readBuffer.remaining() < 4) {
             return null;
         }

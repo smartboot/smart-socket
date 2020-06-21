@@ -15,11 +15,10 @@ import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousSocketChannel;
 
 /**
- * @param <T> 消息对象类型
  * @author 三刀
  * @version V1.0 , 2019/8/25
  */
-public abstract class AioSession<T> {
+public abstract class AioSession {
 
 
     /**
@@ -157,6 +156,5 @@ public abstract class AioSession<T> {
     public InputStream getInputStream(int length) throws IOException {
         throw new UnsupportedOperationException();
     }
-
 
 }

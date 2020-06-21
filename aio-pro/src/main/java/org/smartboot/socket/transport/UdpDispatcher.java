@@ -55,7 +55,7 @@ class UdpDispatcher<T> implements Runnable {
      * @param session
      * @param request
      */
-    public void dispatch(UdpAioSession<T> session, T request) {
+    public void dispatch(UdpAioSession session, T request) {
         dispatch(new RequestTask<>(session, request));
     }
 
@@ -69,10 +69,10 @@ class UdpDispatcher<T> implements Runnable {
     }
 
     class RequestTask<T> {
-        UdpAioSession<T> session;
+        UdpAioSession session;
         T request;
 
-        public RequestTask(UdpAioSession<T> session, T request) {
+        public RequestTask(UdpAioSession session, T request) {
             this.session = session;
             this.request = request;
         }

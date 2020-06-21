@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
  */
 public class NullProtocol implements Protocol<Void> {
     @Override
-    public Void decode(ByteBuffer readBuffer, AioSession<Void> session) {
+    public Void decode(ByteBuffer readBuffer, AioSession session) {
         return null;
     }
 

@@ -18,7 +18,7 @@ import org.smartboot.socket.transport.AioSession;
 public class IntegerClient {
     public static void main(String[] args) throws Exception {
         AioQuickClient<Integer> aioQuickClient = new AioQuickClient<Integer>("localhost", 8888, new IntegerProtocol(), new IntegerClientProcessor());
-        AioSession<Integer> session = aioQuickClient.start();
+        AioSession session = aioQuickClient.start();
         session.writeBuffer().writeInt(1);
 //        session.writeBuffer().flush();
 //        Thread.sleep(1000);

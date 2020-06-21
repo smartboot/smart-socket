@@ -31,7 +31,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {
         try {
             // 接收到的消息进行预处理
-            NetMonitor<T> monitor = aioSession.getServerConfig().getMonitor();
+            NetMonitor monitor = aioSession.getServerConfig().getMonitor();
             if (monitor != null) {
                 monitor.afterRead(aioSession, result);
             }

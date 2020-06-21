@@ -31,7 +31,7 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
     private static final Logger LOGGER = LoggerFactory.getLogger(RpcConsumerProcessor.class);
     private Map<String, CompletableFuture<RpcResponse>> synchRespMap = new ConcurrentHashMap<>();
     private Map<Class, Object> objectMap = new ConcurrentHashMap<>();
-    private AioSession<byte[]> aioSession;
+    private AioSession aioSession;
 
     public static void main(String[] args) {
         CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
@@ -56,7 +56,7 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
     }
 
     @Override
-    public void process(AioSession<byte[]> session, byte[] msg) {
+    public void process(AioSession session, byte[] msg) {
         ObjectInput objectInput = null;
         try {
             objectInput = new ObjectInputStream(new ByteArrayInputStream(msg));
@@ -131,7 +131,7 @@ public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
     }
 
     @Override
-    public void stateEvent(AioSession<byte[]> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         switch (stateMachineEnum) {
             case NEW_SESSION:
                 this.aioSession = session;

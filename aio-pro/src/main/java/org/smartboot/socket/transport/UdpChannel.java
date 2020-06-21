@@ -45,7 +45,7 @@ public final class UdpChannel<Request> {
     /**
      * 与当前UDP通道对接的会话
      */
-    private ConcurrentHashMap<String, UdpAioSession<Request>> udpAioSessionConcurrentHashMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, UdpAioSession> udpAioSessionConcurrentHashMap = new ConcurrentHashMap<>();
     /**
      * 待输出消息
      */
@@ -127,7 +127,7 @@ public final class UdpChannel<Request> {
      * @param remote
      * @return
      */
-    public AioSession<Request> connect(SocketAddress remote) {
+    public AioSession connect(SocketAddress remote) {
         return createAndCacheSession(remote);
     }
 
@@ -137,9 +137,9 @@ public final class UdpChannel<Request> {
      * @param remote
      * @return
      */
-    UdpAioSession<Request> createAndCacheSession(final SocketAddress remote) {
+    UdpAioSession createAndCacheSession(final SocketAddress remote) {
         String key = getSessionKey(remote);
-        UdpAioSession<Request> session = udpAioSessionConcurrentHashMap.get(key);
+        UdpAioSession session = udpAioSessionConcurrentHashMap.get(key);
         if (session != null) {
             return session;
         }
@@ -161,7 +161,7 @@ public final class UdpChannel<Request> {
                 return null;
             };
             WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, config.getWriteBufferSize(), 1);
-            session = new UdpAioSession<>(this, remote, writeBuffer);
+            session = new UdpAioSession(this, remote, writeBuffer);
             udpAioSessionConcurrentHashMap.put(key, session);
         }
         return session;
@@ -192,7 +192,7 @@ public final class UdpChannel<Request> {
             selector.wakeup();
             selectionKey = null;
         }
-        for (Map.Entry<String, UdpAioSession<Request>> entry : udpAioSessionConcurrentHashMap.entrySet()) {
+        for (Map.Entry<String, UdpAioSession> entry : udpAioSessionConcurrentHashMap.entrySet()) {
             entry.getValue().close();
         }
         try {

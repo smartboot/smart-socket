@@ -22,7 +22,7 @@ public class IntegerProtocol implements Protocol<Integer> {
     private static final int INT_LENGTH = 4;
 
     @Override
-    public Integer decode(ByteBuffer data, AioSession<Integer> session) {
+    public Integer decode(ByteBuffer data, AioSession session) {
         if (data.remaining() < INT_LENGTH)
             return null;
         return data.getInt();

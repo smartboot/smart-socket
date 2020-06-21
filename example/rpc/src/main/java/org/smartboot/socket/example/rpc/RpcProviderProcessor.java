@@ -40,7 +40,7 @@ public class RpcProviderProcessor implements MessageProcessor<byte[]> {
     }
 
     @Override
-    public void process(AioSession<byte[]> session, byte[] msg) {
+    public void process(AioSession session, byte[] msg) {
         pool.execute(() -> {
             ObjectInput objectInput = null;
             ObjectOutput objectOutput = null;
@@ -117,7 +117,7 @@ public class RpcProviderProcessor implements MessageProcessor<byte[]> {
     }
 
     @Override
-    public void stateEvent(AioSession<byte[]> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
 
     }
 
