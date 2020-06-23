@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
 public class StringProtocol implements Protocol<String> {
 
     @Override
-    public String decode(ByteBuffer readBuffer, AioSession<String> session) {
+    public String decode(ByteBuffer readBuffer, AioSession session) {
         int remaining = readBuffer.remaining();
         if (remaining < Integer.BYTES) {
             return null;

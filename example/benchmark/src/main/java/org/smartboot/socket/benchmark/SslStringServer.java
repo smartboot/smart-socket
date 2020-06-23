@@ -26,7 +26,7 @@ public class SslStringServer {
     public static void main(String[] args) throws IOException {
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
-            public void process0(AioSession<String> session, String msg) {
+            public void process0(AioSession session, String msg) {
 //                LOGGER.info(msg);
                 WriteBuffer outputStream = session.writeBuffer();
 
@@ -40,7 +40,7 @@ public class SslStringServer {
             }
 
             @Override
-            public void stateEvent0(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+            public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 if (throwable != null) {
                     LOGGER.error(stateMachineEnum + " exception:", throwable);
                 }

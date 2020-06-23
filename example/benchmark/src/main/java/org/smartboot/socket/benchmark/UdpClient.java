@@ -72,7 +72,7 @@ public class UdpClient {
                     try {
                         int count = 10;
                         UdpChannel<String> channel = bootstrap.open();
-                        AioSession<String> aioSession = channel.connect(remote);
+                        AioSession aioSession = channel.connect(remote);
                         WriteBuffer writeBuffer = aioSession.writeBuffer();
 //                        byte[] msg = "HelloWorld".getBytes();
                         while (count-- > 0) {

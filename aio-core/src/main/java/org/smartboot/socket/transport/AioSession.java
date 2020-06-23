@@ -48,9 +48,6 @@ public abstract class AioSession {
      */
     private Object attachment;
 
-    AioSession() {
-    }
-
     /**
      * 获取WriteBuffer用以数据输出
      *
