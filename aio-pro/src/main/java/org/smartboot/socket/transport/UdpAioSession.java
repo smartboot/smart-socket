@@ -21,11 +21,11 @@ import java.net.SocketAddress;
  */
 final class UdpAioSession extends AioSession {
 
-    private UdpChannel udpChannel;
+    private final UdpChannel udpChannel;
 
-    private SocketAddress remote;
+    private final SocketAddress remote;
 
-    private WriteBuffer writeBuffer;
+    private final WriteBuffer writeBuffer;
 
     UdpAioSession(final UdpChannel udpChannel, final SocketAddress remote, WriteBuffer writeBuffer) {
         this.udpChannel = udpChannel;

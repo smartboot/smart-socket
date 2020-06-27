@@ -35,26 +35,25 @@ import java.util.function.Function;
  */
 public final class UdpChannel<Request> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
-    IoServerConfig config;
-    private BufferPage bufferPage;
+    private final BufferPage bufferPage;
+    /**
+     * 与当前UDP通道对接的会话
+     */
+    private final ConcurrentHashMap<String, UdpAioSession> udpAioSessionConcurrentHashMap = new ConcurrentHashMap<>();
+    /**
+     * 待输出消息
+     */
+    private final ConcurrentLinkedQueue<ResponseTask> responseTasks;
+    private final Semaphore writeSemaphore = new Semaphore(1);
+    IoServerConfig<Request> config;
     /**
      * 真实的UDP通道
      */
     private DatagramChannel channel;
     private SelectionKey selectionKey;
-    /**
-     * 与当前UDP通道对接的会话
-     */
-    private ConcurrentHashMap<String, UdpAioSession> udpAioSessionConcurrentHashMap = new ConcurrentHashMap<>();
-    /**
-     * 待输出消息
-     */
-    private ConcurrentLinkedQueue<ResponseTask> responseTasks;
     private ResponseTask failWriteEvent;
 
-    private Semaphore writeSemaphore = new Semaphore(1);
-
-    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, IoServerConfig config, BufferPage bufferPage) {
+    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, IoServerConfig<Request> config, BufferPage bufferPage) {
         this.channel = channel;
         responseTasks = new ConcurrentLinkedQueue<>();
         this.selectionKey = selectionKey;
@@ -214,15 +213,15 @@ public final class UdpChannel<Request> {
         return channel;
     }
 
-    final class ResponseTask {
+    static final class ResponseTask {
         /**
          * 待输出数据的接受地址
          */
-        private SocketAddress remote;
+        private final SocketAddress remote;
         /**
          * 待输出数据
          */
-        private VirtualBuffer response;
+        private final VirtualBuffer response;
 
         public ResponseTask(SocketAddress remote, VirtualBuffer response) {
             this.remote = remote;

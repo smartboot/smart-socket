@@ -24,9 +24,9 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 class UdpDispatcher<T> implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpDispatcher.class);
-    public final RequestTask<T> EXECUTE_TASK_OR_SHUTDOWN = new RequestTask<>(null, null);
-    private BlockingQueue<RequestTask<T>> taskQueue = new LinkedBlockingQueue<>();
-    private MessageProcessor<T> processor;
+    public final RequestTask EXECUTE_TASK_OR_SHUTDOWN = new RequestTask(null, null);
+    private final BlockingQueue<RequestTask> taskQueue = new LinkedBlockingQueue<>();
+    private final MessageProcessor<T> processor;
 
     public UdpDispatcher(MessageProcessor<T> processor) {
         this.processor = processor;
@@ -36,7 +36,7 @@ class UdpDispatcher<T> implements Runnable {
     public void run() {
         try {
             while (true) {
-                RequestTask<T> unit = taskQueue.take();
+                RequestTask unit = taskQueue.take();
                 if (unit == EXECUTE_TASK_OR_SHUTDOWN) {
                     LOGGER.info("shutdown thread:{}", Thread.currentThread());
                     break;
@@ -56,7 +56,7 @@ class UdpDispatcher<T> implements Runnable {
      * @param request
      */
     public void dispatch(UdpAioSession session, T request) {
-        dispatch(new RequestTask<>(session, request));
+        dispatch(new RequestTask(session, request));
     }
 
     /**
@@ -64,11 +64,11 @@ class UdpDispatcher<T> implements Runnable {
      *
      * @param requestTask
      */
-    public void dispatch(RequestTask<T> requestTask) {
+    public void dispatch(RequestTask requestTask) {
         taskQueue.offer(requestTask);
     }
 
-    class RequestTask<T> {
+    class RequestTask {
         UdpAioSession session;
         T request;
 
