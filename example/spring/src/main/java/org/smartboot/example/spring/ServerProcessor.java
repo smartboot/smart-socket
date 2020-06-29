@@ -15,7 +15,7 @@ import java.io.IOException;
 @Component("messageProcessor")
 public class ServerProcessor implements MessageProcessor<String> {
     @Override
-    public void process(AioSession<String> session, String msg) {
+    public void process(AioSession session, String msg) {
         WriteBuffer outputStream = session.writeBuffer();
         try {
             byte[] bytes = msg.getBytes();
@@ -27,6 +27,6 @@ public class ServerProcessor implements MessageProcessor<String> {
     }
 
     @Override
-    public void stateEvent(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
     }
 }
