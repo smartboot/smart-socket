@@ -26,10 +26,6 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class BufferPage {
     /**
-     * 实例化当前内存页的线程对象
-     */
-    private final Thread ownerThread = Thread.currentThread();
-    /**
      * 共享内存页
      */
     private final BufferPage sharedBufferPage;
@@ -90,9 +86,8 @@ public class BufferPage {
      */
     public VirtualBuffer allocate(final int size) {
         VirtualBuffer virtualBuffer;
-        Thread currentThread = Thread.currentThread();
-        if (poolPages != null && currentThread instanceof FastBufferThread && currentThread == ownerThread) {
-            virtualBuffer = poolPages[((FastBufferThread) currentThread).getIndex()].allocate0(size);
+        if (poolPages != null) {
+            virtualBuffer = poolPages[(int) (Thread.currentThread().getId() % poolPages.length)].allocate0(size);
         } else {
             virtualBuffer = allocate0(size);
         }
@@ -115,6 +110,9 @@ public class BufferPage {
      * @return 虚拟内存对象
      */
     private VirtualBuffer allocate0(final int size) {
+        if (size > buffer.capacity()) {
+            return null;
+        }
         idle = false;
         VirtualBuffer cleanBuffer = cleanBuffers.poll();
         if (cleanBuffer != null && cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {

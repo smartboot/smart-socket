@@ -19,7 +19,7 @@ public interface BufferFactory {
     /**
      * 禁用状态的内存池
      */
-    BufferFactory DISABLED_BUFFER_FACTORY = BufferPagePool.NoneBufferPagePool::new;
+    BufferFactory DISABLED_BUFFER_FACTORY = () -> new BufferPagePool(0, 1, false);
 
     /**
      * 创建内存池

@@ -146,7 +146,7 @@ public final class AioQuickServer<T> {
 
                 @Override
                 public Thread newThread(Runnable r) {
-                    return bufferPool.newThread(r, "smart-socket:Thread-" + (++index) + "-");
+                    return new Thread(r, "smart-socket:Thread-" + (++index) + "-");
                 }
             });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);

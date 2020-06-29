@@ -9,7 +9,6 @@
 
 package org.smartboot.socket.buffer;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -36,10 +35,6 @@ public class BufferPagePool {
      */
     private final AtomicInteger cursor = new AtomicInteger(0);
     /**
-     * 线程游标
-     */
-    private final AtomicInteger threadCursor = new AtomicInteger(0);
-    /**
      * 内存页组
      */
     protected BufferPage[] bufferPages;
@@ -51,7 +46,7 @@ public class BufferPagePool {
     /**
      * 内存回收任务
      */
-    protected ScheduledFuture<?> future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
+    private ScheduledFuture<?> future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
         @Override
         public void run() {
             if (enabled) {
@@ -100,18 +95,9 @@ public class BufferPagePool {
         for (int i = 0; i < pageNum; i++) {
             bufferPages[i] = new BufferPage(bufferPages, sharedBufferPage, pageSize, isDirect);
         }
-    }
-
-    /**
-     * 申请FastBufferThread的线程对象,配合线程池申请会有更好的性能表现
-     *
-     * @param target Runnable
-     * @param name   线程名
-     * @return FastBufferThread线程对象
-     */
-    public Thread newThread(Runnable target, String name) {
-        assertEnabled();
-        return new FastBufferThread(target, name, threadCursor.getAndIncrement() % bufferPages.length);
+        if ((pageNum == 0 || pageSize == 0) && sharedPageSize <= 0) {
+            future.cancel(false);
+        }
     }
 
     /**
@@ -141,21 +127,5 @@ public class BufferPagePool {
     public void release() {
         enabled = false;
     }
-
-    final static class NoneBufferPagePool extends BufferPagePool {
-
-        NoneBufferPagePool() {
-            super(0, 0, false);
-            bufferPages = new BufferPage[1];
-            bufferPages[0] = new BufferPage(null, null, 0, false) {
-                @Override
-                public VirtualBuffer allocate(int size) {
-                    return new VirtualBuffer(null, ByteBuffer.allocate(size), 0, 0);
-                }
-            };
-            future.cancel(false);
-        }
-    }
-
 }
 
