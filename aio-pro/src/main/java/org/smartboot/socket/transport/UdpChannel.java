@@ -143,6 +143,7 @@ public final class UdpChannel<Request> {
             return session;
         }
         synchronized (this) {
+            session = udpAioSessionConcurrentHashMap.get(key);
             if (session != null) {
                 return session;
             }
