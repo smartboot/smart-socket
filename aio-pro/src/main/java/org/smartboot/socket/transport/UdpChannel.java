@@ -138,15 +138,7 @@ public final class UdpChannel<Request> {
      */
     UdpAioSession createAndCacheSession(final SocketAddress remote) {
         String key = getSessionKey(remote);
-        UdpAioSession session = udpAioSessionConcurrentHashMap.get(key);
-        if (session != null) {
-            return session;
-        }
-        synchronized (this) {
-            session = udpAioSessionConcurrentHashMap.get(key);
-            if (session != null) {
-                return session;
-            }
+        UdpAioSession session = udpAioSessionConcurrentHashMap.computeIfAbsent(key, s -> {
             Function<WriteBuffer, Void> function = writeBuffer -> {
                 VirtualBuffer virtualBuffer = writeBuffer.poll();
                 if (virtualBuffer == null) {
@@ -161,9 +153,8 @@ public final class UdpChannel<Request> {
                 return null;
             };
             WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, config.getWriteBufferSize(), 1);
-            session = new UdpAioSession(this, remote, writeBuffer);
-            udpAioSessionConcurrentHashMap.put(key, session);
-        }
+            return new UdpAioSession(UdpChannel.this, remote, writeBuffer);
+        });
         return session;
     }
 

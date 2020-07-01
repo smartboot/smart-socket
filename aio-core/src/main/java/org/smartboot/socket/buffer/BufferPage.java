@@ -24,7 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author 三刀
  * @version V1.0 , 2018/10/31
  */
-public class BufferPage {
+public final class BufferPage {
     /**
      * 共享内存页
      */
@@ -77,7 +77,6 @@ public class BufferPage {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
-
     /**
      * 申请虚拟内存
      *
@@ -85,8 +84,19 @@ public class BufferPage {
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
+        return allocate(size, true);
+    }
+
+    /**
+     * 申请虚拟内存
+     *
+     * @param size       申请大小
+     * @param bindThread 优先绑定线程分配
+     * @return 虚拟内存对象
+     */
+    public VirtualBuffer allocate(final int size, boolean bindThread) {
         VirtualBuffer virtualBuffer;
-        if (poolPages != null) {
+        if (poolPages != null && bindThread) {
             virtualBuffer = poolPages[(int) (Thread.currentThread().getId() % poolPages.length)].allocate0(size);
         } else {
             virtualBuffer = allocate0(size);
