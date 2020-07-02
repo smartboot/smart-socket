@@ -81,7 +81,6 @@ public final class BufferPage {
      * 申请虚拟内存
      *
      * @param size       申请大小
-     * @param bindThread 优先绑定线程分配
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
