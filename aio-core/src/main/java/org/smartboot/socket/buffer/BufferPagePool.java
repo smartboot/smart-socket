@@ -46,7 +46,7 @@ public class BufferPagePool {
     /**
      * 内存回收任务
      */
-    private ScheduledFuture<?> future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
+    private final ScheduledFuture<?> future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
         @Override
         public void run() {
             if (enabled) {
@@ -98,6 +98,18 @@ public class BufferPagePool {
         if ((pageNum == 0 || pageSize == 0) && sharedPageSize <= 0) {
             future.cancel(false);
         }
+    }
+
+    /**
+     * 申请FastBufferThread的线程对象,配合线程池申请会有更好的性能表现
+     *
+     * @param target Runnable
+     * @param name   线程名
+     * @return FastBufferThread线程对象
+     */
+    public Thread newThread(Runnable target, String name) {
+        assertEnabled();
+        return new FastBufferThread(target, name);
     }
 
     /**

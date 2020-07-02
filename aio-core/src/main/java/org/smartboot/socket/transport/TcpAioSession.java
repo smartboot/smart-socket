@@ -104,7 +104,7 @@ final class TcpAioSession<T> extends AioSession {
         this.writeCompletionHandler = writeCompletionHandler;
         this.ioServerConfig = config;
 
-        this.readBuffer = bufferPage.allocate(config.getReadBufferSize(), false);
+        this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
 
         Function<WriteBuffer, Void> flushFunction = var -> {
             if (!semaphore.tryAcquire()) {

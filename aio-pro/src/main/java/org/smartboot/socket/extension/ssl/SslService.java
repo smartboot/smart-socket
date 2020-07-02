@@ -144,11 +144,11 @@ public final class SslService {
                 }
             }
             handshakeModel.setSslEngine(sslEngine);
-            handshakeModel.setAppWriteBuffer(bufferPage.allocate(session.getApplicationBufferSize(), false));
-            handshakeModel.setNetWriteBuffer(bufferPage.allocate(session.getPacketBufferSize(), false));
+            handshakeModel.setAppWriteBuffer(bufferPage.allocate(session.getApplicationBufferSize()));
+            handshakeModel.setNetWriteBuffer(bufferPage.allocate(session.getPacketBufferSize()));
             handshakeModel.getNetWriteBuffer().buffer().flip();
-            handshakeModel.setAppReadBuffer(bufferPage.allocate(session.getApplicationBufferSize(), false));
-            handshakeModel.setNetReadBuffer(bufferPage.allocate(session.getPacketBufferSize(), false));
+            handshakeModel.setAppReadBuffer(bufferPage.allocate(session.getApplicationBufferSize()));
+            handshakeModel.setNetReadBuffer(bufferPage.allocate(session.getPacketBufferSize()));
             sslEngine.beginHandshake();
 
             handshakeModel.setSocketChannel(socketChannel);
