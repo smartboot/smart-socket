@@ -76,10 +76,6 @@ public class WriteBuffer extends OutputStream {
      */
     private VirtualBuffer writeInBuf;
     /**
-     * 暂存当前待输出的数据
-     */
-    private volatile VirtualBuffer writeOutBuf;
-    /**
      * 当前WriteBuffer是否已关闭
      */
     private boolean closed = false;
@@ -134,18 +130,25 @@ public class WriteBuffer extends OutputStream {
                 writeInBuf = bufferPage.allocate(chunkSize);
             }
             writeInBuf.buffer().put(b);
-            if (writeInBuf.buffer().hasRemaining()) {
-                return;
-            }
-            writeInBuf.buffer().flip();
-
-            this.put(writeInBuf);
-            writeInBuf = null;
+            flushWriteBuffer();
         } finally {
             lock.unlock();
         }
 
         function.apply(this);
+    }
+
+    private void flushWriteBuffer() {
+        if (writeInBuf.buffer().hasRemaining()) {
+            return;
+        }
+        function.apply(this);
+        if (writeInBuf != null) {
+            writeInBuf.buffer().flip();
+            VirtualBuffer buffer = writeInBuf;
+            writeInBuf = null;
+            this.put(buffer);
+        }
     }
 
     /**
@@ -161,6 +164,26 @@ public class WriteBuffer extends OutputStream {
         cacheByte[2] = (byte) ((v >>> 8) & 0xFF);
         cacheByte[3] = (byte) (v & 0xFF);
         write(cacheByte, 0, 4);
+    }
+
+
+    /**
+     * 输出long数值,占用8个字节
+     *
+     * @param v long数值
+     * @throws IOException IO异常
+     */
+    public void writeLong(long v) throws IOException {
+        initCacheBytes();
+        cacheByte[0] = (byte) ((v >>> 56) & 0xFF);
+        cacheByte[1] = (byte) ((v >>> 48) & 0xFF);
+        cacheByte[2] = (byte) ((v >>> 40) & 0xFF);
+        cacheByte[3] = (byte) ((v >>> 32) & 0xFF);
+        cacheByte[4] = (byte) ((v >>> 24) & 0xFF);
+        cacheByte[5] = (byte) ((v >>> 16) & 0xFF);
+        cacheByte[6] = (byte) ((v >>> 8) & 0xFF);
+        cacheByte[7] = (byte) (v & 0xFF);
+        write(cacheByte, 0, 8);
     }
 
     @Override
@@ -191,13 +214,7 @@ public class WriteBuffer extends OutputStream {
                 }
                 writeBuffer.put(b, off, minSize);
                 off += minSize;
-                if (!writeBuffer.hasRemaining()) {
-                    writeBuffer.flip();
-                    VirtualBuffer buffer = writeInBuf;
-                    writeInBuf = null;
-                    this.put(buffer);
-                    function.apply(this);
-                }
+                flushWriteBuffer();
             } while (off < len);
             notifyWaiting();
         } finally {
@@ -268,25 +285,8 @@ public class WriteBuffer extends OutputStream {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
-        int size = this.count;
-        if (size > 0 || writeOutBuf != null) {
+        if (this.count > 0 || writeInBuf != null) {
             function.apply(this);
-        } else if (writeInBuf != null && writeInBuf.buffer().position() > 0 && lock.tryLock()) {
-            VirtualBuffer buffer;
-            try {
-                if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
-                    buffer = writeInBuf;
-                    writeInBuf = null;
-                    buffer.buffer().flip();
-                    this.put(buffer);
-                    size++;
-                }
-            } finally {
-                lock.unlock();
-            }
-            if (size > 0) {
-                function.apply(this);
-            }
         }
     }
 
@@ -303,9 +303,6 @@ public class WriteBuffer extends OutputStream {
             while ((byteBuf = poll()) != null) {
                 byteBuf.clean();
             }
-            if (writeInBuf != null) {
-                writeInBuf.clean();
-            }
         } finally {
             lock.unlock();
         }
@@ -318,7 +315,7 @@ public class WriteBuffer extends OutputStream {
      * @return true:有,false:无
      */
     boolean hasData() {
-        return count > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0);
+        return count > 0 || writeInBuf != null;
     }
 
 
@@ -335,19 +332,6 @@ public class WriteBuffer extends OutputStream {
                 //防止因close诱发内存泄露
                 if (closed) {
                     virtualBuffer.clean();
-                    return;
-                }
-            }
-            while (writeOutBuf == null) {
-                if (count > 0) {
-                    writeOutBuf = items[takeIndex];
-                    items[takeIndex] = null;
-                    if (++takeIndex == items.length) {
-                        takeIndex = 0;
-                    }
-                    count--;
-                } else {
-                    writeOutBuf = virtualBuffer;
                     return;
                 }
             }
@@ -368,21 +352,19 @@ public class WriteBuffer extends OutputStream {
      * @return 待输出的VirtualBuffer
      */
     VirtualBuffer poll() {
-        if (writeOutBuf != null) {
-            VirtualBuffer virtualBuffer = writeOutBuf;
-            writeOutBuf = null;
-            return virtualBuffer;
-        }
         lock.lock();
         try {
-            if (writeOutBuf != null) {
-                VirtualBuffer virtualBuffer = writeOutBuf;
-                writeOutBuf = null;
-                return virtualBuffer;
-            }
             if (count == 0) {
-                return null;
+                if (writeInBuf != null) {
+                    writeInBuf.buffer().flip();
+                    VirtualBuffer buffer = writeInBuf;
+                    writeInBuf = null;
+                    return buffer;
+                } else {
+                    return null;
+                }
             }
+
             VirtualBuffer x = items[takeIndex];
             items[takeIndex] = null;
             if (++takeIndex == items.length) {
@@ -390,14 +372,6 @@ public class WriteBuffer extends OutputStream {
             }
             if (count-- == items.length) {
                 notFull.signal();
-            }
-            if (count > 0) {
-                writeOutBuf = items[takeIndex];
-                items[takeIndex] = null;
-                if (++takeIndex == items.length) {
-                    takeIndex = 0;
-                }
-                count--;
             }
             return x;
         } finally {

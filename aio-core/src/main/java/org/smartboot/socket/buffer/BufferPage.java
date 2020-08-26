@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -76,11 +77,11 @@ public final class BufferPage {
     private ByteBuffer allocate0(int size, boolean direct) {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
-    
+
     /**
      * 申请虚拟内存
      *
-     * @param size       申请大小
+     * @param size 申请大小
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
@@ -250,8 +251,7 @@ public final class BufferPage {
      * @param cleanBuffer 虚拟缓冲区
      */
     private void clean0(VirtualBuffer cleanBuffer) {
-        int index = 0;
-        Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
+        ListIterator<VirtualBuffer> iterator = availableBuffers.listIterator();
         while (iterator.hasNext()) {
             VirtualBuffer freeBuffer = iterator.next();
             //cleanBuffer在freeBuffer之前并且形成连续块
@@ -275,12 +275,12 @@ public final class BufferPage {
                 return;
             }
             if (freeBuffer.getParentPosition() > cleanBuffer.getParentLimit()) {
-                availableBuffers.add(index, cleanBuffer);
+                iterator.previous();
+                iterator.add(cleanBuffer);
                 return;
             }
-            index++;
         }
-        availableBuffers.add(cleanBuffer);
+        iterator.add(cleanBuffer);
     }
 
     /**
