@@ -20,7 +20,7 @@ import java.nio.channels.CompletionHandler;
  * @author 三刀
  * @version V1.0.0
  */
-class WriteCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
+final class WriteCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
 
     @Override
     public void completed(final Integer result, final TcpAioSession<T> aioSession) {

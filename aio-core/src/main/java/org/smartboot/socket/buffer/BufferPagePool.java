@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author 三刀
  * @version V1.0 , 2018/10/31
  */
-public class BufferPagePool {
+public final class BufferPagePool {
 
     /**
      * 守护线程在空闲时期回收内存资源
@@ -37,7 +37,7 @@ public class BufferPagePool {
     /**
      * 内存页组
      */
-    protected BufferPage[] bufferPages;
+    private BufferPage[] bufferPages;
     /**
      * 共享缓存页
      */

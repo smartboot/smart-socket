@@ -26,7 +26,7 @@ import java.util.function.Function;
  * @version V1.0 , 2018/11/8
  */
 
-public class WriteBuffer extends OutputStream {
+public final class WriteBuffer extends OutputStream {
     /**
      * 存储已就绪待输出的数据
      */
@@ -85,7 +85,7 @@ public class WriteBuffer extends OutputStream {
     private byte[] cacheByte;
 
 
-    protected WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int chunkSize, int capacity) {
+    WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int chunkSize, int capacity) {
         this.bufferPage = bufferPage;
         this.function = flushFunction;
         this.items = new VirtualBuffer[capacity];
