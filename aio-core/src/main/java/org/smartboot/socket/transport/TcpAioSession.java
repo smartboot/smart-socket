@@ -158,24 +158,6 @@ final class TcpAioSession<T> extends AioSession {
     }
 
     /**
-     * 内部方法：触发通道的读操作
-     *
-     * @param buffer 用于存放待读取数据的buffer
-     */
-    private void readFromChannel0(ByteBuffer buffer) {
-        channel.read(buffer, this, readCompletionHandler);
-    }
-
-    /**
-     * 内部方法：触发通道的写操作
-     *
-     * @param buffer 待输出的buffer
-     */
-    private void writeToChannel0(ByteBuffer buffer) {
-        channel.write(buffer, 0L, TimeUnit.MILLISECONDS, this, writeCompletionHandler);
-    }
-
-    /**
      * @return 输入流
      */
     public final WriteBuffer writeBuffer() {
@@ -271,21 +253,9 @@ final class TcpAioSession<T> extends AioSession {
             return;
         }
 
-        if (semaphore.availablePermits() > 0) {
-            byteBuf.flush();
-        }
+        byteBuf.flush();
 
-        //数据读取完毕
-        if (readBuffer.remaining() == 0) {
-            readBuffer.clear();
-        } else if (readBuffer.position() > 0) {
-            // 仅当发生数据读取时调用compact,减少内存拷贝
-            readBuffer.compact();
-        } else {
-            readBuffer.position(readBuffer.limit());
-            readBuffer.limit(readBuffer.capacity());
-        }
-
+        readBuffer.compact();
         //读缓冲区已满
         if (!readBuffer.hasRemaining()) {
             RuntimeException exception = new RuntimeException("readBuffer overflow");
@@ -304,7 +274,7 @@ final class TcpAioSession<T> extends AioSession {
         if (monitor != null) {
             monitor.beforeRead(this);
         }
-        readFromChannel0(readBuffer.buffer());
+        channel.read(readBuffer.buffer(), 0L, TimeUnit.MILLISECONDS, this, readCompletionHandler);
     }
 
     /**
@@ -335,7 +305,7 @@ final class TcpAioSession<T> extends AioSession {
         if (monitor != null) {
             monitor.beforeWrite(this);
         }
-        writeToChannel0(writeBuffer.buffer());
+        channel.write(writeBuffer.buffer(), 0L, TimeUnit.MILLISECONDS, this, writeCompletionHandler);
     }
 
     /**
