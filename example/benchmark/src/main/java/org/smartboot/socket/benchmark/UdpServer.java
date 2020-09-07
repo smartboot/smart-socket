@@ -25,7 +25,7 @@ import java.net.InetSocketAddress;
  * @version V1.0 , 2019/8/16
  */
 public class UdpServer {
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException {
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
             public void process0(AioSession channel, String msg) {

@@ -16,17 +16,16 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
 /**
- *
  * @author 三刀
  * @version V1.0 , 2019/8/25
  */
-final class UdpAioSession<T> extends AioSession<T> {
+final class UdpAioSession extends AioSession {
 
-    private UdpChannel udpChannel;
+    private final UdpChannel udpChannel;
 
-    private SocketAddress remote;
+    private final SocketAddress remote;
 
-    private WriteBuffer writeBuffer;
+    private final WriteBuffer writeBuffer;
 
     UdpAioSession(final UdpChannel udpChannel, final SocketAddress remote, WriteBuffer writeBuffer) {
         this.udpChannel = udpChannel;

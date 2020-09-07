@@ -20,12 +20,12 @@ import java.nio.channels.AsynchronousSocketChannel;
  */
 public abstract class AbstractPlugin<T> implements Plugin<T> {
     @Override
-    public boolean preProcess(AioSession<T> session, T t) {
+    public boolean preProcess(AioSession session, T t) {
         return true;
     }
 
     @Override
-    public void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
+    public void stateEvent(StateMachineEnum stateMachineEnum, AioSession session, Throwable throwable) {
 
     }
 
@@ -35,22 +35,22 @@ public abstract class AbstractPlugin<T> implements Plugin<T> {
     }
 
     @Override
-    public void afterRead(AioSession<T> session, int readSize) {
+    public void afterRead(AioSession session, int readSize) {
 
     }
 
     @Override
-    public void afterWrite(AioSession<T> session, int writeSize) {
+    public void afterWrite(AioSession session, int writeSize) {
 
     }
 
     @Override
-    public void beforeRead(AioSession<T> session) {
+    public void beforeRead(AioSession session) {
 
     }
 
     @Override
-    public void beforeWrite(AioSession<T> session) {
+    public void beforeWrite(AioSession session) {
 
     }
 }

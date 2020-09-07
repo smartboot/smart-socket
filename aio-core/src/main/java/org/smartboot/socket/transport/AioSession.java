@@ -15,11 +15,10 @@ import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousSocketChannel;
 
 /**
- * @param <T> 消息对象类型
  * @author 三刀
  * @version V1.0 , 2019/8/25
  */
-public abstract class AioSession<T> {
+public abstract class AioSession {
 
 
     /**
@@ -48,9 +47,6 @@ public abstract class AioSession<T> {
      * 附件对象
      */
     private Object attachment;
-
-    AioSession() {
-    }
 
     /**
      * 获取WriteBuffer用以数据输出
@@ -96,20 +92,20 @@ public abstract class AioSession<T> {
     /**
      * 获取附件对象
      *
-     * @param <T> 附件对象类型
+     * @param <A> 附件对象类型
      * @return 附件
      */
-    public final <T> T getAttachment() {
-        return (T) attachment;
+    public final <A> A getAttachment() {
+        return (A) attachment;
     }
 
     /**
      * 存放附件，支持任意类型
      *
-     * @param <T>        附件对象类型
+     * @param <A>        附件对象类型
      * @param attachment 附件对象
      */
-    public final <T> void setAttachment(T attachment) {
+    public final <A> void setAttachment(A attachment) {
         this.attachment = attachment;
     }
 
@@ -157,6 +153,5 @@ public abstract class AioSession<T> {
     public InputStream getInputStream(int length) throws IOException {
         throw new UnsupportedOperationException();
     }
-
 
 }

@@ -26,7 +26,7 @@ public class SenderClient {
         StringProtocol protocol = new StringProtocol();
         PushClientProcessorMessage clientProcessorMessage = new PushClientProcessorMessage();
         AioQuickClient<String> clients = new AioQuickClient("localhost", 8080, protocol, clientProcessorMessage);
-        AioSession<String> session = clients.start();
+        AioSession session = clients.start();
         byte[] msg = "HelloWorld".getBytes();
         while (true) {
             WriteBuffer writeBuffer = session.writeBuffer();

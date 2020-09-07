@@ -23,11 +23,9 @@ import java.nio.channels.AsynchronousChannelGroup;
  */
 class ReconnectPlugin<T> extends AbstractPlugin<T> {
 
-    private AioQuickClient<T> client;
-
+    private final AsynchronousChannelGroup asynchronousChannelGroup;
+    private final AioQuickClient<T> client;
     private boolean shutdown = false;
-
-    private AsynchronousChannelGroup asynchronousChannelGroup;
 
     public ReconnectPlugin(AioQuickClient<T> client) {
         this(client, null);
@@ -39,7 +37,7 @@ class ReconnectPlugin<T> extends AbstractPlugin<T> {
     }
 
     @Override
-    public void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
+    public void stateEvent(StateMachineEnum stateMachineEnum, AioSession session, Throwable throwable) {
         if (stateMachineEnum != StateMachineEnum.SESSION_CLOSED || shutdown) {
             return;
         }

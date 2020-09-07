@@ -22,9 +22,10 @@ public class StringServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(StringServer.class);
 
     public static void main(String[] args) throws IOException {
+        System.setProperty("java.nio.channels.spi.AsynchronousChannelProvider", "org.smartboot.aio.EnhanceAsynchronousChannelProvider");
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
-            public void process0(AioSession<String> session, String msg) {
+            public void process0(AioSession session, String msg) {
 //                LOGGER.info(msg);
                 WriteBuffer outputStream = session.writeBuffer();
 
@@ -38,7 +39,7 @@ public class StringServer {
             }
 
             @Override
-            public void stateEvent0(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+            public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 if (throwable != null) {
                     LOGGER.error(stateMachineEnum + " exception:", throwable);
                 }

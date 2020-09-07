@@ -23,12 +23,12 @@ public class HeartClient {
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         AbstractMessageProcessor<String> client_1_processor = new AbstractMessageProcessor<String>() {
             @Override
-            public void process0(AioSession<String> session, String msg) {
+            public void process0(AioSession session, String msg) {
                 LOGGER.info("client_1 收到服务端消息:" + msg);
             }
 
             @Override
-            public void stateEvent0(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+            public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 LOGGER.info("stateMachineEnum：{}", stateMachineEnum);
             }
         };
@@ -37,7 +37,7 @@ public class HeartClient {
 
         AbstractMessageProcessor<String> client_2_processor = new AbstractMessageProcessor<String>() {
             @Override
-            public void process0(AioSession<String> session, String msg) {
+            public void process0(AioSession session, String msg) {
                 LOGGER.info("client_2 收到服务端消息:" + msg);
                 try {
                     if ("heart_req".equals(msg)) {
@@ -53,7 +53,7 @@ public class HeartClient {
             }
 
             @Override
-            public void stateEvent0(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+            public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 LOGGER.info("stateMachineEnum：{}", stateMachineEnum);
             }
         };

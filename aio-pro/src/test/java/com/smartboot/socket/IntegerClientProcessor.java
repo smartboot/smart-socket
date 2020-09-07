@@ -20,12 +20,12 @@ import org.smartboot.socket.transport.AioSession;
 public class IntegerClientProcessor extends AbstractMessageProcessor<Integer> {
 
     @Override
-    public void process0(AioSession<Integer> session, Integer msg) {
+    public void process0(AioSession session, Integer msg) {
         System.out.println("receive data from server：" + msg);
     }
 
     @Override
-    public void stateEvent0(AioSession<Integer> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         System.out.println("other state:" + stateMachineEnum);
         if (stateMachineEnum == StateMachineEnum.OUTPUT_EXCEPTION) {
             throwable.printStackTrace();

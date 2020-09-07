@@ -22,7 +22,7 @@ import java.io.IOException;
  */
 public class IntegerServerProcessor extends AbstractMessageProcessor<Integer> {
     @Override
-    public void process0(AioSession<Integer> session, Integer msg) {
+    public void process0(AioSession session, Integer msg) {
         Integer respMsg = msg + 1;
         System.out.println("receive data from client: " + msg + " ,rsp:" + (respMsg));
         try {
@@ -33,7 +33,7 @@ public class IntegerServerProcessor extends AbstractMessageProcessor<Integer> {
     }
 
     @Override
-    public void stateEvent0(AioSession<Integer> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
 
     }
 }

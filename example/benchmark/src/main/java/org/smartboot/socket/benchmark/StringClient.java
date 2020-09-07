@@ -25,16 +25,16 @@ public class StringClient {
 
 
     public static void main(String[] args) throws IOException {
-
+        System.setProperty("java.nio.channels.spi.AsynchronousChannelProvider", "org.smartboot.aio.EnhanceAsynchronousChannelProvider");
         BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 32, 10, true);
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
-            public void process0(AioSession<String> session, String msg) {
+            public void process0(AioSession session, String msg) {
 
             }
 
             @Override
-            public void stateEvent0(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+            public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 if (throwable != null) {
                     throwable.printStackTrace();
                 }
@@ -71,7 +71,7 @@ public class StringClient {
         AioQuickClient<String> client = new AioQuickClient<>("localhost", 8888, new StringProtocol(), processor);
         client.setBufferPagePool(bufferPagePool);
         client.setWriteBuffer(1024 * 1024, 10);
-        AioSession<String> session = client.start(asynchronousChannelGroup);
+        AioSession session = client.start(asynchronousChannelGroup);
         WriteBuffer outputStream = session.writeBuffer();
 
         byte[] data = "smart-socket".getBytes();

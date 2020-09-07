@@ -39,7 +39,7 @@ final class IoServerConfig<T> {
     /**
      * 当前smart-socket版本号
      */
-    public static final String VERSION = "v1.4.11";
+    public static final String VERSION = "v1.5.0";
 
     /**
      * 消息体缓存大小,字节
@@ -60,7 +60,7 @@ final class IoServerConfig<T> {
     /**
      * 服务器消息拦截器
      */
-    private NetMonitor<T> monitor;
+    private NetMonitor monitor;
     /**
      * 服务器端口号
      */
@@ -144,7 +144,7 @@ final class IoServerConfig<T> {
         this.port = port;
     }
 
-    public NetMonitor<T> getMonitor() {
+    public NetMonitor getMonitor() {
         return monitor;
     }
 
@@ -165,7 +165,7 @@ final class IoServerConfig<T> {
      */
     public void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
-        this.monitor = (processor instanceof NetMonitor) ? (NetMonitor<T>) processor : null;
+        this.monitor = (processor instanceof NetMonitor) ? (NetMonitor) processor : null;
     }
 
     public int getReadBufferSize() {

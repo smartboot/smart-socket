@@ -35,26 +35,25 @@ import java.util.function.Function;
  */
 public final class UdpChannel<Request> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
-    IoServerConfig config;
-    private BufferPage bufferPage;
+    private final BufferPage bufferPage;
+    /**
+     * 与当前UDP通道对接的会话
+     */
+    private final ConcurrentHashMap<String, UdpAioSession> udpAioSessionConcurrentHashMap = new ConcurrentHashMap<>();
+    /**
+     * 待输出消息
+     */
+    private final ConcurrentLinkedQueue<ResponseTask> responseTasks;
+    private final Semaphore writeSemaphore = new Semaphore(1);
+    IoServerConfig<Request> config;
     /**
      * 真实的UDP通道
      */
     private DatagramChannel channel;
     private SelectionKey selectionKey;
-    /**
-     * 与当前UDP通道对接的会话
-     */
-    private ConcurrentHashMap<String, UdpAioSession<Request>> udpAioSessionConcurrentHashMap = new ConcurrentHashMap<>();
-    /**
-     * 待输出消息
-     */
-    private ConcurrentLinkedQueue<ResponseTask> responseTasks;
     private ResponseTask failWriteEvent;
 
-    private Semaphore writeSemaphore = new Semaphore(1);
-
-    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, IoServerConfig config, BufferPage bufferPage) {
+    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, IoServerConfig<Request> config, BufferPage bufferPage) {
         this.channel = channel;
         responseTasks = new ConcurrentLinkedQueue<>();
         this.selectionKey = selectionKey;
@@ -127,7 +126,7 @@ public final class UdpChannel<Request> {
      * @param remote
      * @return
      */
-    public AioSession<Request> connect(SocketAddress remote) {
+    public AioSession connect(SocketAddress remote) {
         return createAndCacheSession(remote);
     }
 
@@ -137,16 +136,9 @@ public final class UdpChannel<Request> {
      * @param remote
      * @return
      */
-    UdpAioSession<Request> createAndCacheSession(final SocketAddress remote) {
+    UdpAioSession createAndCacheSession(final SocketAddress remote) {
         String key = getSessionKey(remote);
-        UdpAioSession<Request> session = udpAioSessionConcurrentHashMap.get(key);
-        if (session != null) {
-            return session;
-        }
-        synchronized (this) {
-            if (session != null) {
-                return session;
-            }
+        UdpAioSession session = udpAioSessionConcurrentHashMap.computeIfAbsent(key, s -> {
             Function<WriteBuffer, Void> function = writeBuffer -> {
                 VirtualBuffer virtualBuffer = writeBuffer.poll();
                 if (virtualBuffer == null) {
@@ -161,9 +153,8 @@ public final class UdpChannel<Request> {
                 return null;
             };
             WriteBuffer writeBuffer = new WriteBuffer(bufferPage, function, config.getWriteBufferSize(), 1);
-            session = new UdpAioSession<>(this, remote, writeBuffer);
-            udpAioSessionConcurrentHashMap.put(key, session);
-        }
+            return new UdpAioSession(UdpChannel.this, remote, writeBuffer);
+        });
         return session;
     }
 
@@ -192,7 +183,7 @@ public final class UdpChannel<Request> {
             selector.wakeup();
             selectionKey = null;
         }
-        for (Map.Entry<String, UdpAioSession<Request>> entry : udpAioSessionConcurrentHashMap.entrySet()) {
+        for (Map.Entry<String, UdpAioSession> entry : udpAioSessionConcurrentHashMap.entrySet()) {
             entry.getValue().close();
         }
         try {
@@ -214,15 +205,15 @@ public final class UdpChannel<Request> {
         return channel;
     }
 
-    final class ResponseTask {
+    static final class ResponseTask {
         /**
          * 待输出数据的接受地址
          */
-        private SocketAddress remote;
+        private final SocketAddress remote;
         /**
          * 待输出数据
          */
-        private VirtualBuffer response;
+        private final VirtualBuffer response;
 
         public ResponseTask(SocketAddress remote, VirtualBuffer response) {
             this.remote = remote;

@@ -23,33 +23,33 @@ import java.util.List;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>, NetMonitor<T> {
+public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>, NetMonitor {
 
     private List<Plugin<T>> plugins = new ArrayList<>();
 
     @Override
-    public final void afterRead(AioSession<T> session, int readSize) {
+    public final void afterRead(AioSession session, int readSize) {
         for (Plugin<T> plugin : plugins) {
             plugin.afterRead(session, readSize);
         }
     }
 
     @Override
-    public final void afterWrite(AioSession<T> session, int writeSize) {
+    public final void afterWrite(AioSession session, int writeSize) {
         for (Plugin<T> plugin : plugins) {
             plugin.afterWrite(session, writeSize);
         }
     }
 
     @Override
-    public final void beforeRead(AioSession<T> session) {
+    public final void beforeRead(AioSession session) {
         for (Plugin<T> plugin : plugins) {
             plugin.beforeRead(session);
         }
     }
 
     @Override
-    public final void beforeWrite(AioSession<T> session) {
+    public final void beforeWrite(AioSession session) {
         for (Plugin<T> plugin : plugins) {
             plugin.beforeWrite(session);
         }
@@ -68,7 +68,7 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
     }
 
     @Override
-    public final void process(AioSession<T> session, T msg) {
+    public final void process(AioSession session, T msg) {
         boolean flag = true;
         for (Plugin<T> plugin : plugins) {
             if (!plugin.preProcess(session, msg)) {
@@ -87,7 +87,7 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
      * @param msg
      * @see MessageProcessor#process(AioSession, Object)
      */
-    public abstract void process0(AioSession<T> session, T msg);
+    public abstract void process0(AioSession session, T msg);
 
     /**
      * @param session          本次触发状态机的AioSession对象
@@ -95,7 +95,7 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
      * @param throwable        异常对象，如果存在的话
      */
     @Override
-    public final void stateEvent(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public final void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         for (Plugin<T> plugin : plugins) {
             plugin.stateEvent(stateMachineEnum, session, throwable);
         }
@@ -108,9 +108,9 @@ public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>
      * @param throwable
      * @see #stateEvent(AioSession, StateMachineEnum, Throwable)
      */
-    public abstract void stateEvent0(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable);
+    public abstract void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable);
 
-    public final void addPlugin(Plugin plugin) {
+    public final void addPlugin(Plugin<T> plugin) {
         this.plugins.add(plugin);
     }
 }

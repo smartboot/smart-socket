@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -24,39 +25,35 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author 三刀
  * @version V1.0 , 2018/10/31
  */
-public class BufferPage {
+public final class BufferPage {
     /**
-     * 实例化当前内存页的线程对象
+     * 共享内存页
      */
-    private final Thread ownerThread = Thread.currentThread();
+    private final BufferPage sharedBufferPage;
     /**
-     * 当前空闲的虚拟Buffer
+     * 同组内存池中的各内存页
      */
-    private List<VirtualBuffer> availableBuffers;
-    /**
-     * 待回收的虚拟Buffer
-     */
-    private ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<>();
-    /**
-     * 当前缓存页的物理缓冲区
-     */
-    private ByteBuffer buffer;
+    private final BufferPage[] poolPages;
     /**
      * 条件锁
      */
-    private ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
+    /**
+     * 当前缓存页的物理缓冲区
+     */
+    private final ByteBuffer buffer;
+    /**
+     * 待回收的虚拟Buffer
+     */
+    private final ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<>();
+    /**
+     * 当前空闲的虚拟Buffer
+     */
+    private final List<VirtualBuffer> availableBuffers;
     /**
      * 内存页是否处于空闲状态
      */
     private boolean idle = true;
-    /**
-     * 同组内存池中的各内存页
-     */
-    private BufferPage[] poolPages;
-    /**
-     * 共享内存页
-     */
-    private BufferPage sharedBufferPage;
 
     /**
      * @param size   缓存页大小
@@ -81,7 +78,6 @@ public class BufferPage {
         return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
-
     /**
      * 申请虚拟内存
      *
@@ -89,10 +85,9 @@ public class BufferPage {
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
-        VirtualBuffer virtualBuffer = null;
-        Thread currentThread = Thread.currentThread();
-        if (poolPages != null && currentThread instanceof FastBufferThread && currentThread == ownerThread) {
-            virtualBuffer = poolPages[((FastBufferThread) currentThread).getIndex()].allocate0(size);
+        VirtualBuffer virtualBuffer;
+        if (poolPages != null && Thread.currentThread() instanceof FastBufferThread) {
+            virtualBuffer = poolPages[(int) (Thread.currentThread().getId() % poolPages.length)].allocate0(size);
         } else {
             virtualBuffer = allocate0(size);
         }
@@ -115,6 +110,9 @@ public class BufferPage {
      * @return 虚拟内存对象
      */
     private VirtualBuffer allocate0(final int size) {
+        if (size > buffer.capacity()) {
+            return null;
+        }
         idle = false;
         VirtualBuffer cleanBuffer = cleanBuffers.poll();
         if (cleanBuffer != null && cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
@@ -253,8 +251,7 @@ public class BufferPage {
      * @param cleanBuffer 虚拟缓冲区
      */
     private void clean0(VirtualBuffer cleanBuffer) {
-        int index = 0;
-        Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
+        ListIterator<VirtualBuffer> iterator = availableBuffers.listIterator();
         while (iterator.hasNext()) {
             VirtualBuffer freeBuffer = iterator.next();
             //cleanBuffer在freeBuffer之前并且形成连续块
@@ -278,12 +275,12 @@ public class BufferPage {
                 return;
             }
             if (freeBuffer.getParentPosition() > cleanBuffer.getParentLimit()) {
-                availableBuffers.add(index, cleanBuffer);
+                iterator.previous();
+                iterator.add(cleanBuffer);
                 return;
             }
-            index++;
         }
-        availableBuffers.add(cleanBuffer);
+        iterator.add(cleanBuffer);
     }
 
     /**

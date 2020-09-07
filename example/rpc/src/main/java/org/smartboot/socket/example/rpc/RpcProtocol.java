@@ -13,7 +13,7 @@ public class RpcProtocol implements Protocol<byte[]> {
     private static final int INTEGER_BYTES = Integer.SIZE / Byte.SIZE;
 
     @Override
-    public byte[] decode(ByteBuffer readBuffer, AioSession<byte[]> session) {
+    public byte[] decode(ByteBuffer readBuffer, AioSession session) {
         int remaining = readBuffer.remaining();
         if (remaining < INTEGER_BYTES) {
             return null;

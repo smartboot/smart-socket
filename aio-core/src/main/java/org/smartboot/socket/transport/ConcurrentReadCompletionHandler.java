@@ -26,12 +26,12 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
     /**
      * 读回调资源信号量
      */
-    private Semaphore semaphore;
+    private final Semaphore semaphore;
 
-    private ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
+    private final ThreadLocal<ConcurrentReadCompletionHandler<T>> threadLocal = new ThreadLocal<>();
 
-    private LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
-    private ExecutorService executorService = new ThreadPoolExecutor(1, 1,
+    private final LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
+    private final ExecutorService executorService = new ThreadPoolExecutor(1, 1,
             60L, TimeUnit.SECONDS, taskQueue);
 
     ConcurrentReadCompletionHandler(final Semaphore semaphore) {
@@ -58,9 +58,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
             return;
         }
         //线程资源不足,暂时积压任务
-        executorService.execute(() -> {
-            ConcurrentReadCompletionHandler.super.completed(result, aioSession);
-        });
+        executorService.execute(() -> ConcurrentReadCompletionHandler.super.completed(result, aioSession));
 
     }
 

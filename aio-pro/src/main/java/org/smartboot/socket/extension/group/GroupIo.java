@@ -15,14 +15,14 @@ import org.smartboot.socket.transport.AioSession;
  * @author 三刀
  * @version V1.0 , 2018/8/9
  */
-public interface GroupIo<T> {
+public interface GroupIo {
     /**
      * 将AioSession加入群组group
      *
      * @param group
      * @param session
      */
-    void join(String group, AioSession<T> session);
+    void join(String group, AioSession session);
 
 
     /**
@@ -31,14 +31,14 @@ public interface GroupIo<T> {
      * @param group
      * @param session
      */
-    void remove(String group, AioSession<T> session);
+    void remove(String group, AioSession session);
 
     /**
      * AioSession从所有群组中退出
      *
      * @param session
      */
-    void remove(AioSession<T> session);
+    void remove(AioSession session);
 
     /**
      * 群发消息

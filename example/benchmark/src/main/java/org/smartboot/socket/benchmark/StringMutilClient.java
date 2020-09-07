@@ -52,7 +52,7 @@ public class StringMutilClient {
         AioQuickClient<String> client = new AioQuickClient<>("localhost", 8888, new StringProtocol(), processor);
         client.setBufferPagePool(bufferPagePool);
         client.setWriteBuffer(512, 20);
-        AioSession<String> session = client.start();
+        AioSession session = client.start();
         for (int i = 0; i < 10; i++) {
             new Thread() {
                 @Override

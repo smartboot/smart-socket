@@ -25,10 +25,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class PushServerProcessorMessage implements MessageProcessor<String> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PushServerProcessorMessage.class);
-    private Map<String, AioSession<String>> sessionMap = new ConcurrentHashMap<>();
+    private Map<String, AioSession> sessionMap = new ConcurrentHashMap<>();
 
     @Override
-    public void process(AioSession<String> session, String msg) {
+    public void process(AioSession session, String msg) {
         LOGGER.info("收到SendClient发送的消息:{}", msg);
         byte[] bytes = msg.getBytes();
         sessionMap.values().forEach(onlineSession -> {
@@ -48,7 +48,7 @@ public class PushServerProcessorMessage implements MessageProcessor<String> {
     }
 
     @Override
-    public void stateEvent(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         switch (stateMachineEnum) {
             case NEW_SESSION:
                 LOGGER.info("与客户端:{} 建立连接", session.getSessionID());

@@ -35,7 +35,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
             session.close(true);
         }
     };
-    private Map<AioSession<T>, Long> sessionMap = new HashMap<>();
+    private Map<AioSession, Long> sessionMap = new HashMap<>();
     /**
      * 心跳频率
      */
@@ -89,7 +89,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
     }
 
     @Override
-    public final boolean preProcess(AioSession<T> session, T t) {
+    public final boolean preProcess(AioSession session, T t) {
         sessionMap.put(session, System.currentTimeMillis());
         //是否心跳响应消息
         if (isHeartMessage(session, t)) {
@@ -100,7 +100,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
     }
 
     @Override
-    public final void stateEvent(StateMachineEnum stateMachineEnum, AioSession<T> session, Throwable throwable) {
+    public final void stateEvent(StateMachineEnum stateMachineEnum, AioSession session, Throwable throwable) {
         switch (stateMachineEnum) {
             case NEW_SESSION:
                 sessionMap.put(session, System.currentTimeMillis());
@@ -122,7 +122,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
      * @param session
      * @throws IOException
      */
-    public abstract void sendHeartRequest(AioSession<T> session) throws IOException;
+    public abstract void sendHeartRequest(AioSession session) throws IOException;
 
     /**
      * 判断当前收到的消息是否为心跳消息。
@@ -132,9 +132,9 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
      * @param msg
      * @return
      */
-    public abstract boolean isHeartMessage(AioSession<T> session, T msg);
+    public abstract boolean isHeartMessage(AioSession session, T msg);
 
-    private void registerHeart(final AioSession<T> session, final long heartRate) {
+    private void registerHeart(final AioSession session, final long heartRate) {
         if (heartRate <= 0) {
             LOGGER.info("sesssion:{} 因心跳超时时间为:{},终止启动心跳监测任务", session, heartRate);
             return;

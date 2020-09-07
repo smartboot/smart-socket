@@ -30,7 +30,7 @@ public interface MessageProcessor<T> {
      * @param session 通信会话
      * @param msg     待处理的业务消息
      */
-    void process(AioSession<T> session, T msg);
+    void process(AioSession session, T msg);
 
     /**
      * 状态机事件,当枚举事件发生时由框架触发该方法
@@ -40,5 +40,5 @@ public interface MessageProcessor<T> {
      * @param throwable        异常对象，如果存在的话
      * @see StateMachineEnum
      */
-    void stateEvent(AioSession<T> session, StateMachineEnum stateMachineEnum, Throwable throwable);
+    void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable);
 }

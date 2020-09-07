@@ -1,8 +1,8 @@
 /*******************************************************************************
- * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
+ * Copyright (c) 2017-2020, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: FastBufferThread.java
- * Date: 2019-12-31
+ * Date: 2020-07-02
  * Author: sandao (zhengjunweimail@163.com)
  *
  ******************************************************************************/
@@ -14,17 +14,7 @@ package org.smartboot.socket.buffer;
  * @version V1.0 , 2019/11/16
  */
 final class FastBufferThread extends Thread {
-    /**
-     * 索引标识
-     */
-    private final int index;
-
-    FastBufferThread(Runnable target, String name, int index) {
-        super(target, name + index);
-        this.index = index;
-    }
-
-    public int getIndex() {
-        return index;
+    public FastBufferThread(Runnable target, String name) {
+        super(target, name);
     }
 }

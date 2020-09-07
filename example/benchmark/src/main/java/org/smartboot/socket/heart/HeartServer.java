@@ -25,12 +25,12 @@ public class HeartServer {
         //定义消息处理器
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
-            public void process0(AioSession<String> session, String msg) {
+            public void process0(AioSession session, String msg) {
                 LOGGER.info("收到客户端:{}消息：{}", session.getSessionID(), msg);
             }
 
             @Override
-            public void stateEvent0(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+            public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 switch (stateMachineEnum) {
                     case SESSION_CLOSED:
                         LOGGER.info("客户端:{} 断开连接", session.getSessionID());

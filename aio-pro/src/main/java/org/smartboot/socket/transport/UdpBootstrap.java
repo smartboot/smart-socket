@@ -28,7 +28,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * UDP服务启动类
@@ -53,6 +52,14 @@ public class UdpBootstrap<Request> {
     private final SelectionKey NEED_TO_POLL = new UdpNullSelectionKey();
     private final SelectionKey EXECUTE_TASK_OR_SHUTDOWN = new UdpNullSelectionKey();
     /**
+     * 缓存页
+     */
+    private final BufferPage bufferPage = new BufferPagePool(1024, 1, -1, true).allocateBufferPage();
+    /**
+     * 服务配置
+     */
+    private final IoServerConfig<Request> config = new IoServerConfig<>();
+    /**
      * 服务状态
      */
     private volatile Status status = Status.STATUS_INIT;
@@ -60,21 +67,7 @@ public class UdpBootstrap<Request> {
      * 多路复用器
      */
     private Selector selector;
-    /**
-     * 服务配置
-     */
-    private IoServerConfig<Request> config = new IoServerConfig<>();
-
-
-    private ArrayBlockingQueue<SelectionKey> selectionKeys = new ArrayBlockingQueue<>(MAX_EVENT);
-
-    private UdpDispatcher[] workerGroup;
-
-
-    /**
-     * 缓存页
-     */
-    private BufferPage bufferPage = new BufferPagePool(1024, 1, -1, true).allocateBufferPage();
+    private UdpDispatcher<Request>[] workerGroup;
 
     public UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
         config.setProtocol(protocol);
@@ -138,45 +131,31 @@ public class UdpBootstrap<Request> {
         if (status != Status.STATUS_INIT) {
             return;
         }
-        updateServiceStatus(Status.STATUS_RUNNING);
+        this.status = Status.STATUS_RUNNING;
         int uid = UdpBootstrap.UID++;
 
         //启动worker线程组
         workerGroup = new UdpDispatcher[config.getThreadNum()];
         for (int i = 0; i < config.getThreadNum(); i++) {
-            workerGroup[i] = new UdpDispatcher(config.getProcessor());
+            workerGroup[i] = new UdpDispatcher<>(config.getProcessor());
             new Thread(workerGroup[i], "UDP-Worker-" + i).start();
         }
         //启动Boss线程组
-        selectionKeys.offer(NEED_TO_POLL);
-        for (int i = 0; i < 2; i++) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    //读缓冲区
-                    VirtualBuffer readBuffer = bufferPage.allocate(config.getReadBufferSize());
-                    SelectionKey key;
-                    try {
-                        while (true) {
-                            try {
-                                key = selectionKeys.take();
-                                if (key == NEED_TO_POLL) {
-                                    try {
-                                        key = poll();
-                                    } catch (IOException x) {
-                                        x.printStackTrace();
-                                        return;
-                                    }
-                                }
-                            } catch (InterruptedException e) {
-                                LOGGER.info("InterruptedException", e);
-                                continue;
-                            }
-                            if (key == EXECUTE_TASK_OR_SHUTDOWN) {
-                                LOGGER.info("stop thread:{}" + Thread.currentThread());
-                                break;
-                            }
-
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                //读缓冲区
+                VirtualBuffer readBuffer = bufferPage.allocate(config.getReadBufferSize());
+                try {
+                    while (true) {
+                        Set<SelectionKey> selectionKeys = selector.selectedKeys();
+                        if (selectionKeys.isEmpty()) {
+                            selector.select();
+                        }
+                        Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
+                        while (keyIterator.hasNext()) {
+                            SelectionKey key = keyIterator.next();
+                            keyIterator.remove();
                             UdpChannel<Request> udpChannel = (UdpChannel<Request>) key.attachment();
                             if (!key.isValid()) {
                                 udpChannel.close();
@@ -184,78 +163,21 @@ public class UdpBootstrap<Request> {
                             }
 
                             if (key.isReadable()) {
-                                try {
-                                    doRead(readBuffer, udpChannel);
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
+                                doRead(readBuffer, udpChannel);
                             }
                             if (key.isWritable()) {
-                                try {
-                                    udpChannel.flush();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
+                                udpChannel.flush();
                             }
                         }
-                    } finally {
-                        //读缓冲区内存回收
-                        readBuffer.clean();
                     }
-                }
-            }, "UDP-Boss-" + uid + "-" + i).start();
-        }
-    }
-
-    private void updateServiceStatus(final Status status) {
-        this.status = status;
-//        notifyWhenUpdateStatus(status);
-    }
-
-    /**
-     * 获取待处理的Key
-     *
-     * @return
-     * @throws IOException
-     */
-    private SelectionKey poll() throws IOException {
-        try {
-            while (true) {
-                if (status != Status.STATUS_RUNNING) {
-                    LOGGER.info("current status is :{}, will shutdown", status);
-                    return EXECUTE_TASK_OR_SHUTDOWN;
-                }
-                Set<SelectionKey> selectionKeys = selector.selectedKeys();
-                if (selectionKeys.isEmpty()) {
-                    selector.select();
-                }
-                if (status != Status.STATUS_RUNNING) {
-                    LOGGER.info("current status is :{}, will shutdown", status);
-                    return EXECUTE_TASK_OR_SHUTDOWN;
-                }
-                Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
-                int max = selectionKeys.size();
-                if (max > MAX_EVENT) {
-                    max = MAX_EVENT;
-                }
-
-                while (max-- > 0) {
-                    final SelectionKey key = keyIterator.next();
-                    keyIterator.remove();
-                    try {
-                        if (max > 0) {
-                            this.selectionKeys.offer(key);
-                        } else {
-                            return key;
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    //读缓冲区内存回收
+                    readBuffer.clean();
                 }
             }
-        } finally {
-            selectionKeys.offer(NEED_TO_POLL);
-        }
+        }, "UDP-Boss-" + uid).start();
     }
 
     /**
@@ -264,7 +186,7 @@ public class UdpBootstrap<Request> {
      * @param channel
      * @throws IOException
      */
-    private void doRead(VirtualBuffer readBuffer, UdpChannel channel) throws IOException {
+    private void doRead(VirtualBuffer readBuffer, UdpChannel<Request> channel) throws IOException {
         int count = MAX_READ_TIMES;
         while (count-- > 0) {
             //接收数据
@@ -278,10 +200,10 @@ public class UdpBootstrap<Request> {
             }
             buffer.flip();
 
-            UdpAioSession<Request> aioSession = channel.createAndCacheSession(remote);
+            UdpAioSession aioSession = channel.createAndCacheSession(remote);
             config.getMonitor().beforeRead(aioSession);
             config.getMonitor().afterRead(aioSession, buffer.remaining());
-            Request request = null;
+            Request request;
             //解码
             try {
                 request = config.getProtocol().decode(buffer, aioSession);
@@ -302,7 +224,7 @@ public class UdpBootstrap<Request> {
             if (hashCode < 0) {
                 hashCode = -hashCode;
             }
-            UdpDispatcher dispatcher = workerGroup[hashCode % workerGroup.length];
+            UdpDispatcher<Request> dispatcher = workerGroup[hashCode % workerGroup.length];
             dispatcher.dispatch(aioSession, request);
         }
     }
@@ -311,7 +233,7 @@ public class UdpBootstrap<Request> {
         status = Status.STATUS_STOPPING;
         selector.wakeup();
 
-        for (UdpDispatcher dispatcher : workerGroup) {
+        for (UdpDispatcher<Request> dispatcher : workerGroup) {
             dispatcher.dispatch(dispatcher.EXECUTE_TASK_OR_SHUTDOWN);
         }
     }

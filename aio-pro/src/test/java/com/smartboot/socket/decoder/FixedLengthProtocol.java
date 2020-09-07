@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 public class FixedLengthProtocol implements Protocol<String> {
 
     @Override
-    public String decode(ByteBuffer readBuffer, AioSession<String> session) {
+    public String decode(ByteBuffer readBuffer, AioSession session) {
         if (!readBuffer.hasRemaining()) {
             return null;
         }

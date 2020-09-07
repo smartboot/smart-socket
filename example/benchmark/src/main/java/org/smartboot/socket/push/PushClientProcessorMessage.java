@@ -23,12 +23,12 @@ public class PushClientProcessorMessage implements MessageProcessor<String> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PushClientProcessorMessage.class);
 
     @Override
-    public void process(AioSession<String> session, String msg) {
+    public void process(AioSession session, String msg) {
         LOGGER.info("ReceiverClient:{} 收到Push消息:{}", session.getSessionID(), msg);
     }
 
     @Override
-    public void stateEvent(AioSession<String> session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    public void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
 
     }
 }

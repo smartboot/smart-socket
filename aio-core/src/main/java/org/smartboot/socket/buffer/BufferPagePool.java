@@ -9,10 +9,8 @@
 
 package org.smartboot.socket.buffer;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -22,40 +20,33 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author 三刀
  * @version V1.0 , 2018/10/31
  */
-public class BufferPagePool {
+public final class BufferPagePool {
 
     /**
      * 守护线程在空闲时期回收内存资源
      */
-    private static final ScheduledThreadPoolExecutor BUFFER_POOL_CLEAN = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r, "BufferPoolClean");
-            thread.setDaemon(true);
-            return thread;
-        }
+    private static final ScheduledThreadPoolExecutor BUFFER_POOL_CLEAN = new ScheduledThreadPoolExecutor(1, r -> {
+        Thread thread = new Thread(r, "BufferPoolClean");
+        thread.setDaemon(true);
+        return thread;
     });
+    /**
+     * 内存页游标
+     */
+    private final AtomicInteger cursor = new AtomicInteger(0);
     /**
      * 内存页组
      */
-    protected BufferPage[] bufferPages;
+    private BufferPage[] bufferPages;
     /**
      * 共享缓存页
      */
     private BufferPage sharedBufferPage;
-    /**
-     * 内存页游标
-     */
-    private AtomicInteger cursor = new AtomicInteger(0);
-    /**
-     * 线程游标
-     */
-    private AtomicInteger threadCursor = new AtomicInteger(0);
     private boolean enabled = true;
     /**
      * 内存回收任务
      */
-    protected ScheduledFuture future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
+    private final ScheduledFuture<?> future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
         @Override
         public void run() {
             if (enabled) {
@@ -104,6 +95,9 @@ public class BufferPagePool {
         for (int i = 0; i < pageNum; i++) {
             bufferPages[i] = new BufferPage(bufferPages, sharedBufferPage, pageSize, isDirect);
         }
+        if ((pageNum == 0 || pageSize == 0) && sharedPageSize <= 0) {
+            future.cancel(false);
+        }
     }
 
     /**
@@ -115,7 +109,7 @@ public class BufferPagePool {
      */
     public Thread newThread(Runnable target, String name) {
         assertEnabled();
-        return new FastBufferThread(target, name, threadCursor.getAndIncrement() % bufferPages.length);
+        return new FastBufferThread(target, name);
     }
 
     /**
@@ -145,21 +139,5 @@ public class BufferPagePool {
     public void release() {
         enabled = false;
     }
-
-    final static class NoneBufferPagePool extends BufferPagePool {
-
-        NoneBufferPagePool() {
-            super(0, 0, false);
-            bufferPages = new BufferPage[1];
-            bufferPages[0] = new BufferPage(null, null, 0, false) {
-                @Override
-                public VirtualBuffer allocate(int size) {
-                    return new VirtualBuffer(null, ByteBuffer.allocate(size), 0, 0);
-                }
-            };
-            future.cancel(false);
-        }
-    }
-
 }
 
