@@ -3,7 +3,7 @@ smart-socket是一款国产开源的Java AIO框架，支持 TCP、UDP、SSL/TLS�
 如果smart-socket对您有一丝帮助，请Star一下我们的项目并持续关注；
 如果您对smart-socket并不满意，那请多一些耐心，smart-socket一直在努力变得更好。
 
-## smart-socket正在参加《![2020 年度 OSC 中国开源项目评选](https://www.oschina.net/project/top_cn_2020?fr=news-1023)》，请为这个项目投上您宝贵的一票。
+## smart-socket正在参加《[2020 年度 OSC 中国开源项目评选](https://www.oschina.net/project/top_cn_2020?fr=news-1023)》，请为这个项目投上您宝贵的一票。
 
 **愿景**：
 - 数据传输更快
