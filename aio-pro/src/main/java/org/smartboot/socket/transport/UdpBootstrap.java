@@ -12,6 +12,7 @@ package org.smartboot.socket.transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
@@ -201,8 +202,11 @@ public class UdpBootstrap<Request> {
             buffer.flip();
 
             UdpAioSession aioSession = channel.createAndCacheSession(remote);
-            config.getMonitor().beforeRead(aioSession);
-            config.getMonitor().afterRead(aioSession, buffer.remaining());
+            NetMonitor netMonitor = config.getMonitor();
+            if(netMonitor != null){
+                netMonitor.beforeRead(aioSession);
+                netMonitor.afterRead(aioSession, buffer.remaining());
+            }
             Request request;
             //解码
             try {
