@@ -34,8 +34,8 @@ class UdpDispatcher<T> implements Runnable {
 
     @Override
     public void run() {
-        try {
-            while (true) {
+        while (true) {
+            try {
                 RequestTask unit = taskQueue.take();
                 if (unit == EXECUTE_TASK_OR_SHUTDOWN) {
                     LOGGER.info("shutdown thread:{}", Thread.currentThread());
@@ -43,9 +43,11 @@ class UdpDispatcher<T> implements Runnable {
                 }
                 processor.process(unit.session, unit.request);
                 unit.session.writeBuffer().flush();
+            } catch (InterruptedException e) {
+                LOGGER.info("InterruptedException", e);
+            } catch (Exception e) {
+                LOGGER.error(e.getClass().getName(), e);
             }
-        } catch (InterruptedException e) {
-            LOGGER.info("InterruptedException", e);
         }
     }
 
