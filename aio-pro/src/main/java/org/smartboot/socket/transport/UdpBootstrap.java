@@ -100,6 +100,11 @@ public class UdpBootstrap<Request> {
      * @param port 指定绑定端口号,为0则随机指定
      */
     public UdpChannel<Request> open(String host, int port) throws IOException {
+        if (host != null) {
+            config.setHost(host);
+        }
+        config.setPort(port);
+
         if (selector == null) {
             synchronized (this) {
                 if (selector == null) {
@@ -111,7 +116,13 @@ public class UdpBootstrap<Request> {
         DatagramChannel channel = DatagramChannel.open();
         channel.configureBlocking(false);
         if (port > 0) {
-            channel.socket().bind(host == null ? new InetSocketAddress(port) : new InetSocketAddress(host, port));
+            InetSocketAddress inetSocketAddress = host == null ? new InetSocketAddress(port) : new InetSocketAddress(host, port);
+            channel.socket().bind(inetSocketAddress);
+            if (host == null) {
+                config.setHost(inetSocketAddress.getHostString());
+            }
+        } else {
+            config.setHost("");
         }
 
         if (status == Status.STATUS_RUNNING) {
@@ -125,6 +136,9 @@ public class UdpBootstrap<Request> {
         if (status == Status.STATUS_INIT) {
             initThreadServer();
         }
+
+        System.out.println("smart-socket server started on port " + config.getPort() + ",threadNum:" + config.getThreadNum());
+        System.out.println("smart-socket server config is " + config);
         return udpChannel;
     }
 
@@ -132,6 +146,12 @@ public class UdpBootstrap<Request> {
         if (status != Status.STATUS_INIT) {
             return;
         }
+
+        // 增加广告说明
+        if (config.isBannerEnabled()) {
+            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
+        }
+
         this.status = Status.STATUS_RUNNING;
         int uid = UdpBootstrap.UID++;
 
@@ -203,7 +223,7 @@ public class UdpBootstrap<Request> {
 
             UdpAioSession aioSession = channel.createAndCacheSession(remote);
             NetMonitor netMonitor = config.getMonitor();
-            if(netMonitor != null){
+            if (netMonitor != null) {
                 netMonitor.beforeRead(aioSession);
                 netMonitor.afterRead(aioSession, buffer.remaining());
             }
@@ -260,6 +280,18 @@ public class UdpBootstrap<Request> {
      */
     public final UdpBootstrap<Request> setThreadNum(int num) {
         this.config.setThreadNum(num);
+        return this;
+    }
+
+
+    /**
+     * 是否启用控制台Banner打印
+     *
+     * @param bannerEnabled true:启用，false:禁用
+     * @return 当前AioQuickServer对象
+     */
+    public final UdpBootstrap<Request> setBannerEnabled(boolean bannerEnabled) {
+        config.setBannerEnabled(bannerEnabled);
         return this;
     }
 
