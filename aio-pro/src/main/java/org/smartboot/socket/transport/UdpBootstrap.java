@@ -105,11 +105,6 @@ public class UdpBootstrap<Request> {
         }
         config.setPort(port);
 
-        // 增加广告说明
-        if (config.isBannerEnabled()) {
-            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
-        }
-
         if (selector == null) {
             synchronized (this) {
                 if (selector == null) {
@@ -151,6 +146,12 @@ public class UdpBootstrap<Request> {
         if (status != Status.STATUS_INIT) {
             return;
         }
+
+        // 增加广告说明
+        if (config.isBannerEnabled()) {
+            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
+        }
+
         this.status = Status.STATUS_RUNNING;
         int uid = UdpBootstrap.UID++;
 
