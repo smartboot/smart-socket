@@ -188,34 +188,24 @@ public final class WriteBuffer extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        if (closed) {
-            throw new IOException("OutputStream has closed");
-        }
-        if (b == null) {
-            throw new NullPointerException();
-        } else if ((off < 0) || (off > b.length) || (len < 0) ||
-                ((off + len) > b.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
-            return;
-        }
         lock.lock();
         try {
             waitPreWriteFinish();
             do {
                 if (writeInBuf == null) {
-                    writeInBuf = bufferPage.allocate(Math.max(chunkSize, len - off));
+                    writeInBuf = bufferPage.allocate(Math.max(chunkSize, len));
                 }
                 ByteBuffer writeBuffer = writeInBuf.buffer();
-                int minSize = Math.min(writeBuffer.remaining(), len - off);
-                if (minSize == 0 || closed) {
+                if (closed) {
                     writeInBuf.clean();
-                    throw new IOException("writeBuffer.remaining:" + writeBuffer.remaining() + " closed:" + closed);
+                    throw new IOException("writeBuffer has closed");
                 }
+                int minSize = Math.min(writeBuffer.remaining(), len);
                 writeBuffer.put(b, off, minSize);
                 off += minSize;
+                len -= minSize;
                 flushWriteBuffer();
-            } while (off < len);
+            } while (len > 0);
             notifyWaiting();
         } finally {
             lock.unlock();
