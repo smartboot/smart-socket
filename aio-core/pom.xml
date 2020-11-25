@@ -14,7 +14,6 @@
     <name>aio-core</name>
     <description>A high performance network application framework based on Java AIO</description>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.smartboot.socket</groupId>
     <artifactId>aio-core</artifactId>
 
     <parent>
