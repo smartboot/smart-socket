@@ -103,6 +103,10 @@ public final class BufferPage {
         return virtualBuffer;
     }
 
+    public VirtualBuffer wrap(ByteBuffer buffer) {
+        return new VirtualBuffer(null, buffer, 0, 0);
+    }
+
     /**
      * 申请虚拟内存
      *

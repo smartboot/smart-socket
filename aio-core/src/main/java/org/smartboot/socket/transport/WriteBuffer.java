@@ -212,6 +212,31 @@ public final class WriteBuffer extends OutputStream {
         }
     }
 
+    public void write(ByteBuffer buffer) throws IOException {
+        if (!buffer.hasRemaining()) {
+            return;
+        }
+        lock.lock();
+        try {
+            waitPreWriteFinish();
+            if (writeInBuf != null) {
+                if (writeInBuf.buffer().remaining() > buffer.remaining()) {
+                    writeInBuf.buffer().put(buffer);
+                } else {
+                    flushWriteBuffer();
+                    writeInBuf = bufferPage.wrap(buffer);
+                    flushWriteBuffer();
+                }
+            } else {
+                writeInBuf = bufferPage.wrap(buffer);
+                flushWriteBuffer();
+            }
+            notifyWaiting();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     /**
      * 唤醒处于waiting状态的线程
      */
