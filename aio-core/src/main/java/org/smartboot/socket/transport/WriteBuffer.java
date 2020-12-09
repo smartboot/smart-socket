@@ -213,7 +213,7 @@ public final class WriteBuffer extends OutputStream {
     }
 
     public void write(ByteBuffer buffer) throws IOException {
-        write(bufferPage.wrap(buffer));
+        write(VirtualBuffer.wrap(buffer));
     }
 
     public void write(VirtualBuffer virtualBuffer) throws IOException {
