@@ -213,24 +213,23 @@ public final class WriteBuffer extends OutputStream {
     }
 
     public void write(ByteBuffer buffer) throws IOException {
-        if (!buffer.hasRemaining()) {
-            return;
-        }
+        write(bufferPage.wrap(buffer));
+    }
+
+    public void write(VirtualBuffer virtualBuffer) throws IOException {
         lock.lock();
         try {
             waitPreWriteFinish();
-            if (writeInBuf != null) {
-                if (writeInBuf.buffer().remaining() > buffer.remaining()) {
-                    writeInBuf.buffer().put(buffer);
-                } else {
-                    flushWriteBuffer();
-                    writeInBuf = bufferPage.wrap(buffer);
-                    flushWriteBuffer();
-                }
+            if (writeInBuf == null) {
+                writeInBuf = virtualBuffer;
+            } else if (writeInBuf.buffer().remaining() > virtualBuffer.buffer().remaining()) {
+                writeInBuf.buffer().put(virtualBuffer.buffer());
+                virtualBuffer.clean();
             } else {
-                writeInBuf = bufferPage.wrap(buffer);
                 flushWriteBuffer();
+                writeInBuf = virtualBuffer;
             }
+            flushWriteBuffer();
             notifyWaiting();
         } finally {
             lock.unlock();
