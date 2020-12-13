@@ -226,7 +226,6 @@ public final class WriteBuffer extends OutputStream {
                 writeInBuf.buffer().put(virtualBuffer.buffer());
                 virtualBuffer.clean();
             } else {
-                virtualBuffer.buffer().compact();
                 flushWriteBuffer(true);
                 writeInBuf = virtualBuffer;
             }
