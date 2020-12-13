@@ -130,7 +130,7 @@ public final class WriteBuffer extends OutputStream {
                 writeInBuf = bufferPage.allocate(chunkSize);
             }
             writeInBuf.buffer().put(b);
-            flushWriteBuffer();
+            flushWriteBuffer(false);
         } finally {
             lock.unlock();
         }
@@ -138,8 +138,8 @@ public final class WriteBuffer extends OutputStream {
         function.apply(this);
     }
 
-    private void flushWriteBuffer() {
-        if (writeInBuf.buffer().hasRemaining()) {
+    private void flushWriteBuffer(boolean forceFlush) {
+        if (!forceFlush && writeInBuf.buffer().hasRemaining()) {
             return;
         }
         function.apply(this);
@@ -204,7 +204,7 @@ public final class WriteBuffer extends OutputStream {
                 writeBuffer.put(b, off, minSize);
                 off += minSize;
                 len -= minSize;
-                flushWriteBuffer();
+                flushWriteBuffer(false);
             } while (len > 0);
             notifyWaiting();
         } finally {
@@ -226,10 +226,10 @@ public final class WriteBuffer extends OutputStream {
                 writeInBuf.buffer().put(virtualBuffer.buffer());
                 virtualBuffer.clean();
             } else {
-                flushWriteBuffer();
+                flushWriteBuffer(true);
                 writeInBuf = virtualBuffer;
             }
-            flushWriteBuffer();
+            flushWriteBuffer(false);
             notifyWaiting();
         } finally {
             lock.unlock();
