@@ -220,13 +220,13 @@ public final class WriteBuffer extends OutputStream {
         lock.lock();
         try {
             waitPreWriteFinish();
-            if (writeInBuf == null) {
-                writeInBuf = virtualBuffer;
-            } else if (writeInBuf.buffer().remaining() > virtualBuffer.buffer().remaining()) {
+            if (writeInBuf != null && !virtualBuffer.buffer().isDirect() && writeInBuf.buffer().remaining() > virtualBuffer.buffer().remaining()) {
                 writeInBuf.buffer().put(virtualBuffer.buffer());
                 virtualBuffer.clean();
             } else {
-                flushWriteBuffer(true);
+                if (writeInBuf != null) {
+                    flushWriteBuffer(true);
+                }
                 virtualBuffer.buffer().compact();
                 writeInBuf = virtualBuffer;
             }
