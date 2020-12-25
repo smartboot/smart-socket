@@ -17,7 +17,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 /**
  * 包装当前会话分配到的虚拟Buffer,提供流式操作方式
@@ -50,7 +50,7 @@ public final class WriteBuffer extends OutputStream {
     /**
      * 缓冲区数据刷新Function
      */
-    private final Function<WriteBuffer, Void> function;
+    private final Consumer<WriteBuffer> consumer;
     /**
      * 默认内存块大小
      */
@@ -85,9 +85,9 @@ public final class WriteBuffer extends OutputStream {
     private byte[] cacheByte;
 
 
-    WriteBuffer(BufferPage bufferPage, Function<WriteBuffer, Void> flushFunction, int chunkSize, int capacity) {
+    WriteBuffer(BufferPage bufferPage, Consumer<WriteBuffer> consumer, int chunkSize, int capacity) {
         this.bufferPage = bufferPage;
-        this.function = flushFunction;
+        this.consumer = consumer;
         this.items = new VirtualBuffer[capacity];
         this.chunkSize = chunkSize;
     }
@@ -135,14 +135,14 @@ public final class WriteBuffer extends OutputStream {
             lock.unlock();
         }
 
-        function.apply(this);
+        consumer.accept(this);
     }
 
     private void flushWriteBuffer(boolean forceFlush) {
         if (!forceFlush && writeInBuf.buffer().hasRemaining()) {
             return;
         }
-        function.apply(this);
+        consumer.accept(this);
         if (writeInBuf != null) {
             writeInBuf.buffer().flip();
             VirtualBuffer buffer = writeInBuf;
@@ -301,7 +301,7 @@ public final class WriteBuffer extends OutputStream {
             throw new RuntimeException("OutputStream has closed");
         }
         if (this.count > 0 || writeInBuf != null) {
-            function.apply(this);
+            consumer.accept(this);
         }
     }
 
@@ -367,6 +367,9 @@ public final class WriteBuffer extends OutputStream {
      * @return 待输出的VirtualBuffer
      */
     VirtualBuffer poll() {
+        if (count == 0 && writeInBuf == null) {
+            return null;
+        }
         lock.lock();
         try {
             if (count == 0) {
