@@ -188,28 +188,48 @@ public final class WriteBuffer extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        if (writeInBuf == null) {
+            int bufferSize = Math.max(chunkSize, len);
+            VirtualBuffer virtualBuffer = bufferPage.allocate(bufferSize);
+            int writeSize = writeToBuffer(virtualBuffer, b, off, len);
+            writeInBuf = virtualBuffer;
+            if (bufferSize > writeSize) {
+                return;
+            }
+            off += writeSize;
+            len -= writeSize;
+        }
+
         lock.lock();
         try {
             waitPreWriteFinish();
-            do {
+            if (writeInBuf != null) {
+                flushWriteBuffer(false);
+            }
+            while (len > 0) {
                 if (writeInBuf == null) {
                     writeInBuf = bufferPage.allocate(Math.max(chunkSize, len));
                 }
-                ByteBuffer writeBuffer = writeInBuf.buffer();
-                if (closed) {
-                    writeInBuf.clean();
-                    throw new IOException("writeBuffer has closed");
-                }
-                int minSize = Math.min(writeBuffer.remaining(), len);
-                writeBuffer.put(b, off, minSize);
-                off += minSize;
-                len -= minSize;
+                int writeSize = writeToBuffer(writeInBuf, b, off, len);
+                off += writeSize;
+                len -= writeSize;
                 flushWriteBuffer(false);
-            } while (len > 0);
+            }
             notifyWaiting();
         } finally {
             lock.unlock();
         }
+    }
+
+    private int writeToBuffer(VirtualBuffer writeInBuf, byte[] b, int off, int len) throws IOException {
+        ByteBuffer writeBuffer = writeInBuf.buffer();
+        if (closed) {
+            writeInBuf.clean();
+            throw new IOException("writeBuffer has closed");
+        }
+        int writeSize = Math.min(writeBuffer.remaining(), len);
+        writeBuffer.put(b, off, writeSize);
+        return writeSize;
     }
 
     public void write(ByteBuffer buffer) throws IOException {
