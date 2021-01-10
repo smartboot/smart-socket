@@ -120,11 +120,7 @@ public final class BufferPagePool {
     public BufferPage allocateBufferPage() {
         assertEnabled();
         //轮训游标，均衡分配内存页
-        int index = cursor.getAndIncrement();
-        if (index < 0) {
-            cursor.set(0);
-        }
-        return bufferPages[index % bufferPages.length];
+        return bufferPages[(cursor.getAndIncrement() & 0x7fff) % bufferPages.length];
     }
 
     private void assertEnabled() {
