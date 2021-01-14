@@ -20,19 +20,11 @@ smart-socket是一款国产开源的 Java AIO 通信框架，支持 TCP、UDP、
 3. 使用：通过内存池（bufferPool）技术以及背压（back-pressure）机制，既能充分发挥机器性能，又能保证服务运行稳定性。
 4. 服务：提供丰富的插件式服务，包括：SSL/TLS通信插件、心跳插件、断链重连插件、服务指标统计插件、黑名单插件、内存池监测插件。
 
-### 交流互助
-如果您在使用的过程中碰到问题，可以通过下面几个途径寻求帮助，同时我们也鼓励资深用户给新人提供帮助。
-
--  Email：zhengjunweimail@163.com。
-- [开源问答](https://www.oschina.net/question/tag/smart-socket)
-- 通过 [Issue](https://gitee.com/smartboot/smart-socket/issues) 报告 bug 或进行咨询。
-- 提交 [Pull Request](https://gitee.com/smartboot/smart-socket/pulls) 改进 smart-socket 的代码。
-- 在开源中国发表smart-socket相关的技术性文章。
-
-### 开源生态
+### 案例
 1. [smart-http](https://gitee.com/smartboot/smart-http) 国内首款基于smart-socket实现的Http服务器
-2. [irtu-gps](https://gitee.com/wendal/irtu-gps) 基于iRTU项目,实现GPS数据的接收和展示
-3. [企业案例](https://gitee.com/smartboot/smart-socket/issues/IHV69)
+2. [smart-servlet](https://gitee.com/smartboot/smart-servlet) 一款实现了Servlet 3.1规范，支持多应用隔离部署的的 Web 容器
+3. [irtu-gps](https://gitee.com/wendal/irtu-gps) 基于iRTU项目,实现GPS数据的接收和展示
+4. [企业案例](https://gitee.com/smartboot/smart-socket/issues/IHV69)
 > 如果您的项目中使用了 smart-socket 并愿意在此处展现给大众，欢迎留言反馈。
 
 
