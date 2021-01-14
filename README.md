@@ -34,25 +34,6 @@ smart-socket是一款国产开源的 Java AIO 通信框架，支持 TCP、UDP、
 - 感谢为 smart-socket [捐赠](https://smartboot.gitee.io/book/donation.html)的每一位朋友。
 - 感谢正在使用及为 smart-socket 作推广的朋友。
 
-## 性能测试
-- 环境准备
-    1. 测试项目：[smart-http](https://gitee.com/smartboot/smart-http) 
-    2. 通信协议：Http
-    3. 压测工具：[wrk](https://github.com/wg/wrk)
-    4. 测试机：MacBook Pro, 2.9Ghz i5, 4核8G内存
-    5. 测试命令：
-    ```
-    wrk -H 'Host: 10.0.0.1' -H 'Accept: text/plain,text/html;q=0.9,application/xhtml+xml;q=0.9,application/xml;q=0.8,*/*;q=0.7' -H 'Connection: keep-alive' --latency -d 15 -c 1024 --timeout 8 -t 4 http://127.0.0.1:8080/plaintext -s pipeline.lua -- 16
-    ```
-- 测试结果：smart-socket的性能表现基本稳定维持在 128MB/s 左右。
-
-    |  连接数  | Requests/sec   |  Transfer/sec  |
-    | -- | -- | -- |
-    | 512 | 924343.47 | 128.70MB|
-    | 1024 | 922967.92 | 128.51MB|
-    | 2048 | 933479.41 | 129.97MB|
-    | 4096 | 922589.53 | 128.46MB|
-
 ### 参考文献
 - https://jfarcand.wordpress.com/2008/11/25/tricks-and-tips-with-aio-part-1-the-frightening-thread-pool/
 - https://webtide.com/on-jdk-7-asynchronous-io/
