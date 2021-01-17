@@ -349,8 +349,8 @@ public final class WriteBuffer extends OutputStream {
      *
      * @return true:有,false:无
      */
-    boolean hasData() {
-        return count > 0 || writeInBuf != null;
+    boolean isEmpty() {
+        return count == 0 && writeInBuf == null;
     }
 
 
@@ -387,7 +387,7 @@ public final class WriteBuffer extends OutputStream {
      * @return 待输出的VirtualBuffer
      */
     VirtualBuffer poll() {
-        if (count == 0 && writeInBuf == null) {
+        if (isEmpty()) {
             return null;
         }
         lock.lock();
