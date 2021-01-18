@@ -41,11 +41,6 @@
                 <version>1.5.5-SNAPSHOT</version>
             </dependency>
             <dependency>
-                <groupId>org.smartboot.socket</groupId>
-                <artifactId>aio-core</artifactId>
-                <version>1.5.5-SNAPSHOT</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>3.7</version>
