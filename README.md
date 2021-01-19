@@ -26,7 +26,7 @@ smart-socket是一款国产开源的 Java AIO 通信框架，支持 TCP、UDP、
 
 ### 感谢
 - 感谢码云提供的代码托管和 Pages 服务。
-- 感谢 JetBrains 为 smart-socket 提供的 IDEA License。
+- 感谢 JetBrains 为 smart-socket 提供的 IDEA License。     
     <a href="https://www.jetbrains.com/?from=smart-socket"><img src="jetbrains.png" width="20%" height="20%"/></a>
 - 感谢为 smart-socket [捐赠](https://smartboot.gitee.io/book/donation.html)的每一位朋友。
 - 感谢一直以来陪伴 smart-socket 成长的朋友。
