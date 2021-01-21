@@ -31,6 +31,10 @@ smart-socket是一款国产开源的 Java AIO 通信框架，支持 TCP、UDP、
 - 感谢为 smart-socket [捐赠](https://smartboot.gitee.io/book/donation.html)的每一位朋友。
 - 感谢一直以来陪伴 smart-socket 成长的朋友。
 
+### 如何正确的交流互动
+1. 如果对本项目有任何使用上的疑问，请通过 [Issues](https://gitee.com/smartboot/smart-http/issues) 进行交流互动，以便分享这一份宝贵知识沉淀。
+2. 若仅是发表个人对这个项目的主观感受，欢迎直接在下面留言。
+
 ### 关于作者
 Edit By 三刀  
 E-mail:zhengjunweimail@163.com  
