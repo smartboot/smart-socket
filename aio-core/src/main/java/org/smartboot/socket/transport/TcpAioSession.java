@@ -132,6 +132,7 @@ final class TcpAioSession<T> extends AioSession {
      * 初始化AioSession
      */
     void initSession() {
+        this.readBuffer.buffer().flip();
         continueRead();
     }
 

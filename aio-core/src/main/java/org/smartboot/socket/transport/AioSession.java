@@ -63,6 +63,8 @@ public abstract class AioSession {
         close(true);
     }
 
+    public abstract void continueRead();
+
     /**
      * 是否立即关闭会话
      *
