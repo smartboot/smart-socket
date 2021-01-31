@@ -95,7 +95,7 @@ final class TcpAioSession<T> extends AioSession {
      */
     private InputStream inputStream;
 
-    private boolean awaitRead = false;
+    private volatile int modCount = 0;
 
     /**
      * @param channel                Socket通道
@@ -171,7 +171,7 @@ final class TcpAioSession<T> extends AioSession {
 
     @Override
     public void awaitRead() {
-        awaitRead = true;
+        modCount++;
     }
 
     /**
@@ -231,7 +231,7 @@ final class TcpAioSession<T> extends AioSession {
      * 触发通道的读回调操作
      */
     public void signalRead() {
-        awaitRead = false;
+        int modCount = this.modCount;
         if (status == SESSION_STATUS_CLOSED) {
             return;
         }
@@ -252,7 +252,7 @@ final class TcpAioSession<T> extends AioSession {
             //处理消息
             try {
                 messageProcessor.process(this, dataEntry);
-                if (awaitRead) {
+                if (modCount != this.modCount) {
                     return;
                 }
             } catch (Exception e) {
