@@ -64,7 +64,7 @@ public abstract class AioSession {
     }
 
     /**
-     * 继续触发读行为，该进行仅可在异步处理模式下可使用，否则会触发不可预知的异常
+     * 继续触发读行为，该方法仅可在异步处理模式下可使用，否则会触发不可预知的异常
      */
     public abstract void continueRead();
 
