@@ -11,7 +11,7 @@ package org.smartboot.socket.transport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.AsyncSupportMessageProcessor;
+import org.smartboot.socket.MessageProcessor;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -26,9 +26,9 @@ class UdpDispatcher<T> implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpDispatcher.class);
     public final RequestTask EXECUTE_TASK_OR_SHUTDOWN = new RequestTask(null, null);
     private final BlockingQueue<RequestTask> taskQueue = new LinkedBlockingQueue<>();
-    private final AsyncSupportMessageProcessor<T> processor;
+    private final MessageProcessor<T> processor;
 
-    public UdpDispatcher(AsyncSupportMessageProcessor<T> processor) {
+    public UdpDispatcher(MessageProcessor<T> processor) {
         this.processor = processor;
     }
 

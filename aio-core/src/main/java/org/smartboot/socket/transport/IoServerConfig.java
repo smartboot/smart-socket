@@ -9,7 +9,7 @@
 
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.AsyncSupportMessageProcessor;
+import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.buffer.BufferFactory;
@@ -74,7 +74,7 @@ final class IoServerConfig<T> {
     /**
      * 消息处理器
      */
-    private AsyncSupportMessageProcessor<T> processor;
+    private MessageProcessor<T> processor;
     /**
      * 协议编解码
      */
@@ -148,10 +148,6 @@ final class IoServerConfig<T> {
         return monitor;
     }
 
-    public void setMonitor(NetMonitor monitor) {
-        this.monitor = monitor;
-    }
-
     public Protocol<T> getProtocol() {
         return protocol;
     }
@@ -160,14 +156,14 @@ final class IoServerConfig<T> {
         this.protocol = protocol;
     }
 
-    public AsyncSupportMessageProcessor<T> getProcessor() {
+    public MessageProcessor<T> getProcessor() {
         return processor;
     }
 
     /**
      * @param processor 消息处理器
      */
-    public void setProcessor(AsyncSupportMessageProcessor<T> processor) {
+    public void setProcessor(MessageProcessor<T> processor) {
         this.processor = processor;
         this.monitor = (processor instanceof NetMonitor) ? (NetMonitor) processor : null;
     }

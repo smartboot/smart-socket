@@ -10,9 +10,8 @@
 package org.smartboot.socket.transport;
 
 
-import org.smartboot.socket.AsyncSupportMessageProcessor;
+import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
-import org.smartboot.socket.ProcessMode;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
@@ -96,6 +95,8 @@ final class TcpAioSession<T> extends AioSession {
      */
     private InputStream inputStream;
 
+    private boolean awaitRead = false;
+
     /**
      * @param channel                Socket通道
      * @param config                 配置项
@@ -132,7 +133,7 @@ final class TcpAioSession<T> extends AioSession {
     void initSession(VirtualBuffer readBuffer) {
         this.readBuffer = readBuffer;
         this.readBuffer.buffer().flip();
-        continueRead();
+        signalRead();
     }
 
     /**
@@ -166,6 +167,11 @@ final class TcpAioSession<T> extends AioSession {
      */
     public final WriteBuffer writeBuffer() {
         return byteBuf;
+    }
+
+    @Override
+    public void awaitRead() {
+        awaitRead = true;
     }
 
     /**
@@ -224,12 +230,13 @@ final class TcpAioSession<T> extends AioSession {
     /**
      * 触发通道的读回调操作
      */
-    public void continueRead() {
+    public void signalRead() {
+        awaitRead = false;
         if (status == SESSION_STATUS_CLOSED) {
             return;
         }
         final ByteBuffer readBuffer = this.readBuffer.buffer();
-        final AsyncSupportMessageProcessor<T> messageProcessor = ioServerConfig.getProcessor();
+        final MessageProcessor<T> messageProcessor = ioServerConfig.getProcessor();
         while (readBuffer.hasRemaining() && status == SESSION_STATUS_ENABLED) {
             T dataEntry;
             try {
@@ -244,8 +251,8 @@ final class TcpAioSession<T> extends AioSession {
 
             //处理消息
             try {
-                ProcessMode mode = messageProcessor.process(this, dataEntry);
-                if (mode == ProcessMode.ASYNC) {
+                messageProcessor.process(this, dataEntry);
+                if (awaitRead) {
                     return;
                 }
             } catch (Exception e) {

@@ -37,7 +37,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
             }
             //触发读回调
             aioSession.flipRead(result == -1);
-            aioSession.continueRead();
+            aioSession.signalRead();
         } catch (Exception e) {
             failed(e, aioSession);
         }

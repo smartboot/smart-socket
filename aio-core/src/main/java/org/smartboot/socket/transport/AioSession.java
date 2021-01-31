@@ -63,10 +63,12 @@ public abstract class AioSession {
         close(true);
     }
 
+    public abstract void awaitRead();
+
     /**
      * 继续触发读行为，该方法仅可在异步处理模式下可使用，否则会触发不可预知的异常
      */
-    public abstract void continueRead();
+    public abstract void signalRead();
 
     /**
      * 是否立即关闭会话

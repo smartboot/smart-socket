@@ -40,7 +40,12 @@ final class UdpAioSession extends AioSession {
     }
 
     @Override
-    public void continueRead() {
+    public void awaitRead() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void signalRead() {
         throw new UnsupportedOperationException();
     }
 
