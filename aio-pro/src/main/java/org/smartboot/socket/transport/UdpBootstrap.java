@@ -72,7 +72,10 @@ public class UdpBootstrap<Request> {
 
     public UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
         config.setProtocol(protocol);
-        config.setProcessor(messageProcessor);
+        config.setProcessor(IOUtil.wrap(messageProcessor));
+        if (messageProcessor instanceof NetMonitor) {
+            config.setMonitor((NetMonitor) messageProcessor);
+        }
     }
 
     /**

@@ -9,7 +9,9 @@
 
 package org.smartboot.socket.transport;
 
+import org.smartboot.socket.AsyncSupportMessageProcessor;
 import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferFactory;
@@ -92,6 +94,20 @@ public final class AioQuickServer<T> {
      * @param messageProcessor 消息处理器
      */
     public AioQuickServer(int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
+        this(port, protocol, IOUtil.wrap(messageProcessor));
+        if (messageProcessor instanceof NetMonitor) {
+            config.setMonitor((NetMonitor) messageProcessor);
+        }
+    }
+
+    /**
+     * 设置服务端启动必要参数配置
+     *
+     * @param port             绑定服务端口号
+     * @param protocol         协议编解码
+     * @param messageProcessor 消息处理器
+     */
+    public AioQuickServer(int port, Protocol<T> protocol, AsyncSupportMessageProcessor<T> messageProcessor) {
         config.setPort(port);
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
@@ -105,6 +121,16 @@ public final class AioQuickServer<T> {
      * @param messageProcessor 消息处理器
      */
     public AioQuickServer(String host, int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
+        this(host, port, protocol, IOUtil.wrap(messageProcessor));
+    }
+
+    /**
+     * @param host             绑定服务端Host地址
+     * @param port             绑定服务端口号
+     * @param protocol         协议编解码
+     * @param messageProcessor 消息处理器
+     */
+    public AioQuickServer(String host, int port, Protocol<T> protocol, AsyncSupportMessageProcessor<T> messageProcessor) {
         this(port, protocol, messageProcessor);
         config.setHost(host);
     }

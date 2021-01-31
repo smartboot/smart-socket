@@ -9,6 +9,11 @@
 
 package org.smartboot.socket.transport;
 
+import org.smartboot.socket.AsyncSupportMessageProcessor;
+import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.ProcessMode;
+import org.smartboot.socket.StateMachineEnum;
+
 import java.io.IOException;
 import java.nio.channels.AsynchronousSocketChannel;
 
@@ -39,5 +44,20 @@ final class IOUtil {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static <T> AsyncSupportMessageProcessor<T> wrap(MessageProcessor<T> messageProcessor) {
+        return new AsyncSupportMessageProcessor<T>() {
+            @Override
+            public ProcessMode process(AioSession session, T msg) {
+                messageProcessor.process(session, msg);
+                return ProcessMode.SYNC;
+            }
+
+            @Override
+            public void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+                messageProcessor.stateEvent(session, stateMachineEnum, throwable);
+            }
+        };
     }
 }

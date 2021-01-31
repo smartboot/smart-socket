@@ -10,8 +10,9 @@
 package org.smartboot.socket.transport;
 
 
-import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.AsyncSupportMessageProcessor;
 import org.smartboot.socket.NetMonitor;
+import org.smartboot.socket.ProcessMode;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
@@ -82,6 +83,10 @@ final class TcpAioSession<T> extends AioSession {
      * 服务配置
      */
     private final IoServerConfig<T> ioServerConfig;
+    /**
+     * 是否读通道以至末尾
+     */
+    boolean eof;
     /**
      * 写缓冲
      */
@@ -211,18 +216,20 @@ final class TcpAioSession<T> extends AioSession {
     }
 
 
+    void flipRead(boolean eof) {
+        this.eof = eof;
+        this.readBuffer.buffer().flip();
+    }
+
     /**
      * 触发通道的读回调操作
-     *
-     * @param eof 输入流是否已关闭
      */
-    void readCompleted(boolean eof) {
+    public void continueRead() {
         if (status == SESSION_STATUS_CLOSED) {
             return;
         }
         final ByteBuffer readBuffer = this.readBuffer.buffer();
-        readBuffer.flip();
-        final MessageProcessor<T> messageProcessor = ioServerConfig.getProcessor();
+        final AsyncSupportMessageProcessor<T> messageProcessor = ioServerConfig.getProcessor();
         while (readBuffer.hasRemaining() && status == SESSION_STATUS_ENABLED) {
             T dataEntry;
             try {
@@ -237,7 +244,10 @@ final class TcpAioSession<T> extends AioSession {
 
             //处理消息
             try {
-                messageProcessor.process(this, dataEntry);
+                ProcessMode mode = messageProcessor.process(this, dataEntry);
+                if (mode == ProcessMode.ASYNC) {
+                    return;
+                }
             } catch (Exception e) {
                 messageProcessor.stateEvent(this, StateMachineEnum.PROCESS_EXCEPTION, e);
             }
@@ -262,19 +272,14 @@ final class TcpAioSession<T> extends AioSession {
             throw exception;
         }
 
-        continueRead();
-    }
-
-    /**
-     * 触发读操作
-     */
-    private void continueRead() {
+        //read from channel
         NetMonitor monitor = getServerConfig().getMonitor();
         if (monitor != null) {
             monitor.beforeRead(this);
         }
-        channel.read(readBuffer.buffer(), 0L, TimeUnit.MILLISECONDS, this, readCompletionHandler);
+        channel.read(readBuffer, 0L, TimeUnit.MILLISECONDS, this, readCompletionHandler);
     }
+
 
     /**
      * 同步读取数据

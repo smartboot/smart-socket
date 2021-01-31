@@ -10,7 +10,9 @@
 
 package org.smartboot.socket.transport;
 
+import org.smartboot.socket.AsyncSupportMessageProcessor;
 import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.buffer.BufferFactory;
 import org.smartboot.socket.buffer.BufferPagePool;
@@ -94,6 +96,21 @@ public final class AioQuickClient<T> {
      * @param messageProcessor 消息处理器
      */
     public AioQuickClient(String host, int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
+        this(host, port, protocol, IOUtil.wrap(messageProcessor));
+        if (messageProcessor instanceof NetMonitor) {
+            config.setMonitor((NetMonitor) messageProcessor);
+        }
+    }
+
+    /**
+     * 当前构造方法设置了启动Aio客户端的必要参数，基本实现开箱即用。
+     *
+     * @param host             远程服务器地址
+     * @param port             远程服务器端口号
+     * @param protocol         协议编解码
+     * @param messageProcessor 消息处理器
+     */
+    public AioQuickClient(String host, int port, Protocol<T> protocol, AsyncSupportMessageProcessor<T> messageProcessor) {
         config.setHost(host);
         config.setPort(port);
         config.setProtocol(protocol);
