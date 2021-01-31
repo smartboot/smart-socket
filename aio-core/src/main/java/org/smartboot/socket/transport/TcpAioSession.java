@@ -59,11 +59,6 @@ final class TcpAioSession<T> extends AioSession {
      */
     private final AsynchronousSocketChannel channel;
     /**
-     * 读缓冲。
-     * <p>大小取决于AioQuickClient/AioQuickServer设置的setReadBufferSize</p>
-     */
-    private final VirtualBuffer readBuffer;
-    /**
      * 输出流
      */
     private final WriteBuffer byteBuf;
@@ -88,6 +83,11 @@ final class TcpAioSession<T> extends AioSession {
      */
     boolean eof;
     /**
+     * 读缓冲。
+     * <p>大小取决于AioQuickClient/AioQuickServer设置的setReadBufferSize</p>
+     */
+    private VirtualBuffer readBuffer;
+    /**
      * 写缓冲
      */
     private VirtualBuffer writeBuffer;
@@ -109,8 +109,6 @@ final class TcpAioSession<T> extends AioSession {
         this.writeCompletionHandler = writeCompletionHandler;
         this.ioServerConfig = config;
 
-        this.readBuffer = bufferPage.allocate(config.getReadBufferSize());
-
         Consumer<WriteBuffer> flushConsumer = var -> {
             if (!semaphore.tryAcquire()) {
                 return;
@@ -131,7 +129,8 @@ final class TcpAioSession<T> extends AioSession {
     /**
      * 初始化AioSession
      */
-    void initSession() {
+    void initSession(VirtualBuffer readBuffer) {
+        this.readBuffer = readBuffer;
         this.readBuffer.buffer().flip();
         continueRead();
     }
