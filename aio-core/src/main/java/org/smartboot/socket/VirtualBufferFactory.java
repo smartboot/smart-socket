@@ -17,5 +17,5 @@ import org.smartboot.socket.buffer.VirtualBuffer;
  * @version V1.0 , 2021/1/31
  */
 public interface VirtualBufferFactory {
-    VirtualBuffer newVirtualBuffer(BufferPage bufferPage);
+    VirtualBuffer newBuffer(BufferPage bufferPage);
 }

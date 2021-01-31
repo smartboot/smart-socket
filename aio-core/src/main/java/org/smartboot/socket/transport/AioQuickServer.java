@@ -243,7 +243,7 @@ public final class AioQuickServer<T> {
             if (acceptChannel != null) {
                 acceptChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
                 session = aioSessionFunction.apply(acceptChannel);
-                session.initSession(readBufferFactory.newVirtualBuffer(bufferPool.allocateBufferPage()));
+                session.initSession(readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
                 IOUtil.close(channel);
