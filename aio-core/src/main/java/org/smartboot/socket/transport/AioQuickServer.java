@@ -85,7 +85,7 @@ public final class AioQuickServer<T> {
      */
     private AsynchronousChannelGroup asynchronousChannelGroup;
 
-    private VirtualBufferFactory readVirtualBufferFactory = bufferPage -> bufferPage.allocate(config.getReadBufferSize());
+    private VirtualBufferFactory readBufferFactory = bufferPage -> bufferPage.allocate(config.getReadBufferSize());
 
     /**
      * 设置服务端启动必要参数配置
@@ -243,7 +243,7 @@ public final class AioQuickServer<T> {
             if (acceptChannel != null) {
                 acceptChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
                 session = aioSessionFunction.apply(acceptChannel);
-                session.initSession(readVirtualBufferFactory.newVirtualBuffer(bufferPool.allocateBufferPage()));
+                session.initSession(readBufferFactory.newVirtualBuffer(bufferPool.allocateBufferPage()));
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
                 IOUtil.close(channel);
@@ -398,8 +398,8 @@ public final class AioQuickServer<T> {
         return this;
     }
 
-    public final AioQuickServer<T> setReadVirtualBufferFactory(VirtualBufferFactory readVirtualBufferFactory) {
-        this.readVirtualBufferFactory = readVirtualBufferFactory;
+    public final AioQuickServer<T> setReadBufferFactory(VirtualBufferFactory readBufferFactory) {
+        this.readBufferFactory = readBufferFactory;
         return this;
     }
 }
