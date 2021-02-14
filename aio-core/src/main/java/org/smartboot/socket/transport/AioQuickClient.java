@@ -22,8 +22,10 @@ import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.util.Map;
-import java.util.concurrent.Future;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -103,6 +105,21 @@ public final class AioQuickClient<T> {
         config.setProcessor(messageProcessor);
     }
 
+    public AioSession start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
+        CompletableFuture<AioSession> future = asyncStart(asynchronousChannelGroup);
+        try {
+            if (connectTimeout > 0) {
+                future.get(connectTimeout, TimeUnit.MILLISECONDS);
+            } else {
+                future.get();
+            }
+        } catch (Exception e) {
+            shutdownNow();
+            throw new IOException(e);
+        }
+        return session;
+    }
+
     /**
      * 启动客户端。
      * <p>
@@ -117,49 +134,46 @@ public final class AioQuickClient<T> {
      * @throws IOException IOException
      * @see AsynchronousSocketChannel#connect(SocketAddress)
      */
-    public AioSession start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
-        AsynchronousSocketChannel socketChannel = null;
-        try {
-            socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
-            if (bufferPool == null) {
-                bufferPool = config.getBufferFactory().create();
-                this.innerBufferPool = bufferPool;
+    public CompletableFuture<AioSession> asyncStart(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
+        Objects.requireNonNull(asynchronousChannelGroup);
+        AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        if (bufferPool == null) {
+            bufferPool = config.getBufferFactory().create();
+            this.innerBufferPool = bufferPool;
+        }
+        //set socket options
+        if (config.getSocketOptions() != null) {
+            for (Map.Entry<SocketOption<Object>, Object> entry : config.getSocketOptions().entrySet()) {
+                socketChannel.setOption(entry.getKey(), entry.getValue());
             }
-            //set socket options
-            if (config.getSocketOptions() != null) {
-                for (Map.Entry<SocketOption<Object>, Object> entry : config.getSocketOptions().entrySet()) {
-                    socketChannel.setOption(entry.getKey(), entry.getValue());
+        }
+        //bind host
+        if (localAddress != null) {
+            socketChannel.bind(localAddress);
+        }
+        CompletableFuture<AioSession> completableFuture = new CompletableFuture<>();
+        socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort()), socketChannel, new CompletionHandler<Void, AsynchronousSocketChannel>() {
+            @Override
+            public void completed(Void result, AsynchronousSocketChannel socketChannel) {
+                AsynchronousSocketChannel connectedChannel = socketChannel;
+                if (config.getMonitor() != null) {
+                    connectedChannel = config.getMonitor().shouldAccept(socketChannel);
                 }
-            }
-            //bind host
-            if (localAddress != null) {
-                socketChannel.bind(localAddress);
-            }
-            Future<Void> future = socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort()));
-            if (connectTimeout > 0) {
-                future.get(connectTimeout, TimeUnit.MILLISECONDS);
-            } else {
-                future.get();
+                if (connectedChannel == null) {
+                    throw new RuntimeException("NetMonitor refuse channel");
+                }
+                //连接成功则构造AIOSession对象
+                session = new TcpAioSession<>(connectedChannel, config, new ReadCompletionHandler<>(), new WriteCompletionHandler<>(), bufferPool.allocateBufferPage());
+                session.initSession(readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
+                completableFuture.complete(session);
             }
 
-            AsynchronousSocketChannel connectedChannel = socketChannel;
-            if (config.getMonitor() != null) {
-                connectedChannel = config.getMonitor().shouldAccept(socketChannel);
+            @Override
+            public void failed(Throwable exc, AsynchronousSocketChannel socketChannel) {
+                completableFuture.completeExceptionally(exc);
             }
-            if (connectedChannel == null) {
-                throw new RuntimeException("NetMonitor refuse channel");
-            }
-            //连接成功则构造AIOSession对象
-            session = new TcpAioSession<>(connectedChannel, config, new ReadCompletionHandler<>(), new WriteCompletionHandler<>(), bufferPool.allocateBufferPage());
-            session.initSession(readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
-            return session;
-        } catch (Exception e) {
-            if (socketChannel != null) {
-                IOUtil.close(socketChannel);
-            }
-            shutdownNow();
-            throw new IOException(e);
-        }
+        });
+        return completableFuture;
     }
 
     /**
