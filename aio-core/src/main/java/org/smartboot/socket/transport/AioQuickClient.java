@@ -48,22 +48,21 @@ import java.util.concurrent.TimeUnit;
  * </pre>
  * </p>
  *
- * @param <T> 消息对象类型
  * @author 三刀
  * @version V1.0.0
  */
-public final class AioQuickClient<T> {
+public final class AioQuickClient {
     /**
      * 客户端服务配置。
      * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
      */
-    private final IoServerConfig<T> config = new IoServerConfig<>();
+    private final IoServerConfig config = new IoServerConfig();
     /**
      * 网络连接的会话对象
      *
      * @see TcpAioSession
      */
-    private TcpAioSession<T> session;
+    private TcpAioSession session;
     /**
      * 内存池
      */
@@ -98,7 +97,7 @@ public final class AioQuickClient<T> {
      * @param protocol         协议编解码
      * @param messageProcessor 消息处理器
      */
-    public AioQuickClient(String host, int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
+    public <T> AioQuickClient(String host, int port, Protocol<T> protocol, MessageProcessor<T> messageProcessor) {
         config.setHost(host);
         config.setPort(port);
         config.setProtocol(protocol);
@@ -163,7 +162,7 @@ public final class AioQuickClient<T> {
                     throw new RuntimeException("NetMonitor refuse channel");
                 }
                 //连接成功则构造AIOSession对象
-                session = new TcpAioSession<>(connectedChannel, config, new ReadCompletionHandler<>(), new WriteCompletionHandler<>(), bufferPool.allocateBufferPage());
+                session = new TcpAioSession(connectedChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), bufferPool.allocateBufferPage());
                 session.initSession(readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
                 completableFuture.complete(session);
             }
@@ -234,7 +233,7 @@ public final class AioQuickClient<T> {
      * @param size 单位：byte
      * @return 当前AIOQuickClient对象
      */
-    public final AioQuickClient<T> setReadBufferSize(int size) {
+    public final AioQuickClient setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
         return this;
     }
@@ -255,7 +254,7 @@ public final class AioQuickClient<T> {
      * @param <V>          泛型
      * @return 当前客户端实例
      */
-    public final <V> AioQuickClient<T> setOption(SocketOption<V> socketOption, V value) {
+    public final <V> AioQuickClient setOption(SocketOption<V> socketOption, V value) {
         config.setOption(socketOption, value);
         return this;
     }
@@ -267,7 +266,7 @@ public final class AioQuickClient<T> {
      * @param port  若传0则由系统指定
      * @return 当前客户端实例
      */
-    public final AioQuickClient<T> bindLocal(String local, int port) {
+    public final AioQuickClient bindLocal(String local, int port) {
         localAddress = local == null ? new InetSocketAddress(port) : new InetSocketAddress(local, port);
         return this;
     }
@@ -281,7 +280,7 @@ public final class AioQuickClient<T> {
      * @param bufferPool 内存池对象
      * @return 当前客户端实例
      */
-    public final AioQuickClient<T> setBufferPagePool(BufferPagePool bufferPool) {
+    public final AioQuickClient setBufferPagePool(BufferPagePool bufferPool) {
         this.bufferPool = bufferPool;
         this.config.setBufferFactory(BufferFactory.DISABLED_BUFFER_FACTORY);
         return this;
@@ -296,7 +295,7 @@ public final class AioQuickClient<T> {
      * @param bufferFactory 内存池工厂
      * @return 当前客户端实例
      */
-    public final AioQuickClient<T> setBufferFactory(BufferFactory bufferFactory) {
+    public final AioQuickClient setBufferFactory(BufferFactory bufferFactory) {
         this.config.setBufferFactory(bufferFactory);
         this.bufferPool = null;
         return this;
@@ -309,7 +308,7 @@ public final class AioQuickClient<T> {
      * @param bufferCapacity 内存块数量上限
      * @return 当前客户端实例
      */
-    public final AioQuickClient<T> setWriteBuffer(int bufferSize, int bufferCapacity) {
+    public final AioQuickClient setWriteBuffer(int bufferSize, int bufferCapacity) {
         config.setWriteBufferSize(bufferSize);
         config.setWriteBufferCapacity(bufferCapacity);
         return this;
@@ -321,12 +320,12 @@ public final class AioQuickClient<T> {
      * @param timeout 超时时间
      * @return 当前客户端实例
      */
-    public final AioQuickClient<T> connectTimeout(int timeout) {
+    public final AioQuickClient connectTimeout(int timeout) {
         this.connectTimeout = timeout;
         return this;
     }
 
-    public final AioQuickClient<T> setReadBufferFactory(VirtualBufferFactory readBufferFactory) {
+    public final AioQuickClient setReadBufferFactory(VirtualBufferFactory readBufferFactory) {
         this.readBufferFactory = readBufferFactory;
         return this;
     }

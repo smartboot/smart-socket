@@ -39,7 +39,7 @@ public class LocalAddressClient {
         String localIp2 = "192.168.0.107";
 
         //启动服务端
-        new AioQuickServer<>(serverPort, null, processor).start();
+        new AioQuickServer(serverPort, null, processor).start();
 
         //IP、端口系统指定
         new AioQuickClient(serverIp, serverPort, null, processor)

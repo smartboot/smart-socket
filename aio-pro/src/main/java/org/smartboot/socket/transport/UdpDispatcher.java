@@ -22,13 +22,13 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author 三刀
  * @version V1.0 , 2020/3/13
  */
-class UdpDispatcher<T> implements Runnable {
+class UdpDispatcher implements Runnable {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpDispatcher.class);
     public final RequestTask EXECUTE_TASK_OR_SHUTDOWN = new RequestTask(null, null);
     private final BlockingQueue<RequestTask> taskQueue = new LinkedBlockingQueue<>();
-    private final MessageProcessor<T> processor;
+    private final MessageProcessor processor;
 
-    public UdpDispatcher(MessageProcessor<T> processor) {
+    public UdpDispatcher(MessageProcessor processor) {
         this.processor = processor;
     }
 
@@ -57,7 +57,7 @@ class UdpDispatcher<T> implements Runnable {
      * @param session
      * @param request
      */
-    public void dispatch(UdpAioSession session, T request) {
+    public void dispatch(UdpAioSession session, Object request) {
         dispatch(new RequestTask(session, request));
     }
 
@@ -72,9 +72,9 @@ class UdpDispatcher<T> implements Runnable {
 
     class RequestTask {
         UdpAioSession session;
-        T request;
+        Object request;
 
-        public RequestTask(UdpAioSession session, T request) {
+        public RequestTask(UdpAioSession session, Object request) {
             this.session = session;
             this.request = request;
         }

@@ -15,7 +15,7 @@ import java.io.IOException;
 public class Provider {
     public static void main(String[] args) throws IOException {
         RpcProviderProcessor rpcProviderProcessor = new RpcProviderProcessor();
-        AioQuickServer<byte[]> server = new AioQuickServer<>(8888, new RpcProtocol(), rpcProviderProcessor);
+        AioQuickServer server = new AioQuickServer(8888, new RpcProtocol(), rpcProviderProcessor);
         server.start();
 
         rpcProviderProcessor.publishService(DemoApi.class, new DemoApiImpl());

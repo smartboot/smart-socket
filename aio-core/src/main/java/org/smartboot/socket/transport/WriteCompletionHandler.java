@@ -20,10 +20,10 @@ import java.nio.channels.CompletionHandler;
  * @author 三刀
  * @version V1.0.0
  */
-final class WriteCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
+final class WriteCompletionHandler implements CompletionHandler<Integer, TcpAioSession> {
 
     @Override
-    public void completed(final Integer result, final TcpAioSession<T> aioSession) {
+    public void completed(final Integer result, final TcpAioSession aioSession) {
         try {
             NetMonitor monitor = aioSession.getServerConfig().getMonitor();
             if (monitor != null) {
@@ -37,7 +37,7 @@ final class WriteCompletionHandler<T> implements CompletionHandler<Integer, TcpA
 
 
     @Override
-    public void failed(Throwable exc, TcpAioSession<T> aioSession) {
+    public void failed(Throwable exc, TcpAioSession aioSession) {
         try {
             aioSession.getServerConfig().getProcessor().stateEvent(aioSession, StateMachineEnum.OUTPUT_EXCEPTION, exc);
         } catch (Exception e) {

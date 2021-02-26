@@ -51,7 +51,7 @@ import java.util.function.Consumer;
  * @author 三刀
  * @version V1.0.0
  */
-final class TcpAioSession<T> extends AioSession {
+final class TcpAioSession extends AioSession {
 
     /**
      * 底层通信channel对象
@@ -68,15 +68,15 @@ final class TcpAioSession<T> extends AioSession {
     /**
      * 读回调
      */
-    private final ReadCompletionHandler<T> readCompletionHandler;
+    private final ReadCompletionHandler readCompletionHandler;
     /**
      * 写回调
      */
-    private final WriteCompletionHandler<T> writeCompletionHandler;
+    private final WriteCompletionHandler writeCompletionHandler;
     /**
      * 服务配置
      */
-    private final IoServerConfig<T> ioServerConfig;
+    private final IoServerConfig ioServerConfig;
     /**
      * 是否读通道以至末尾
      */
@@ -104,7 +104,7 @@ final class TcpAioSession<T> extends AioSession {
      * @param writeCompletionHandler 写回调
      * @param bufferPage             绑定内存页
      */
-    TcpAioSession(AsynchronousSocketChannel channel, final IoServerConfig<T> config, ReadCompletionHandler<T> readCompletionHandler, WriteCompletionHandler<T> writeCompletionHandler, BufferPage bufferPage) {
+    TcpAioSession(AsynchronousSocketChannel channel, final IoServerConfig config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, BufferPage bufferPage) {
         this.channel = channel;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
@@ -236,9 +236,9 @@ final class TcpAioSession<T> extends AioSession {
             return;
         }
         final ByteBuffer readBuffer = this.readBuffer.buffer();
-        final MessageProcessor<T> messageProcessor = ioServerConfig.getProcessor();
+        final MessageProcessor messageProcessor = ioServerConfig.getProcessor();
         while (readBuffer.hasRemaining() && status == SESSION_STATUS_ENABLED) {
-            T dataEntry;
+            Object dataEntry;
             try {
                 dataEntry = ioServerConfig.getProtocol().decode(readBuffer, this);
             } catch (Exception e) {
@@ -350,7 +350,7 @@ final class TcpAioSession<T> extends AioSession {
         }
     }
 
-    IoServerConfig<T> getServerConfig() {
+    IoServerConfig getServerConfig() {
         return this.ioServerConfig;
     }
 

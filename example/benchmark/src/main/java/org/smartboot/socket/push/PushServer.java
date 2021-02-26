@@ -20,7 +20,7 @@ import java.io.IOException;
  */
 public class PushServer {
     public static void main(String[] args) throws IOException {
-        AioQuickServer<String> server = new AioQuickServer<>(8080, new StringProtocol(), new PushServerProcessorMessage());
+        AioQuickServer server = new AioQuickServer(8080, new StringProtocol(), new PushServerProcessorMessage());
         server.start();
     }
 }

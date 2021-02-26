@@ -47,14 +47,14 @@ public class SslStringServer {
             }
         };
 
-        AioQuickServer<String> server = new AioQuickServer<>(8888, new StringProtocol(), processor);
+        AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
         server.setReadBufferSize(1024 * 1024)
                 .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
                 .setBufferFactory(() -> new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors() + 1, true))
                 .setWriteBuffer(4096, 512);
-        processor.addPlugin(new BufferPageMonitorPlugin(server, 6));
-        processor.addPlugin(new MonitorPlugin(5));
-        SslPlugin sslPlugin = new SslPlugin();
+        processor.addPlugin(new BufferPageMonitorPlugin<>(server, 6));
+        processor.addPlugin(new MonitorPlugin<>(5));
+        SslPlugin<String> sslPlugin = new SslPlugin<>();
         sslPlugin.initForServer(StringServer.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456", ClientAuth.NONE);
         processor.addPlugin(sslPlugin);
         server.start();

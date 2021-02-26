@@ -33,11 +33,10 @@ import java.util.Set;
 /**
  * UDP服务启动类
  *
- * @param <Request>
  * @author 三刀
  * @version V1.0 , 2019/8/18
  */
-public class UdpBootstrap<Request> {
+public class UdpBootstrap {
     /**
      * logger
      */
@@ -59,7 +58,7 @@ public class UdpBootstrap<Request> {
     /**
      * 服务配置
      */
-    private final IoServerConfig<Request> config = new IoServerConfig<>();
+    private final IoServerConfig config = new IoServerConfig();
     /**
      * 服务状态
      */
@@ -68,9 +67,9 @@ public class UdpBootstrap<Request> {
      * 多路复用器
      */
     private Selector selector;
-    private UdpDispatcher<Request>[] workerGroup;
+    private UdpDispatcher[] workerGroup;
 
-    public UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
+    public <Request> UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
     }
@@ -80,7 +79,7 @@ public class UdpBootstrap<Request> {
      *
      * @return UDP通道
      */
-    public UdpChannel<Request> open() throws IOException {
+    public UdpChannel open() throws IOException {
         return open(0);
     }
 
@@ -89,7 +88,7 @@ public class UdpBootstrap<Request> {
      *
      * @param port 指定绑定端口号,为0则随机指定
      */
-    public UdpChannel<Request> open(int port) throws IOException {
+    public UdpChannel open(int port) throws IOException {
         return open(null, port);
     }
 
@@ -99,7 +98,7 @@ public class UdpBootstrap<Request> {
      * @param host 绑定本机地址
      * @param port 指定绑定端口号,为0则随机指定
      */
-    public UdpChannel<Request> open(String host, int port) throws IOException {
+    public UdpChannel open(String host, int port) throws IOException {
         if (host != null) {
             config.setHost(host);
         }
@@ -129,7 +128,7 @@ public class UdpBootstrap<Request> {
             selector.wakeup();
         }
         SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
-        UdpChannel<Request> udpChannel = new UdpChannel<>(channel, selectionKey, config, bufferPage);
+        UdpChannel udpChannel = new UdpChannel(channel, selectionKey, config, bufferPage);
         selectionKey.attach(udpChannel);
 
         //启动线程服务
@@ -158,7 +157,7 @@ public class UdpBootstrap<Request> {
         //启动worker线程组
         workerGroup = new UdpDispatcher[config.getThreadNum()];
         for (int i = 0; i < config.getThreadNum(); i++) {
-            workerGroup[i] = new UdpDispatcher<>(config.getProcessor());
+            workerGroup[i] = new UdpDispatcher(config.getProcessor());
             new Thread(workerGroup[i], "UDP-Worker-" + i).start();
         }
         //启动Boss线程组
@@ -177,7 +176,7 @@ public class UdpBootstrap<Request> {
                         while (keyIterator.hasNext()) {
                             SelectionKey key = keyIterator.next();
                             keyIterator.remove();
-                            UdpChannel<Request> udpChannel = (UdpChannel<Request>) key.attachment();
+                            UdpChannel udpChannel = (UdpChannel) key.attachment();
                             if (!key.isValid()) {
                                 udpChannel.close();
                                 continue;
@@ -207,7 +206,7 @@ public class UdpBootstrap<Request> {
      * @param channel
      * @throws IOException
      */
-    private void doRead(VirtualBuffer readBuffer, UdpChannel<Request> channel) throws IOException {
+    private void doRead(VirtualBuffer readBuffer, UdpChannel channel) throws IOException {
         int count = MAX_READ_TIMES;
         while (count-- > 0) {
             //接收数据
@@ -227,7 +226,7 @@ public class UdpBootstrap<Request> {
                 netMonitor.beforeRead(aioSession);
                 netMonitor.afterRead(aioSession, buffer.remaining());
             }
-            Request request;
+            Object request;
             //解码
             try {
                 request = config.getProtocol().decode(buffer, aioSession);
@@ -248,7 +247,7 @@ public class UdpBootstrap<Request> {
             if (hashCode < 0) {
                 hashCode = -hashCode;
             }
-            UdpDispatcher<Request> dispatcher = workerGroup[hashCode % workerGroup.length];
+            UdpDispatcher dispatcher = workerGroup[hashCode % workerGroup.length];
             dispatcher.dispatch(aioSession, request);
         }
     }
@@ -257,7 +256,7 @@ public class UdpBootstrap<Request> {
         status = Status.STATUS_STOPPING;
         selector.wakeup();
 
-        for (UdpDispatcher<Request> dispatcher : workerGroup) {
+        for (UdpDispatcher dispatcher : workerGroup) {
             dispatcher.dispatch(dispatcher.EXECUTE_TASK_OR_SHUTDOWN);
         }
     }
@@ -267,7 +266,7 @@ public class UdpBootstrap<Request> {
      *
      * @param size 单位：byte
      */
-    public final UdpBootstrap<Request> setReadBufferSize(int size) {
+    public final UdpBootstrap setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
         return this;
     }
@@ -278,7 +277,7 @@ public class UdpBootstrap<Request> {
      *
      * @param num
      */
-    public final UdpBootstrap<Request> setThreadNum(int num) {
+    public final UdpBootstrap setThreadNum(int num) {
         this.config.setThreadNum(num);
         return this;
     }
@@ -290,7 +289,7 @@ public class UdpBootstrap<Request> {
      * @param bannerEnabled true:启用，false:禁用
      * @return 当前AioQuickServer对象
      */
-    public final UdpBootstrap<Request> setBannerEnabled(boolean bannerEnabled) {
+    public final UdpBootstrap setBannerEnabled(boolean bannerEnabled) {
         config.setBannerEnabled(bannerEnabled);
         return this;
     }

@@ -21,17 +21,17 @@ import java.nio.channels.AsynchronousChannelGroup;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-class ReconnectPlugin<T> extends AbstractPlugin<T> {
+class ReconnectPlugin extends AbstractPlugin {
 
     private final AsynchronousChannelGroup asynchronousChannelGroup;
-    private final AioQuickClient<T> client;
+    private final AioQuickClient client;
     private boolean shutdown = false;
 
-    public ReconnectPlugin(AioQuickClient<T> client) {
+    public ReconnectPlugin(AioQuickClient client) {
         this(client, null);
     }
 
-    public ReconnectPlugin(AioQuickClient<T> client, AsynchronousChannelGroup asynchronousChannelGroup) {
+    public ReconnectPlugin(AioQuickClient client, AsynchronousChannelGroup asynchronousChannelGroup) {
         this.client = client;
         this.asynchronousChannelGroup = asynchronousChannelGroup;
     }

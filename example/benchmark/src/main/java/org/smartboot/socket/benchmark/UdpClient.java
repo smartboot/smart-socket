@@ -56,11 +56,11 @@ public class UdpClient {
             }
         };
         //服务端
-        final UdpBootstrap<String> bootstrap = new UdpBootstrap<String>(new StringProtocol(), processor);
+        final UdpBootstrap bootstrap = new UdpBootstrap(new StringProtocol(), processor);
         int threadNum = Runtime.getRuntime().availableProcessors();
         bootstrap.setThreadNum(threadNum);
         bootstrap.setReadBufferSize(1024);
-        processor.addPlugin(new MonitorPlugin(5));
+        processor.addPlugin(new MonitorPlugin<>(5));
 
         //客户端
         int i = 10;
@@ -71,7 +71,7 @@ public class UdpClient {
                 public void run() {
                     try {
                         int count = 10;
-                        UdpChannel<String> channel = bootstrap.open();
+                        UdpChannel channel = bootstrap.open();
                         AioSession aioSession = channel.connect(remote);
                         WriteBuffer writeBuffer = aioSession.writeBuffer();
 //                        byte[] msg = "HelloWorld".getBytes();

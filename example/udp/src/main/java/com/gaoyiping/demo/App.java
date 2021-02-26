@@ -9,7 +9,7 @@ public class App {
     public static void main( String[] args ) throws IOException {
     	int socketPort = 10086;
 //    	AioQuickServer<byte[]> server = new AioQuickServer<byte[]>(socketPort, new DemoProtocol(), new DemoService());
-		UdpBootstrap<byte[]> server = new UdpBootstrap<>(new DemoProtocol(), new DemoService());
+		UdpBootstrap server = new UdpBootstrap(new DemoProtocol(), new DemoService());
 		server.setReadBufferSize(1024);
 		server.open(socketPort);
 

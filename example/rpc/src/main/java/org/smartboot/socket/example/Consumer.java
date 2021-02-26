@@ -19,7 +19,7 @@ public class Consumer {
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
 
         RpcConsumerProcessor rpcConsumerProcessor = new RpcConsumerProcessor();
-        AioQuickClient<byte[]> consumer = new AioQuickClient<>("localhost", 8888, new RpcProtocol(), rpcConsumerProcessor);
+        AioQuickClient consumer = new AioQuickClient("localhost", 8888, new RpcProtocol(), rpcConsumerProcessor);
         consumer.start();
 
         DemoApi demoApi = rpcConsumerProcessor.getObject(DemoApi.class);

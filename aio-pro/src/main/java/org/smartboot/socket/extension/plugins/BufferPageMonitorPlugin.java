@@ -26,18 +26,18 @@ import java.util.concurrent.TimeUnit;
  * @author 三刀
  * @version V1.0 , 2019/4/14
  */
-public class BufferPageMonitorPlugin<T> extends AbstractPlugin {
+public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BufferPageMonitorPlugin.class);
     /**
      * 任务执行频率
      */
     private int seconds = 0;
 
-    private AioQuickServer<T> server;
+    private AioQuickServer server;
 
     private ScheduledFuture<?> future;
 
-    public BufferPageMonitorPlugin(AioQuickServer<T> server, int seconds) {
+    public BufferPageMonitorPlugin(AioQuickServer server, int seconds) {
         this.seconds = seconds;
         this.server = server;
         init();

@@ -26,7 +26,7 @@ public class ReconnectServer {
     public static void main(String[] args) throws IOException {
 
         //启动服务
-        AioQuickServer<String> server = new AioQuickServer<>(8888, new StringProtocol(), new MessageProcessorImpl());
+        AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), new MessageProcessorImpl());
         server.start();
     }
 }

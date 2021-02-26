@@ -25,7 +25,7 @@ import java.util.List;
  */
 public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>, NetMonitor {
 
-    private List<Plugin<T>> plugins = new ArrayList<>();
+    private final List<Plugin<T>> plugins = new ArrayList<>();
 
     @Override
     public final void afterRead(AioSession session, int readSize) {

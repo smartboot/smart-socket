@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class ReconnectClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReconnectClient.class);
-    private AioQuickClient<String> client;
+    private AioQuickClient client;
     private AioSession session;
     private boolean running = true;
 
@@ -82,7 +82,7 @@ public class ReconnectClient {
                 LOGGER.info("关闭旧客户端");
                 client.shutdownNow();
             }
-            client = new AioQuickClient<>("localhost", 8888, new StringProtocol(), new MessageProcessorImpl());
+            client = new AioQuickClient("localhost", 8888, new StringProtocol(), new MessageProcessorImpl());
             session = client.start();
             LOGGER.info("客户端连接成功");
         } catch (IOException e) {

@@ -49,7 +49,7 @@ public class StringMutilClient {
 //                return true;
 //            }
 //        });
-        AioQuickClient<String> client = new AioQuickClient<>("localhost", 8888, new StringProtocol(), processor);
+        AioQuickClient client = new AioQuickClient("localhost", 8888, new StringProtocol(), processor);
         client.setBufferPagePool(bufferPagePool);
         client.setWriteBuffer(512, 20);
         AioSession session = client.start();

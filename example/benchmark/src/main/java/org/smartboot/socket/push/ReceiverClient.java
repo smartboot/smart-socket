@@ -31,9 +31,9 @@ public class ReceiverClient {
         });
         StringProtocol protocol = new StringProtocol();
         PushClientProcessorMessage clientProcessorMessage = new PushClientProcessorMessage();
-        AioQuickClient<String>[] clients = new AioQuickClient[4];
+        AioQuickClient[] clients = new AioQuickClient[4];
         for (int i = 0; i < clients.length; i++) {
-            clients[i] = new AioQuickClient<>("localhost", 8080, protocol, clientProcessorMessage);
+            clients[i] = new AioQuickClient("localhost", 8080, protocol, clientProcessorMessage);
             clients[i].start(channelGroup);
         }
     }

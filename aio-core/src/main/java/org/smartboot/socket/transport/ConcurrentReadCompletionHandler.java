@@ -21,14 +21,14 @@ import java.util.concurrent.TimeUnit;
  * @author 三刀
  * @version V1.0.0
  */
-final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> {
+final class ConcurrentReadCompletionHandler extends ReadCompletionHandler {
 
     /**
      * 读回调资源信号量
      */
     private final Semaphore semaphore;
 
-    private final ThreadLocal<ConcurrentReadCompletionHandler<T>> threadLocal = new ThreadLocal<>();
+    private final ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
 
     private final LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
     private final ExecutorService executorService = new ThreadPoolExecutor(1, 1,
@@ -40,7 +40,7 @@ final class ConcurrentReadCompletionHandler<T> extends ReadCompletionHandler<T> 
 
 
     @Override
-    public void completed(final Integer result, final TcpAioSession<T> aioSession) {
+    public void completed(final Integer result, final TcpAioSession aioSession) {
         if (threadLocal.get() != null) {
             super.completed(result, aioSession);
             return;

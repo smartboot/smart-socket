@@ -24,7 +24,7 @@ import java.util.Map;
  * @author 三刀
  * @version V1.0.0
  */
-final class IoServerConfig<T> {
+final class IoServerConfig {
 
     /**
      * banner信息
@@ -74,11 +74,11 @@ final class IoServerConfig<T> {
     /**
      * 消息处理器
      */
-    private MessageProcessor<T> processor;
+    private MessageProcessor processor;
     /**
      * 协议编解码
      */
-    private Protocol<T> protocol;
+    private Protocol protocol;
     /**
      * 是否启用控制台banner
      */
@@ -148,22 +148,22 @@ final class IoServerConfig<T> {
         return monitor;
     }
 
-    public Protocol<T> getProtocol() {
+    public Protocol getProtocol() {
         return protocol;
     }
 
-    public void setProtocol(Protocol<T> protocol) {
+    public void setProtocol(Protocol protocol) {
         this.protocol = protocol;
     }
 
-    public MessageProcessor<T> getProcessor() {
+    public MessageProcessor getProcessor() {
         return processor;
     }
 
     /**
      * @param processor 消息处理器
      */
-    public void setProcessor(MessageProcessor<T> processor) {
+    public void setProcessor(MessageProcessor processor) {
         this.processor = processor;
         this.monitor = (processor instanceof NetMonitor) ? (NetMonitor) processor : null;
     }

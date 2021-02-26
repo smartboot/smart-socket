@@ -20,7 +20,7 @@ import java.nio.channels.CompletionHandler;
  * @author 三刀
  * @version V1.0.0
  */
-class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSession<T>> {
+class ReadCompletionHandler implements CompletionHandler<Integer, TcpAioSession> {
     /**
      * 处理消息读回调事件
      *
@@ -28,7 +28,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
      * @param aioSession 当前触发读回调的会话
      */
     @Override
-    public void completed(final Integer result, final TcpAioSession<T> aioSession) {
+    public void completed(final Integer result, final TcpAioSession aioSession) {
         try {
             // 接收到的消息进行预处理
             NetMonitor monitor = aioSession.getServerConfig().getMonitor();
@@ -45,7 +45,7 @@ class ReadCompletionHandler<T> implements CompletionHandler<Integer, TcpAioSessi
 
 
     @Override
-    public final void failed(Throwable exc, TcpAioSession<T> aioSession) {
+    public final void failed(Throwable exc, TcpAioSession aioSession) {
         try {
             aioSession.getServerConfig().getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
         } catch (Exception e) {

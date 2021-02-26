@@ -54,11 +54,11 @@ public class UdpServer {
             }
         };
         //服务端
-        final UdpBootstrap<String> bootstrap = new UdpBootstrap<String>(new StringProtocol(), processor);
+        final UdpBootstrap bootstrap = new UdpBootstrap(new StringProtocol(), processor);
         int threadNum = Runtime.getRuntime().availableProcessors();
         bootstrap.setThreadNum(threadNum);
         bootstrap.setReadBufferSize(1024);
-        processor.addPlugin(new MonitorPlugin(5));
+        processor.addPlugin(new MonitorPlugin<>(5));
         bootstrap.open(9999);
         System.out.println("启动成功");
     }
