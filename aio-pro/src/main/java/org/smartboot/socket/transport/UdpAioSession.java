@@ -62,7 +62,7 @@ final class UdpAioSession extends AioSession {
     }
 
     @Override
-    public InetSocketAddress getRemoteAddress() throws IOException {
+    public InetSocketAddress getRemoteAddress() {
         return (InetSocketAddress) remote;
     }
 }

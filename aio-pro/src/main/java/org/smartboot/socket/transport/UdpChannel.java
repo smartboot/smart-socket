@@ -65,7 +65,6 @@ public final class UdpChannel {
      * @param virtualBuffer
      * @param remote
      * @throws IOException
-     * @throws InterruptedException
      */
     private void write(VirtualBuffer virtualBuffer, SocketAddress remote) throws IOException {
         if (writeSemaphore.tryAcquire() && responseTasks.isEmpty() && send(virtualBuffer.buffer(), remote) > 0) {

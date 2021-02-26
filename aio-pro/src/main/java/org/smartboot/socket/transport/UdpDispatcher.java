@@ -70,7 +70,7 @@ class UdpDispatcher implements Runnable {
         taskQueue.offer(requestTask);
     }
 
-    class RequestTask {
+    static class RequestTask {
         UdpAioSession session;
         Object request;
 
