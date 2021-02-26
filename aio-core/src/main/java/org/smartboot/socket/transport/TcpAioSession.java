@@ -95,7 +95,7 @@ final class TcpAioSession extends AioSession {
      */
     private InputStream inputStream;
 
-    private volatile int modCount = 0;
+    private int modCount = 0;
 
     /**
      * @param channel                Socket通道

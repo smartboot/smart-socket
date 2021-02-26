@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
  * @author 三刀
  * @version V1.0 , 2017/10/20
  */
-public class FixedLengthFrameDecoder implements SmartDecoder{
+public class FixedLengthFrameDecoder implements SmartDecoder {
     private ByteBuffer buffer;
     private boolean finishRead;
 

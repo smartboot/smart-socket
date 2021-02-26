@@ -48,7 +48,7 @@ public class DelimiterProtocol implements Protocol<String> {
     }
 
     public static void main(String[] args) {
-        ByteBuffer b=ByteBuffer.allocate(4);
+        ByteBuffer b = ByteBuffer.allocate(4);
         b.putInt(104857600);
 
         System.out.println(StringUtils.toHexString(b.array()));
