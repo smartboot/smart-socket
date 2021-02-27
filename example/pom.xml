@@ -3,15 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <groupId>org.smartboot.socket</groupId>
-    <packaging>pom</packaging>
     <version>1.0.0</version>
-    <modules>
-        <module>rpc</module>
-        <module>udp</module>
-        <module>benchmark</module>
-        <module>spring</module>
-        <module>c1000k</module>
-    </modules>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>example</artifactId>
@@ -28,34 +20,42 @@
             </plugin>
         </plugins>
     </build>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.smartboot.socket</groupId>
-                <artifactId>aio-pro</artifactId>
-                <version>1.5.6-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>org.smartboot.socket</groupId>
-                <artifactId>aio-core</artifactId>
-                <version>1.5.6-SNAPSHOT</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>3.7</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
-                <version>1.7.21</version>
-            </dependency>
-            <dependency>
-                <groupId>org.smartboot.aio</groupId>
-                <artifactId>aio-enhance</artifactId>
-                <version>1.0.2</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.smartboot.socket</groupId>
+            <artifactId>aio-pro</artifactId>
+            <version>1.5.6-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.smartboot.socket</groupId>
+            <artifactId>aio-core</artifactId>
+            <version>1.5.6-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.21</version>
+        </dependency>
+        <dependency>
+            <groupId>org.smartboot.aio</groupId>
+            <artifactId>aio-enhance</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.62</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>4.3.21.RELEASE</version>
+        </dependency>
+    </dependencies>
 
 </project>

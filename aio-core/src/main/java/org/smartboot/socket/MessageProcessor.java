@@ -40,5 +40,6 @@ public interface MessageProcessor<T> {
      * @param throwable        异常对象，如果存在的话
      * @see StateMachineEnum
      */
-    void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable);
+    default void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+    }
 }
