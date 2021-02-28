@@ -41,5 +41,8 @@ public interface MessageProcessor<T> {
      * @see StateMachineEnum
      */
     default void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+        if (stateMachineEnum == StateMachineEnum.DECODE_EXCEPTION || stateMachineEnum == StateMachineEnum.PROCESS_EXCEPTION) {
+            throwable.printStackTrace();
+        }
     }
 }

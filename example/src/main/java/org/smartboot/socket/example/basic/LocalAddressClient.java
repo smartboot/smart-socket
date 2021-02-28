@@ -1,13 +1,13 @@
 /*******************************************************************************
- * Copyright (c) 2017-2019, org.smartboot. All rights reserved.
+ * Copyright (c) 2017-2021, org.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: LocalAddressClient.java
- * Date: 2019-12-31
+ * Date: 2021-02-28
  * Author: sandao (zhengjunweimail@163.com)
  *
  ******************************************************************************/
 
-package org.smartboot.socket.test;
+package org.smartboot.socket.example.basic;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
