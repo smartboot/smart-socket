@@ -124,7 +124,7 @@ public class UdpBootstrap {
 
         // 增加广告说明
         if (config.isBannerEnabled()) {
-            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
+            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket[udp] ::\t(" + IoServerConfig.VERSION + ")");
         }
 
         this.status = Status.STATUS_RUNNING;
@@ -144,7 +144,7 @@ public class UdpBootstrap {
                 VirtualBuffer readBuffer = bufferPage.allocate(config.getReadBufferSize());
                 try {
                     Set<SelectionKey> selectionKeys = selector.selectedKeys();
-                    while (true) {
+                    while (status == Status.STATUS_RUNNING) {
                         if (selectionKeys.isEmpty()) {
                             selector.select();
                         }

@@ -15,6 +15,7 @@ import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
@@ -125,6 +126,10 @@ public final class UdpChannel {
      */
     public AioSession connect(SocketAddress remote) {
         return createAndCacheSession(remote);
+    }
+
+    public AioSession connect(String host, int port) {
+        return connect(new InetSocketAddress(host, port));
     }
 
     /**
