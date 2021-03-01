@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
@@ -37,24 +35,16 @@ import java.util.Set;
  * @version V1.0 , 2019/8/18
  */
 public class UdpBootstrap {
-    /**
-     * logger
-     */
-    private static final Logger LOGGER = LoggerFactory.getLogger(UdpBootstrap.class);
-
-    private final static int MAX_EVENT = 512;
 
     private final static int MAX_READ_TIMES = 16;
     /**
      * 服务ID
      */
     private static int UID;
-    private final SelectionKey NEED_TO_POLL = new UdpNullSelectionKey();
-    private final SelectionKey EXECUTE_TASK_OR_SHUTDOWN = new UdpNullSelectionKey();
     /**
      * 缓存页
      */
-    private final BufferPage bufferPage = new BufferPagePool(1024, 1, -1, true).allocateBufferPage();
+    private final BufferPage bufferPage = new BufferPagePool(1024 * 1024, 1, -1, true).allocateBufferPage();
     /**
      * 服务配置
      */
@@ -99,11 +89,6 @@ public class UdpBootstrap {
      * @param port 指定绑定端口号,为0则随机指定
      */
     public UdpChannel open(String host, int port) throws IOException {
-        if (host != null) {
-            config.setHost(host);
-        }
-        config.setPort(port);
-
         if (selector == null) {
             synchronized (this) {
                 if (selector == null) {
@@ -117,13 +102,7 @@ public class UdpBootstrap {
         if (port > 0) {
             InetSocketAddress inetSocketAddress = host == null ? new InetSocketAddress(port) : new InetSocketAddress(host, port);
             channel.socket().bind(inetSocketAddress);
-            if (host == null) {
-                config.setHost(inetSocketAddress.getHostString());
-            }
-        } else {
-            config.setHost("");
         }
-
         if (status == Status.STATUS_RUNNING) {
             selector.wakeup();
         }
@@ -135,9 +114,6 @@ public class UdpBootstrap {
         if (status == Status.STATUS_INIT) {
             initThreadServer();
         }
-
-        System.out.println("smart-socket server started on port " + config.getPort() + ",threadNum:" + config.getThreadNum());
-        System.out.println("smart-socket server config is " + config);
         return udpChannel;
     }
 
@@ -167,8 +143,8 @@ public class UdpBootstrap {
                 //读缓冲区
                 VirtualBuffer readBuffer = bufferPage.allocate(config.getReadBufferSize());
                 try {
+                    Set<SelectionKey> selectionKeys = selector.selectedKeys();
                     while (true) {
-                        Set<SelectionKey> selectionKeys = selector.selectedKeys();
                         if (selectionKeys.isEmpty()) {
                             selector.select();
                         }
@@ -186,7 +162,7 @@ public class UdpBootstrap {
                                 doRead(readBuffer, udpChannel);
                             }
                             if (key.isWritable()) {
-                                udpChannel.flush();
+                                udpChannel.doWrite();
                             }
                         }
                     }
@@ -200,20 +176,12 @@ public class UdpBootstrap {
         }, "UDP-Boss-" + uid).start();
     }
 
-    /**
-     * 去读数据
-     *
-     * @param channel
-     * @throws IOException
-     */
     private void doRead(VirtualBuffer readBuffer, UdpChannel channel) throws IOException {
         int count = MAX_READ_TIMES;
         while (count-- > 0) {
             //接收数据
             ByteBuffer buffer = readBuffer.buffer();
             buffer.clear();
-            //The datagram's source address,
-            // or null if this channel is in non-blocking mode and no datagram was immediately available
             SocketAddress remote = channel.getChannel().receive(buffer);
             if (remote == null) {
                 return;
@@ -238,17 +206,10 @@ public class UdpBootstrap {
             //理论上每个UDP包都是一个完整的消息
             if (request == null) {
                 config.getProcessor().stateEvent(aioSession, StateMachineEnum.DECODE_EXCEPTION, new DecoderException("decode result is null"));
-                return;
+            } else {
+                //任务分发
+                workerGroup[(remote.hashCode() & Integer.MAX_VALUE) % workerGroup.length].dispatch(aioSession, request);
             }
-//            LOGGER.info("receive:{} from:{}", request, remote);
-
-            //任务分发
-            int hashCode = remote.hashCode();
-            if (hashCode < 0) {
-                hashCode = -hashCode;
-            }
-            UdpDispatcher dispatcher = workerGroup[hashCode % workerGroup.length];
-            dispatcher.dispatch(aioSession, request);
         }
     }
 
@@ -300,10 +261,6 @@ public class UdpBootstrap {
          */
         STATUS_INIT,
         /**
-         * 状态：初始
-         */
-        STATUS_STARTING,
-        /**
          * 状态：运行中
          */
         STATUS_RUNNING,
@@ -311,10 +268,6 @@ public class UdpBootstrap {
          * 状态：停止中
          */
         STATUS_STOPPING,
-        /**
-         * 状态：已停止
-         */
-        STATUS_STOPPED;
     }
 }
 

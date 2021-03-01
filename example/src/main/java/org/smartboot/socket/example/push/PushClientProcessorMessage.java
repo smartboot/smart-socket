@@ -12,7 +12,6 @@ package org.smartboot.socket.example.push;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 
 /**
@@ -25,10 +24,5 @@ public class PushClientProcessorMessage implements MessageProcessor<String> {
     @Override
     public void process(AioSession session, String msg) {
         LOGGER.info("ReceiverClient:{} 收到Push消息:{}", session.getSessionID(), msg);
-    }
-
-    @Override
-    public void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-
     }
 }

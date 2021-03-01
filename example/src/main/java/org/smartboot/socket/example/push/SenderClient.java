@@ -15,14 +15,13 @@ import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
 /**
  * @author 三刀
  * @version V1.0 , 2020/4/25
  */
 public class SenderClient {
-    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         StringProtocol protocol = new StringProtocol();
         PushClientProcessorMessage clientProcessorMessage = new PushClientProcessorMessage();
         AioQuickClient clients = new AioQuickClient("localhost", 8080, protocol, clientProcessorMessage);
