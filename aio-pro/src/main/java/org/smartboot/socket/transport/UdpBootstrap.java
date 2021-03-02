@@ -194,7 +194,7 @@ public class UdpBootstrap {
         worker.selector.wakeup();
 
         for (UdpDispatcher dispatcher : workerGroup) {
-            dispatcher.dispatch(dispatcher.EXECUTE_TASK_OR_SHUTDOWN);
+            dispatcher.dispatch(UdpDispatcher.EXECUTE_TASK_OR_SHUTDOWN);
         }
         executorService.shutdown();
     }
