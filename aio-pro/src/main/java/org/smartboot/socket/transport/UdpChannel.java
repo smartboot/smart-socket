@@ -77,7 +77,7 @@ public final class UdpChannel {
         }
     }
 
-    public void setSelectionKey(SelectionKey selectionKey) {
+    void setSelectionKey(SelectionKey selectionKey) {
         this.selectionKey = selectionKey;
     }
 
