@@ -23,8 +23,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @version V1.0 , 2020/3/13
  */
 class UdpDispatcher implements Runnable {
+    public final static RequestTask EXECUTE_TASK_OR_SHUTDOWN = new RequestTask(null, null);
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpDispatcher.class);
-    public final RequestTask EXECUTE_TASK_OR_SHUTDOWN = new RequestTask(null, null);
     private final BlockingQueue<RequestTask> taskQueue = new LinkedBlockingQueue<>();
     private final MessageProcessor processor;
 
