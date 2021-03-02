@@ -44,6 +44,7 @@ public final class UdpChannel {
      */
     private final ConcurrentLinkedQueue<ResponseUnit> responseTasks;
     private final Semaphore writeSemaphore = new Semaphore(1);
+    private final UdpBootstrap.Worker worker;
     IoServerConfig config;
     /**
      * 真实的UDP通道
@@ -52,19 +53,14 @@ public final class UdpChannel {
     private SelectionKey selectionKey;
     private ResponseUnit failResponseUnit;
 
-    UdpChannel(final DatagramChannel channel, SelectionKey selectionKey, IoServerConfig config, BufferPage bufferPage) {
+    UdpChannel(final DatagramChannel channel, UdpBootstrap.Worker worker, IoServerConfig config, BufferPage bufferPage) {
         this.channel = channel;
         responseTasks = new ConcurrentLinkedQueue<>();
-        this.selectionKey = selectionKey;
+        this.worker = worker;
         this.bufferPage = bufferPage;
         this.config = config;
     }
 
-    /**
-     * @param virtualBuffer
-     * @param remote
-     * @throws IOException
-     */
     private void write(VirtualBuffer virtualBuffer, SocketAddress remote) throws IOException {
         if (writeSemaphore.tryAcquire() && responseTasks.isEmpty() && send(virtualBuffer.buffer(), remote) > 0) {
             virtualBuffer.clean();
@@ -72,9 +68,17 @@ public final class UdpChannel {
             return;
         }
         responseTasks.offer(new ResponseUnit(remote, virtualBuffer));
-        if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) == 0) {
-            selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
+        if (selectionKey == null) {
+            worker.addRegister(selector -> selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE));
+        } else {
+            if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) == 0) {
+                selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
+            }
         }
+    }
+
+    public void setSelectionKey(SelectionKey selectionKey) {
+        this.selectionKey = selectionKey;
     }
 
     void doWrite() throws IOException {
@@ -120,9 +124,6 @@ public final class UdpChannel {
 
     /**
      * 建立与远程服务的连接会话,通过AioSession可进行数据传输
-     *
-     * @param remote
-     * @return
      */
     public AioSession connect(SocketAddress remote) {
         return createAndCacheSession(remote);
@@ -134,9 +135,6 @@ public final class UdpChannel {
 
     /**
      * 创建并缓存与指定地址的会话信息
-     *
-     * @param remote
-     * @return
      */
     UdpAioSession createAndCacheSession(final SocketAddress remote) {
         return sessionMap.computeIfAbsent(remote, s -> {

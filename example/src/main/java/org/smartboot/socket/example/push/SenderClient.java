@@ -9,6 +9,8 @@
 
 package org.smartboot.socket.example.push;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.smartboot.socket.example.StringProtocol;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
@@ -21,10 +23,11 @@ import java.io.IOException;
  * @version V1.0 , 2020/4/25
  */
 public class SenderClient {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SenderClient.class);
+
     public static void main(String[] args) throws IOException, InterruptedException {
         StringProtocol protocol = new StringProtocol();
-        PushClientProcessorMessage clientProcessorMessage = new PushClientProcessorMessage();
-        AioQuickClient clients = new AioQuickClient("localhost", 8080, protocol, clientProcessorMessage);
+        AioQuickClient clients = new AioQuickClient("localhost", 8080, protocol, (session, msg) -> LOGGER.info("ReceiverClient:{} 收到Push消息:{}", session.getSessionID(), msg));
         AioSession session = clients.start();
         byte[] msg = "HelloWorld".getBytes();
         while (true) {

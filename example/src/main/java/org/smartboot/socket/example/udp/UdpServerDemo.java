@@ -30,6 +30,7 @@ public class UdpServerDemo {
                 e.printStackTrace();
             }
         });
-        bootstrap.open(8888);
+        bootstrap.setThreadNum(Runtime.getRuntime().availableProcessors())
+                .setReadBufferSize(1024).open(8888);
     }
 }

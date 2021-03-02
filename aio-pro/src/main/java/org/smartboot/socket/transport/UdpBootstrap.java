@@ -22,11 +22,14 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 /**
  * UDP服务启动类
@@ -49,15 +52,12 @@ public class UdpBootstrap {
      * 服务配置
      */
     private final IoServerConfig config = new IoServerConfig();
-    /**
-     * 服务状态
-     */
-    private volatile Status status = Status.STATUS_INIT;
-    /**
-     * 多路复用器
-     */
-    private Selector selector;
+
+    private Worker worker;
+
     private UdpDispatcher[] workerGroup;
+
+    private boolean running = true;
 
     public <Request> UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
         config.setProtocol(protocol);
@@ -89,12 +89,9 @@ public class UdpBootstrap {
      * @param port 指定绑定端口号,为0则随机指定
      */
     public UdpChannel open(String host, int port) throws IOException {
-        if (selector == null) {
-            synchronized (this) {
-                if (selector == null) {
-                    selector = Selector.open();
-                }
-            }
+        //启动线程服务
+        if (worker == null) {
+            initThreadServer();
         }
 
         DatagramChannel channel = DatagramChannel.open();
@@ -103,22 +100,21 @@ public class UdpBootstrap {
             InetSocketAddress inetSocketAddress = host == null ? new InetSocketAddress(port) : new InetSocketAddress(host, port);
             channel.socket().bind(inetSocketAddress);
         }
-        if (status == Status.STATUS_RUNNING) {
-            selector.wakeup();
-        }
-        SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
-        UdpChannel udpChannel = new UdpChannel(channel, selectionKey, config, bufferPage);
-        selectionKey.attach(udpChannel);
-
-        //启动线程服务
-        if (status == Status.STATUS_INIT) {
-            initThreadServer();
-        }
+        UdpChannel udpChannel = new UdpChannel(channel, worker, config, bufferPage);
+        worker.addRegister(selector -> {
+            try {
+                SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ);
+                udpChannel.setSelectionKey(selectionKey);
+                selectionKey.attach(udpChannel);
+            } catch (ClosedChannelException e) {
+                e.printStackTrace();
+            }
+        });
         return udpChannel;
     }
 
-    private synchronized void initThreadServer() {
-        if (status != Status.STATUS_INIT) {
+    private synchronized void initThreadServer() throws IOException {
+        if (worker != null) {
             return;
         }
 
@@ -127,53 +123,18 @@ public class UdpBootstrap {
             System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket[udp] ::\t(" + IoServerConfig.VERSION + ")");
         }
 
-        this.status = Status.STATUS_RUNNING;
         int uid = UdpBootstrap.UID++;
 
         //启动worker线程组
         workerGroup = new UdpDispatcher[config.getThreadNum()];
+
         for (int i = 0; i < config.getThreadNum(); i++) {
             workerGroup[i] = new UdpDispatcher(config.getProcessor());
-            new Thread(workerGroup[i], "UDP-Worker-" + i).start();
+            new Thread(workerGroup[i], "smart-socket:udp-" + uid + "-" + i).start();
         }
         //启动Boss线程组
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                //读缓冲区
-                VirtualBuffer readBuffer = bufferPage.allocate(config.getReadBufferSize());
-                try {
-                    Set<SelectionKey> selectionKeys = selector.selectedKeys();
-                    while (status == Status.STATUS_RUNNING) {
-                        if (selectionKeys.isEmpty()) {
-                            selector.select();
-                        }
-                        Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
-                        while (keyIterator.hasNext()) {
-                            SelectionKey key = keyIterator.next();
-                            keyIterator.remove();
-                            UdpChannel udpChannel = (UdpChannel) key.attachment();
-                            if (!key.isValid()) {
-                                udpChannel.close();
-                                continue;
-                            }
-
-                            if (key.isReadable()) {
-                                doRead(readBuffer, udpChannel);
-                            }
-                            if (key.isWritable()) {
-                                udpChannel.doWrite();
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    //读缓冲区内存回收
-                    readBuffer.clean();
-                }
-            }
-        }, "UDP-Boss-" + uid).start();
+        worker = new Worker();
+        new Thread(worker, "smart-socket:udp-" + uid).start();
     }
 
     private void doRead(VirtualBuffer readBuffer, UdpChannel channel) throws IOException {
@@ -214,8 +175,8 @@ public class UdpBootstrap {
     }
 
     public void shutdown() {
-        status = Status.STATUS_STOPPING;
-        selector.wakeup();
+        running = false;
+        worker.selector.wakeup();
 
         for (UdpDispatcher dispatcher : workerGroup) {
             dispatcher.dispatch(dispatcher.EXECUTE_TASK_OR_SHUTDOWN);
@@ -236,7 +197,7 @@ public class UdpBootstrap {
     /**
      * 设置线程大小
      *
-     * @param num
+     * @param num 线程数
      */
     public final UdpBootstrap setThreadNum(int num) {
         this.config.setThreadNum(num);
@@ -255,19 +216,70 @@ public class UdpBootstrap {
         return this;
     }
 
-    enum Status {
+    class Worker implements Runnable {
         /**
-         * 状态：初始
+         * 当前Worker绑定的Selector
          */
-        STATUS_INIT,
+        private final Selector selector;
+
         /**
-         * 状态：运行中
+         * 待注册的事件
          */
-        STATUS_RUNNING,
+        private final ConcurrentLinkedQueue<Consumer<Selector>> registers = new ConcurrentLinkedQueue<>();
+
+        Worker() throws IOException {
+            this.selector = Selector.open();
+        }
+
         /**
-         * 状态：停止中
+         * 注册事件
          */
-        STATUS_STOPPING,
+        final void addRegister(Consumer<Selector> register) {
+            registers.offer(register);
+            selector.wakeup();
+        }
+
+        @Override
+        public final void run() {
+            // 优先获取SelectionKey,若无关注事件触发则阻塞在selector.select(),减少select被调用次数
+            Set<SelectionKey> keySet = selector.selectedKeys();
+            //读缓冲区
+            VirtualBuffer readBuffer = bufferPage.allocate(config.getReadBufferSize());
+            try {
+                while (running) {
+                    Consumer<Selector> register;
+                    while ((register = registers.poll()) != null) {
+                        register.accept(selector);
+                    }
+                    if (keySet.isEmpty() && selector.select() == 0) {
+                        continue;
+                    }
+                    Iterator<SelectionKey> keyIterator = keySet.iterator();
+                    // 执行本次已触发待处理的事件
+                    while (keyIterator.hasNext()) {
+                        SelectionKey key = keyIterator.next();
+                        keyIterator.remove();
+                        UdpChannel udpChannel = (UdpChannel) key.attachment();
+                        if (!key.isValid()) {
+                            udpChannel.close();
+                            continue;
+                        }
+
+                        if (key.isReadable()) {
+                            doRead(readBuffer, udpChannel);
+                        }
+                        if (key.isWritable()) {
+                            udpChannel.doWrite();
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                //读缓冲区内存回收
+                readBuffer.clean();
+            }
+        }
     }
 }
 
