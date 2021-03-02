@@ -53,9 +53,6 @@ class UdpDispatcher implements Runnable {
 
     /**
      * 任务分发
-     *
-     * @param session
-     * @param request
      */
     public void dispatch(UdpAioSession session, Object request) {
         dispatch(new RequestTask(session, request));
@@ -63,8 +60,6 @@ class UdpDispatcher implements Runnable {
 
     /**
      * 任务分发
-     *
-     * @param requestTask
      */
     public void dispatch(RequestTask requestTask) {
         taskQueue.offer(requestTask);

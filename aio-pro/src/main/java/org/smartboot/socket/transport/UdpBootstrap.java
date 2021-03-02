@@ -29,6 +29,9 @@ import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 
 /**
@@ -56,6 +59,7 @@ public class UdpBootstrap {
     private Worker worker;
 
     private UdpDispatcher[] workerGroup;
+    private ExecutorService executorService;
 
     private boolean running = true;
 
@@ -127,10 +131,17 @@ public class UdpBootstrap {
 
         //启动worker线程组
         workerGroup = new UdpDispatcher[config.getThreadNum()];
+        executorService = Executors.newFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+            int i = 0;
 
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "smart-socket:udp-" + uid + "-" + (++i));
+            }
+        });
         for (int i = 0; i < config.getThreadNum(); i++) {
             workerGroup[i] = new UdpDispatcher(config.getProcessor());
-            new Thread(workerGroup[i], "smart-socket:udp-" + uid + "-" + i).start();
+            executorService.execute(workerGroup[i]);
         }
         //启动Boss线程组
         worker = new Worker();
@@ -181,6 +192,7 @@ public class UdpBootstrap {
         for (UdpDispatcher dispatcher : workerGroup) {
             dispatcher.dispatch(dispatcher.EXECUTE_TASK_OR_SHUTDOWN);
         }
+        executorService.shutdown();
     }
 
     /**

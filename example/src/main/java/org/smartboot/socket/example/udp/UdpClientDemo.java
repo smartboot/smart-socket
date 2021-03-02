@@ -24,7 +24,7 @@ public class UdpClientDemo {
         UdpBootstrap bootstrap = new UdpBootstrap(new StringProtocol(), (session, msg) -> {
             System.out.println("收到服务端消息: " + msg);
         });
-        bootstrap.setBannerEnabled(false);
+        bootstrap.setBannerEnabled(false).setThreadNum(Runtime.getRuntime().availableProcessors()).setReadBufferSize(1024);
         System.out.println(bootstrap.open().connect("localhost", 8888) == bootstrap.open().connect("localhost", 8888));
         AioSession session = bootstrap.open().connect("localhost", 8888);
         byte[] bytes = "hello smart-socket".getBytes();
