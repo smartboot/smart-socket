@@ -30,8 +30,10 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -131,7 +133,9 @@ public class UdpBootstrap {
 
         //启动worker线程组
         workerGroup = new UdpDispatcher[config.getThreadNum()];
-        executorService = Executors.newFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+        executorService = new ThreadPoolExecutor(config.getThreadNum(), config.getThreadNum(),
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
             int i = 0;
 
             @Override
