@@ -44,7 +44,7 @@
         <dependency>
             <groupId>org.smartboot.aio</groupId>
             <artifactId>aio-enhance</artifactId>
-            <version>1.0.2</version>
+            <version>1.0.4-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
@@ -55,6 +55,11 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <version>4.3.21.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.42.Final</version>
         </dependency>
     </dependencies>
 
