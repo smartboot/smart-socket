@@ -380,40 +380,23 @@ public final class WriteBuffer extends OutputStream {
      * @return 待输出的VirtualBuffer
      */
     VirtualBuffer poll() {
-        if (isEmpty()) {
+        if (count > 0) {
+            return pollQueue();
+        }
+        if (writeInBuf == null || !bufferLock.tryLock()) {
             return null;
         }
-        if (count > 0) {
-            lock.lock();
-            try {
-                VirtualBuffer x = items[takeIndex];
-                items[takeIndex] = null;
-                if (++takeIndex == items.length) {
-                    takeIndex = 0;
-                }
-                if (count-- == items.length) {
-                    notFull.signal();
-                }
-                return x;
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            if (!bufferLock.tryLock()) {
+        try {
+            if (writeInBuf != null) {
+                writeInBuf.buffer().flip();
+                VirtualBuffer buffer = writeInBuf;
+                writeInBuf = null;
+                return buffer;
+            } else {
                 return null;
             }
-            try {
-                if (writeInBuf != null) {
-                    writeInBuf.buffer().flip();
-                    VirtualBuffer buffer = writeInBuf;
-                    writeInBuf = null;
-                    return buffer;
-                } else {
-                    return null;
-                }
-            } finally {
-                bufferLock.unlock();
-            }
+        } finally {
+            bufferLock.unlock();
         }
     }
 
