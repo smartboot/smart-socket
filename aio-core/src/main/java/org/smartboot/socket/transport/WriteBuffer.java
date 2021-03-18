@@ -34,12 +34,12 @@ public final class WriteBuffer extends OutputStream {
     /**
      * 同步锁
      */
-    private final ReentrantLock lock = new ReentrantLock();
-    private final ReentrantLock bufferLock = new ReentrantLock();
+    private final ReentrantLock readLock = new ReentrantLock();
+    private final ReentrantLock writeLock = new ReentrantLock();
     /**
      * Condition for waiting puts
      */
-    private final Condition notFull = lock.newCondition();
+    private final Condition notFull = readLock.newCondition();
 
     /**
      * 为当前 WriteBuffer 提供数据存放功能的缓存页
@@ -118,7 +118,7 @@ public final class WriteBuffer extends OutputStream {
      * @see #write(int)
      */
     public void writeByte(byte b) {
-        bufferLock.lock();
+        writeLock.lock();
         try {
             if (writeInBuf == null) {
                 writeInBuf = bufferPage.allocate(chunkSize);
@@ -126,7 +126,7 @@ public final class WriteBuffer extends OutputStream {
             writeInBuf.buffer().put(b);
             flushWriteBuffer(false);
         } finally {
-            bufferLock.unlock();
+            writeLock.unlock();
         }
     }
 
@@ -141,7 +141,7 @@ public final class WriteBuffer extends OutputStream {
         writeInBuf.buffer().flip();
         VirtualBuffer virtualBuffer = writeInBuf;
         writeInBuf = null;
-        lock.lock();
+        readLock.lock();
         try {
             while (count == items.length) {
                 notFull.await();
@@ -160,7 +160,7 @@ public final class WriteBuffer extends OutputStream {
         } catch (InterruptedException e1) {
             throw new RuntimeException(e1);
         } finally {
-            lock.unlock();
+            readLock.unlock();
         }
     }
 
@@ -201,41 +201,27 @@ public final class WriteBuffer extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        if (writeInBuf == null) {
-            int bufferSize = Math.max(chunkSize, len);
-            VirtualBuffer virtualBuffer = bufferPage.allocate(bufferSize);
-            int writeSize = writeToBuffer(virtualBuffer, b, off, len);
-            writeInBuf = virtualBuffer;
-            if (bufferSize > writeSize) {
-                return;
-            }
-            off += writeSize;
-            len -= writeSize;
-        }
-
-        bufferLock.lock();
+        writeLock.lock();
         try {
-            if (writeInBuf != null) {
-                flushWriteBuffer(false);
-            }
             while (len > 0) {
                 if (writeInBuf == null) {
                     writeInBuf = bufferPage.allocate(Math.max(chunkSize, len));
                 }
-                int writeSize = writeToBuffer(writeInBuf, b, off, len);
+                int writeSize = writeToBuffer(b, off, len);
                 off += writeSize;
                 len -= writeSize;
                 flushWriteBuffer(false);
             }
         } finally {
-            bufferLock.unlock();
+            writeLock.unlock();
         }
     }
 
-    private int writeToBuffer(VirtualBuffer writeInBuf, byte[] b, int off, int len) throws IOException {
+    private int writeToBuffer(byte[] b, int off, int len) throws IOException {
         ByteBuffer writeBuffer = writeInBuf.buffer();
         if (closed) {
             writeInBuf.clean();
+            writeInBuf = null;
             throw new IOException("writeBuffer has closed");
         }
         int writeSize = Math.min(writeBuffer.remaining(), len);
@@ -248,7 +234,7 @@ public final class WriteBuffer extends OutputStream {
     }
 
     public void write(VirtualBuffer virtualBuffer) throws IOException {
-        bufferLock.lock();
+        writeLock.lock();
         try {
             if (writeInBuf != null && !virtualBuffer.buffer().isDirect() && writeInBuf.buffer().remaining() > virtualBuffer.buffer().remaining()) {
                 writeInBuf.buffer().put(virtualBuffer.buffer());
@@ -262,7 +248,7 @@ public final class WriteBuffer extends OutputStream {
             }
             flushWriteBuffer(false);
         } finally {
-            bufferLock.unlock();
+            writeLock.unlock();
         }
     }
 
@@ -316,26 +302,37 @@ public final class WriteBuffer extends OutputStream {
         if (closed) {
             return;
         }
-        lock.lock();
         try {
             flush();
-            closed = true;
-            VirtualBuffer byteBuf;
-            while ((byteBuf = poll()) != null) {
-                byteBuf.clean();
-            }
-        } finally {
-            lock.unlock();
+        } catch (Exception e) {
+            System.out.println("hhhhhhhhhhhhhhh");
+            e.printStackTrace();
         }
-        bufferLock.lock();
-        try {
-            if (writeInBuf != null) {
-                writeInBuf.clean();
-                writeInBuf = null;
+        closed = true;
+        if (writeInBuf != null) {
+            writeLock.lock();
+            try {
+                if (writeInBuf != null) {
+                    writeInBuf.clean();
+                    writeInBuf = null;
+                }
+            } finally {
+                writeLock.unlock();
             }
-        } finally {
-            bufferLock.unlock();
         }
+        VirtualBuffer byteBuf;
+        while ((byteBuf = poll()) != null) {
+            byteBuf.clean();
+        }
+//        writeLock.lock();
+//        try {
+//            if (writeInBuf != null) {
+//                writeInBuf.clean();
+//                writeInBuf = null;
+//            }
+//        } finally {
+//            writeLock.unlock();
+//        }
     }
 
 
@@ -358,7 +355,7 @@ public final class WriteBuffer extends OutputStream {
         if (count == 0) {
             return null;
         }
-        lock.lock();
+        readLock.lock();
         try {
             VirtualBuffer x = items[takeIndex];
             items[takeIndex] = null;
@@ -370,7 +367,7 @@ public final class WriteBuffer extends OutputStream {
             }
             return x;
         } finally {
-            lock.unlock();
+            readLock.unlock();
         }
     }
 
@@ -383,10 +380,14 @@ public final class WriteBuffer extends OutputStream {
         if (count > 0) {
             return pollQueue();
         }
-        if (writeInBuf == null || !bufferLock.tryLock()) {
+        if (writeInBuf == null || !writeLock.tryLock()) {
             return null;
         }
         try {
+            if (count > 0) {
+                System.out.println("aaaa");
+                return pollQueue();
+            }
             if (writeInBuf != null) {
                 writeInBuf.buffer().flip();
                 VirtualBuffer buffer = writeInBuf;
@@ -396,7 +397,7 @@ public final class WriteBuffer extends OutputStream {
                 return null;
             }
         } finally {
-            bufferLock.unlock();
+            writeLock.unlock();
         }
     }
 
