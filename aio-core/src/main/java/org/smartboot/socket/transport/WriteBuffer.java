@@ -207,7 +207,14 @@ public final class WriteBuffer extends OutputStream {
                 if (writeInBuf == null) {
                     writeInBuf = bufferPage.allocate(Math.max(chunkSize, len));
                 }
-                int writeSize = writeToBuffer(b, off, len);
+                ByteBuffer writeBuffer = writeInBuf.buffer();
+                if (closed) {
+                    writeInBuf.clean();
+                    writeInBuf = null;
+                    throw new IOException("writeBuffer has closed");
+                }
+                int writeSize = Math.min(writeBuffer.remaining(), len);
+                writeBuffer.put(b, off, writeSize);
                 off += writeSize;
                 len -= writeSize;
                 flushWriteBuffer(false);
@@ -217,23 +224,12 @@ public final class WriteBuffer extends OutputStream {
         }
     }
 
-    private int writeToBuffer(byte[] b, int off, int len) throws IOException {
-        ByteBuffer writeBuffer = writeInBuf.buffer();
-        if (closed) {
-            writeInBuf.clean();
-            writeInBuf = null;
-            throw new IOException("writeBuffer has closed");
-        }
-        int writeSize = Math.min(writeBuffer.remaining(), len);
-        writeBuffer.put(b, off, writeSize);
-        return writeSize;
-    }
 
-    public void write(ByteBuffer buffer) throws IOException {
+    public void write(ByteBuffer buffer) {
         write(VirtualBuffer.wrap(buffer));
     }
 
-    public void write(VirtualBuffer virtualBuffer) throws IOException {
+    public void write(VirtualBuffer virtualBuffer) {
         writeLock.lock();
         try {
             if (writeInBuf != null && !virtualBuffer.buffer().isDirect() && writeInBuf.buffer().remaining() > virtualBuffer.buffer().remaining()) {
@@ -302,12 +298,7 @@ public final class WriteBuffer extends OutputStream {
         if (closed) {
             return;
         }
-        try {
-            flush();
-        } catch (Exception e) {
-            System.out.println("hhhhhhhhhhhhhhh");
-            e.printStackTrace();
-        }
+        flush();
         closed = true;
         if (writeInBuf != null) {
             writeLock.lock();
@@ -324,15 +315,6 @@ public final class WriteBuffer extends OutputStream {
         while ((byteBuf = poll()) != null) {
             byteBuf.clean();
         }
-//        writeLock.lock();
-//        try {
-//            if (writeInBuf != null) {
-//                writeInBuf.clean();
-//                writeInBuf = null;
-//            }
-//        } finally {
-//            writeLock.unlock();
-//        }
     }
 
 
@@ -385,7 +367,6 @@ public final class WriteBuffer extends OutputStream {
         }
         try {
             if (count > 0) {
-                System.out.println("aaaa");
                 return pollQueue();
             }
             if (writeInBuf != null) {
