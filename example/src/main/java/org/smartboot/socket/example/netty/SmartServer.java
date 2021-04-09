@@ -24,19 +24,16 @@ import java.io.IOException;
 public class SmartServer {
     public static void main(String[] args) throws Exception {
         System.setProperty("java.nio.channels.spi.AsynchronousChannelProvider", "org.smartboot.aio.EnhanceAsynchronousChannelProvider");
-        AioQuickServer server = new AioQuickServer("localhost", 8080, new LongProtocol(), new MessageProcessor<Long>() {
-            @Override
-            public void process(AioSession session, Long msg) {
-                long now = System.nanoTime();
+        AioQuickServer server = new AioQuickServer("localhost", 8080, new LongProtocol(), (session, msg) -> {
+            long now = System.nanoTime();
 //                System.out.println("cost: " + (now - msg));
-                try {
-                    session.writeBuffer().writeLong(now);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            try {
+                session.writeBuffer().writeLong(now);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         });
-        server.setBufferPagePool(new BufferPagePool(1024, Runtime.getRuntime().availableProcessors(), -1, true));
+        server.setBufferPagePool(new BufferPagePool(1024, Runtime.getRuntime().availableProcessors(), true));
         server.start();
     }
 

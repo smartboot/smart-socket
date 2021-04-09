@@ -52,7 +52,7 @@ public class UdpBootstrap {
     /**
      * 缓存页
      */
-    private final BufferPage bufferPage = new BufferPagePool(1024 * 1024, 1, -1, true).allocateBufferPage();
+    private final BufferPage bufferPage = new BufferPagePool(1024 * 1024, 1, true).allocateBufferPage();
     /**
      * 服务配置
      */
@@ -135,7 +135,7 @@ public class UdpBootstrap {
         workerGroup = new UdpDispatcher[config.getThreadNum()];
         executorService = new ThreadPoolExecutor(config.getThreadNum(), config.getThreadNum(),
                 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
+                new LinkedBlockingQueue<>(), new ThreadFactory() {
             int i = 0;
 
             @Override

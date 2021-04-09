@@ -27,10 +27,6 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public final class BufferPage {
     /**
-     * 共享内存页
-     */
-    private final BufferPage sharedBufferPage;
-    /**
      * 同组内存池中的各内存页
      */
     private final BufferPage[] poolPages;
@@ -59,9 +55,8 @@ public final class BufferPage {
      * @param size   缓存页大小
      * @param direct 是否使用堆外内存
      */
-    BufferPage(BufferPage[] poolPages, BufferPage sharedBufferPage, int size, boolean direct) {
+    BufferPage(BufferPage[] poolPages, int size, boolean direct) {
         this.poolPages = poolPages;
-        this.sharedBufferPage = sharedBufferPage;
         availableBuffers = new LinkedList<>();
         this.buffer = allocate0(size, direct);
         availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
@@ -91,16 +86,7 @@ public final class BufferPage {
         } else {
             virtualBuffer = allocate0(size);
         }
-        if (virtualBuffer != null) {
-            return virtualBuffer;
-        }
-        if (sharedBufferPage != null) {
-            virtualBuffer = sharedBufferPage.allocate0(size);
-        }
-        if (virtualBuffer == null) {
-            virtualBuffer = new VirtualBuffer(null, allocate0(size, false), 0, 0);
-        }
-        return virtualBuffer;
+        return virtualBuffer == null ? new VirtualBuffer(null, allocate0(size, false), 0, 0) : virtualBuffer;
     }
 
     /**

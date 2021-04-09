@@ -38,10 +38,6 @@ public final class BufferPagePool {
      * 内存页组
      */
     private BufferPage[] bufferPages;
-    /**
-     * 共享缓存页
-     */
-    private BufferPage sharedBufferPage;
     private boolean enabled = true;
     /**
      * 内存回收任务
@@ -53,19 +49,12 @@ public final class BufferPagePool {
                 for (BufferPage bufferPage : bufferPages) {
                     bufferPage.tryClean();
                 }
-                if (sharedBufferPage != null) {
-                    sharedBufferPage.tryClean();
-                }
             } else {
                 if (bufferPages != null) {
                     for (BufferPage page : bufferPages) {
                         page.release();
                     }
                     bufferPages = null;
-                }
-                if (sharedBufferPage != null) {
-                    sharedBufferPage.release();
-                    sharedBufferPage = null;
                 }
                 future.cancel(false);
             }
@@ -78,24 +67,11 @@ public final class BufferPagePool {
      * @param isDirect 是否使用直接缓冲区
      */
     public BufferPagePool(final int pageSize, final int pageNum, final boolean isDirect) {
-        this(pageSize, pageNum, -1, isDirect);
-    }
-
-    /**
-     * @param pageSize       内存页大小
-     * @param pageNum        内存页个数
-     * @param sharedPageSize 共享内存页大小
-     * @param isDirect       是否使用直接缓冲区
-     */
-    public BufferPagePool(final int pageSize, final int pageNum, final int sharedPageSize, final boolean isDirect) {
-        if (sharedPageSize > 0) {
-            sharedBufferPage = new BufferPage(null, null, sharedPageSize, isDirect);
-        }
         bufferPages = new BufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
-            bufferPages[i] = new BufferPage(bufferPages, sharedBufferPage, pageSize, isDirect);
+            bufferPages[i] = new BufferPage(bufferPages, pageSize, isDirect);
         }
-        if ((pageNum == 0 || pageSize == 0) && sharedPageSize <= 0) {
+        if (pageNum == 0 || pageSize == 0) {
             future.cancel(false);
         }
     }
