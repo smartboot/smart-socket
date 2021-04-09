@@ -9,11 +9,8 @@
 
 package org.smartboot.socket.transport;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 读写事件回调处理类
@@ -30,12 +27,11 @@ final class ConcurrentReadCompletionHandler extends ReadCompletionHandler {
 
     private final ThreadLocal<ConcurrentReadCompletionHandler> threadLocal = new ThreadLocal<>();
 
-    private final LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
-    private final ExecutorService executorService = new ThreadPoolExecutor(1, 1,
-            60L, TimeUnit.SECONDS, taskQueue);
+    private final ThreadPoolExecutor threadPoolExecutor;
 
-    ConcurrentReadCompletionHandler(final Semaphore semaphore) {
+    ConcurrentReadCompletionHandler(final Semaphore semaphore, ThreadPoolExecutor threadPoolExecutor) {
         this.semaphore = semaphore;
+        this.threadPoolExecutor = threadPoolExecutor;
     }
 
 
@@ -50,7 +46,7 @@ final class ConcurrentReadCompletionHandler extends ReadCompletionHandler {
             //处理当前读回调任务
             super.completed(result, aioSession);
             Runnable task;
-            while ((task = taskQueue.poll()) != null) {
+            while ((task = threadPoolExecutor.getQueue().poll()) != null) {
                 task.run();
             }
             semaphore.release();
@@ -58,14 +54,7 @@ final class ConcurrentReadCompletionHandler extends ReadCompletionHandler {
             return;
         }
         //线程资源不足,暂时积压任务
-        executorService.execute(() -> ConcurrentReadCompletionHandler.super.completed(result, aioSession));
+        threadPoolExecutor.execute(() -> ConcurrentReadCompletionHandler.super.completed(result, aioSession));
 
-    }
-
-    /**
-     * 停止内部线程
-     */
-    public void shutdown() {
-        executorService.shutdown();
     }
 }

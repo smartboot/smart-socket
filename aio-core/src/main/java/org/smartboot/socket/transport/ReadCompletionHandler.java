@@ -59,9 +59,4 @@ class ReadCompletionHandler implements CompletionHandler<Integer, TcpAioSession>
             e.printStackTrace();
         }
     }
-
-    public void shutdown() {
-
-    }
-
 }

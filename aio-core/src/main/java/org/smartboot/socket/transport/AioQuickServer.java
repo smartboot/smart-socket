@@ -26,8 +26,10 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -65,6 +67,10 @@ public final class AioQuickServer {
      * 读回调事件处理
      */
     private ReadCompletionHandler aioReadCompletionHandler;
+    /**
+     * ConcurrentReadCompletionHandler 回调守护线程
+     */
+    private ThreadPoolExecutor concurrentReadCompletionHandlerExecutor;
     /**
      * 写回调事件处理
      */
@@ -141,7 +147,9 @@ public final class AioQuickServer {
             if (AIO_ENHANCE_PROVIDER.equals(System.getProperty(ASYNCHRONOUS_CHANNEL_PROVIDER))) {
                 aioReadCompletionHandler = new ReadCompletionHandler();
             } else {
-                aioReadCompletionHandler = new ConcurrentReadCompletionHandler(new Semaphore(config.getThreadNum() - 1));
+                concurrentReadCompletionHandlerExecutor = new ThreadPoolExecutor(1, 1,
+                        60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+                aioReadCompletionHandler = new ConcurrentReadCompletionHandler(new Semaphore(config.getThreadNum() - 1), concurrentReadCompletionHandlerExecutor);
             }
             asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
                 private byte index = 0;
@@ -285,7 +293,10 @@ public final class AioQuickServer {
         if (innerBufferPool != null) {
             innerBufferPool.release();
         }
-        aioReadCompletionHandler.shutdown();
+        if (concurrentReadCompletionHandlerExecutor != null) {
+            concurrentReadCompletionHandlerExecutor.shutdown();
+            concurrentReadCompletionHandlerExecutor = null;
+        }
     }
 
     /**
