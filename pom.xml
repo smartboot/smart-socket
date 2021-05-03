@@ -18,11 +18,6 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.smartboot.socket</groupId>
-                <artifactId>smart-protocol-p2p</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>commons-lang</groupId>
                 <artifactId>commons-lang</artifactId>
                 <version>${commons.lang.version}</version>

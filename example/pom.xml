@@ -5,7 +5,9 @@
     <groupId>org.smartboot.socket</groupId>
     <version>1.0.0</version>
     <modelVersion>4.0.0</modelVersion>
-
+    <properties>
+        <aio.enhance.version>1.0.4-SNAPSHOT</aio.enhance.version>
+    </properties>
     <artifactId>example</artifactId>
     <build>
         <plugins>
@@ -44,7 +46,7 @@
         <dependency>
             <groupId>org.smartboot.aio</groupId>
             <artifactId>aio-enhance</artifactId>
-            <version>1.0.4-SNAPSHOT</version>
+            <version>${aio.enhance.version}</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
