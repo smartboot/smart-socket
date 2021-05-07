@@ -15,7 +15,7 @@ import org.smartboot.socket.transport.AioSession;
  * @author 三刀（zhengjunweimail@163.com）
  * @version V1.0 , 2021/3/19
  */
-public class ByteArrayProtocol extends FixedLengthProtocol<byte[]> {
+public class ByteArrayProtocol extends FixedLengthBytesProtocol<byte[]> {
     @Override
     protected byte[] decode(byte[] bytes, AioSession session) {
         return bytes;

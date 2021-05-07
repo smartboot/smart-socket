@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
  * @author 三刀（zhengjunweimail@163.com）
  * @version V1.0 , 2021/3/19
  */
-public abstract class FixedLengthProtocol<T> implements Protocol<T> {
+public abstract class FixedLengthBytesProtocol<T> implements Protocol<T> {
     @Override
     public final T decode(ByteBuffer readBuffer, AioSession session) {
         if (readBuffer.remaining() < Integer.BYTES) {
