@@ -161,6 +161,10 @@ public final class AioQuickClient {
         }
     }
 
+    public TcpAioSession getSession() {
+        return session;
+    }
+
     /**
      * 启动客户端。
      *

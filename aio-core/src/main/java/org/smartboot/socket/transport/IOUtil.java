@@ -21,9 +21,6 @@ final class IOUtil {
      * @param channel 需要被关闭的通道
      */
     public static void close(AsynchronousSocketChannel channel) {
-        if (channel == null) {
-            throw new NullPointerException();
-        }
         try {
             channel.shutdownInput();
         } catch (IOException ignored) {
