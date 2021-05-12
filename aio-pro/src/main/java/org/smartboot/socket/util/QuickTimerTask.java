@@ -37,7 +37,7 @@ public abstract class QuickTimerTask implements Runnable {
 
     public QuickTimerTask() {
         SCHEDULED_EXECUTOR_SERVICE.scheduleAtFixedRate(this, getDelay(), getPeriod(), TimeUnit.MILLISECONDS);
-        logger.info("Regist QuickTimerTask---- " + this.getClass().getSimpleName());
+        logger.info("Register QuickTimerTask---- " + this.getClass().getSimpleName());
     }
 
     public static void cancelQuickTask() {

@@ -42,7 +42,6 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
      * 当前周期内处理消息数
      */
     private final LongAdder processMsgNum = new LongAdder();
-    private final LongAdder totleProcessMsgNum = new LongAdder();
     /**
      * 新建连接数
      */
@@ -51,13 +50,20 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
      * 断链数
      */
     private final LongAdder disConnect = new LongAdder();
-    private final LongAdder totalConnect = new LongAdder();
     private final LongAdder readCount = new LongAdder();
     private final LongAdder writeCount = new LongAdder();
     /**
      * 任务执行频率
      */
-    private int seconds;
+    private final int seconds;
+    /**
+     * 自插件启用起的累计连接总数
+     */
+    private long totalConnect;
+    /**
+     * 自插件启用起的累计处理消息总数
+     */
+    private long totalProcessMsgNum = 0;
     /**
      * 在线连接数
      */
@@ -77,7 +83,6 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
     @Override
     public boolean preProcess(AioSession session, T t) {
         processMsgNum.increment();
-        totleProcessMsgNum.increment();
         return true;
     }
 
@@ -107,17 +112,21 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
         long curProcessMsgNum = getAndReset(processMsgNum);
         long connectCount = getAndReset(newConnect);
         long disConnectCount = getAndReset(disConnect);
+        long curReadCount = getAndReset(readCount);
+        long curWriteCount = getAndReset(writeCount);
         onlineCount += connectCount - disConnectCount;
+        totalProcessMsgNum += curProcessMsgNum;
+        totalConnect += connectCount;
         logger.info("\r\n-----" + seconds + "seconds ----\r\ninflow:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\noutflow:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\nprocess fail:\t" + curDiscardNum
-                + "\r\nprocess success:\t" + curProcessMsgNum
-                + "\r\nprocess total:\t" + totleProcessMsgNum.longValue()
-                + "\r\nread count:\t" + getAndReset(readCount) + "\twrite count:\t" + getAndReset(writeCount)
+                + "\r\nprocess count:\t" + curProcessMsgNum
+                + "\r\nprocess total:\t" + totalProcessMsgNum
+                + "\r\nread count:\t" + curReadCount + "\twrite count:\t" + curWriteCount
                 + "\r\nconnect count:\t" + connectCount
                 + "\r\ndisconnect count:\t" + disConnectCount
                 + "\r\nonline count:\t" + onlineCount
-                + "\r\nconnected total:\t" + getAndReset(totalConnect)
+                + "\r\nconnected total:\t" + totalConnect
                 + "\r\nRequests/sec:\t" + curProcessMsgNum * 1.0 / seconds
                 + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "(MB)");
     }
