@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -56,7 +57,7 @@ public final class BufferPage {
      * @param direct 是否使用堆外内存
      */
     BufferPage(BufferPage[] poolPages, int size, boolean direct) {
-        this.poolPages = poolPages;
+        this.poolPages = Objects.requireNonNull(poolPages);
         availableBuffers = new LinkedList<>();
         this.buffer = allocate0(size, direct);
         availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
@@ -81,7 +82,7 @@ public final class BufferPage {
      */
     public VirtualBuffer allocate(final int size) {
         VirtualBuffer virtualBuffer;
-        if (poolPages != null && Thread.currentThread() instanceof FastBufferThread) {
+        if (Thread.currentThread() instanceof FastBufferThread) {
             virtualBuffer = poolPages[(int) (Thread.currentThread().getId() % poolPages.length)].allocate0(size);
         } else {
             virtualBuffer = allocate0(size);
@@ -157,7 +158,7 @@ public final class BufferPage {
      * @return 申请到的内存块, 若空间不足则范围null
      */
     private VirtualBuffer slowAllocate(int size) {
-        Iterator<VirtualBuffer> iterator = availableBuffers.iterator();
+        Iterator<VirtualBuffer> iterator = availableBuffers.listIterator(0);
         VirtualBuffer bufferChunk;
         while (iterator.hasNext()) {
             VirtualBuffer freeChunk = iterator.next();
@@ -237,7 +238,7 @@ public final class BufferPage {
      * @param cleanBuffer 虚拟缓冲区
      */
     private void clean0(VirtualBuffer cleanBuffer) {
-        ListIterator<VirtualBuffer> iterator = availableBuffers.listIterator();
+        ListIterator<VirtualBuffer> iterator = availableBuffers.listIterator(0);
         while (iterator.hasNext()) {
             VirtualBuffer freeBuffer = iterator.next();
             //cleanBuffer在freeBuffer之前并且形成连续块
