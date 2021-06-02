@@ -13,17 +13,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
+import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import java.io.IOException;
-import java.net.SocketAddress;
-import java.net.SocketOption;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * @author 三刀
  * @version V1.0 , 2020/4/16
  */
-public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
+public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy {
     private static final Logger logger = LoggerFactory.getLogger(SslAsynchronousSocketChannel.class);
     private final VirtualBuffer netWriteBuffer;
     private final VirtualBuffer netReadBuffer;
@@ -45,7 +43,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
     /**
      * 完成握手置null
      */
-    private SslService sslService;
+    private final SslService sslService;
 
     private boolean handshake = true;
     /**
@@ -54,7 +52,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private int adaptiveWriteSize = -1;
 
     public SslAsynchronousSocketChannel(AsynchronousSocketChannel asynchronousSocketChannel, SslService sslService, BufferPage bufferPage) {
-        super(null);
+        super(asynchronousSocketChannel);
         this.handshakeModel = sslService.createSSLEngine(asynchronousSocketChannel, bufferPage);
         this.sslService = sslService;
         this.asynchronousSocketChannel = asynchronousSocketChannel;
@@ -62,51 +60,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
         this.netWriteBuffer = handshakeModel.getNetWriteBuffer();
         this.netReadBuffer = handshakeModel.getNetReadBuffer();
         this.appReadBuffer = handshakeModel.getAppReadBuffer();
-    }
-
-    @Override
-    public AsynchronousSocketChannel bind(SocketAddress local) throws IOException {
-        return asynchronousSocketChannel.bind(local);
-    }
-
-    @Override
-    public <T> AsynchronousSocketChannel setOption(SocketOption<T> name, T value) throws IOException {
-        return asynchronousSocketChannel.setOption(name, value);
-    }
-
-    @Override
-    public <T> T getOption(SocketOption<T> name) throws IOException {
-        return asynchronousSocketChannel.getOption(name);
-    }
-
-    @Override
-    public Set<SocketOption<?>> supportedOptions() {
-        return asynchronousSocketChannel.supportedOptions();
-    }
-
-    @Override
-    public AsynchronousSocketChannel shutdownInput() throws IOException {
-        return asynchronousSocketChannel.shutdownInput();
-    }
-
-    @Override
-    public AsynchronousSocketChannel shutdownOutput() throws IOException {
-        return asynchronousSocketChannel.shutdownOutput();
-    }
-
-    @Override
-    public SocketAddress getRemoteAddress() throws IOException {
-        return asynchronousSocketChannel.getRemoteAddress();
-    }
-
-    @Override
-    public <A> void connect(SocketAddress remote, A attachment, CompletionHandler<Void, ? super A> handler) {
-        asynchronousSocketChannel.connect(remote, attachment, handler);
-    }
-
-    @Override
-    public Future<Void> connect(SocketAddress remote) {
-        return asynchronousSocketChannel.connect(remote);
     }
 
     @Override
@@ -320,16 +273,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannel {
     @Override
     public <A> void write(ByteBuffer[] srcs, int offset, int length, long timeout, TimeUnit unit, A attachment, CompletionHandler<Long, ? super A> handler) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public SocketAddress getLocalAddress() throws IOException {
-        return asynchronousSocketChannel.getLocalAddress();
-    }
-
-    @Override
-    public boolean isOpen() {
-        return asynchronousSocketChannel.isOpen();
     }
 
     @Override
