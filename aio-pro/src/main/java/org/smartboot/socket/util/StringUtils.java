@@ -46,8 +46,8 @@ public class StringUtils {
      * @param bytes byte[]
      */
     public static String toHexString(final byte[] bytes) {
-        final StringBuffer buffer = new StringBuffer(bytes.length);
-        buffer.append("\r\n\t   0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\r\n");
+        final StringBuilder buffer = new StringBuilder(bytes.length);
+        buffer.append("\r\n\t\t   0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\r\n");
         int startIndex = 0;
         int column = 0;
         for (int i = 0; i < bytes.length; i++) {

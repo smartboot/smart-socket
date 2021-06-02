@@ -10,8 +10,11 @@
 package org.smartboot.socket.extension.plugins;
 
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
+import org.smartboot.socket.channels.UnsupportedAsynchronousSocketChannel;
 import org.smartboot.socket.util.StringUtils;
 
+import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
@@ -19,7 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 /**
  * 传输层码流监控插件
@@ -28,21 +31,29 @@ import java.util.function.Consumer;
  * @version V1.0 , 2021/6/2
  */
 public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
-    private final Consumer<byte[]> inputStreamConsumer;
-    private final Consumer<byte[]> outputStreamConsumer;
+    private final BiConsumer<AsynchronousSocketChannel, byte[]> inputStreamConsumer;
+    private final BiConsumer<AsynchronousSocketChannel, byte[]> outputStreamConsumer;
 
     public StreamMonitorPlugin() {
-        this(bytes -> {
+        this((channel, bytes) -> {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-            System.out.println("\033[34m" + simpleDateFormat.format(new Date()) + " [Input Stream]" + StringUtils.toHexString(bytes));
-        }, bytes -> {
+            try {
+                System.out.println("\033[34m" + simpleDateFormat.format(new Date()) + " [ " + channel.getRemoteAddress() + " --> " + channel.getLocalAddress() + " ] [ " + bytes.length + " bytes ]" + StringUtils.toHexString(bytes));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }, (channel, bytes) -> {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-            System.err.println("\033[31m" + simpleDateFormat.format(new Date()) + " [Output Stream]" + StringUtils.toHexString(bytes));
+            try {
+                System.err.println("\033[31m" + simpleDateFormat.format(new Date()) + " [ " + channel.getLocalAddress() + " --> " + channel.getRemoteAddress() + " ] [ " + bytes.length + " bytes ]" + StringUtils.toHexString(bytes));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
 
     }
 
-    public StreamMonitorPlugin(Consumer<byte[]> inputStreamConsumer, Consumer<byte[]> outputStreamConsumer) {
+    public StreamMonitorPlugin(BiConsumer<AsynchronousSocketChannel, byte[]> inputStreamConsumer, BiConsumer<AsynchronousSocketChannel, byte[]> outputStreamConsumer) {
         this.inputStreamConsumer = Objects.requireNonNull(inputStreamConsumer);
         this.outputStreamConsumer = Objects.requireNonNull(outputStreamConsumer);
     }
@@ -54,10 +65,22 @@ public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
 
     static class MonitorCompletionHandler<A> implements CompletionHandler<Integer, A> {
         CompletionHandler<Integer, A> handler;
-        Consumer<byte[]> consumer;
+        BiConsumer<AsynchronousSocketChannel, byte[]> consumer;
         ByteBuffer buffer;
+        AsynchronousSocketChannel channel;
 
-        public MonitorCompletionHandler(CompletionHandler<Integer, A> handler, Consumer<byte[]> consumer, ByteBuffer buffer) {
+        public MonitorCompletionHandler(AsynchronousSocketChannel channel, CompletionHandler<Integer, A> handler, BiConsumer<AsynchronousSocketChannel, byte[]> consumer, ByteBuffer buffer) {
+            this.channel = new UnsupportedAsynchronousSocketChannel(channel) {
+                @Override
+                public SocketAddress getRemoteAddress() throws IOException {
+                    return channel.getRemoteAddress();
+                }
+
+                @Override
+                public SocketAddress getLocalAddress() throws IOException {
+                    return channel.getLocalAddress();
+                }
+            };
             this.handler = handler;
             this.consumer = consumer;
             this.buffer = buffer;
@@ -69,7 +92,7 @@ public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
                 byte[] bytes = new byte[result];
                 buffer.position(buffer.position() - result);
                 buffer.get(bytes);
-                consumer.accept(bytes);
+                consumer.accept(channel, bytes);
             }
             handler.completed(result, attachment);
         }
@@ -88,12 +111,20 @@ public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
 
         @Override
         public <A> void read(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
-            super.read(dst, timeout, unit, attachment, new MonitorCompletionHandler<>(handler, inputStreamConsumer, dst));
+            super.read(dst, timeout, unit, attachment, new MonitorCompletionHandler<>(this, handler, inputStreamConsumer, dst));
         }
 
         @Override
         public <A> void write(ByteBuffer src, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
-            super.write(src, timeout, unit, attachment, new MonitorCompletionHandler<>(handler, outputStreamConsumer, src));
+            super.write(src, timeout, unit, attachment, new MonitorCompletionHandler<>(this, handler, outputStreamConsumer, src));
         }
+    }
+
+    class DegradedAsynchronousSocketChannelProxy extends AsynchronousSocketChannelProxy {
+
+        public DegradedAsynchronousSocketChannelProxy(AsynchronousSocketChannel asynchronousSocketChannel) {
+            super(asynchronousSocketChannel);
+        }
+
     }
 }
