@@ -119,12 +119,4 @@ public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
             super.write(src, timeout, unit, attachment, new MonitorCompletionHandler<>(this, handler, outputStreamConsumer, src));
         }
     }
-
-    class DegradedAsynchronousSocketChannelProxy extends AsynchronousSocketChannelProxy {
-
-        public DegradedAsynchronousSocketChannelProxy(AsynchronousSocketChannel asynchronousSocketChannel) {
-            super(asynchronousSocketChannel);
-        }
-
-    }
 }
