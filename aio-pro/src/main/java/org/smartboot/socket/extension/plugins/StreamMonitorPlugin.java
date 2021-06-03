@@ -38,14 +38,14 @@ public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
         this((channel, bytes) -> {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
             try {
-                System.out.println("\033[34m" + simpleDateFormat.format(new Date()) + " [ " + channel.getRemoteAddress() + " --> " + channel.getLocalAddress() + " ] [ " + bytes.length + " bytes ]" + StringUtils.toHexString(bytes));
+                System.out.println("\033[34m" + simpleDateFormat.format(new Date()) + " [ " + channel.getRemoteAddress() + " --> " + channel.getLocalAddress() + " ] [ read: " + bytes.length + " bytes ]" + StringUtils.toHexString(bytes));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }, (channel, bytes) -> {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
             try {
-                System.err.println("\033[31m" + simpleDateFormat.format(new Date()) + " [ " + channel.getLocalAddress() + " --> " + channel.getRemoteAddress() + " ] [ " + bytes.length + " bytes ]" + StringUtils.toHexString(bytes));
+                System.err.println("\033[31m" + simpleDateFormat.format(new Date()) + " [ " + channel.getLocalAddress() + " --> " + channel.getRemoteAddress() + " ] [ write: " + bytes.length + " bytes ]" + StringUtils.toHexString(bytes));
             } catch (IOException e) {
                 e.printStackTrace();
             }
