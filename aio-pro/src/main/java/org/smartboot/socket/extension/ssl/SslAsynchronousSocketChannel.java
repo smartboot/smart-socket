@@ -34,7 +34,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
     private final VirtualBuffer netWriteBuffer;
     private final VirtualBuffer netReadBuffer;
     private final VirtualBuffer appReadBuffer;
-    private final AsynchronousSocketChannel asynchronousSocketChannel;
     private SSLEngine sslEngine = null;
     /**
      * 完成握手置null
@@ -55,7 +54,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         super(asynchronousSocketChannel);
         this.handshakeModel = sslService.createSSLEngine(asynchronousSocketChannel, bufferPage);
         this.sslService = sslService;
-        this.asynchronousSocketChannel = asynchronousSocketChannel;
         this.sslEngine = handshakeModel.getSslEngine();
         this.netWriteBuffer = handshakeModel.getNetWriteBuffer();
         this.netReadBuffer = handshakeModel.getNetReadBuffer();

@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0 , 2021/6/2
  */
 public class AsynchronousSocketChannelProxy extends AsynchronousSocketChannel {
-    private final AsynchronousSocketChannel asynchronousSocketChannel;
+    protected final AsynchronousSocketChannel asynchronousSocketChannel;
 
     public AsynchronousSocketChannelProxy(AsynchronousSocketChannel asynchronousSocketChannel) {
         super(asynchronousSocketChannel.provider());
