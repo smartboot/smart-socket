@@ -183,10 +183,16 @@ public final class AioQuickServer {
     }
 
     private void startAcceptThread() {
+        boolean aioEnhance = AIO_ENHANCE_PROVIDER.equals(System.getProperty(ASYNCHRONOUS_CHANNEL_PROVIDER));
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
             @Override
             public void completed(AsynchronousSocketChannel channel, Void attachment) {
-                createSession(channel);
+                if (aioEnhance) {
+                    createSession(channel);
+                } else {
+                    concurrentReadCompletionHandlerExecutor.execute(() -> createSession(channel));
+                }
+
                 try {
                     serverSocketChannel.accept(attachment, this);
                 } catch (Throwable throwable) {
