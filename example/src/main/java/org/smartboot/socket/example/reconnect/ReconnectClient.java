@@ -11,7 +11,7 @@ package org.smartboot.socket.example.reconnect;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.smartboot.socket.example.StringProtocol;
+import org.smartboot.socket.extension.protocol.StringProtocol;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
 
@@ -48,7 +48,7 @@ public class ReconnectClient {
                 }
                 LOGGER.info("终止连接监测");
             }
-        },"Reconnect-Thread").start();
+        }, "Reconnect-Thread").start();
 
         new Thread(new Runnable() {
             @Override
@@ -69,7 +69,7 @@ public class ReconnectClient {
                 LOGGER.info("彻底断开连接，不再重连");
                 shutdown();
             }
-        },"Fault-Thread").start();
+        }, "Fault-Thread").start();
     }
 
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {

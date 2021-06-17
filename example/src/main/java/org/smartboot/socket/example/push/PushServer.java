@@ -9,7 +9,7 @@
 
 package org.smartboot.socket.example.push;
 
-import org.smartboot.socket.example.StringProtocol;
+import org.smartboot.socket.extension.protocol.StringProtocol;
 import org.smartboot.socket.transport.AioQuickServer;
 
 import java.io.IOException;

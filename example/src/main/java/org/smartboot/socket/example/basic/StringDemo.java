@@ -10,7 +10,7 @@
 package org.smartboot.socket.example.basic;
 
 import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.example.StringProtocol;
+import org.smartboot.socket.extension.protocol.StringProtocol;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;

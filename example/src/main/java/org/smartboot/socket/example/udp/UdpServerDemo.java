@@ -9,7 +9,7 @@
 
 package org.smartboot.socket.example.udp;
 
-import org.smartboot.socket.example.StringProtocol;
+import org.smartboot.socket.extension.protocol.StringProtocol;
 import org.smartboot.socket.transport.UdpBootstrap;
 
 import java.io.IOException;

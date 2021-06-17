@@ -12,12 +12,11 @@ package org.smartboot.socket.extension.protocol;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.util.AttachKey;
-import org.smartboot.socket.util.Attachment;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.WeakHashMap;
 
 /**
  * @author 三刀
@@ -25,8 +24,9 @@ import java.nio.charset.StandardCharsets;
  */
 public class StringProtocol implements Protocol<String> {
 
-    private static final AttachKey<FixedLengthFrameDecoder> FRAME_DECODER_ATTACH_KEY = AttachKey.valueOf("fixedDecoder");
     private final Charset charset;
+
+    private final WeakHashMap<AioSession, FixedLengthFrameDecoder> decoderWeakHashMap = new WeakHashMap<>();
 
     public StringProtocol(Charset charset) {
         this.charset = charset;
@@ -38,14 +38,13 @@ public class StringProtocol implements Protocol<String> {
 
     @Override
     public String decode(ByteBuffer readBuffer, AioSession session) {
-        Attachment attachment = session.getAttachment();
-        FixedLengthFrameDecoder decoder = attachment.get(FRAME_DECODER_ATTACH_KEY);
+        FixedLengthFrameDecoder decoder = decoderWeakHashMap.get(session);
         //消息长度超过缓冲区容量
         if (decoder != null) {
             String content = bigContent(readBuffer, decoder);
             //解码成功,释放解码器
             if (content != null) {
-                attachment.remove(FRAME_DECODER_ATTACH_KEY);
+                decoderWeakHashMap.remove(session);
             }
             return content;
         }
@@ -59,7 +58,7 @@ public class StringProtocol implements Protocol<String> {
         //消息长度超过缓冲区容量引发的半包,启用定长消息解码器,本次解码失败
         if (length + Integer.BYTES > readBuffer.capacity()) {
             FixedLengthFrameDecoder fixedLengthFrameDecoder = new FixedLengthFrameDecoder(length);
-            attachment.put(FRAME_DECODER_ATTACH_KEY, fixedLengthFrameDecoder);
+            decoderWeakHashMap.put(session, fixedLengthFrameDecoder);
             return null;
         }
         //半包，解码失败
