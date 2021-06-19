@@ -16,7 +16,7 @@ import org.smartboot.socket.transport.AioSession;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.WeakHashMap;
+import java.util.HashMap;
 
 /**
  * @author 三刀
@@ -26,7 +26,8 @@ public class StringProtocol implements Protocol<String> {
 
     private final Charset charset;
 
-    private final WeakHashMap<AioSession, FixedLengthFrameDecoder> decoderWeakHashMap = new WeakHashMap<>();
+    private final HashMap<AioSession, FixedLengthFrameDecoder> decoderMap = new HashMap<>();
+    private long lastClearTime = System.currentTimeMillis();
 
     public StringProtocol(Charset charset) {
         this.charset = charset;
@@ -38,13 +39,17 @@ public class StringProtocol implements Protocol<String> {
 
     @Override
     public String decode(ByteBuffer readBuffer, AioSession session) {
-        FixedLengthFrameDecoder decoder = decoderWeakHashMap.get(session);
+        if (System.currentTimeMillis() - lastClearTime > 5000) {
+            lastClearTime = System.currentTimeMillis();
+            decoderMap.keySet().stream().filter(AioSession::isInvalid).forEach(decoderMap::remove);
+        }
+        FixedLengthFrameDecoder decoder = decoderMap.get(session);
         //消息长度超过缓冲区容量
         if (decoder != null) {
             String content = bigContent(readBuffer, decoder);
             //解码成功,释放解码器
             if (content != null) {
-                decoderWeakHashMap.remove(session);
+                decoderMap.remove(session);
             }
             return content;
         }
@@ -58,7 +63,7 @@ public class StringProtocol implements Protocol<String> {
         //消息长度超过缓冲区容量引发的半包,启用定长消息解码器,本次解码失败
         if (length + Integer.BYTES > readBuffer.capacity()) {
             FixedLengthFrameDecoder fixedLengthFrameDecoder = new FixedLengthFrameDecoder(length);
-            decoderWeakHashMap.put(session, fixedLengthFrameDecoder);
+            decoderMap.put(session, fixedLengthFrameDecoder);
             return null;
         }
         //半包，解码失败
