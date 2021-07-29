@@ -99,6 +99,10 @@ final class IoServerConfig {
      */
     private BufferFactory bufferFactory = BufferFactory.DISABLED_BUFFER_FACTORY;
 
+    /**
+     * 启用 aio 增强
+     */
+    private boolean aioEnhance = true;
 
     /**
      * 获取默认内存块大小
@@ -232,6 +236,14 @@ final class IoServerConfig {
 
     public void setBacklog(int backlog) {
         this.backlog = backlog;
+    }
+
+    public boolean isAioEnhance() {
+        return aioEnhance;
+    }
+
+    public void setAioEnhance(boolean aioEnhance) {
+        this.aioEnhance = aioEnhance;
     }
 
     @Override

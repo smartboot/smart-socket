@@ -15,6 +15,7 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.VirtualBufferFactory;
 import org.smartboot.socket.buffer.BufferFactory;
 import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -24,6 +25,7 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -52,8 +54,6 @@ import java.util.function.Function;
  * @version V1.0.0
  */
 public final class AioQuickServer {
-    private static final String AIO_ENHANCE_PROVIDER = "org.smartboot.aio.EnhanceAsynchronousChannelProvider";
-    private static final String ASYNCHRONOUS_CHANNEL_PROVIDER = "java.nio.channels.spi.AsynchronousChannelProvider";
     /**
      * Server端服务配置。
      * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
@@ -144,14 +144,17 @@ public final class AioQuickServer {
                 this.innerBufferPool = bufferPool;
             }
             this.aioSessionFunction = aioSessionFunction;
-            if (AIO_ENHANCE_PROVIDER.equals(System.getProperty(ASYNCHRONOUS_CHANNEL_PROVIDER))) {
+            AsynchronousChannelProvider provider;
+            if (config.isAioEnhance()) {
                 aioReadCompletionHandler = new ReadCompletionHandler();
+                provider = new EnhanceAsynchronousChannelProvider();
             } else {
                 concurrentReadCompletionHandlerExecutor = new ThreadPoolExecutor(1, 1,
                         60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
                 aioReadCompletionHandler = new ConcurrentReadCompletionHandler(new Semaphore(config.getThreadNum() - 1), concurrentReadCompletionHandlerExecutor);
+                provider = AsynchronousChannelProvider.provider();
             }
-            asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(config.getThreadNum(), new ThreadFactory() {
+            asynchronousChannelGroup = provider.openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
                 private byte index = 0;
 
                 @Override
