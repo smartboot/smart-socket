@@ -11,6 +11,7 @@ package org.smartboot.socket.transport;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.NotYetConnectedException;
 
 /**
  * @author 三刀
@@ -21,13 +22,18 @@ final class IOUtil {
      * @param channel 需要被关闭的通道
      */
     public static void close(AsynchronousSocketChannel channel) {
+        boolean connected = true;
         try {
             channel.shutdownInput();
         } catch (IOException ignored) {
+        } catch (NotYetConnectedException e) {
+            connected = false;
         }
         try {
-            channel.shutdownOutput();
-        } catch (IOException ignored) {
+            if (connected) {
+                channel.shutdownOutput();
+            }
+        } catch (IOException | NotYetConnectedException ignored) {
         }
         try {
             channel.close();

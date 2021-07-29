@@ -165,8 +165,13 @@ final class TcpAioSession extends AioSession {
     /**
      * @return 输入流
      */
-    public final WriteBuffer writeBuffer() {
+    public WriteBuffer writeBuffer() {
         return byteBuf;
+    }
+
+    @Override
+    public ByteBuffer readBuffer() {
+        return readBuffer.buffer();
     }
 
     @Override

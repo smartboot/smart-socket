@@ -14,6 +14,7 @@ import org.smartboot.socket.StateMachineEnum;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 
 /**
  * @author 三刀
@@ -37,6 +38,11 @@ final class UdpAioSession extends AioSession {
     @Override
     public WriteBuffer writeBuffer() {
         return writeBuffer;
+    }
+
+    @Override
+    public ByteBuffer readBuffer() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
