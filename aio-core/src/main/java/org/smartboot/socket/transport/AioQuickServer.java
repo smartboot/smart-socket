@@ -124,7 +124,7 @@ public final class AioQuickServer {
      */
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
-            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket ::\t(" + IoServerConfig.VERSION + ")");
+            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + (config.isAioEnhance() ? "[enhance]" : "") + "::\t(" + IoServerConfig.VERSION + ")");
         }
         start0(channel -> new TcpAioSession(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage()));
     }
@@ -272,7 +272,7 @@ public final class AioQuickServer {
     /**
      * 停止服务端
      */
-    public final void shutdown() {
+    public void shutdown() {
         try {
             if (serverSocketChannel != null) {
                 serverSocketChannel.close();
@@ -311,6 +311,16 @@ public final class AioQuickServer {
      */
     public final AioQuickServer setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
+        return this;
+    }
+
+    /**
+     * 是否启用 AIO 增强模式。默认：true
+     *
+     * @param enabled true:启用；false:禁用
+     */
+    public AioQuickServer setAioEnhance(boolean enabled) {
+        config.setAioEnhance(enabled);
         return this;
     }
 
