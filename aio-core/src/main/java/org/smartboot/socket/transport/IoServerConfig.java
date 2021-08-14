@@ -39,7 +39,7 @@ final class IoServerConfig {
     /**
      * 当前smart-socket版本号
      */
-    public static final String VERSION = "v1.5.10";
+    public static final String VERSION = "v1.5.11";
 
     /**
      * 消息体缓存大小,字节
@@ -99,6 +99,10 @@ final class IoServerConfig {
      */
     private BufferFactory bufferFactory = BufferFactory.DISABLED_BUFFER_FACTORY;
 
+    /**
+     * 启用 aio 增强
+     */
+    private boolean aioEnhance = true;
 
     /**
      * 获取默认内存块大小
@@ -234,20 +238,31 @@ final class IoServerConfig {
         this.backlog = backlog;
     }
 
+    public boolean isAioEnhance() {
+        return aioEnhance;
+    }
+
+    public void setAioEnhance(boolean aioEnhance) {
+        this.aioEnhance = aioEnhance;
+    }
+
     @Override
     public String toString() {
         return "IoServerConfig{" +
                 "readBufferSize=" + readBufferSize +
-                ", writeQueueCapacity=" + writeBufferCapacity +
+                ", writeBufferSize=" + writeBufferSize +
+                ", writeBufferCapacity=" + writeBufferCapacity +
                 ", host='" + host + '\'' +
                 ", monitor=" + monitor +
                 ", port=" + port +
+                ", backlog=" + backlog +
                 ", processor=" + processor +
                 ", protocol=" + protocol +
                 ", bannerEnabled=" + bannerEnabled +
                 ", socketOptions=" + socketOptions +
                 ", threadNum=" + threadNum +
-                ", writeBufferSize=" + writeBufferSize +
+                ", bufferFactory=" + bufferFactory +
+                ", aioEnhance=" + aioEnhance +
                 '}';
     }
 }

@@ -12,6 +12,7 @@ package org.smartboot.socket.transport;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 
 /**
@@ -54,6 +55,11 @@ public abstract class AioSession {
      * @return WriteBuffer
      */
     public abstract WriteBuffer writeBuffer();
+
+    /**
+     * 获取读缓冲区对象
+     */
+    public abstract ByteBuffer readBuffer();
 
     /**
      * 强制关闭当前AIOSession。
