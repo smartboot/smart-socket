@@ -28,7 +28,6 @@ import java.util.concurrent.Future;
  * @version V1.0 , 2020/5/25
  */
 final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSocketChannel {
-    private static final String VERSION = "1.0.6";
     private final ServerSocketChannel serverSocketChannel;
     private final EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup;
     private final EnhanceAsynchronousChannelGroup.Worker acceptWorker;
@@ -38,16 +37,12 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     private SelectionKey selectionKey;
     private boolean acceptPending;
 
-    /**
-     * Initializes a new instance of this class.
-     */
-    protected EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup) throws IOException {
+    EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup) throws IOException {
         super(enhanceAsynchronousChannelGroup.provider());
         this.enhanceAsynchronousChannelGroup = enhanceAsynchronousChannelGroup;
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.configureBlocking(false);
         acceptWorker = enhanceAsynchronousChannelGroup.getAcceptWorker();
-        System.out.println("enhance[" + VERSION + "]...");
     }
 
     @Override

@@ -250,16 +250,19 @@ final class IoServerConfig {
     public String toString() {
         return "IoServerConfig{" +
                 "readBufferSize=" + readBufferSize +
-                ", writeQueueCapacity=" + writeBufferCapacity +
+                ", writeBufferSize=" + writeBufferSize +
+                ", writeBufferCapacity=" + writeBufferCapacity +
                 ", host='" + host + '\'' +
                 ", monitor=" + monitor +
                 ", port=" + port +
+                ", backlog=" + backlog +
                 ", processor=" + processor +
                 ", protocol=" + protocol +
                 ", bannerEnabled=" + bannerEnabled +
                 ", socketOptions=" + socketOptions +
                 ", threadNum=" + threadNum +
-                ", writeBufferSize=" + writeBufferSize +
+                ", bufferFactory=" + bufferFactory +
+                ", aioEnhance=" + aioEnhance +
                 '}';
     }
 }
