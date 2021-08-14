@@ -22,7 +22,6 @@ public class StringServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(StringServer.class);
 
     public static void main(String[] args) throws IOException {
-        System.setProperty("java.nio.channels.spi.AsynchronousChannelProvider", "org.smartboot.aio.EnhanceAsynchronousChannelProvider");
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
             public void process0(AioSession session, String msg) {
