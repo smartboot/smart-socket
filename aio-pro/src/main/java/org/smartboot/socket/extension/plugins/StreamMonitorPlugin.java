@@ -51,7 +51,7 @@ public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
     public static final BiConsumer<AsynchronousSocketChannel, byte[]> BLUE_TEXT_INPUT_STREAM = (channel, bytes) -> {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         try {
-            System.out.println(ConsoleColors.BLUE + simpleDateFormat.format(new Date()) + " [ " + channel.getRemoteAddress() + " --> " + channel.getLocalAddress() + " ] [ read: " + bytes.length + " bytes ]" + new String(bytes) + ConsoleColors.RESET);
+            System.out.println(ConsoleColors.BLUE + simpleDateFormat.format(new Date()) + " [ " + channel.getRemoteAddress() + " --> " + channel.getLocalAddress() + " ] [ read: " + bytes.length + " bytes ]\r\n" + new String(bytes) + ConsoleColors.RESET);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -59,7 +59,7 @@ public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
     public static final BiConsumer<AsynchronousSocketChannel, byte[]> RED_TEXT_OUTPUT_STREAM = (channel, bytes) -> {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         try {
-            System.err.println(ConsoleColors.RED + simpleDateFormat.format(new Date()) + " [ " + channel.getLocalAddress() + " --> " + channel.getRemoteAddress() + " ] [ write: " + bytes.length + " bytes ]" + new String(bytes) + ConsoleColors.RESET);
+            System.err.println(ConsoleColors.RED + simpleDateFormat.format(new Date()) + " [ " + channel.getLocalAddress() + " --> " + channel.getRemoteAddress() + " ] [ write: " + bytes.length + " bytes ]\r\n" + new String(bytes) + ConsoleColors.RESET);
         } catch (IOException e) {
             e.printStackTrace();
         }
