@@ -31,25 +31,44 @@ import java.util.function.BiConsumer;
  * @version V1.0 , 2021/6/2
  */
 public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
+    public static final BiConsumer<AsynchronousSocketChannel, byte[]> BLUE_HEX_INPUT_STREAM = (channel, bytes) -> {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        try {
+            System.out.println(ConsoleColors.BLUE + simpleDateFormat.format(new Date()) + " [ " + channel.getRemoteAddress() + " --> " + channel.getLocalAddress() + " ] [ read: " + bytes.length + " bytes ]" + StringUtils.toHexString(bytes) + ConsoleColors.RESET);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    };
+    public static final BiConsumer<AsynchronousSocketChannel, byte[]> RED_HEX_OUTPUT_STREAM = (channel, bytes) -> {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        try {
+            System.err.println(ConsoleColors.RED + simpleDateFormat.format(new Date()) + " [ " + channel.getLocalAddress() + " --> " + channel.getRemoteAddress() + " ] [ write: " + bytes.length + " bytes ]" + StringUtils.toHexString(bytes) + ConsoleColors.RESET);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    };
+
+    public static final BiConsumer<AsynchronousSocketChannel, byte[]> BLUE_TEXT_INPUT_STREAM = (channel, bytes) -> {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        try {
+            System.out.println(ConsoleColors.BLUE + simpleDateFormat.format(new Date()) + " [ " + channel.getRemoteAddress() + " --> " + channel.getLocalAddress() + " ] [ read: " + bytes.length + " bytes ]" + new String(bytes) + ConsoleColors.RESET);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    };
+    public static final BiConsumer<AsynchronousSocketChannel, byte[]> RED_TEXT_OUTPUT_STREAM = (channel, bytes) -> {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        try {
+            System.err.println(ConsoleColors.RED + simpleDateFormat.format(new Date()) + " [ " + channel.getLocalAddress() + " --> " + channel.getRemoteAddress() + " ] [ write: " + bytes.length + " bytes ]" + new String(bytes) + ConsoleColors.RESET);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    };
     private final BiConsumer<AsynchronousSocketChannel, byte[]> inputStreamConsumer;
     private final BiConsumer<AsynchronousSocketChannel, byte[]> outputStreamConsumer;
 
     public StreamMonitorPlugin() {
-        this((channel, bytes) -> {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-            try {
-                System.out.println("\033[34m" + simpleDateFormat.format(new Date()) + " [ " + channel.getRemoteAddress() + " --> " + channel.getLocalAddress() + " ] [ read: " + bytes.length + " bytes ]" + StringUtils.toHexString(bytes));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }, (channel, bytes) -> {
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-            try {
-                System.err.println("\033[31m" + simpleDateFormat.format(new Date()) + " [ " + channel.getLocalAddress() + " --> " + channel.getRemoteAddress() + " ] [ write: " + bytes.length + " bytes ]" + StringUtils.toHexString(bytes));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+        this(BLUE_HEX_INPUT_STREAM, RED_HEX_OUTPUT_STREAM);
 
     }
 
@@ -101,6 +120,23 @@ public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
         public void failed(Throwable exc, A attachment) {
             handler.failed(exc, attachment);
         }
+    }
+
+    static class ConsoleColors {
+        /**
+         * 重置颜色
+         */
+        public static final String RESET = "\033[0m";
+        /**
+         * 蓝色
+         */
+        public static final String BLUE = "\033[34m";
+
+        /**
+         * 红色
+         */
+        public static final String RED = "\033[31m";
+
     }
 
     class StreamMonitorAsynchronousSocketChannel extends AsynchronousSocketChannelProxy {
