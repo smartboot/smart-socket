@@ -35,14 +35,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
      * 递归回调次数上限
      */
     public static final int MAX_INVOKER = 8;
-    /**
-     * 写线程数
-     */
-    private static final String WRITE_THREAD_NUM = "org.smartboot.aio.writeThreadNum";
-    /**
-     * accept线程数,该线程数只可少于等于进程内启用的服务端个数，多出无效
-     */
-    private static final String ACCEPT_THREAD_NUM = "org.smartboot.aio.acceptThreadNum";
+
     /**
      * 读回调处理线程池,可用于业务处理
      */
@@ -105,8 +98,8 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         }
 
         //init threadPool for write and connect
-        final int writeThreadNum = getIntSystemProperty(WRITE_THREAD_NUM, 1);
-        final int acceptThreadNum = getIntSystemProperty(ACCEPT_THREAD_NUM, 1);
+        final int writeThreadNum = 1;
+        final int acceptThreadNum = 1;
         writeExecutorService = getThreadPoolExecutor("smart-socket:write-", writeThreadNum);
         this.writeWorkers = new Worker[writeThreadNum];
 
@@ -177,19 +170,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                 return new Thread(r, prefix + atomicInteger.getAndIncrement());
             }
         });
-    }
-
-    private int getIntSystemProperty(String key, int defaultValue) {
-        String value = System.getProperty(key);
-        if (value == null || value.length() == 0) {
-            return defaultValue;
-        }
-        try {
-            return Integer.parseInt(value);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return defaultValue;
     }
 
 
