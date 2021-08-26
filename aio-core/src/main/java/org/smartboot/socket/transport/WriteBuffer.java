@@ -329,25 +329,18 @@ public final class WriteBuffer extends OutputStream {
 
     void reuse(VirtualBuffer buffer) {
         boolean clean = true;
-        if (closed) {
-            System.out.println("closed");
-        }
         if (writeInBuf == null && writeLock.tryLock()) {
             try {
                 if (writeInBuf == null) {
                     writeInBuf = buffer;
                     writeInBuf.buffer().clear();
                     clean = false;
-//                    System.out.println("aaa");
-                } else {
-                    System.out.println("bbb");
                 }
             } finally {
                 writeLock.unlock();
             }
-        } else {
-//            System.out.println("ccc");
         }
+
         if (clean) {
             buffer.clean();
         }
