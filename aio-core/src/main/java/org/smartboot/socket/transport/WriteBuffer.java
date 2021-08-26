@@ -135,7 +135,7 @@ public final class WriteBuffer extends OutputStream {
             return;
         }
         consumer.accept(this);
-        if (writeInBuf == null) {
+        if (writeInBuf == null || writeInBuf.buffer().position() == 0) {
             return;
         }
         writeInBuf.buffer().flip();
@@ -288,7 +288,7 @@ public final class WriteBuffer extends OutputStream {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
-        if (this.count > 0 || writeInBuf != null) {
+        if (this.count > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0)) {
             consumer.accept(this);
         }
     }
@@ -324,9 +324,34 @@ public final class WriteBuffer extends OutputStream {
      * @return true:有,false:无
      */
     boolean isEmpty() {
-        return count == 0 && writeInBuf == null;
+        return count == 0 && (writeInBuf == null || writeInBuf.buffer().position() == 0);
     }
 
+    void reuse(VirtualBuffer buffer) {
+        boolean clean = true;
+        if (closed) {
+            System.out.println("closed");
+        }
+        if (writeInBuf == null && writeLock.tryLock()) {
+            try {
+                if (writeInBuf == null) {
+                    writeInBuf = buffer;
+                    writeInBuf.buffer().clear();
+                    clean = false;
+//                    System.out.println("aaa");
+                } else {
+                    System.out.println("bbb");
+                }
+            } finally {
+                writeLock.unlock();
+            }
+        } else {
+//            System.out.println("ccc");
+        }
+        if (clean) {
+            buffer.clean();
+        }
+    }
 
     /**
      * 获取并移除当前缓冲队列中头部的VirtualBuffer
@@ -369,7 +394,7 @@ public final class WriteBuffer extends OutputStream {
             if (count > 0) {
                 return pollQueue();
             }
-            if (writeInBuf != null) {
+            if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
                 writeInBuf.buffer().flip();
                 VirtualBuffer buffer = writeInBuf;
                 writeInBuf = null;

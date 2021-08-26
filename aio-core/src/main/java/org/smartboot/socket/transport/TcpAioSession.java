@@ -144,7 +144,7 @@ final class TcpAioSession extends AioSession {
         if (writeBuffer == null) {
             writeBuffer = byteBuf.pollQueue();
         } else if (!writeBuffer.buffer().hasRemaining()) {
-            writeBuffer.clean();
+            byteBuf.reuse(writeBuffer);
             writeBuffer = byteBuf.pollQueue();
         }
 
