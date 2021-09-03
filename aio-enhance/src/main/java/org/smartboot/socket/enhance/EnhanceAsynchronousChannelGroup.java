@@ -14,7 +14,6 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AsynchronousChannelProvider;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -308,14 +307,12 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     }
 
                     selector.select();
-                    Iterator<SelectionKey> keyIterator = keySet.iterator();
                     // 执行本次已触发待处理的事件
-                    while (keyIterator.hasNext()) {
-                        SelectionKey key = keyIterator.next();
+                    for (SelectionKey key : keySet) {
                         invoker = 0;
-                        keyIterator.remove();
                         consumer.accept(key);
                     }
+                    keySet.clear();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
