@@ -78,6 +78,10 @@ public final class WriteBuffer extends OutputStream {
      */
     private byte[] cacheByte;
 
+    /**
+     * 当前持有write锁的线程
+     */
+    private volatile Thread writeLockThread;
 
     WriteBuffer(BufferPage bufferPage, Consumer<WriteBuffer> consumer, int chunkSize, int capacity) {
         this.bufferPage = bufferPage;
@@ -118,7 +122,7 @@ public final class WriteBuffer extends OutputStream {
      * @see #write(int)
      */
     public void writeByte(byte b) {
-        writeLock.lock();
+        boolean suc = writeLock();
         try {
             if (writeInBuf == null) {
                 writeInBuf = bufferPage.allocate(chunkSize);
@@ -126,7 +130,9 @@ public final class WriteBuffer extends OutputStream {
             writeInBuf.buffer().put(b);
             flushWriteBuffer(false);
         } finally {
-            writeLock.unlock();
+            if (suc) {
+                writeUnLock();
+            }
         }
     }
 
@@ -199,9 +205,20 @@ public final class WriteBuffer extends OutputStream {
         write(cacheByte, 0, 8);
     }
 
+
+    public boolean writeLock() {
+        if (writeLockThread != Thread.currentThread()) {
+            writeLock.lock();
+            writeLockThread = Thread.currentThread();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        writeLock.lock();
+        boolean suc = writeLock();
         try {
             while (len > 0) {
                 if (writeInBuf == null) {
@@ -220,8 +237,15 @@ public final class WriteBuffer extends OutputStream {
                 flushWriteBuffer(false);
             }
         } finally {
-            writeLock.unlock();
+            if (suc) {
+                writeUnLock();
+            }
         }
+    }
+
+    public void writeUnLock() {
+        writeLockThread = null;
+        writeLock.unlock();
     }
 
 
@@ -230,7 +254,7 @@ public final class WriteBuffer extends OutputStream {
     }
 
     public void write(VirtualBuffer virtualBuffer) {
-        writeLock.lock();
+        boolean suc = writeLock();
         try {
             if (writeInBuf != null && !virtualBuffer.buffer().isDirect() && writeInBuf.buffer().remaining() > virtualBuffer.buffer().remaining()) {
                 writeInBuf.buffer().put(virtualBuffer.buffer());
@@ -244,7 +268,9 @@ public final class WriteBuffer extends OutputStream {
             }
             flushWriteBuffer(false);
         } finally {
-            writeLock.unlock();
+            if (suc) {
+                writeUnLock();
+            }
         }
     }
 
@@ -301,14 +327,16 @@ public final class WriteBuffer extends OutputStream {
         flush();
         closed = true;
         if (writeInBuf != null) {
-            writeLock.lock();
+            boolean suc = writeLock();
             try {
                 if (writeInBuf != null) {
                     writeInBuf.clean();
                     writeInBuf = null;
                 }
             } finally {
-                writeLock.unlock();
+                if (suc) {
+                    writeUnLock();
+                }
             }
         }
         VirtualBuffer byteBuf;
