@@ -357,7 +357,7 @@ public final class WriteBuffer extends OutputStream {
 
     void reuse(VirtualBuffer buffer) {
         boolean clean = true;
-        if (writeInBuf == null && writeLock.tryLock()) {
+        if (writeInBuf == null && (writeLockThread == Thread.currentThread() || writeLock.tryLock())) {
             try {
                 if (writeInBuf == null) {
                     writeInBuf = buffer;
@@ -365,7 +365,9 @@ public final class WriteBuffer extends OutputStream {
                     clean = false;
                 }
             } finally {
-                writeLock.unlock();
+                if (writeLockThread != Thread.currentThread()) {
+                    writeLock.unlock();
+                }
             }
         }
 
@@ -408,7 +410,7 @@ public final class WriteBuffer extends OutputStream {
         if (count > 0) {
             return pollQueue();
         }
-        if (writeInBuf == null || !writeLock.tryLock()) {
+        if (writeInBuf == null || !(writeLockThread == Thread.currentThread() || writeLock.tryLock())) {
             return null;
         }
         try {
@@ -424,7 +426,9 @@ public final class WriteBuffer extends OutputStream {
                 return null;
             }
         } finally {
-            writeLock.unlock();
+            if (writeLockThread != Thread.currentThread()) {
+                writeLock.unlock();
+            }
         }
     }
 
