@@ -105,7 +105,11 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         for (int i = 0; i < writeThreadNum; i++) {
             writeWorkers[i] = new Worker(selectionKey -> {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
-                asynchronousSocketChannel.doWrite();
+                if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) > 0) {
+                    asynchronousSocketChannel.doWrite();
+                } else {
+                    System.out.println("ignore write");
+                }
             });
             writeExecutorService.execute(writeWorkers[i]);
         }
