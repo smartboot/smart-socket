@@ -206,7 +206,7 @@ public final class WriteBuffer extends OutputStream {
     }
 
 
-    public boolean writeLock() {
+    private boolean writeLock() {
         if (writeLockThread != Thread.currentThread()) {
             writeLock.lock();
             writeLockThread = Thread.currentThread();
@@ -243,7 +243,7 @@ public final class WriteBuffer extends OutputStream {
         }
     }
 
-    public void writeUnLock() {
+    private void writeUnLock() {
         writeLockThread = null;
         writeLock.unlock();
     }
