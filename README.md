@@ -23,6 +23,16 @@ smart-socket是一款国产开源的 Java AIO 通信框架，支持 TCP、UDP、
 4. [企业案例](https://gitee.com/smartboot/smart-socket/issues/IHV69)
 > 如果您的项目中使用了 smart-socket 并愿意在此处展现给大众，欢迎留言反馈。
 
+### 插件
+| Plugin | 用途 |
+|---|---|
+|BlackListPlugin|黑名单插件,smart-socket会拒绝与黑名单中的IP建立连接|
+|BufferPageMonitorPlugin|内存池监控插件|
+|HeartPlugin|心跳插件|
+|MonitorPlugin|服务指标监控插件|
+|SocketOptionPlugin|连接属性配置插件|
+|SslPlugin|TLS/SSL加密通讯插件|
+|StreamMonitorPlugin|传输层通讯码流监控插件|
 
 ### 感谢
 - 感谢码云提供的代码托管和 Pages 服务。
