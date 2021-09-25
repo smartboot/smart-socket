@@ -230,11 +230,16 @@ public final class WriteBuffer extends OutputStream {
                     writeInBuf = null;
                     throw new IOException("writeBuffer has closed");
                 }
-                int writeSize = Math.min(writeBuffer.remaining(), len);
-                writeBuffer.put(b, off, writeSize);
-                off += writeSize;
-                len -= writeSize;
-                flushWriteBuffer(false);
+                if (writeBuffer.remaining() > len) {
+                    writeBuffer.put(b, off, len);
+                    break;
+                } else {
+                    int writeSize = writeBuffer.remaining();
+                    writeBuffer.put(b, off, writeBuffer.remaining());
+                    off += writeSize;
+                    len -= writeSize;
+                    flushWriteBuffer(true);
+                }
             }
         } finally {
             if (suc) {
