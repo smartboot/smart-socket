@@ -273,7 +273,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         private final ConcurrentLinkedQueue<Consumer<Selector>> registers = new ConcurrentLinkedQueue<>();
         private final Consumer<SelectionKey> consumer;
         int invoker = 0;
-        int modCount;
         private Thread workerThread;
 
         Worker(Consumer<SelectionKey> consumer) throws IOException {
@@ -286,7 +285,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
          */
         final void addRegister(Consumer<Selector> register) {
             registers.offer(register);
-            modCount++;
             selector.wakeup();
         }
 
@@ -299,15 +297,11 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             workerThread = Thread.currentThread();
             // 优先获取SelectionKey,若无关注事件触发则阻塞在selector.select(),减少select被调用次数
             Set<SelectionKey> keySet = selector.selectedKeys();
+            Consumer<Selector> register;
             try {
-                int v = 0;
                 while (running) {
-                    Consumer<Selector> register;
-                    if (v != modCount) {
-                        v = modCount;
-                        while ((register = registers.poll()) != null) {
-                            register.accept(selector);
-                        }
+                    while ((register = registers.poll()) != null) {
+                        register.accept(selector);
                     }
 
                     selector.select();
