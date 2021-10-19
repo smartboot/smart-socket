@@ -30,7 +30,7 @@ public final class EnhanceAsynchronousChannelProvider extends AsynchronousChanne
     public AsynchronousChannelGroup openAsynchronousChannelGroup(int nThreads, ThreadFactory threadFactory) throws IOException {
         return new EnhanceAsynchronousChannelGroup(this, new ThreadPoolExecutor(nThreads, nThreads,
                 0L, TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<Runnable>(nThreads),
+                new ArrayBlockingQueue<>(nThreads),
                 threadFactory), nThreads);
     }
 

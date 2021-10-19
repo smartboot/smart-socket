@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -99,7 +98,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         //init threadPool for write and connect
         final int writeThreadNum = 1;
         final int acceptThreadNum = 1;
-        writeExecutorService = getThreadPoolExecutor("smart-socket:write-", writeThreadNum);
+        writeExecutorService = getSingleThreadExecutor("smart-socket:write");
         this.writeWorkers = new Worker[writeThreadNum];
 
         for (int i = 0; i < writeThreadNum; i++) {
@@ -115,7 +114,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         }
 
         //init threadPool for accept
-        acceptExecutorService = getThreadPoolExecutor("smart-socket:connect-", acceptThreadNum);
+        acceptExecutorService = getSingleThreadExecutor("smart-socket:connect");
         acceptWorkers = new Worker[acceptThreadNum];
         for (int i = 0; i < acceptThreadNum; i++) {
             acceptWorkers[i] = new Worker(selectionKey -> {
@@ -141,7 +140,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
      */
     public synchronized void registerFuture(Consumer<Selector> register, int opType) throws IOException {
         if (futureWorker == null) {
-            futureExecutorService = getThreadPoolExecutor("smart-socket:future-", 1);
+            futureExecutorService = getSingleThreadExecutor("smart-socket:future");
             futureWorker = new Worker(selectionKey -> {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 switch (opType) {
@@ -163,16 +162,9 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         futureWorker.addRegister(register);
     }
 
-    private ThreadPoolExecutor getThreadPoolExecutor(final String prefix, int threadNum) {
-        return new ThreadPoolExecutor(threadNum, threadNum, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(), new ThreadFactory() {
-            private final AtomicInteger atomicInteger = new AtomicInteger(0);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, prefix + atomicInteger.getAndIncrement());
-            }
-        });
+    private ThreadPoolExecutor getSingleThreadExecutor(final String prefix) {
+        return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(), r -> new Thread(r, prefix));
     }
 
 
