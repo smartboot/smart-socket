@@ -134,9 +134,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
 
     /**
      * 同步IO注册异步线程，防止主IO线程阻塞
-     *
-     * @param register
-     * @throws IOException
      */
     public synchronized void registerFuture(Consumer<Selector> register, int opType) throws IOException {
         if (futureWorker == null) {
