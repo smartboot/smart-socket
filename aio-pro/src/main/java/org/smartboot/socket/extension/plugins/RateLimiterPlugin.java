@@ -19,6 +19,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 网络流量控制插件
  * @author 三刀（zhengjunweimail@163.com）
  * @version V1.0 , 2021/6/29
  */
