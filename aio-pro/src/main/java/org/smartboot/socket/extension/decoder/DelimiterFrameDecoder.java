@@ -20,6 +20,11 @@ import java.util.List;
  * @version V1.0 , 2017/10/20
  */
 public class DelimiterFrameDecoder implements SmartDecoder {
+    private final int reposition;
+    /**
+     * 存储已解析的数据
+     */
+    private final List<ByteBuffer> bufferList;
     /**
      * 消息结束标志
      */
@@ -29,18 +34,21 @@ public class DelimiterFrameDecoder implements SmartDecoder {
      */
     private int exceptIndex;
     /**
-     * 存储已解析的数据
-     */
-    private List<ByteBuffer> bufferList;
-    /**
      * 是否解析完成
      */
     private boolean finishRead;
-
     private int position;
 
     public DelimiterFrameDecoder(byte[] endFLag, int unitBufferSize) {
         this.endFLag = endFLag;
+        int p = 0;
+        for (int i = 1; i < endFLag.length; i++) {
+            if (endFLag[i] != endFLag[0]) {
+                p = i - 1;
+                break;
+            }
+        }
+        reposition = p;
         bufferList = new ArrayList<>();
         bufferList.add(ByteBuffer.allocate(unitBufferSize));
     }
@@ -66,7 +74,9 @@ public class DelimiterFrameDecoder implements SmartDecoder {
             byte data = byteBuffer.get();
             preBuffer.put(data);
             if (data != endFLag[exceptIndex]) {
-                exceptIndex = 0;
+                if (exceptIndex != reposition + 1 || data != endFLag[reposition]) {
+                    exceptIndex = 0;
+                }
             } else if (++exceptIndex == endFLag.length) {
                 preBuffer.flip();
                 finishRead = true;
