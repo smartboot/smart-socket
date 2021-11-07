@@ -74,6 +74,7 @@ public class DelimiterFrameDecoder implements SmartDecoder {
             byte data = byteBuffer.get();
             preBuffer.put(data);
             if (data != endFLag[exceptIndex]) {
+                //bugfix for https://gitee.com/smartboot/smart-socket/issues/I4H4YB
                 if (exceptIndex != reposition + 1 || data != endFLag[reposition]) {
                     exceptIndex = 0;
                 }
