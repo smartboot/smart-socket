@@ -42,6 +42,11 @@ public class DelimiterFrameDecoderTest {
         check("abaaababa", "abab");
     }
 
+    @Test
+    public void testDecoder5() {
+        check("aaabaabb", "aabb");
+    }
+
     private void check(String data, String endFlag) {
         byte[] endBytes = endFlag.getBytes(StandardCharsets.UTF_8);
         DelimiterFrameDecoder decoder = new DelimiterFrameDecoder(endBytes, 512);

@@ -76,7 +76,8 @@ public class DelimiterFrameDecoder implements SmartDecoder {
             if (data != endFLag[exceptIndex]) {
                 //bugfix for https://gitee.com/smartboot/smart-socket/issues/I4H4YB
                 if (exceptIndex != reposition + 1 || data != endFLag[reposition]) {
-                    exceptIndex = 0;
+//                    exceptIndex =  0;
+                    exceptIndex = endFLag[0] == data ? 1 : 0;
                 }
             } else if (++exceptIndex == endFLag.length) {
                 preBuffer.flip();
