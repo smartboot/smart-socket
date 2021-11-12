@@ -188,14 +188,14 @@ public final class AioQuickClient {
      * </p>
      */
     public final void shutdown() {
-        showdown0(false);
+        shutdown0(false);
     }
 
     /**
      * 立即关闭客户端
      */
     public final void shutdownNow() {
-        showdown0(true);
+        shutdown0(true);
     }
 
     /**
@@ -203,7 +203,7 @@ public final class AioQuickClient {
      *
      * @param flag 是否立即停止
      */
-    private void showdown0(boolean flag) {
+    private void shutdown0(boolean flag) {
         if (session != null) {
             session.close(flag);
             session = null;
