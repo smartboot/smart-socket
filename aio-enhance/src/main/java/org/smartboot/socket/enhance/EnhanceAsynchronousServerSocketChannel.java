@@ -30,7 +30,7 @@ import java.util.concurrent.Future;
 final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSocketChannel {
     private final ServerSocketChannel serverSocketChannel;
     private final EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup;
-    private final EnhanceAsynchronousChannelGroup.Worker acceptWorker;
+    private final Worker acceptWorker;
     private CompletionHandler<AsynchronousSocketChannel, Object> acceptCompletionHandler;
     private FutureCompletionHandler<AsynchronousSocketChannel, Void> acceptFuture;
     private Object attachment;
@@ -150,5 +150,9 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     @Override
     public void close() throws IOException {
         serverSocketChannel.close();
+        if (selectionKey != null) {
+            selectionKey.cancel();
+            selectionKey = null;
+        }
     }
 }

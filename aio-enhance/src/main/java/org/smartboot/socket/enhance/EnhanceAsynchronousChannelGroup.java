@@ -14,11 +14,11 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AsynchronousChannelProvider;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,8 +87,9 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         //init threadPool for read
         this.readExecutorService = readExecutorService;
         this.readWorkers = new Worker[threadNum];
+        ShareUnit shareUnit = new ShareUnit();
         for (int i = 0; i < threadNum; i++) {
-            readWorkers[i] = new Worker(selectionKey -> {
+            readWorkers[i] = new NonFairWorker(shareUnit, selectionKey -> {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 asynchronousSocketChannel.doRead(true);
             });
@@ -102,7 +103,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         this.writeWorkers = new Worker[writeThreadNum];
 
         for (int i = 0; i < writeThreadNum; i++) {
-            writeWorkers[i] = new Worker(selectionKey -> {
+            writeWorkers[i] = new FairWorker(selectionKey -> {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) > 0) {
                     asynchronousSocketChannel.doWrite();
@@ -117,7 +118,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         acceptExecutorService = getSingleThreadExecutor("smart-socket:connect");
         acceptWorkers = new Worker[acceptThreadNum];
         for (int i = 0; i < acceptThreadNum; i++) {
-            acceptWorkers[i] = new Worker(selectionKey -> {
+            acceptWorkers[i] = new FairWorker(selectionKey -> {
                 if (selectionKey.isAcceptable()) {
                     EnhanceAsynchronousServerSocketChannel serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) selectionKey.attachment();
                     serverSocketChannel.doAccept();
@@ -138,7 +139,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
     public synchronized void registerFuture(Consumer<Selector> register, int opType) throws IOException {
         if (futureWorker == null) {
             futureExecutorService = getSingleThreadExecutor("smart-socket:future");
-            futureWorker = new Worker(selectionKey -> {
+            futureWorker = new FairWorker(selectionKey -> {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 switch (opType) {
                     case SelectionKey.OP_READ:
@@ -164,7 +165,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                 new LinkedBlockingQueue<>(), r -> new Thread(r, prefix));
     }
 
-
     /**
      * 移除关注事件
      *
@@ -178,7 +178,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
     }
 
     public Worker getReadWorker() {
-        return readWorkers[(readIndex.getAndIncrement() & Integer.MAX_VALUE) % readWorkers.length];
+        return readWorkers[(readIndex.getAndIncrement() & Integer.MAX_VALUE) % (readWorkers.length)];
     }
 
     public Worker getWriteWorker() {
@@ -251,7 +251,15 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         }
     }
 
-    class Worker implements Runnable {
+    static class ShareUnit {
+        /**
+         * 已就绪的 SelectionKey
+         */
+        private final ConcurrentLinkedQueue<SelectionKey> readySelectionKeys = new ConcurrentLinkedQueue<>();
+        /**
+         * 待唤醒的资源组
+         */
+        private final ConcurrentLinkedQueue<Semaphore> selectionKeySemaphores = new ConcurrentLinkedQueue<>();
         /**
          * 当前Worker绑定的Selector
          */
@@ -260,32 +268,103 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
          * 待注册的事件
          */
         private final ConcurrentLinkedQueue<Consumer<Selector>> registers = new ConcurrentLinkedQueue<>();
-        private final Consumer<SelectionKey> consumer;
-        int invoker = 0;
-        private Thread workerThread;
+        private final Semaphore semaphore = new Semaphore(1);
 
-        Worker(Consumer<SelectionKey> consumer) throws IOException {
+        public ShareUnit() throws IOException {
             this.selector = Selector.open();
+        }
+    }
+
+    class NonFairWorker extends Worker {
+        private final ShareUnit shareUnit;
+        Consumer<SelectionKey> consumer;
+        Semaphore semaphore = new Semaphore(0);
+
+        public NonFairWorker(ShareUnit shareUnit, Consumer<SelectionKey> consumer) {
+            super(shareUnit.selector, shareUnit.registers);
+            this.shareUnit = shareUnit;
             this.consumer = consumer;
         }
 
-        /**
-         * 注册事件
-         */
-        final void addRegister(Consumer<Selector> register) {
-            registers.offer(register);
-            selector.wakeup();
+        @Override
+        public void run() {
+            workerThread = Thread.currentThread();
+            try {
+                while (running) {
+                    if (shareUnit.semaphore.tryAcquire()) {
+                        try {
+                            doSelect();
+                        } finally {
+                            shareUnit.semaphore.release();
+                        }
+                    } else {
+                        shareUnit.selectionKeySemaphores.offer(semaphore);
+                        selector.wakeup();
+                        semaphore.acquire();
+                    }
+                    while (true) {
+                        SelectionKey selectionKey = shareUnit.readySelectionKeys.poll();
+                        if (selectionKey == null) {
+                            break;
+                        }
+                        invoker = 0;
+                        EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
+                        asynchronousSocketChannel.setReadWorker(this);
+                        consumer.accept(selectionKey);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    selector.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
-        public final Thread getWorkerThread() {
-            return workerThread;
+        private void doSelect() throws IOException {
+            if (shareUnit.readySelectionKeys.isEmpty()) {
+                selector.select();
+            } else {
+                selector.selectNow();
+            }
+            Consumer<Selector> register;
+            while ((register = shareUnit.registers.poll()) != null) {
+                register.accept(selector);
+            }
+
+            do {
+                for (SelectionKey key : keySet) {
+                    key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+                    shareUnit.readySelectionKeys.offer(key);
+                }
+                keySet.clear();
+                if (!shareUnit.readySelectionKeys.isEmpty()) {
+                    Semaphore semaphore;
+                    while ((semaphore = shareUnit.selectionKeySemaphores.poll()) != null) {
+                        semaphore.release();
+                    }
+                }
+            } while (selector.selectNow() > 0);
         }
+    }
+
+    class FairWorker extends Worker {
+
+        private final Consumer<SelectionKey> consumer;
+
+        FairWorker(Consumer<SelectionKey> consumer) throws IOException {
+            super(Selector.open());
+            this.consumer = consumer;
+        }
+
 
         @Override
         public final void run() {
             workerThread = Thread.currentThread();
             // 优先获取SelectionKey,若无关注事件触发则阻塞在selector.select(),减少select被调用次数
-            Set<SelectionKey> keySet = selector.selectedKeys();
             Consumer<Selector> register;
             try {
                 while (running) {

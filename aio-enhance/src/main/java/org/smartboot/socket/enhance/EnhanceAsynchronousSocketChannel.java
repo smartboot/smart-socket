@@ -36,9 +36,9 @@ import java.util.concurrent.TimeUnit;
 final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private final SocketChannel channel;
     private final EnhanceAsynchronousChannelGroup group;
-    private final EnhanceAsynchronousChannelGroup.Worker readWorker;
-    private final EnhanceAsynchronousChannelGroup.Worker writeWorker;
-    private final EnhanceAsynchronousChannelGroup.Worker connectWorker;
+    private final Worker writeWorker;
+    private final Worker connectWorker;
+    private Worker readWorker;
     private ByteBuffer readBuffer;
     private ByteBufferArray scatteringReadBuffer;
     private ByteBuffer writeBuffer;
@@ -69,6 +69,10 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         writeWorker = group.getWriteWorker();
         connectWorker = group.getConnectWorker();
         channel.configureBlocking(false);
+    }
+
+    public void setReadWorker(Worker readWorker) {
+        this.readWorker = readWorker;
     }
 
     @Override
