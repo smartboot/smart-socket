@@ -60,8 +60,8 @@ public class RateLimiterDemo {
                 .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
                 .setBufferFactory(() -> bufferPagePool)
                 .setWriteBuffer(4096, 512);
-        processor.addPlugin(new MonitorPlugin<>(5));
-        processor.addPlugin(new RateLimiterPlugin<>(512 * 1024, 1024 * 1024));
+        processor.addPlugin(new MonitorPlugin<>(10));
+        processor.addPlugin(new RateLimiterPlugin<>(512, 1024));
         server.start();
 
     }

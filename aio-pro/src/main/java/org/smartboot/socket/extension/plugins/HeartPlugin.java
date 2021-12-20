@@ -136,7 +136,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
 
     private void registerHeart(final AioSession session, final long heartRate) {
         if (heartRate <= 0) {
-            LOGGER.info("sesssion:{} 因心跳超时时间为:{},终止启动心跳监测任务", session, heartRate);
+            LOGGER.info("session:{} 因心跳超时时间为:{},终止启动心跳监测任务", session, heartRate);
             return;
         }
         LOGGER.debug("session:{}注册心跳任务,超时时间:{}", session, heartRate);
