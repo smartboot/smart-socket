@@ -22,8 +22,9 @@ import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.util.Map;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -102,6 +103,59 @@ public final class AioQuickClient {
         config.setProcessor(messageProcessor);
     }
 
+    public <A> void start(AsynchronousChannelGroup asynchronousChannelGroup, A attachment,
+                          CompletionHandler<AioSession, ? super A> handler) throws IOException {
+        AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        if (bufferPool == null) {
+            bufferPool = config.getBufferFactory().create();
+            this.innerBufferPool = bufferPool;
+        }
+        //set socket options
+        if (config.getSocketOptions() != null) {
+            for (Map.Entry<SocketOption<Object>, Object> entry : config.getSocketOptions().entrySet()) {
+                socketChannel.setOption(entry.getKey(), entry.getValue());
+            }
+        }
+        //bind host
+        if (localAddress != null) {
+            socketChannel.bind(localAddress);
+        }
+        socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort()), socketChannel, new CompletionHandler<Void, AsynchronousSocketChannel>() {
+            @Override
+            public void completed(Void result, AsynchronousSocketChannel socketChannel) {
+                try {
+                    AsynchronousSocketChannel connectedChannel = socketChannel;
+                    if (config.getMonitor() != null) {
+                        connectedChannel = config.getMonitor().shouldAccept(socketChannel);
+                    }
+                    if (connectedChannel == null) {
+                        throw new RuntimeException("NetMonitor refuse channel");
+                    }
+                    //连接成功则构造AIOSession对象
+                    session = new TcpAioSession(connectedChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), bufferPool.allocateBufferPage());
+                    session.initSession(readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
+                    handler.completed(session, attachment);
+                } catch (Exception e) {
+                    failed(e, socketChannel);
+                }
+            }
+
+            @Override
+            public void failed(Throwable exc, AsynchronousSocketChannel socketChannel) {
+                try {
+                    handler.failed(exc, attachment);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (socketChannel != null) {
+                        IOUtil.close(socketChannel);
+                    }
+                    shutdownNow();
+                }
+            }
+        });
+    }
+
     /**
      * 启动客户端。
      * <p>
@@ -117,45 +171,29 @@ public final class AioQuickClient {
      * @see AsynchronousSocketChannel#connect(SocketAddress)
      */
     public AioSession start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
-        AsynchronousSocketChannel socketChannel = null;
-        try {
-            socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
-            if (bufferPool == null) {
-                bufferPool = config.getBufferFactory().create();
-                this.innerBufferPool = bufferPool;
-            }
-            //set socket options
-            if (config.getSocketOptions() != null) {
-                for (Map.Entry<SocketOption<Object>, Object> entry : config.getSocketOptions().entrySet()) {
-                    socketChannel.setOption(entry.getKey(), entry.getValue());
+        CompletableFuture<AioSession> future = new CompletableFuture<>();
+        start(asynchronousChannelGroup, future, new CompletionHandler<AioSession, CompletableFuture<AioSession>>() {
+            @Override
+            public void completed(AioSession result, CompletableFuture<AioSession> future) {
+                if (future.isDone() || future.isCancelled()) {
+                    result.close();
+                } else {
+                    future.complete(result);
                 }
             }
-            //bind host
-            if (localAddress != null) {
-                socketChannel.bind(localAddress);
-            }
-            Future<Void> future = socketChannel.connect(new InetSocketAddress(config.getHost(), config.getPort()));
-            if (connectTimeout > 0) {
-                future.get(connectTimeout, TimeUnit.MILLISECONDS);
-            } else {
-                future.get();
-            }
 
-            AsynchronousSocketChannel connectedChannel = socketChannel;
-            if (config.getMonitor() != null) {
-                connectedChannel = config.getMonitor().shouldAccept(socketChannel);
+            @Override
+            public void failed(Throwable exc, CompletableFuture<AioSession> future) {
+                future.completeExceptionally(exc);
             }
-            if (connectedChannel == null) {
-                throw new RuntimeException("NetMonitor refuse channel");
+        });
+        try {
+            if (connectTimeout > 0) {
+                return future.get(connectTimeout, TimeUnit.MILLISECONDS);
+            } else {
+                return future.get();
             }
-            //连接成功则构造AIOSession对象
-            session = new TcpAioSession(connectedChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), bufferPool.allocateBufferPage());
-            session.initSession(readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
-            return session;
         } catch (Exception e) {
-            if (socketChannel != null) {
-                IOUtil.close(socketChannel);
-            }
             shutdownNow();
             throw new IOException(e);
         }

@@ -302,6 +302,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                         selector.wakeup();
                         semaphore.acquire();
                     }
+                    notifyWorker();
                     while (true) {
                         SelectionKey selectionKey = shareUnit.readySelectionKeys.poll();
                         if (selectionKey == null) {
@@ -313,6 +314,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                         consumer.accept(selectionKey);
                     }
                 }
+                notifyWorker();
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -341,13 +343,17 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     shareUnit.readySelectionKeys.offer(key);
                 }
                 keySet.clear();
-                if (!shareUnit.readySelectionKeys.isEmpty()) {
-                    Semaphore semaphore;
-                    while ((semaphore = shareUnit.selectionKeySemaphores.poll()) != null) {
-                        semaphore.release();
-                    }
-                }
+//                notifyWorker();
             } while (selector.selectNow() > 0);
+        }
+
+        private void notifyWorker() {
+            if (!shareUnit.readySelectionKeys.isEmpty()) {
+                Semaphore semaphore;
+                while ((semaphore = shareUnit.selectionKeySemaphores.poll()) != null) {
+                    semaphore.release();
+                }
+            }
         }
     }
 
