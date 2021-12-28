@@ -30,7 +30,7 @@ import java.util.concurrent.Future;
 final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSocketChannel {
     private final ServerSocketChannel serverSocketChannel;
     private final EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup;
-    private final Worker acceptWorker;
+    private final EnhanceAsynchronousChannelGroup.Worker acceptWorker;
     private CompletionHandler<AsynchronousSocketChannel, Object> acceptCompletionHandler;
     private FutureCompletionHandler<AsynchronousSocketChannel, Void> acceptFuture;
     private Object attachment;
