@@ -150,9 +150,5 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     @Override
     public void close() throws IOException {
         serverSocketChannel.close();
-        if (selectionKey != null) {
-            selectionKey.cancel();
-            selectionKey = null;
-        }
     }
 }
