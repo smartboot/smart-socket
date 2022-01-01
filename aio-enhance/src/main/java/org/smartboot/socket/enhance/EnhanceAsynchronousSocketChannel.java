@@ -264,8 +264,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             } else if (connectSelectionKey == null) {
                 connectWorker.addRegister(selector -> {
                     try {
-                        connectSelectionKey = channel.register(selector, SelectionKey.OP_CONNECT);
-                        connectSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
+                        connectSelectionKey = channel.register(selector, SelectionKey.OP_CONNECT,EnhanceAsynchronousSocketChannel.this);
+//                        connectSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         connectCompletionHandler.failed(e, connectAttachment);
                     }
@@ -318,8 +318,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 group.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 group.registerFuture(selector -> {
                     try {
-                        readFutureSelectionKey = channel.register(selector, SelectionKey.OP_READ);
-                        readFutureSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
+                        readFutureSelectionKey = channel.register(selector, SelectionKey.OP_READ,EnhanceAsynchronousSocketChannel.this);
+//                        readFutureSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         e.printStackTrace();
                         doRead(true);
@@ -345,8 +345,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             } else if (readSelectionKey == null) {
                 readWorker.addRegister(selector -> {
                     try {
-                        readSelectionKey = channel.register(selector, SelectionKey.OP_READ);
-                        readSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
+                        readSelectionKey = channel.register(selector, SelectionKey.OP_READ,EnhanceAsynchronousSocketChannel.this);
+//                        readSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         readCompletionHandler.failed(e, readAttachment);
                     }
@@ -413,8 +413,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 group.removeOps(writeSelectionKey, SelectionKey.OP_WRITE);
                 group.registerFuture(selector -> {
                     try {
-                        SelectionKey readSelectionKey = channel.register(selector, SelectionKey.OP_WRITE);
-                        readSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
+                        SelectionKey readSelectionKey = channel.register(selector, SelectionKey.OP_WRITE,EnhanceAsynchronousSocketChannel.this);
+//                        readSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         e.printStackTrace();
                         doWrite();
@@ -439,8 +439,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             } else if (writeSelectionKey == null) {
                 writeWorker.addRegister(selector -> {
                     try {
-                        writeSelectionKey = channel.register(selector, SelectionKey.OP_WRITE);
-                        writeSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
+                        writeSelectionKey = channel.register(selector, SelectionKey.OP_WRITE,EnhanceAsynchronousSocketChannel.this);
+//                        writeSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         writeCompletionHandler.failed(e, writeAttachment);
                     }
