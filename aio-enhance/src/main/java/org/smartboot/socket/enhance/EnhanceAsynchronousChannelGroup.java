@@ -15,6 +15,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -87,7 +88,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         this.readExecutorService = readExecutorService;
         this.readWorkers = new Worker[threadNum];
         for (int i = 0; i < threadNum; i++) {
-            readWorkers[i] = new Worker(selectionKey -> {
+            readWorkers[i] = new Worker(Selector.open(), selectionKey -> {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 asynchronousSocketChannel.doRead(true);
             });
@@ -101,7 +102,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         this.writeWorkers = new Worker[writeThreadNum];
 
         for (int i = 0; i < writeThreadNum; i++) {
-            writeWorkers[i] = new Worker(selectionKey -> {
+            writeWorkers[i] = new Worker(Selector.open(), selectionKey -> {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) > 0) {
                     asynchronousSocketChannel.doWrite();
@@ -116,7 +117,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         acceptExecutorService = getSingleThreadExecutor("smart-socket:connect");
         acceptWorkers = new Worker[acceptThreadNum];
         for (int i = 0; i < acceptThreadNum; i++) {
-            acceptWorkers[i] = new Worker(selectionKey -> {
+            acceptWorkers[i] = new Worker(Selector.open(), selectionKey -> {
                 if (selectionKey.isAcceptable()) {
                     EnhanceAsynchronousServerSocketChannel serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) selectionKey.attachment();
                     serverSocketChannel.doAccept();
@@ -137,7 +138,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
     public synchronized void registerFuture(Consumer<Selector> register, int opType) throws IOException {
         if (futureWorker == null) {
             futureExecutorService = getSingleThreadExecutor("smart-socket:future");
-            futureWorker = new Worker(selectionKey -> {
+            futureWorker = new Worker(Selector.open(), selectionKey -> {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 switch (opType) {
                     case SelectionKey.OP_READ:
@@ -255,11 +256,12 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
          */
         private final Selector selector;
         private final Consumer<SelectionKey> consumer;
+        private final ConcurrentLinkedQueue<Consumer<Selector>> consumers = new ConcurrentLinkedQueue<>();
         int invoker = 0;
         private Thread workerThread;
 
-        Worker(Consumer<SelectionKey> consumer) throws IOException {
-            this.selector = Selector.open();
+        Worker(Selector selector, Consumer<SelectionKey> consumer) {
+            this.selector = selector;
             this.consumer = consumer;
         }
 
@@ -267,7 +269,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
          * 注册事件
          */
         final void addRegister(Consumer<Selector> register) {
-            register.accept(selector);
+            consumers.offer(register);
             selector.wakeup();
         }
 
@@ -282,6 +284,10 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             Set<SelectionKey> keySet = selector.selectedKeys();
             try {
                 while (running) {
+                    Consumer<Selector> selectorConsumer;
+                    while ((selectorConsumer = consumers.poll()) != null) {
+                        selectorConsumer.accept(selector);
+                    }
                     selector.select();
                     // 执行本次已触发待处理的事件
                     for (SelectionKey key : keySet) {

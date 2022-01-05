@@ -103,6 +103,29 @@ public final class AioQuickClient {
         config.setProcessor(messageProcessor);
     }
 
+    /**
+     * 采用异步的方式启动客户端
+     *
+     * @param attachment 可传入回调方法中的附件对象
+     * @param handler    异步回调
+     * @param <A>        附件对象类型
+     * @throws IOException
+     */
+    public <A> void start(A attachment,
+                          CompletionHandler<AioSession, ? super A> handler) throws IOException {
+        this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, Thread::new);
+        start(asynchronousChannelGroup, attachment, handler);
+    }
+
+    /**
+     * 采用异步的方式启动客户端
+     *
+     * @param asynchronousChannelGroup 通信线程资源组
+     * @param attachment               可传入回调方法中的附件对象
+     * @param handler                  异步回调
+     * @param <A>                      附件对象类型
+     * @throws IOException
+     */
     public <A> void start(AsynchronousChannelGroup asynchronousChannelGroup, A attachment,
                           CompletionHandler<AioSession, ? super A> handler) throws IOException {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
@@ -174,11 +197,11 @@ public final class AioQuickClient {
         CompletableFuture<AioSession> future = new CompletableFuture<>();
         start(asynchronousChannelGroup, future, new CompletionHandler<AioSession, CompletableFuture<AioSession>>() {
             @Override
-            public void completed(AioSession result, CompletableFuture<AioSession> future) {
+            public void completed(AioSession session, CompletableFuture<AioSession> future) {
                 if (future.isDone() || future.isCancelled()) {
-                    result.close();
+                    session.close();
                 } else {
-                    future.complete(result);
+                    future.complete(session);
                 }
             }
 
@@ -194,6 +217,7 @@ public final class AioQuickClient {
                 return future.get();
             }
         } catch (Exception e) {
+            future.cancel(false);
             shutdownNow();
             throw new IOException(e);
         }

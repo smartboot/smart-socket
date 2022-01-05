@@ -142,10 +142,11 @@ final class TcpAioSession extends AioSession {
      */
     void writeCompleted() {
         if (writeBuffer == null) {
-            writeBuffer = byteBuf.pollQueue();
+            writeBuffer = byteBuf.poll();
         } else if (!writeBuffer.buffer().hasRemaining()) {
-            byteBuf.reuse(writeBuffer);
-            writeBuffer = byteBuf.pollQueue();
+            writeBuffer.clean();
+//            byteBuf.reuse(writeBuffer);
+            writeBuffer = byteBuf.poll();
         }
 
         if (writeBuffer != null) {
@@ -213,7 +214,7 @@ final class TcpAioSession extends AioSession {
      *
      * @return sessionId
      */
-    public final String getSessionID() {
+    public String getSessionID() {
         return "aioSession-" + hashCode();
     }
 
@@ -222,7 +223,7 @@ final class TcpAioSession extends AioSession {
      *
      * @return 是否失效
      */
-    public final boolean isInvalid() {
+    public boolean isInvalid() {
         return status != SESSION_STATUS_ENABLED;
     }
 
