@@ -290,35 +290,22 @@ public final class WriteBuffer extends OutputStream {
         return count == 0 && (writeInBuf == null || writeInBuf.buffer().position() == 0);
     }
 
-
-    /**
-     * 获取并移除当前缓冲队列中头部的VirtualBuffer
-     *
-     * @return 待输出的VirtualBuffer
-     */
-    VirtualBuffer pollQueue() {
-        VirtualBuffer x = items[takeIndex];
-        items[takeIndex] = null;
-        if (++takeIndex == items.length) {
-            takeIndex = 0;
-        }
-        if (count-- == items.length) {
-            this.notifyAll();
-        }
-        return x;
-    }
-
     /**
      * 获取并移除当前缓冲队列中头部的VirtualBuffer
      *
      * @return 待输出的VirtualBuffer
      */
     synchronized VirtualBuffer poll() {
-        if (count == 0 && writeInBuf == null) {
-            return null;
-        }
         if (count > 0) {
-            return pollQueue();
+            VirtualBuffer x = items[takeIndex];
+            items[takeIndex] = null;
+            if (++takeIndex == items.length) {
+                takeIndex = 0;
+            }
+            if (count-- == items.length) {
+                this.notifyAll();
+            }
+            return x;
         }
         if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
             writeInBuf.buffer().flip();
