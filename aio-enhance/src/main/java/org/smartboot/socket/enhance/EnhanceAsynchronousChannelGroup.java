@@ -257,7 +257,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         private final Selector selector;
         private final Consumer<SelectionKey> consumer;
         private final ConcurrentLinkedQueue<Consumer<Selector>> consumers = new ConcurrentLinkedQueue<>();
-        private final AtomicInteger consumerCount = new AtomicInteger(0);
         int invoker = 0;
         private Thread workerThread;
 
@@ -271,7 +270,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
          */
         final void addRegister(Consumer<Selector> register) {
             consumers.offer(register);
-            consumerCount.incrementAndGet();
             selector.wakeup();
         }
 
@@ -287,9 +285,8 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             try {
                 while (running) {
                     Consumer<Selector> selectorConsumer;
-                    while (consumerCount.get() > 0 && (selectorConsumer = consumers.poll()) != null) {
+                    while ((selectorConsumer = consumers.poll()) != null) {
                         selectorConsumer.accept(selector);
-                        consumerCount.decrementAndGet();
                     }
                     selector.select();
                     // 执行本次已触发待处理的事件
