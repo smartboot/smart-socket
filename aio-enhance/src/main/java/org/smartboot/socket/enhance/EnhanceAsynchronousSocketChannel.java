@@ -34,31 +34,88 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0 , 2018/5/24
  */
 final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
+    /**
+     * 实际的Socket通道
+     */
     private final SocketChannel channel;
+    /**
+     * 处理当前连接IO事件的资源组
+     */
     private final EnhanceAsynchronousChannelGroup group;
+    /**
+     * 处理 read 事件的线程资源
+     */
     private final EnhanceAsynchronousChannelGroup.Worker readWorker;
+    /**
+     * 处理 write 事件的线程资源
+     */
     private final EnhanceAsynchronousChannelGroup.Worker writeWorker;
+    /**
+     * 处理 connect 事件的线程资源
+     */
     private final EnhanceAsynchronousChannelGroup.Worker connectWorker;
+    /**
+     * 用于接收 read 通道数据的缓冲区，经解码后腾出缓冲区以供下一批数据的读取
+     */
     private ByteBuffer readBuffer;
+    /**
+     * 用于接收 read 通道数据的缓冲区集合
+     */
     private ByteBufferArray scatteringReadBuffer;
+    /**
+     * 存放待输出数据的缓冲区
+     */
     private ByteBuffer writeBuffer;
+    /**
+     * 存放待输出数据的缓冲区集合
+     */
     private ByteBufferArray gatheringWriteBuffer;
+    /**
+     * read 回调事件处理器
+     */
     private CompletionHandler<Number, Object> readCompletionHandler;
+    /**
+     * write 回调事件处理器
+     */
     private CompletionHandler<Number, Object> writeCompletionHandler;
+    /**
+     * connect 回调事件处理器
+     */
     private CompletionHandler<Void, Object> connectCompletionHandler;
     private FutureCompletionHandler<Void, Void> connectFuture;
     private FutureCompletionHandler<? extends Number, Object> readFuture;
     private FutureCompletionHandler<? extends Number, Object> writeFuture;
+    /**
+     * read 回调事件关联绑定的附件对象
+     */
     private Object readAttachment;
+    /**
+     * write 回调事件关联绑定的附件对象
+     */
     private Object writeAttachment;
+    /**
+     * connect 回调事件关联绑定的附件对象
+     */
     private Object connectAttachment;
     private SelectionKey readSelectionKey;
     private SelectionKey readFutureSelectionKey;
     private SelectionKey writeSelectionKey;
     private SelectionKey connectSelectionKey;
+    /**
+     * 当前是否正在执行 write 操作
+     */
     private boolean writePending;
+    /**
+     * 当前是否正在执行 read 操作
+     */
     private boolean readPending;
+    /**
+     * 当前是否正在执行 connect 操作
+     */
     private boolean connectionPending;
+    /**
+     * 远程连接的地址
+     */
     private SocketAddress remote;
 
     public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel) throws IOException {
@@ -264,8 +321,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             } else if (connectSelectionKey == null) {
                 connectWorker.addRegister(selector -> {
                     try {
-                        connectSelectionKey = channel.register(selector, SelectionKey.OP_CONNECT,EnhanceAsynchronousSocketChannel.this);
-//                        connectSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
+                        connectSelectionKey = channel.register(selector, SelectionKey.OP_CONNECT, EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         connectCompletionHandler.failed(e, connectAttachment);
                     }
@@ -318,8 +374,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 group.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 group.registerFuture(selector -> {
                     try {
-                        readFutureSelectionKey = channel.register(selector, SelectionKey.OP_READ,EnhanceAsynchronousSocketChannel.this);
-//                        readFutureSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
+                        readFutureSelectionKey = channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         e.printStackTrace();
                         doRead(true);
@@ -345,8 +400,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             } else if (readSelectionKey == null) {
                 readWorker.addRegister(selector -> {
                     try {
-                        readSelectionKey = channel.register(selector, SelectionKey.OP_READ,EnhanceAsynchronousSocketChannel.this);
-//                        readSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
+                        readSelectionKey = channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         readCompletionHandler.failed(e, readAttachment);
                     }
@@ -413,7 +467,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 group.removeOps(writeSelectionKey, SelectionKey.OP_WRITE);
                 group.registerFuture(selector -> {
                     try {
-                        SelectionKey readSelectionKey = channel.register(selector, SelectionKey.OP_WRITE,EnhanceAsynchronousSocketChannel.this);
+                        SelectionKey readSelectionKey = channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
 //                        readSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         e.printStackTrace();
@@ -439,8 +493,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             } else if (writeSelectionKey == null) {
                 writeWorker.addRegister(selector -> {
                     try {
-                        writeSelectionKey = channel.register(selector, SelectionKey.OP_WRITE,EnhanceAsynchronousSocketChannel.this);
-//                        writeSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
+                        writeSelectionKey = channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         writeCompletionHandler.failed(e, writeAttachment);
                     }
