@@ -273,9 +273,12 @@ public final class AioQuickClient {
         //仅Client内部创建的ChannelGroup需要shutdown
         if (asynchronousChannelGroup != null) {
             asynchronousChannelGroup.shutdown();
+            asynchronousChannelGroup = null;
         }
         if (innerBufferPool != null) {
             innerBufferPool.release();
+            innerBufferPool = null;
+            bufferPool = null;
         }
     }
 
