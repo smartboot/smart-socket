@@ -42,7 +42,9 @@ class UdpDispatcher implements Runnable {
                     break;
                 }
                 processor.process(unit.session, unit.request);
-                unit.session.writeBuffer().flush();
+                if(!unit.session.isInvalid()){
+                    unit.session.writeBuffer().flush();
+                }
             } catch (InterruptedException e) {
                 LOGGER.info("InterruptedException", e);
             } catch (Exception e) {

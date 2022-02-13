@@ -14,7 +14,17 @@ package org.smartboot.socket.buffer;
  * @version V1.0 , 2019/11/16
  */
 final class FastBufferThread extends Thread {
+    private int pageIndex;
+
     public FastBufferThread(Runnable target, String name) {
         super(target, name);
+    }
+
+    public int getPageIndex() {
+        return pageIndex;
+    }
+
+    public void setPageIndex(int pageIndex) {
+        this.pageIndex = pageIndex;
     }
 }

@@ -39,27 +39,6 @@ public final class BufferPagePool {
      */
     private BufferPage[] bufferPages;
     private boolean enabled = true;
-    /**
-     * 内存回收任务
-     */
-    private final ScheduledFuture<?> future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
-        @Override
-        public void run() {
-            if (enabled) {
-                for (BufferPage bufferPage : bufferPages) {
-                    bufferPage.tryClean();
-                }
-            } else {
-                if (bufferPages != null) {
-                    for (BufferPage page : bufferPages) {
-                        page.release();
-                    }
-                    bufferPages = null;
-                }
-                future.cancel(false);
-            }
-        }
-    }, 500, 1000, TimeUnit.MILLISECONDS);
 
     /**
      * @param pageSize 内存页大小
@@ -85,7 +64,9 @@ public final class BufferPagePool {
      */
     public Thread newThread(Runnable target, String name) {
         assertEnabled();
-        return new FastBufferThread(target, name);
+        FastBufferThread thread = new FastBufferThread(target, name);
+        thread.setPageIndex((int) (thread.getId() % bufferPages.length));
+        return thread;
     }
 
     /**
@@ -111,5 +92,29 @@ public final class BufferPagePool {
     public void release() {
         enabled = false;
     }
+
+    /**
+     * 内存回收任务
+     */
+    private final ScheduledFuture<?> future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
+        @Override
+        public void run() {
+            if (enabled) {
+                for (BufferPage bufferPage : bufferPages) {
+                    bufferPage.tryClean();
+                }
+            } else {
+                if (bufferPages != null) {
+                    for (BufferPage page : bufferPages) {
+                        page.release();
+                    }
+                    bufferPages = null;
+                }
+                future.cancel(false);
+            }
+        }
+    }, 500, 1000, TimeUnit.MILLISECONDS);
+
+
 }
 
