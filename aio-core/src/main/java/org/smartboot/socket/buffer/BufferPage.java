@@ -98,9 +98,6 @@ public final class BufferPage {
      * @return 虚拟内存对象
      */
     private VirtualBuffer allocate0(final int size) {
-        if (size > buffer.capacity()) {
-            return null;
-        }
         idle = false;
         VirtualBuffer cleanBuffer = cleanBuffers.poll();
         if (cleanBuffer != null && cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
