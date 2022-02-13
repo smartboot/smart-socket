@@ -100,7 +100,7 @@ public final class BufferPage {
     private VirtualBuffer allocate0(final int size) {
         idle = false;
         VirtualBuffer cleanBuffer = cleanBuffers.poll();
-        if (cleanBuffer != null && cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
+        if (cleanBuffer != null && cleanBuffer.getCapacity() >= size) {
             cleanBuffer.buffer().clear();
             cleanBuffer.buffer(cleanBuffer.buffer());
             return cleanBuffer;
@@ -110,7 +110,7 @@ public final class BufferPage {
             if (cleanBuffer != null) {
                 clean0(cleanBuffer);
                 while ((cleanBuffer = cleanBuffers.poll()) != null) {
-                    if (cleanBuffer.getParentLimit() - cleanBuffer.getParentPosition() >= size) {
+                    if (cleanBuffer.getCapacity() >= size) {
                         cleanBuffer.buffer().clear();
                         cleanBuffer.buffer(cleanBuffer.buffer());
                         return cleanBuffer;
@@ -179,12 +179,12 @@ public final class BufferPage {
      * @return 申请到的内存块, 若空间不足则范围null
      */
     private VirtualBuffer allocate(int size, VirtualBuffer freeChunk) {
-        final int remaining = freeChunk.getParentLimit() - freeChunk.getParentPosition();
-        if (remaining < size) {
+        final int capacity = freeChunk.getCapacity();
+        if (capacity < size) {
             return null;
         }
         VirtualBuffer bufferChunk;
-        if (remaining == size) {
+        if (capacity == size) {
             buffer.limit(freeChunk.getParentLimit());
             buffer.position(freeChunk.getParentPosition());
             freeChunk.buffer(buffer.slice());
