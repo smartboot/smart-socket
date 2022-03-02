@@ -199,7 +199,6 @@ final class TcpAioSession extends AioSession {
                 if (writeBuffer != null) {
                     writeBuffer.clean();
                     writeBuffer = null;
-                    semaphore.release();
                 }
             } finally {
                 IOUtil.close(channel);
