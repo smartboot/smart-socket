@@ -100,6 +100,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private SelectionKey readSelectionKey;
     private SelectionKey readFutureSelectionKey;
     private SelectionKey writeSelectionKey;
+    private SelectionKey writeFutureSelectionKey;
     private SelectionKey connectSelectionKey;
     /**
      * 当前是否正在执行 write 操作
@@ -149,6 +150,10 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         if (writeSelectionKey != null) {
             writeSelectionKey.cancel();
             writeSelectionKey = null;
+        }
+        if (writeFutureSelectionKey != null) {
+            writeFutureSelectionKey.cancel();
+            writeFutureSelectionKey = null;
         }
         if (connectSelectionKey != null) {
             connectSelectionKey.cancel();
@@ -467,8 +472,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 group.removeOps(writeSelectionKey, SelectionKey.OP_WRITE);
                 group.registerFuture(selector -> {
                     try {
-                        SelectionKey readSelectionKey = channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
-//                        readSelectionKey.attach(EnhanceAsynchronousSocketChannel.this);
+                        writeFutureSelectionKey = channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         e.printStackTrace();
                         doWrite();

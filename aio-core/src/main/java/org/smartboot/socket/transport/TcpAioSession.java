@@ -193,14 +193,18 @@ final class TcpAioSession extends AioSession {
         }
         status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
         if (immediate) {
-            byteBuf.close();
-            readBuffer.clean();
-            if (writeBuffer != null) {
-                writeBuffer.clean();
-                writeBuffer = null;
+            try {
+                byteBuf.close();
+                readBuffer.clean();
+                if (writeBuffer != null) {
+                    writeBuffer.clean();
+                    writeBuffer = null;
+                    semaphore.release();
+                }
+            } finally {
+                IOUtil.close(channel);
+                ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
             }
-            IOUtil.close(channel);
-            ioServerConfig.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
         } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && byteBuf.isEmpty()) {
             close(true);
         } else {

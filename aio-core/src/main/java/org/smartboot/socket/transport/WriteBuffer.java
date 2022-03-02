@@ -290,19 +290,21 @@ public final class WriteBuffer extends OutputStream {
         return count == 0 && (writeInBuf == null || writeInBuf.buffer().position() == 0);
     }
 
-    synchronized VirtualBuffer pollItem() {
+    VirtualBuffer pollItem() {
         if (count == 0) {
             return null;
         }
-        VirtualBuffer x = items[takeIndex];
-        items[takeIndex] = null;
-        if (++takeIndex == items.length) {
-            takeIndex = 0;
+        synchronized (this) {
+            VirtualBuffer x = items[takeIndex];
+            items[takeIndex] = null;
+            if (++takeIndex == items.length) {
+                takeIndex = 0;
+            }
+            if (count-- == items.length) {
+                this.notifyAll();
+            }
+            return x;
         }
-        if (count-- == items.length) {
-            this.notifyAll();
-        }
-        return x;
     }
 
     /**
