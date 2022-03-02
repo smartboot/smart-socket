@@ -57,7 +57,7 @@ public class StringUtils {
                     startIndex = i;
                     buffer.append(fixHexString(Integer.toHexString(i), 8)).append(": ");
                     buffer.append(toHex(bytes[i]));
-                    buffer.append(" ");
+                    buffer.append(' ');
                     break;
                 case 15:
                     buffer.append(toHex(bytes[i]));
@@ -67,7 +67,7 @@ public class StringUtils {
                     break;
                 default:
                     buffer.append(toHex(bytes[i]));
-                    buffer.append(" ");
+                    buffer.append(' ');
             }
         }
         if (column != 15) {
@@ -110,12 +110,12 @@ public class StringUtils {
         if (hexStr == null || hexStr.length() == 0) {
             return "00000000h";
         } else {
-            final StringBuffer buf = new StringBuffer(length);
+            final StringBuilder buf = new StringBuilder(length);
             final int strLen = hexStr.length();
             for (int i = 0; i < length - strLen; i++) {
-                buf.append("0");
+                buf.append('0');
             }
-            buf.append(hexStr).append("h");
+            buf.append(hexStr).append('h');
             return buf.toString();
         }
     }
