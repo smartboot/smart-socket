@@ -10,6 +10,7 @@
 package org.smartboot.socket.buffer;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.Semaphore;
 
 /**
  * 虚拟ByteBuffer缓冲区
@@ -32,7 +33,7 @@ public final class VirtualBuffer {
     /**
      * 是否已回收
      */
-    private boolean clean = false;
+    private Semaphore clean = new Semaphore(1);
     /**
      * 当前虚拟buffer映射的实际buffer.position
      */
@@ -102,19 +103,19 @@ public final class VirtualBuffer {
      */
     void buffer(ByteBuffer buffer) {
         this.buffer = buffer;
-        clean = false;
+        clean.release();
     }
 
     /**
      * 释放虚拟缓冲区
      */
     public void clean() {
-        if (clean) {
+        if (clean.tryAcquire()) {
+            if (bufferPage != null) {
+                bufferPage.clean(this);
+            }
+        } else {
             throw new UnsupportedOperationException("buffer has cleaned");
-        }
-        clean = true;
-        if (bufferPage != null) {
-            bufferPage.clean(this);
         }
     }
 
