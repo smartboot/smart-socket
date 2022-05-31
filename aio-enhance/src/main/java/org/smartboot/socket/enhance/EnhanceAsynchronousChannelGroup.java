@@ -105,6 +105,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             writeWorkers[i] = new Worker(Selector.open(), selectionKey -> {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) > 0) {
+                    removeOps(selectionKey, SelectionKey.OP_WRITE);
                     asynchronousSocketChannel.doWrite();
                 } else {
                     System.out.println("ignore write");

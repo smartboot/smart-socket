@@ -437,6 +437,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         scatteringReadBuffer = null;
     }
 
+    private int invoker;
+
     public void doWrite() {
         try {
             //此前通过Future调用,且触发了cancel
@@ -444,16 +446,16 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 resetWrite();
                 return;
             }
-            boolean directWrite;
-            boolean isWriteWorkThread = Thread.currentThread() == writeWorker.getWorkerThread();
-            if (isWriteWorkThread && writeFuture != null) {
-                directWrite = writeWorker.invoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER;
+            //read线程自身有堆栈限制
+            if (readWorker.getWorkerThread() == Thread.currentThread()) {
+                invoker = 0;
             } else {
-                directWrite = true;
+                //防止无限递归导致堆栈溢出
+                invoker++;
             }
             long writeSize = 0;
             boolean hasRemain = true;
-            if (directWrite) {
+            if (invoker < EnhanceAsynchronousChannelGroup.MAX_INVOKER) {
                 if (gatheringWriteBuffer != null) {
                     writeSize = channel.write(gatheringWriteBuffer.getBuffers(), gatheringWriteBuffer.getOffset(), gatheringWriteBuffer.getLength());
                     hasRemain = hasRemaining(gatheringWriteBuffer);
@@ -462,9 +464,11 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     hasRemain = writeBuffer.hasRemaining();
                 }
                 //The write buffer has not been emptied, there may be remaining data cannot be output
-                if (isWriteWorkThread && hasRemain) {
-                    writeWorker.invoker = EnhanceAsynchronousChannelGroup.MAX_INVOKER;
+                if (Thread.currentThread() == writeWorker.getWorkerThread() && hasRemain) {
+                    invoker = EnhanceAsynchronousChannelGroup.MAX_INVOKER;
                 }
+            } else {
+                invoker = 0;
             }
 
             //注册至异步线程
@@ -490,9 +494,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     completionHandler.completed((int) writeSize, attach);
                 } else {
                     completionHandler.completed(writeSize, attach);
-                }
-                if (!writePending && writeSelectionKey != null) {
-                    group.removeOps(writeSelectionKey, SelectionKey.OP_WRITE);
                 }
             } else if (writeSelectionKey == null) {
                 writeWorker.addRegister(selector -> {
