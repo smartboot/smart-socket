@@ -15,6 +15,8 @@ import org.smartboot.socket.buffer.VirtualBuffer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -38,6 +40,9 @@ public final class WriteBuffer extends OutputStream {
      * 缓冲区数据刷新Function
      */
     private final Consumer<WriteBuffer> consumer;
+
+    private final BiFunction<VirtualBuffer, Consumer<WriteBuffer>,Boolean> fastFlushConsumer;
+    private final static Consumer<WriteBuffer> flushConsumer= writeBuffer -> writeBuffer.writeInBuf = null;
     /**
      * 默认内存块大小
      */
@@ -67,11 +72,12 @@ public final class WriteBuffer extends OutputStream {
      */
     private byte[] cacheByte;
 
-    WriteBuffer(BufferPage bufferPage, Consumer<WriteBuffer> consumer, int chunkSize, int capacity) {
+    WriteBuffer(BufferPage bufferPage, Consumer<WriteBuffer> consumer, BiFunction<VirtualBuffer, Consumer<WriteBuffer>,Boolean> fastFlushConsumer, int chunkSize, int capacity) {
         this.bufferPage = bufferPage;
         this.consumer = consumer;
         this.items = new VirtualBuffer[capacity];
         this.chunkSize = chunkSize;
+        this.fastFlushConsumer=fastFlushConsumer;
     }
 
     /**
@@ -116,11 +122,10 @@ public final class WriteBuffer extends OutputStream {
         if (!forceFlush && writeInBuf.buffer().hasRemaining()) {
             return;
         }
-        consumer.accept(this);
-        if (writeInBuf == null || writeInBuf.buffer().position() == 0) {
+        writeInBuf.buffer().flip();
+        if(count==0&&fastFlushConsumer.apply(writeInBuf,flushConsumer)){
             return;
         }
-        writeInBuf.buffer().flip();
         VirtualBuffer virtualBuffer = writeInBuf;
         writeInBuf = null;
         try {

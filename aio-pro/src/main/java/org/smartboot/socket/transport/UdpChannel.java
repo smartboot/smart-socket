@@ -24,6 +24,7 @@ import java.nio.channels.Selector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -149,7 +150,7 @@ public final class UdpChannel {
                     e.printStackTrace();
                 }
             };
-            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, consumer, config.getWriteBufferSize(), 1);
+            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, consumer, (virtualBuffers, writeBufferConsumer) -> false, config.getWriteBufferSize(), 1);
             return new UdpAioSession(UdpChannel.this, remote, writeBuffer);
         });
     }
