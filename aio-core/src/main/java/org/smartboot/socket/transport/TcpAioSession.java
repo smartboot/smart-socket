@@ -23,8 +23,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -62,7 +60,7 @@ final class TcpAioSession extends AioSession {
     /**
      * 输出流
      */
-    private  WriteBuffer byteBuf;
+    private final WriteBuffer byteBuf;
     /**
      * 输出信号量,防止并发write导致异常
      */
@@ -123,17 +121,7 @@ final class TcpAioSession extends AioSession {
                 continueWrite(writeBuffer);
             }
         };
-        BiFunction<VirtualBuffer, Consumer<WriteBuffer>,Boolean> fastFlushConsumer = (var, c) -> {
-            if (!semaphore.tryAcquire()) {
-                return false;
-            }
-
-            TcpAioSession.this.writeBuffer = var;
-            c.accept(byteBuf);
-            continueWrite(writeBuffer);
-            return true;
-        };
-        byteBuf = new WriteBuffer(bufferPage, flushConsumer, fastFlushConsumer, ioServerConfig.getWriteBufferSize(), ioServerConfig.getWriteBufferCapacity());
+        byteBuf = new WriteBuffer(bufferPage, flushConsumer, ioServerConfig.getWriteBufferSize(), ioServerConfig.getWriteBufferCapacity());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
