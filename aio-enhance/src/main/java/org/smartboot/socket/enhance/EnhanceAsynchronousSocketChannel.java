@@ -118,6 +118,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 远程连接的地址
      */
     private SocketAddress remote;
+    private int invoker;
 
     public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel) throws IOException {
         super(group.provider());
@@ -437,8 +438,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         scatteringReadBuffer = null;
     }
 
-    private int invoker;
-
     public void doWrite() {
         try {
             //此前通过Future调用,且触发了cancel
@@ -453,19 +452,15 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 //防止无限递归导致堆栈溢出
                 invoker++;
             }
-            long writeSize = 0;
+            int writeSize = 0;
             boolean hasRemain = true;
             if (invoker < EnhanceAsynchronousChannelGroup.MAX_INVOKER) {
                 if (gatheringWriteBuffer != null) {
-                    writeSize = channel.write(gatheringWriteBuffer.getBuffers(), gatheringWriteBuffer.getOffset(), gatheringWriteBuffer.getLength());
+                    writeSize = (int) channel.write(gatheringWriteBuffer.getBuffers(), gatheringWriteBuffer.getOffset(), gatheringWriteBuffer.getLength());
                     hasRemain = hasRemaining(gatheringWriteBuffer);
                 } else {
                     writeSize = channel.write(writeBuffer);
                     hasRemain = writeBuffer.hasRemaining();
-                }
-                //The write buffer has not been emptied, there may be remaining data cannot be output
-                if (Thread.currentThread() == writeWorker.getWorkerThread() && hasRemain) {
-                    invoker = EnhanceAsynchronousChannelGroup.MAX_INVOKER;
                 }
             } else {
                 invoker = 0;
@@ -488,13 +483,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             if (writeSize != 0 || !hasRemain) {
                 CompletionHandler<Number, Object> completionHandler = writeCompletionHandler;
                 Object attach = writeAttachment;
-                ByteBufferArray scattering = gatheringWriteBuffer;
                 resetWrite();
-                if (scattering == null) {
-                    completionHandler.completed((int) writeSize, attach);
-                } else {
-                    completionHandler.completed(writeSize, attach);
-                }
+                completionHandler.completed(writeSize, attach);
             } else if (writeSelectionKey == null) {
                 writeWorker.addRegister(selector -> {
                     try {
