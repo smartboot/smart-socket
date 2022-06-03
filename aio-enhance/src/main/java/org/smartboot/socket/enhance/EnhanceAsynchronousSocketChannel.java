@@ -118,7 +118,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 远程连接的地址
      */
     private SocketAddress remote;
-    private int invoker;
+    private int writeInvoker;
 
     public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel) throws IOException {
         super(group.provider());
@@ -445,12 +445,14 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 resetWrite();
                 return;
             }
-            //read线程自身有堆栈限制
-            if (readWorker.getWorkerThread() == Thread.currentThread()) {
+            int invoker;
+            //防止无限递归导致堆栈溢出
+            if (writeWorker.getWorkerThread() == Thread.currentThread()) {
+                invoker = ++writeWorker.invoker;
+            } else if (readWorker.getWorkerThread() == Thread.currentThread()) {
                 invoker = 0;
             } else {
-                //防止无限递归导致堆栈溢出
-                invoker++;
+                invoker = ++writeInvoker;
             }
             int writeSize = 0;
             boolean hasRemain = true;
@@ -463,7 +465,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     hasRemain = writeBuffer.hasRemaining();
                 }
             } else {
-                invoker = 0;
+                writeInvoker = 0;
             }
 
             //注册至异步线程
