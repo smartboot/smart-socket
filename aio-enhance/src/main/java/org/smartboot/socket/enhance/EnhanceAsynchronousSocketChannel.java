@@ -356,8 +356,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 resetRead();
                 return;
             }
-            boolean isReadWorkThread = Thread.currentThread() == readWorker.getWorkerThread();
-            boolean directRead = direct || (isReadWorkThread && readWorker.invoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER);
+            boolean directRead = direct || (Thread.currentThread() == readWorker.getWorkerThread() && readWorker.invoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER);
 
             long readSize = 0;
             boolean hasRemain = true;
