@@ -369,10 +369,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     readSize = channel.read(readBuffer);
                     hasRemain = readBuffer.hasRemaining();
                 }
-                //The read buffer is not full, there may be no readable data
-                if (hasRemain && isReadWorkThread) {
-                    readWorker.invoker = EnhanceAsynchronousChannelGroup.MAX_INVOKER;
-                }
             }
 
             //注册至异步线程
