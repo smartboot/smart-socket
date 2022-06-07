@@ -9,7 +9,7 @@
 
 package org.smartboot.socket.buffer;
 
-import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
@@ -17,7 +17,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -42,7 +41,7 @@ public final class BufferPage {
     /**
      * 待回收的虚拟Buffer
      */
-    private final ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<>();
+    private final LockFreeQueue cleanBuffers = new LockFreeQueue(1024);
     /**
      * 当前空闲的虚拟Buffer
      */
@@ -209,7 +208,15 @@ public final class BufferPage {
      * @param cleanBuffer 待回收的虚拟内存
      */
     void clean(VirtualBuffer cleanBuffer) {
-        cleanBuffers.offer(cleanBuffer);
+        if (!cleanBuffers.offer(cleanBuffer)) {
+            lock.lock();
+            try {
+                clean0(cleanBuffer);
+            } finally {
+                lock.unlock();
+            }
+
+        }
     }
 
     /**
@@ -274,7 +281,8 @@ public final class BufferPage {
      */
     void release() {
         if (buffer.isDirect()) {
-            Unsafe.getUnsafe().invokeCleaner(buffer);
+//            Unsafe.getUnsafe().invokeCleaner(buffer);
+            ((DirectBuffer) buffer).cleaner().clean();
         }
     }
 
