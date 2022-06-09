@@ -42,7 +42,7 @@ public final class BufferPage {
     /**
      * 待回收的虚拟Buffer
      */
-    private final ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue();
+    private final ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<>();
     /**
      * 当前空闲的虚拟Buffer
      */
@@ -209,15 +209,7 @@ public final class BufferPage {
      * @param cleanBuffer 待回收的虚拟内存
      */
     void clean(VirtualBuffer cleanBuffer) {
-        if (!cleanBuffers.offer(cleanBuffer)) {
-            lock.lock();
-            try {
-                clean0(cleanBuffer);
-            } finally {
-                lock.unlock();
-            }
-
-        }
+        cleanBuffers.offer(cleanBuffer);
     }
 
     /**
@@ -282,7 +274,6 @@ public final class BufferPage {
      */
     void release() {
         if (buffer.isDirect()) {
-//            Unsafe.getUnsafe().invokeCleaner(buffer);
             ((DirectBuffer) buffer).cleaner().clean();
         }
     }
