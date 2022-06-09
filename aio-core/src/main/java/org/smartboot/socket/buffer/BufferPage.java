@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -41,7 +42,7 @@ public final class BufferPage {
     /**
      * 待回收的虚拟Buffer
      */
-    private final LockFreeQueue cleanBuffers = new LockFreeQueue(1024);
+    private final ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue();
     /**
      * 当前空闲的虚拟Buffer
      */
