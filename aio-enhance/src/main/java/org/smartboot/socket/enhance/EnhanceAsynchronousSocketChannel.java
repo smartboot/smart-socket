@@ -440,13 +440,11 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 resetWrite();
                 return;
             }
-            int invoker;
+            int invoker = 0;
             //防止无限递归导致堆栈溢出
             if (writeWorker.getWorkerThread() == Thread.currentThread()) {
                 invoker = ++writeWorker.invoker;
-            } else if (readWorker.getWorkerThread() == Thread.currentThread()) {
-                invoker = 0;
-            } else {
+            } else if (readWorker.getWorkerThread() != Thread.currentThread()) {
                 invoker = ++writeInvoker;
             }
             int writeSize = 0;
