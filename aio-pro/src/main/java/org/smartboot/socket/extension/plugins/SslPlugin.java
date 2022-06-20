@@ -14,9 +14,13 @@ import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.ssl.SslAsynchronousSocketChannel;
 import org.smartboot.socket.extension.ssl.SslService;
+import org.smartboot.socket.extension.ssl.factory.ClientSSLContextFactory;
+import org.smartboot.socket.extension.ssl.factory.SSLContextFactory;
+import org.smartboot.socket.extension.ssl.factory.ServerSSLContextFactory;
 
-import java.io.InputStream;
+import javax.net.ssl.SSLEngine;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.function.Consumer;
 
 /**
  * SSL/TLS通信插件
@@ -25,43 +29,51 @@ import java.nio.channels.AsynchronousSocketChannel;
  * @version V1.0 , 2020/4/17
  */
 public final class SslPlugin<T> extends AbstractPlugin<T> {
-    private SslService sslService;
-    private BufferPagePool bufferPagePool;
-    private boolean init = false;
+    private final SslService sslService;
+    private final BufferPagePool bufferPagePool;
 
-    public SslPlugin() {
-        this.bufferPagePool = BufferFactory.DISABLED_BUFFER_FACTORY.create();
+    public SslPlugin(SSLContextFactory factory, Consumer<SSLEngine> consumer) throws Exception {
+        this(factory, consumer, BufferFactory.DISABLED_BUFFER_FACTORY.create());
     }
 
-    public SslPlugin(BufferPagePool bufferPagePool) {
+    public SslPlugin(SSLContextFactory factory, Consumer<SSLEngine> consumer, BufferPagePool bufferPagePool) throws Exception {
         this.bufferPagePool = bufferPagePool;
+        sslService = new SslService(factory.create(), consumer);
     }
 
-    public void initForServer(InputStream keyStoreInputStream, String keyStorePassword, String keyPassword, ClientAuth clientAuth) {
-        initCheck();
-        sslService = new SslService(false, clientAuth);
-        sslService.initKeyStore(keyStoreInputStream, keyStorePassword, keyPassword);
+    public SslPlugin(ClientSSLContextFactory factory) throws Exception {
+        this(factory, BufferFactory.DISABLED_BUFFER_FACTORY.create());
     }
 
-    public void initForClient() {
-        initForClient(null, null);
+    public SslPlugin(ClientSSLContextFactory factory, BufferPagePool bufferPagePool) throws Exception {
+        this(factory, sslEngine -> sslEngine.setUseClientMode(true), bufferPagePool);
     }
 
-    public void initForClient(InputStream trustInputStream, String trustPassword) {
-        initCheck();
-        sslService = new SslService(true, null);
-        sslService.initTrust(trustInputStream, trustPassword);
+    public SslPlugin(ServerSSLContextFactory factory, ClientAuth clientAuth) throws Exception {
+        this(factory, clientAuth, BufferFactory.DISABLED_BUFFER_FACTORY.create());
     }
 
-    private void initCheck() {
-        if (init) {
-            throw new RuntimeException("plugin is already init");
-        }
-        init = true;
+    public SslPlugin(ServerSSLContextFactory factory, ClientAuth clientAuth, BufferPagePool bufferPagePool) throws Exception {
+        this(factory, sslEngine -> {
+            sslEngine.setUseClientMode(false);
+            switch (clientAuth) {
+                case OPTIONAL:
+                    sslEngine.setWantClientAuth(true);
+                    break;
+                case REQUIRE:
+                    sslEngine.setNeedClientAuth(true);
+                    break;
+                case NONE:
+                    break;
+                default:
+                    throw new Error("Unknown auth " + clientAuth);
+            }
+        }, bufferPagePool);
     }
 
     @Override
-    public final AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
+    public AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
         return new SslAsynchronousSocketChannel(channel, sslService, bufferPagePool.allocateBufferPage());
     }
+
 }

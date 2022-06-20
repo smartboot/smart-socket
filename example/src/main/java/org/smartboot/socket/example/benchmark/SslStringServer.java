@@ -19,6 +19,7 @@ import org.smartboot.socket.extension.plugins.SslPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.extension.protocol.StringProtocol;
 import org.smartboot.socket.extension.ssl.ClientAuth;
+import org.smartboot.socket.extension.ssl.factory.ServerSSLContextFactory;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.WriteBuffer;
@@ -32,7 +33,7 @@ import java.io.IOException;
 public class SslStringServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(SslStringServer.class);
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
             public void process0(AioSession session, String msg) {
@@ -63,8 +64,7 @@ public class SslStringServer {
                 .setWriteBuffer(4096, 512);
         processor.addPlugin(new BufferPageMonitorPlugin<>(server, 6));
         processor.addPlugin(new MonitorPlugin<>(5));
-        SslPlugin<String> sslPlugin = new SslPlugin<>();
-        sslPlugin.initForServer(StringServer.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456", ClientAuth.NONE);
+        SslPlugin<String> sslPlugin = new SslPlugin<>(new ServerSSLContextFactory(StringServer.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456"), ClientAuth.NONE);
         processor.addPlugin(sslPlugin);
         server.start();
 

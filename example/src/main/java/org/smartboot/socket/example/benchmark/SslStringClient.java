@@ -17,6 +17,7 @@ import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.extension.plugins.SslPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.extension.protocol.StringProtocol;
+import org.smartboot.socket.extension.ssl.factory.ClientSSLContextFactory;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.WriteBuffer;
@@ -34,7 +35,7 @@ public class SslStringClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(SslStringClient.class);
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
 
         BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 32, 10, true);
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
@@ -51,8 +52,7 @@ public class SslStringClient {
             }
         };
         processor.addPlugin(new MonitorPlugin(5));
-        SslPlugin sslPlugin = new SslPlugin();
-        sslPlugin.initForClient();
+        SslPlugin sslPlugin = new SslPlugin(new ClientSSLContextFactory());
         processor.addPlugin(sslPlugin);
         AsynchronousChannelGroup asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override

@@ -14,24 +14,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.security.KeyStore;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.util.function.Consumer;
 
 /**
  * TLS/SSL服务
@@ -44,13 +35,10 @@ public final class SslService {
 
     private static final Logger logger = LoggerFactory.getLogger(SslService.class);
 
-    private SSLContext sslContext;
+    private final SSLContext sslContext;
 
-    private boolean isClient;
-
-    private ClientAuth clientAuth;
-
-    private CompletionHandler<Integer, HandshakeModel> handshakeCompletionHandler = new CompletionHandler<Integer, HandshakeModel>() {
+    private final Consumer<SSLEngine> consumer;
+    private final CompletionHandler<Integer, HandshakeModel> handshakeCompletionHandler = new CompletionHandler<Integer, HandshakeModel>() {
         @Override
         public void completed(Integer result, HandshakeModel attachment) {
             if (result == -1) {
@@ -68,59 +56,9 @@ public final class SslService {
         }
     };
 
-    public SslService(boolean isClient, ClientAuth clientAuth) {
-        this.isClient = isClient;
-        this.clientAuth = clientAuth;
-    }
-
-    public void initKeyStore(InputStream keyStoreInputStream, String keyStorePassword, String keyPassword) {
-        try {
-
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(keyStoreInputStream, keyStorePassword.toCharArray());
-            kmf.init(ks, keyPassword.toCharArray());
-            KeyManager[] keyManagers = kmf.getKeyManagers();
-
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(keyManagers, null, new SecureRandom());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void initTrust(InputStream trustInputStream, String trustPassword) {
-        try {
-            TrustManager[] trustManagers;
-            if (trustInputStream != null) {
-                KeyStore ts = KeyStore.getInstance("JKS");
-                ts.load(trustInputStream, trustPassword.toCharArray());
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-                tmf.init(ts);
-                trustManagers = tmf.getTrustManagers();
-            } else {
-                trustManagers = new TrustManager[]{new X509TrustManager() {
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-                    }
-
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-                    }
-
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-                }};
-            }
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustManagers, new SecureRandom());
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public SslService(SSLContext sslContext, Consumer<SSLEngine> consumer) {
+        this.sslContext = sslContext;
+        this.consumer = consumer;
     }
 
     HandshakeModel createSSLEngine(AsynchronousSocketChannel socketChannel, BufferPage bufferPage) {
@@ -128,21 +66,10 @@ public final class SslService {
             HandshakeModel handshakeModel = new HandshakeModel();
             SSLEngine sslEngine = sslContext.createSSLEngine();
             SSLSession session = sslEngine.getSession();
-            sslEngine.setUseClientMode(isClient);
-            if (clientAuth != null) {
-                switch (clientAuth) {
-                    case OPTIONAL:
-                        sslEngine.setWantClientAuth(true);
-                        break;
-                    case REQUIRE:
-                        sslEngine.setNeedClientAuth(true);
-                        break;
-                    case NONE:
-                        break;
-                    default:
-                        throw new Error("Unknown auth " + clientAuth);
-                }
-            }
+
+            //更新SSLEngine配置
+            consumer.accept(sslEngine);
+
             handshakeModel.setSslEngine(sslEngine);
             handshakeModel.setAppWriteBuffer(bufferPage.allocate(session.getApplicationBufferSize()));
             handshakeModel.setNetWriteBuffer(bufferPage.allocate(session.getPacketBufferSize()));
