@@ -49,7 +49,7 @@ public final class UdpChannel {
     private SelectionKey selectionKey;
     private ResponseUnit failResponseUnit;
 
-    public UdpChannel() {
+    UdpChannel() {
     }
 
     UdpChannel(final DatagramChannel channel, UdpBootstrap.Worker worker, IoServerConfig config, BufferPage bufferPage) {
