@@ -10,32 +10,18 @@
 package org.smartboot.socket.transport;
 
 import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferFactory;
 import org.smartboot.socket.buffer.BufferPagePool;
-import org.smartboot.socket.buffer.VirtualBuffer;
-import org.smartboot.socket.util.DecoderException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 /**
  * UDP服务启动类
@@ -44,10 +30,8 @@ import java.util.function.Consumer;
  * @version V1.0 , 2019/8/18
  */
 public class UdpBootstrap {
-    private static final UdpChannel SELECTOR_CHANNEL = new UdpChannel(null, null, null);
-    private static final UdpChannel SHUTDOWN_CHANNEL = new UdpChannel(null, null, null);
 
-    private final static int MAX_READ_TIMES = 16;
+
     /**
      * 服务ID
      */
@@ -139,54 +123,15 @@ public class UdpBootstrap {
             }
         });
 
-        worker = new Worker();
+        worker = new Worker(bufferPool, config);
         for (int i = 0; i < config.getThreadNum(); i++) {
             executorService.execute(worker);
         }
     }
 
-    private void doRead(ByteBuffer buffer, UdpChannel channel) throws IOException {
-        int count = MAX_READ_TIMES;
-        while (count-- > 0) {
-            //接收数据
-            buffer.clear();
-            SocketAddress remote = channel.getChannel().receive(buffer);
-            if (remote == null) {
-                return;
-            }
-            buffer.flip();
-
-            UdpAioSession session = new UdpAioSession(channel, remote, bufferPool.allocateBufferPage());
-            NetMonitor netMonitor = config.getMonitor();
-            if (netMonitor != null) {
-                netMonitor.beforeRead(session);
-                netMonitor.afterRead(session, buffer.remaining());
-            }
-            //解码
-            try {
-                while (buffer.hasRemaining()) {
-                    Object request = config.getProtocol().decode(buffer, session);
-                    //理论上每个UDP包都是一个完整的消息
-                    if (request == null) {
-                        config.getProcessor().stateEvent(session, StateMachineEnum.DECODE_EXCEPTION, new DecoderException("decode result is null"));
-                        break;
-                    } else {
-                        config.getProcessor().process(session, request);
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                config.getProcessor().stateEvent(session, StateMachineEnum.DECODE_EXCEPTION, e);
-                throw e;
-            } finally {
-                session.close();
-            }
-        }
-    }
 
     public void shutdown() {
-        worker.selectionKeys.offer(SHUTDOWN_CHANNEL);
-        worker.selector.wakeup();
+        worker.shutdown();
         executorService.shutdown();
         if (innerBufferPool != null) {
             innerBufferPool.release();
@@ -256,95 +201,6 @@ public class UdpBootstrap {
         return this;
     }
 
-    class Worker implements Runnable {
-        /**
-         * 当前Worker绑定的Selector
-         */
-        private final Selector selector;
-        private final BlockingQueue<UdpChannel> selectionKeys = new ArrayBlockingQueue<>(256);
 
-        /**
-         * 待注册的事件
-         */
-        private final ConcurrentLinkedQueue<Consumer<Selector>> registers = new ConcurrentLinkedQueue<>();
-
-        Worker() throws IOException {
-            this.selector = Selector.open();
-            try {
-                this.selectionKeys.put(SELECTOR_CHANNEL);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        /**
-         * 注册事件
-         */
-        final void addRegister(Consumer<Selector> register) {
-            registers.offer(register);
-            selector.wakeup();
-        }
-
-        @Override
-        public final void run() {
-            //读缓冲区
-            VirtualBuffer readBuffer = bufferPool.allocateBufferPage().allocate(config.getReadBufferSize());
-            try {
-                while (true) {
-                    UdpChannel udpChannel = selectionKeys.take();
-                    if (udpChannel == SELECTOR_CHANNEL) {
-                        try {
-                            doSelect();
-                        } finally {
-                            selectionKeys.put(SELECTOR_CHANNEL);
-                        }
-                        continue;
-                    } else if (udpChannel == SHUTDOWN_CHANNEL) {
-                        selectionKeys.put(SHUTDOWN_CHANNEL);
-                        selector.wakeup();
-                        break;
-                    }
-                    SelectionKey key = udpChannel.getSelectionKey();
-                    if (!key.isValid()) {
-                        udpChannel.close();
-                        continue;
-                    }
-
-                    if (key.isReadable()) {
-                        doRead(readBuffer.buffer(), udpChannel);
-                    }
-                    if (key.isWritable()) {
-                        udpChannel.doWrite();
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                //读缓冲区内存回收
-                readBuffer.clean();
-            }
-        }
-
-        private void doSelect() throws IOException {
-            Consumer<Selector> register;
-            while ((register = registers.poll()) != null) {
-                register.accept(selector);
-            }
-            Set<SelectionKey> keySet = selector.selectedKeys();
-            if (keySet.isEmpty()) {
-                selector.select();
-            }
-            Iterator<SelectionKey> keyIterator = keySet.iterator();
-            // 执行本次已触发待处理的事件
-            while (keyIterator.hasNext()) {
-                SelectionKey key = keyIterator.next();
-                if (selectionKeys.offer((UdpChannel) key.attachment())) {
-                    keyIterator.remove();
-                } else {
-                    break;
-                }
-            }
-        }
-    }
 }
 

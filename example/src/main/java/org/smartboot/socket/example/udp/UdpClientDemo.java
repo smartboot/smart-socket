@@ -46,24 +46,23 @@ public class UdpClientDemo {
         UdpChannel channel = bootstrap.open();
 
         byte[] bytes = "hello smart-socket".getBytes();
-        for (int i = 0; i < 16; i++) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        AioSession session = channel.connect("localhost", 8888);
-                        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 1; i++) {
+            new Thread(() -> {
+                try {
+                    AioSession session = channel.connect("localhost", 8888);
+                    for (int i1 = 0; i1 < 10000; i1++) {
+                        synchronized (session.writeBuffer()) {
                             session.writeBuffer().writeInt(bytes.length);
                             session.writeBuffer().write(bytes);
                             session.writeBuffer().flush();
                         }
-                        session.close();
-                        System.out.println("发送完毕");
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
-
+                    session.close();
+                    System.out.println("发送完毕");
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+
             }).start();
         }
 

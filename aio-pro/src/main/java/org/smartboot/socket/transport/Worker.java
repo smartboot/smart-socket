@@ -1,0 +1,175 @@
+package org.smartboot.socket.transport;
+
+import org.smartboot.socket.NetMonitor;
+import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.buffer.VirtualBuffer;
+import org.smartboot.socket.util.DecoderException;
+
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
+
+final class Worker implements Runnable {
+    private final static int MAX_READ_TIMES = 16;
+    private static final Runnable SELECTOR_CHANNEL = () -> {
+    };
+    private static final Runnable SHUTDOWN_CHANNEL = () -> {
+    };
+    /**
+     * 当前Worker绑定的Selector
+     */
+    private final Selector selector;
+    private final IoServerConfig config;
+    /**
+     * 内存池
+     */
+    private final BufferPagePool bufferPool;
+    private final BlockingQueue<Runnable> requestQueue = new ArrayBlockingQueue<>(128);
+
+    /**
+     * 待注册的事件
+     */
+    private final ConcurrentLinkedQueue<Consumer<Selector>> registers = new ConcurrentLinkedQueue<>();
+
+    private VirtualBuffer standbyBuffer;
+
+    Worker(BufferPagePool bufferPool, IoServerConfig config) throws IOException {
+        this.bufferPool = bufferPool;
+        this.selector = Selector.open();
+        this.config = config;
+        this.standbyBuffer = bufferPool.allocateBufferPage().allocate(config.getReadBufferSize());
+        try {
+            this.requestQueue.put(SELECTOR_CHANNEL);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 注册事件
+     */
+    void addRegister(Consumer<Selector> register) {
+        registers.offer(register);
+        selector.wakeup();
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                Runnable runnable = requestQueue.take();
+                //服务终止
+                if (runnable == SHUTDOWN_CHANNEL) {
+                    requestQueue.put(SHUTDOWN_CHANNEL);
+                    selector.wakeup();
+                    break;
+                } else if (runnable == SELECTOR_CHANNEL) {
+                    try {
+                        doSelector();
+                    } finally {
+                        requestQueue.put(SELECTOR_CHANNEL);
+                    }
+                } else {
+                    runnable.run();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void doSelector() throws IOException {
+        Consumer<Selector> register;
+        while ((register = registers.poll()) != null) {
+            register.accept(selector);
+        }
+        Set<SelectionKey> keySet = selector.selectedKeys();
+        if (keySet.isEmpty()) {
+            selector.select();
+        }
+        Iterator<SelectionKey> keyIterator = keySet.iterator();
+        // 执行本次已触发待处理的事件
+        while (keyIterator.hasNext()) {
+            SelectionKey key = keyIterator.next();
+            UdpChannel udpChannel = (UdpChannel) key.attachment();
+            if (!key.isValid()) {
+                keyIterator.remove();
+                udpChannel.close();
+                continue;
+            }
+            if (key.isWritable()) {
+                udpChannel.doWrite();
+            }
+            if (key.isReadable() && !doRead(udpChannel)) {
+                System.out.println("break...");
+                break;
+            }
+            keyIterator.remove();
+        }
+    }
+
+    private boolean doRead(UdpChannel channel) throws IOException {
+        int count = MAX_READ_TIMES;
+        while (count-- > 0) {
+            ByteBuffer buffer = standbyBuffer.buffer();
+            SocketAddress remote = channel.getChannel().receive(buffer);
+            if (remote == null) {
+                buffer.clear();
+                return true;
+            }
+            VirtualBuffer readyBuffer = standbyBuffer;
+            standbyBuffer = channel.getBufferPage().allocate(config.getReadBufferSize());
+            buffer.flip();
+            Runnable runnable = () -> {
+                //解码
+                UdpAioSession session = new UdpAioSession(channel, remote, bufferPool.allocateBufferPage());
+                try {
+                    NetMonitor netMonitor = config.getMonitor();
+                    if (netMonitor != null) {
+                        netMonitor.beforeRead(session);
+                        netMonitor.afterRead(session, buffer.remaining());
+                    }
+                    do {
+                        Object request = config.getProtocol().decode(buffer, session);
+                        //理论上每个UDP包都是一个完整的消息
+                        if (request == null) {
+                            config.getProcessor().stateEvent(session, StateMachineEnum.DECODE_EXCEPTION, new DecoderException("decode result is null, buffer size: " + buffer.remaining()));
+                            break;
+                        } else {
+                            config.getProcessor().process(session, request);
+                        }
+                    } while (buffer.hasRemaining());
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    config.getProcessor().stateEvent(session, StateMachineEnum.DECODE_EXCEPTION, e);
+                } finally {
+                    session.writeBuffer().flush();
+                    readyBuffer.clean();
+                }
+            };
+            if (!requestQueue.offer(runnable)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    public void shutdown() {
+        try {
+            requestQueue.put(SHUTDOWN_CHANNEL);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        selector.wakeup();
+    }
+}

@@ -40,7 +40,7 @@ public final class UdpChannel {
      */
     private ConcurrentLinkedQueue<ResponseUnit> responseTasks;
     private final Semaphore writeSemaphore = new Semaphore(1);
-    private UdpBootstrap.Worker worker;
+    private Worker worker;
     final IoServerConfig config;
     /**
      * 真实的UDP通道
@@ -56,7 +56,7 @@ public final class UdpChannel {
         this.config = config;
     }
 
-    UdpChannel(final DatagramChannel channel, UdpBootstrap.Worker worker, IoServerConfig config, BufferPage bufferPage) {
+    UdpChannel(final DatagramChannel channel, Worker worker, IoServerConfig config, BufferPage bufferPage) {
         this(channel, config, bufferPage);
         responseTasks = new ConcurrentLinkedQueue<>();
         this.worker = worker;
@@ -69,13 +69,14 @@ public final class UdpChannel {
         });
     }
 
-    void write(VirtualBuffer virtualBuffer, UdpAioSession remote) throws IOException {
-        if (writeSemaphore.tryAcquire() && responseTasks.isEmpty() && send(virtualBuffer.buffer(), remote) > 0) {
+    void write(VirtualBuffer virtualBuffer, UdpAioSession session) throws IOException {
+        if (writeSemaphore.tryAcquire() && responseTasks.isEmpty() && send(virtualBuffer.buffer(), session) > 0) {
             virtualBuffer.clean();
+            session.writeBuffer().flush();
             writeSemaphore.release();
             return;
         }
-        responseTasks.offer(new ResponseUnit(remote, virtualBuffer));
+        responseTasks.offer(new ResponseUnit(session, virtualBuffer));
         if (selectionKey == null) {
             worker.addRegister(selector -> selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE));
         } else {
@@ -90,7 +91,6 @@ public final class UdpChannel {
             ResponseUnit responseUnit;
             if (failResponseUnit == null) {
                 responseUnit = responseTasks.poll();
-//                LOGGER.info("poll from writeBuffer");
             } else {
                 responseUnit = failResponseUnit;
                 failResponseUnit = null;
@@ -107,8 +107,10 @@ public final class UdpChannel {
             }
             if (send(responseUnit.response.buffer(), responseUnit.session) > 0) {
                 responseUnit.response.clean();
+                responseUnit.session.writeBuffer().flush();
             } else {
                 failResponseUnit = responseUnit;
+                LOGGER.warn("send fail,will retry...");
                 break;
             }
         }
@@ -161,6 +163,10 @@ public final class UdpChannel {
         if (failResponseUnit != null) {
             failResponseUnit.response.clean();
         }
+    }
+
+    BufferPage getBufferPage() {
+        return bufferPage;
     }
 
     public SelectionKey getSelectionKey() {

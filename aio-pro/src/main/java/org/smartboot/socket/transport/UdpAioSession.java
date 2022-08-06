@@ -29,29 +29,32 @@ final class UdpAioSession extends AioSession {
 
     private final SocketAddress remote;
 
-    private final WriteBuffer writeBuffer;
+    private final WriteBuffer byteBuf;
+    /**
+     * 写缓冲
+     */
+    private VirtualBuffer writeBuffer;
 
     UdpAioSession(final UdpChannel udpChannel, final SocketAddress remote, BufferPage bufferPage) {
         this.udpChannel = udpChannel;
         this.remote = remote;
-        Consumer<WriteBuffer> consumer = writeBuffer -> {
-            VirtualBuffer virtualBuffer = writeBuffer.poll();
-            if (virtualBuffer == null) {
-                return;
-            }
-            try {
-                udpChannel.write(virtualBuffer, UdpAioSession.this);
-            } catch (IOException e) {
-                e.printStackTrace();
+        Consumer<WriteBuffer> consumer = var -> {
+            UdpAioSession.this.writeBuffer = var.poll();
+            if (writeBuffer != null) {
+                try {
+                    udpChannel.write(writeBuffer, UdpAioSession.this);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         };
-        this.writeBuffer = new WriteBuffer(bufferPage, consumer, udpChannel.config.getWriteBufferSize(), 1);
+        this.byteBuf = new WriteBuffer(bufferPage, consumer, udpChannel.config.getWriteBufferSize(), 1);
         udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
 
     @Override
     public WriteBuffer writeBuffer() {
-        return writeBuffer;
+        return byteBuf;
     }
 
     @Override
@@ -69,10 +72,27 @@ final class UdpAioSession extends AioSession {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * 为确保消息尽可能发送，UDP不支持立即close
+     *
+     * @param immediate true:立即关闭,false:响应消息发送完后关闭
+     */
     @Override
     public void close(boolean immediate) {
-        writeBuffer.close();
-        udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
+        if (status == SESSION_STATUS_CLOSED) {
+            return;
+        }
+        if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && byteBuf.isEmpty()) {
+            status = SESSION_STATUS_CLOSED;
+            try {
+                byteBuf.close();
+            } finally {
+                udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
+            }
+        } else {
+            udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
+            byteBuf.flush();
+        }
     }
 
     @Override
