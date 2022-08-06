@@ -29,7 +29,7 @@ public class UdpClientDemo {
                 .setReadBufferSize(1024);
         AioSession session = bootstrap.open().connect("localhost", 8888);
         byte[] bytes = "hello smart-socket".getBytes();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             session.writeBuffer().writeInt(bytes.length);
             session.writeBuffer().write(bytes);
             session.writeBuffer().flush();

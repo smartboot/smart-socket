@@ -18,13 +18,12 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
-import java.util.function.Consumer;
 
 /**
  * 封装UDP底层真实渠道对象,并提供通信及会话管理
@@ -34,17 +33,14 @@ import java.util.function.Consumer;
  */
 public final class UdpChannel {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
-    private final BufferPage bufferPage;
-    /**
-     * 与当前UDP通道对接的会话
-     */
-    private final ConcurrentHashMap<SocketAddress, UdpAioSession> sessionMap = new ConcurrentHashMap<>();
+    private BufferPage bufferPage;
+
     /**
      * 待输出消息
      */
-    private final ConcurrentLinkedQueue<ResponseUnit> responseTasks;
+    private ConcurrentLinkedQueue<ResponseUnit> responseTasks;
     private final Semaphore writeSemaphore = new Semaphore(1);
-    private final UdpBootstrap.Worker worker;
+    private UdpBootstrap.Worker worker;
     IoServerConfig config;
     /**
      * 真实的UDP通道
@@ -53,15 +49,26 @@ public final class UdpChannel {
     private SelectionKey selectionKey;
     private ResponseUnit failResponseUnit;
 
+    public UdpChannel() {
+    }
+
     UdpChannel(final DatagramChannel channel, UdpBootstrap.Worker worker, IoServerConfig config, BufferPage bufferPage) {
         this.channel = channel;
         responseTasks = new ConcurrentLinkedQueue<>();
         this.worker = worker;
         this.bufferPage = bufferPage;
         this.config = config;
+        worker.addRegister(selector -> {
+            try {
+                SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ, UdpChannel.this);
+                setSelectionKey(selectionKey);
+            } catch (ClosedChannelException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
-    private void write(VirtualBuffer virtualBuffer, SocketAddress remote) throws IOException {
+    void write(VirtualBuffer virtualBuffer, UdpAioSession remote) throws IOException {
         if (writeSemaphore.tryAcquire() && responseTasks.isEmpty() && send(virtualBuffer.buffer(), remote) > 0) {
             virtualBuffer.clean();
             writeSemaphore.release();
@@ -110,14 +117,13 @@ public final class UdpChannel {
         }
     }
 
-    private int send(ByteBuffer byteBuffer, SocketAddress remote) throws IOException {
-        AioSession aioSession = sessionMap.get(remote);
+    private int send(ByteBuffer byteBuffer, UdpAioSession session) throws IOException {
         if (config.getMonitor() != null) {
-            config.getMonitor().beforeWrite(aioSession);
+            config.getMonitor().beforeWrite(session);
         }
-        int size = channel.send(byteBuffer, remote);
+        int size = channel.send(byteBuffer, session.getRemoteAddress());
         if (config.getMonitor() != null) {
-            config.getMonitor().afterWrite(aioSession, size);
+            config.getMonitor().afterWrite(session, size);
         }
         return size;
     }
@@ -126,37 +132,11 @@ public final class UdpChannel {
      * 建立与远程服务的连接会话,通过AioSession可进行数据传输
      */
     public AioSession connect(SocketAddress remote) {
-        return createAndCacheSession(remote);
+        return new UdpAioSession(this, remote, bufferPage);
     }
 
     public AioSession connect(String host, int port) {
         return connect(new InetSocketAddress(host, port));
-    }
-
-    /**
-     * 创建并缓存与指定地址的会话信息
-     */
-    UdpAioSession createAndCacheSession(final SocketAddress remote) {
-        return sessionMap.computeIfAbsent(remote, s -> {
-            Consumer<WriteBuffer> consumer = writeBuffer -> {
-                VirtualBuffer virtualBuffer = writeBuffer.poll();
-                if (virtualBuffer == null) {
-                    return;
-                }
-                try {
-                    write(virtualBuffer, remote);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            };
-            WriteBuffer writeBuffer = new WriteBuffer(bufferPage, consumer, config.getWriteBufferSize(), 1);
-            return new UdpAioSession(UdpChannel.this, remote, writeBuffer);
-        });
-    }
-
-    void removeSession(final SocketAddress remote) {
-        UdpAioSession udpAioSession = sessionMap.remove(remote);
-        LOGGER.info("remove session:{}", udpAioSession);
     }
 
     /**
@@ -168,9 +148,6 @@ public final class UdpChannel {
             selectionKey.cancel();
             selector.wakeup();
             selectionKey = null;
-        }
-        for (UdpAioSession session : sessionMap.values()) {
-            session.close();
         }
         try {
             if (channel != null) {
@@ -190,6 +167,10 @@ public final class UdpChannel {
         }
     }
 
+    public SelectionKey getSelectionKey() {
+        return selectionKey;
+    }
+
     DatagramChannel getChannel() {
         return channel;
     }
@@ -198,13 +179,13 @@ public final class UdpChannel {
         /**
          * 待输出数据的接受地址
          */
-        private final SocketAddress remote;
+        private final UdpAioSession remote;
         /**
          * 待输出数据
          */
         private final VirtualBuffer response;
 
-        public ResponseUnit(SocketAddress remote, VirtualBuffer response) {
+        public ResponseUnit(UdpAioSession remote, VirtualBuffer response) {
             this.remote = remote;
             this.response = response;
         }
