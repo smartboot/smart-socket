@@ -33,7 +33,7 @@ import java.util.concurrent.Semaphore;
  */
 public final class UdpChannel {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
-    private BufferPage bufferPage;
+    private final BufferPage bufferPage;
 
     /**
      * 待输出消息
@@ -41,27 +41,28 @@ public final class UdpChannel {
     private ConcurrentLinkedQueue<ResponseUnit> responseTasks;
     private final Semaphore writeSemaphore = new Semaphore(1);
     private UdpBootstrap.Worker worker;
-    IoServerConfig config;
+    final IoServerConfig config;
     /**
      * 真实的UDP通道
      */
-    private DatagramChannel channel;
+    private final DatagramChannel channel;
     private SelectionKey selectionKey;
+    //发送失败的
     private ResponseUnit failResponseUnit;
 
-    UdpChannel() {
+    UdpChannel(final DatagramChannel channel, IoServerConfig config, BufferPage bufferPage) {
+        this.channel = channel;
+        this.bufferPage = bufferPage;
+        this.config = config;
     }
 
     UdpChannel(final DatagramChannel channel, UdpBootstrap.Worker worker, IoServerConfig config, BufferPage bufferPage) {
-        this.channel = channel;
+        this(channel, config, bufferPage);
         responseTasks = new ConcurrentLinkedQueue<>();
         this.worker = worker;
-        this.bufferPage = bufferPage;
-        this.config = config;
         worker.addRegister(selector -> {
             try {
-                SelectionKey selectionKey = channel.register(selector, SelectionKey.OP_READ, UdpChannel.this);
-                setSelectionKey(selectionKey);
+                UdpChannel.this.selectionKey = channel.register(selector, SelectionKey.OP_READ, UdpChannel.this);
             } catch (ClosedChannelException e) {
                 e.printStackTrace();
             }
@@ -84,16 +85,12 @@ public final class UdpChannel {
         }
     }
 
-    void setSelectionKey(SelectionKey selectionKey) {
-        this.selectionKey = selectionKey;
-    }
-
     void doWrite() throws IOException {
         while (true) {
             ResponseUnit responseUnit;
             if (failResponseUnit == null) {
                 responseUnit = responseTasks.poll();
-                LOGGER.info("poll from writeBuffer");
+//                LOGGER.info("poll from writeBuffer");
             } else {
                 responseUnit = failResponseUnit;
                 failResponseUnit = null;
@@ -108,7 +105,7 @@ public final class UdpChannel {
                 }
                 return;
             }
-            if (send(responseUnit.response.buffer(), responseUnit.remote) > 0) {
+            if (send(responseUnit.response.buffer(), responseUnit.session) > 0) {
                 responseUnit.response.clean();
             } else {
                 failResponseUnit = responseUnit;
@@ -152,7 +149,6 @@ public final class UdpChannel {
         try {
             if (channel != null) {
                 channel.close();
-                channel = null;
             }
         } catch (IOException e) {
             LOGGER.error("", e);
@@ -179,14 +175,14 @@ public final class UdpChannel {
         /**
          * 待输出数据的接受地址
          */
-        private final UdpAioSession remote;
+        private final UdpAioSession session;
         /**
          * 待输出数据
          */
         private final VirtualBuffer response;
 
-        public ResponseUnit(UdpAioSession remote, VirtualBuffer response) {
-            this.remote = remote;
+        public ResponseUnit(UdpAioSession session, VirtualBuffer response) {
+            this.session = session;
             this.response = response;
         }
 

@@ -13,7 +13,7 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.buffer.BufferFactory;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.util.DecoderException;
@@ -44,8 +44,8 @@ import java.util.function.Consumer;
  * @version V1.0 , 2019/8/18
  */
 public class UdpBootstrap {
-    private static final UdpChannel SELECTOR_CHANNEL = new UdpChannel();
-    private static final UdpChannel SHUTDOWN_CHANNEL = new UdpChannel();
+    private static final UdpChannel SELECTOR_CHANNEL = new UdpChannel(null, null, null);
+    private static final UdpChannel SHUTDOWN_CHANNEL = new UdpChannel(null, null, null);
 
     private final static int MAX_READ_TIMES = 16;
     /**
@@ -53,9 +53,10 @@ public class UdpBootstrap {
      */
     private static int UID;
     /**
-     * 缓存页
+     * 内存池
      */
-    private final BufferPage bufferPage = new BufferPagePool(1024 * 1024, 1, true).allocateBufferPage();
+    private BufferPagePool bufferPool;
+    private BufferPagePool innerBufferPool = null;
     /**
      * 服务配置
      */
@@ -106,7 +107,7 @@ public class UdpBootstrap {
             InetSocketAddress inetSocketAddress = host == null ? new InetSocketAddress(port) : new InetSocketAddress(host, port);
             channel.socket().bind(inetSocketAddress);
         }
-        return new UdpChannel(channel, worker, config, bufferPage);
+        return new UdpChannel(channel, worker, config, bufferPool.allocateBufferPage());
     }
 
     private synchronized void initWorker() throws IOException {
@@ -120,6 +121,11 @@ public class UdpBootstrap {
         }
 
         int uid = UdpBootstrap.UID++;
+
+        if (bufferPool == null) {
+            this.bufferPool = config.getBufferFactory().create();
+            this.innerBufferPool = bufferPool;
+        }
 
         //启动worker线程组
         executorService = new ThreadPoolExecutor(config.getThreadNum(), config.getThreadNum(),
@@ -150,7 +156,7 @@ public class UdpBootstrap {
             }
             buffer.flip();
 
-            UdpAioSession session = new UdpAioSession(channel, remote, bufferPage);
+            UdpAioSession session = new UdpAioSession(channel, remote, bufferPool.allocateBufferPage());
             NetMonitor netMonitor = config.getMonitor();
             if (netMonitor != null) {
                 netMonitor.beforeRead(session);
@@ -179,10 +185,12 @@ public class UdpBootstrap {
     }
 
     public void shutdown() {
-        System.out.println("shutdown...");
         worker.selectionKeys.offer(SHUTDOWN_CHANNEL);
         worker.selector.wakeup();
         executorService.shutdown();
+        if (innerBufferPool != null) {
+            innerBufferPool.release();
+        }
     }
 
     /**
@@ -218,6 +226,36 @@ public class UdpBootstrap {
         return this;
     }
 
+    /**
+     * 设置内存池。
+     * 通过该方法设置的内存池，在AioQuickServer执行shutdown时不会触发内存池的释放。
+     * 该方法适用于多个AioQuickServer、AioQuickClient共享内存池的场景。
+     * <b>在启用内存池的情况下会有更好的性能表现</b>
+     *
+     * @param bufferPool 内存池对象
+     * @return 当前AioQuickServer对象
+     */
+    public final UdpBootstrap setBufferPagePool(BufferPagePool bufferPool) {
+        this.bufferPool = bufferPool;
+        this.config.setBufferFactory(BufferFactory.DISABLED_BUFFER_FACTORY);
+        return this;
+    }
+
+    /**
+     * 设置内存池的构造工厂。
+     * 通过工厂形式生成的内存池会强绑定到当前UdpBootstrap对象，
+     * 在UdpBootstrap执行shutdown时会释放内存池。
+     * <b>在启用内存池的情况下会有更好的性能表现</b>
+     *
+     * @param bufferFactory 内存池工厂
+     * @return 当前AioQuickServer对象
+     */
+    public final UdpBootstrap setBufferFactory(BufferFactory bufferFactory) {
+        this.config.setBufferFactory(bufferFactory);
+        this.bufferPool = null;
+        return this;
+    }
+
     class Worker implements Runnable {
         /**
          * 当前Worker绑定的Selector
@@ -250,7 +288,7 @@ public class UdpBootstrap {
         @Override
         public final void run() {
             //读缓冲区
-            VirtualBuffer readBuffer = bufferPage.allocate(config.getReadBufferSize());
+            VirtualBuffer readBuffer = bufferPool.allocateBufferPage().allocate(config.getReadBufferSize());
             try {
                 while (true) {
                     UdpChannel udpChannel = selectionKeys.take();
@@ -276,7 +314,6 @@ public class UdpBootstrap {
                         doRead(readBuffer.buffer(), udpChannel);
                     }
                     if (key.isWritable()) {
-                        System.out.println("writing...");
                         udpChannel.doWrite();
                     }
                 }

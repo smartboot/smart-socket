@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -86,18 +85,4 @@ final class UdpAioSession extends AioSession {
         return (InetSocketAddress) remote;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        UdpAioSession that = (UdpAioSession) o;
-
-        return Objects.equals(remote, that.remote);
-    }
-
-    @Override
-    public int hashCode() {
-        return remote != null ? remote.hashCode() : 0;
-    }
 }

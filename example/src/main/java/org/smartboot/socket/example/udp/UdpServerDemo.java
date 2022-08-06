@@ -9,7 +9,12 @@
 
 package org.smartboot.socket.example.udp;
 
+import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.extension.plugins.MonitorPlugin;
+import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.extension.protocol.StringProtocol;
+import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.UdpBootstrap;
 
 import java.io.IOException;
@@ -20,17 +25,28 @@ import java.io.IOException;
  */
 public class UdpServerDemo {
     public static void main(String[] args) throws IOException {
-        UdpBootstrap bootstrap = new UdpBootstrap(new StringProtocol(), (session, msg) -> {
-            System.out.println("收到客户端消息: " + msg);
-            byte[] bytes = msg.getBytes();
-            try {
-                session.writeBuffer().writeInt(bytes.length);
-                session.writeBuffer().write(bytes);
-            } catch (Exception e) {
-                e.printStackTrace();
+        AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
+            @Override
+            public void process0(AioSession session, String msg) {
+//                System.out.println("收到客户端消息: " + msg);
+                byte[] bytes = msg.getBytes();
+                try {
+                    session.writeBuffer().writeInt(bytes.length);
+                    session.writeBuffer().write(bytes);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        });
+
+            @Override
+            public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
+
+            }
+        };
+        processor.addPlugin(new MonitorPlugin<>(5));
+        UdpBootstrap bootstrap = new UdpBootstrap(new StringProtocol(), processor);
         bootstrap.setThreadNum(Runtime.getRuntime().availableProcessors())
+                .setBufferPagePool(new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors(), true))
                 .setReadBufferSize(1024).open(8888);
     }
 }
