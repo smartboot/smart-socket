@@ -127,7 +127,6 @@ public final class Worker implements Runnable {
                 udpChannel.doWrite();
             }
             if (key.isReadable() && !doRead(udpChannel)) {
-                System.out.println("break...");
                 break;
             }
             keyIterator.remove();
