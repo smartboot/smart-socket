@@ -30,22 +30,14 @@ final class UdpAioSession extends AioSession {
     private final SocketAddress remote;
 
     private final WriteBuffer byteBuf;
-    /**
-     * 写缓冲
-     */
-    private VirtualBuffer writeBuffer;
 
     UdpAioSession(final UdpChannel udpChannel, final SocketAddress remote, BufferPage bufferPage) {
         this.udpChannel = udpChannel;
         this.remote = remote;
         Consumer<WriteBuffer> consumer = var -> {
-            UdpAioSession.this.writeBuffer = var.poll();
+            VirtualBuffer writeBuffer = var.poll();
             if (writeBuffer != null) {
-                try {
-                    udpChannel.write(writeBuffer, UdpAioSession.this);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                udpChannel.write(writeBuffer, UdpAioSession.this);
             }
         };
         this.byteBuf = new WriteBuffer(bufferPage, consumer, udpChannel.config.getWriteBufferSize(), 1);

@@ -69,7 +69,7 @@ public final class UdpChannel {
         });
     }
 
-    void write(VirtualBuffer virtualBuffer, UdpAioSession session) throws IOException {
+    void write(VirtualBuffer virtualBuffer, UdpAioSession session) {
         if (writeSemaphore.tryAcquire() && responseTasks.isEmpty() && send(virtualBuffer.buffer(), session) > 0) {
             virtualBuffer.clean();
             writeSemaphore.release();
@@ -86,7 +86,7 @@ public final class UdpChannel {
         }
     }
 
-    void doWrite() throws IOException {
+    void doWrite() {
         while (true) {
             ResponseUnit responseUnit;
             if (failResponseUnit == null) {
@@ -116,11 +116,16 @@ public final class UdpChannel {
         }
     }
 
-    private int send(ByteBuffer byteBuffer, UdpAioSession session) throws IOException {
+    private int send(ByteBuffer byteBuffer, UdpAioSession session) {
         if (config.getMonitor() != null) {
             config.getMonitor().beforeWrite(session);
         }
-        int size = channel.send(byteBuffer, session.getRemoteAddress());
+        int size = 0;
+        try {
+            size = channel.send(byteBuffer, session.getRemoteAddress());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         if (config.getMonitor() != null) {
             config.getMonitor().afterWrite(session, size);
         }
