@@ -17,11 +17,6 @@ import org.smartboot.socket.buffer.BufferPagePool;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * UDP服务启动类
@@ -31,11 +26,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class UdpBootstrap {
 
-
-    /**
-     * 服务ID
-     */
-    private static int UID;
     /**
      * 内存池
      */
@@ -47,8 +37,14 @@ public class UdpBootstrap {
     private final IoServerConfig config = new IoServerConfig();
 
     private Worker worker;
+    private boolean innerWorker = false;
 
-    private ExecutorService executorService;
+
+    public <Request> UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor, Worker worker) {
+        config.setProtocol(protocol);
+        config.setProcessor(messageProcessor);
+        this.worker = worker;
+    }
 
     public <Request> UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
         config.setProtocol(protocol);
@@ -104,35 +100,19 @@ public class UdpBootstrap {
             System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket[udp] ::\t(" + IoServerConfig.VERSION + ")");
         }
 
-        int uid = UdpBootstrap.UID++;
-
         if (bufferPool == null) {
             this.bufferPool = config.getBufferFactory().create();
             this.innerBufferPool = bufferPool;
         }
-
-        //启动worker线程组
-        executorService = new ThreadPoolExecutor(config.getThreadNum(), config.getThreadNum(),
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(), new ThreadFactory() {
-            int i = 0;
-
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "smart-socket:udp-" + uid + "-" + (++i));
-            }
-        });
-
-        worker = new Worker(bufferPool, config);
-        for (int i = 0; i < config.getThreadNum(); i++) {
-            executorService.execute(worker);
-        }
+        innerWorker = true;
+        worker = new Worker(bufferPool, config.getThreadNum());
     }
 
 
     public void shutdown() {
-        worker.shutdown();
-        executorService.shutdown();
+        if (innerWorker) {
+            worker.shutdown();
+        }
         if (innerBufferPool != null) {
             innerBufferPool.release();
         }

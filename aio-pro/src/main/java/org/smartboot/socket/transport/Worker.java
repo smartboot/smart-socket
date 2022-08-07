@@ -16,9 +16,14 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-final class Worker implements Runnable {
+public final class Worker implements Runnable {
     private final static int MAX_READ_TIMES = 16;
     private static final Runnable SELECTOR_CHANNEL = () -> {
     };
@@ -28,12 +33,11 @@ final class Worker implements Runnable {
      * 当前Worker绑定的Selector
      */
     private final Selector selector;
-    private final IoServerConfig config;
     /**
      * 内存池
      */
     private final BufferPagePool bufferPool;
-    private final BlockingQueue<Runnable> requestQueue = new ArrayBlockingQueue<>(128);
+    private final BlockingQueue<Runnable> requestQueue = new ArrayBlockingQueue<>(256);
 
     /**
      * 待注册的事件
@@ -41,16 +45,29 @@ final class Worker implements Runnable {
     private final ConcurrentLinkedQueue<Consumer<Selector>> registers = new ConcurrentLinkedQueue<>();
 
     private VirtualBuffer standbyBuffer;
+    private final ExecutorService executorService;
 
-    Worker(BufferPagePool bufferPool, IoServerConfig config) throws IOException {
+    public Worker(BufferPagePool bufferPool, int threadNum) throws IOException {
         this.bufferPool = bufferPool;
         this.selector = Selector.open();
-        this.config = config;
-        this.standbyBuffer = bufferPool.allocateBufferPage().allocate(config.getReadBufferSize());
         try {
             this.requestQueue.put(SELECTOR_CHANNEL);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        }
+        //启动worker线程组
+        executorService = new ThreadPoolExecutor(threadNum, threadNum,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(), new ThreadFactory() {
+            int i = 0;
+
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "smart-socket:udp-" + Worker.this.hashCode() + "-" + (++i));
+            }
+        });
+        for (int i = 0; i < threadNum; i++) {
+            executorService.execute(this);
         }
     }
 
@@ -119,7 +136,11 @@ final class Worker implements Runnable {
 
     private boolean doRead(UdpChannel channel) throws IOException {
         int count = MAX_READ_TIMES;
+        IoServerConfig config = channel.config;
         while (count-- > 0) {
+            if (standbyBuffer == null) {
+                standbyBuffer = channel.getBufferPage().allocate(config.getReadBufferSize());
+            }
             ByteBuffer buffer = standbyBuffer.buffer();
             SocketAddress remote = channel.getChannel().receive(buffer);
             if (remote == null) {
@@ -164,12 +185,13 @@ final class Worker implements Runnable {
     }
 
 
-    public void shutdown() {
+    void shutdown() {
         try {
             requestQueue.put(SHUTDOWN_CHANNEL);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         selector.wakeup();
+        executorService.shutdown();
     }
 }

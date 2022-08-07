@@ -79,20 +79,7 @@ final class UdpAioSession extends AioSession {
      */
     @Override
     public void close(boolean immediate) {
-        if (status == SESSION_STATUS_CLOSED) {
-            return;
-        }
-        if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && byteBuf.isEmpty()) {
-            status = SESSION_STATUS_CLOSED;
-            try {
-                byteBuf.close();
-            } finally {
-                udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
-            }
-        } else {
-            udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
-            byteBuf.flush();
-        }
+        byteBuf.flush();
     }
 
     @Override

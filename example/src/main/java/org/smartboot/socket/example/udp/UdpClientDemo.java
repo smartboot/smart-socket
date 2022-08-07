@@ -17,8 +17,10 @@ import org.smartboot.socket.extension.protocol.StringProtocol;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.UdpBootstrap;
 import org.smartboot.socket.transport.UdpChannel;
+import org.smartboot.socket.transport.Worker;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * @author 三刀（zhengjunweimail@163.com）
@@ -34,30 +36,40 @@ public class UdpClientDemo {
 
             @Override
             public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-
+                if(throwable!=null){
+                    throwable.printStackTrace();
+                }
             }
         };
         processor.addPlugin(new MonitorPlugin<>(5));
-        UdpBootstrap bootstrap = new UdpBootstrap(new StringProtocol(), processor);
-        bootstrap.setBannerEnabled(false)
-                .setThreadNum(Runtime.getRuntime().availableProcessors())
-                .setBufferPagePool(new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors(), true))
-                .setReadBufferSize(1024);
-        UdpChannel channel = bootstrap.open();
 
+        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors(), true);
+
+        Worker worker = new Worker(bufferPagePool, Runtime.getRuntime().availableProcessors());
+
+        int c = 256;
+        CountDownLatch count = new CountDownLatch(c);
         byte[] bytes = "hello smart-socket".getBytes();
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < c; i++) {
             new Thread(() -> {
                 try {
+                    UdpBootstrap bootstrap = new UdpBootstrap(new StringProtocol(), processor, worker);
+                    bootstrap.setBannerEnabled(false)
+                            .setThreadNum(Runtime.getRuntime().availableProcessors())
+                            .setBufferPagePool(bufferPagePool)
+                            .setReadBufferSize(1024);
+                    UdpChannel channel = bootstrap.open();
                     AioSession session = channel.connect("localhost", 8888);
-                    for (int i1 = 0; i1 < 10000; i1++) {
+                    for (int i1 = 0; i1 < 1000000; i1++) {
                         synchronized (session.writeBuffer()) {
                             session.writeBuffer().writeInt(bytes.length);
                             session.writeBuffer().write(bytes);
                             session.writeBuffer().flush();
                         }
+                        Thread.sleep(10);
                     }
-                    session.close();
+                    count.countDown();
+//                    session.close();
                     System.out.println("发送完毕");
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -65,8 +77,8 @@ public class UdpClientDemo {
 
             }).start();
         }
+        count.await();
+        System.out.println("shutdown...");
 
-        Thread.sleep(5000);
-        bootstrap.shutdown();
     }
 }
