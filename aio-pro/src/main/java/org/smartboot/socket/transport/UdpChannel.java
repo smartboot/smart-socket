@@ -72,8 +72,8 @@ public final class UdpChannel {
     void write(VirtualBuffer virtualBuffer, UdpAioSession session) throws IOException {
         if (writeSemaphore.tryAcquire() && responseTasks.isEmpty() && send(virtualBuffer.buffer(), session) > 0) {
             virtualBuffer.clean();
-            session.writeBuffer().flush();
             writeSemaphore.release();
+            session.writeBuffer().flush();
             return;
         }
         responseTasks.offer(new ResponseUnit(session, virtualBuffer));
@@ -142,6 +142,7 @@ public final class UdpChannel {
      * 关闭当前连接
      */
     public void close() {
+        LOGGER.info("close channel...");
         if (selectionKey != null) {
             Selector selector = selectionKey.selector();
             selectionKey.cancel();

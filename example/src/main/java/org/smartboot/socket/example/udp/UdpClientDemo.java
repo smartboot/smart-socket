@@ -36,18 +36,18 @@ public class UdpClientDemo {
 
             @Override
             public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-                if(throwable!=null){
+                if (throwable != null) {
                     throwable.printStackTrace();
                 }
             }
         };
-        processor.addPlugin(new MonitorPlugin<>(5));
+        processor.addPlugin(new MonitorPlugin<>(5, true));
 
         BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors(), true);
 
         Worker worker = new Worker(bufferPagePool, Runtime.getRuntime().availableProcessors());
 
-        int c = 256;
+        int c = 512;
         CountDownLatch count = new CountDownLatch(c);
         byte[] bytes = "hello smart-socket".getBytes();
         for (int i = 0; i < c; i++) {
