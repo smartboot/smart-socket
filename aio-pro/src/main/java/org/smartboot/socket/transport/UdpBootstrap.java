@@ -41,8 +41,7 @@ public class UdpBootstrap {
 
 
     public <Request> UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor, Worker worker) {
-        config.setProtocol(protocol);
-        config.setProcessor(messageProcessor);
+        this(protocol, messageProcessor);
         this.worker = worker;
     }
 
@@ -76,10 +75,21 @@ public class UdpBootstrap {
      * @param port 指定绑定端口号,为0则随机指定
      */
     public UdpChannel open(String host, int port) throws IOException {
-        //启动线程服务
-        if (worker == null) {
-            initWorker();
+        //初始化内存池
+        if (bufferPool == null) {
+            // 增加广告说明
+            if (config.isBannerEnabled()) {
+                System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket[udp] ::\t(" + IoServerConfig.VERSION + ")");
+            }
+            this.bufferPool = config.getBufferFactory().create();
+            this.innerBufferPool = bufferPool;
         }
+        // 初始化工作线程
+        if (worker == null) {
+            innerWorker = true;
+            worker = new Worker(bufferPool, config.getThreadNum());
+        }
+
 
         DatagramChannel channel = DatagramChannel.open();
         channel.configureBlocking(false);
@@ -95,17 +105,7 @@ public class UdpBootstrap {
             return;
         }
 
-        // 增加广告说明
-        if (config.isBannerEnabled()) {
-            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket[udp] ::\t(" + IoServerConfig.VERSION + ")");
-        }
 
-        if (bufferPool == null) {
-            this.bufferPool = config.getBufferFactory().create();
-            this.innerBufferPool = bufferPool;
-        }
-        innerWorker = true;
-        worker = new Worker(bufferPool, config.getThreadNum());
     }
 
 

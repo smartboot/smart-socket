@@ -192,5 +192,10 @@ public final class Worker implements Runnable {
         }
         selector.wakeup();
         executorService.shutdown();
+        try {
+            selector.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
