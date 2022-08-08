@@ -75,12 +75,12 @@ public class UdpBootstrap {
      * @param port 指定绑定端口号,为0则随机指定
      */
     public UdpChannel open(String host, int port) throws IOException {
+        // 增加广告说明
+        if (config.isBannerEnabled()) {
+            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket[udp] ::\t(" + IoServerConfig.VERSION + ")");
+        }
         //初始化内存池
         if (bufferPool == null) {
-            // 增加广告说明
-            if (config.isBannerEnabled()) {
-                System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket[udp] ::\t(" + IoServerConfig.VERSION + ")");
-            }
             this.bufferPool = config.getBufferFactory().create();
             this.innerBufferPool = bufferPool;
         }
