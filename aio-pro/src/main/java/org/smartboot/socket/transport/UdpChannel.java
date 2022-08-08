@@ -175,9 +175,6 @@ public final class UdpChannel {
         return bufferPage;
     }
 
-    public SelectionKey getSelectionKey() {
-        return selectionKey;
-    }
 
     DatagramChannel getChannel() {
         return channel;
