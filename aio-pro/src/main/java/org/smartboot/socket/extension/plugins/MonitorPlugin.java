@@ -75,12 +75,19 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
      */
     private long onlineCount;
 
+    private boolean udp;
+
     public MonitorPlugin() {
         this(60);
     }
 
     public MonitorPlugin(int seconds) {
+        this(seconds, false);
+    }
+
+    public MonitorPlugin(int seconds, boolean udp) {
         this.seconds = seconds;
+        this.udp = udp;
         long mills = TimeUnit.SECONDS.toMillis(seconds);
         QuickTimerTask.scheduleAtFixedRate(this, mills, mills);
     }
@@ -129,10 +136,11 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
                 + "\r\nprocess count:\t" + curProcessMsgNum
                 + "\r\nprocess total:\t" + totalProcessMsgNum
                 + "\r\nread count:\t" + curReadCount + "\twrite count:\t" + curWriteCount
-                + "\r\nconnect count:\t" + connectCount
+
+                + (udp ? "" : "\r\nconnect count:\t" + connectCount
                 + "\r\ndisconnect count:\t" + disConnectCount
                 + "\r\nonline count:\t" + onlineCount
-                + "\r\nconnected total:\t" + totalConnect
+                + "\r\nconnected total:\t" + totalConnect)
                 + "\r\nRequests/sec:\t" + curProcessMsgNum * 1.0 / seconds
                 + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "(MB)");
     }
