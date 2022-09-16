@@ -16,6 +16,9 @@ smart-socket是一款国产开源的 Java AIO 通信框架，支持 TCP、UDP、
 4. 良好的线程模型、内存模型设计，保障服务高效稳定的运行。
 5. 支持自定义插件，并已提供了丰富地插件，包括：SSL/TLS通信插件、心跳插件、断链重连插件、服务指标统计插件、黑名单插件、内存池监测插件。
 
+### 性能排行
+![输入图片说明](image.png)
+
 ### 案例
 1. [smart-http](https://gitee.com/smartboot/smart-http) 国内首款基于smart-socket实现的Http服务器
 2. [smart-servlet](https://gitee.com/smartboot/smart-servlet) 一款实现了Servlet 3.1规范，支持多应用隔离部署的的 Web 容器
