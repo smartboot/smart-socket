@@ -24,6 +24,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * AIO传输层会话。
@@ -126,6 +127,12 @@ final class TcpAioSession extends AioSession {
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
 
+    private Function<Void, VirtualBuffer> function;
+
+    void initSession(Function<Void, VirtualBuffer> function) {
+        this.function = function;
+        initSession(function.apply(null));
+    }
 
     /**
      * 初始化AioSession
@@ -134,6 +141,17 @@ final class TcpAioSession extends AioSession {
         this.readBuffer = readBuffer;
         this.readBuffer.buffer().flip();
         signalRead();
+    }
+
+    void releaseReadBuffer() {
+//        System.out.println("release buffer");
+        this.readBuffer.clean();
+        this.readBuffer = null;
+    }
+
+    void continueRead() {
+//        System.out.println("continue read");
+        initSession(function);
     }
 
     /**

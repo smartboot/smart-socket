@@ -15,6 +15,7 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.VirtualBufferFactory;
 import org.smartboot.socket.buffer.BufferFactory;
 import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
 import java.io.IOException;
@@ -254,7 +255,12 @@ public final class AioQuickServer {
             if (acceptChannel != null) {
                 acceptChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
                 session = aioSessionFunction.apply(acceptChannel);
-                session.initSession(readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
+                session.initSession(new Function<Void, VirtualBuffer>() {
+                    @Override
+                    public VirtualBuffer apply(Void unused) {
+                        return readBufferFactory.newBuffer(bufferPool.allocateBufferPage());
+                    }
+                });
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
                 IOUtil.close(channel);

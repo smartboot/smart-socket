@@ -127,7 +127,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         readWorker = group.getReadWorker();
         writeWorker = group.getWriteWorker();
         connectWorker = group.getConnectWorker();
-        channel.configureBlocking(false);
     }
 
     @Override
@@ -319,6 +318,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             if (connected || channel.connect(remote)) {
                 connected = channel.finishConnect();
             }
+            channel.configureBlocking(false);
             if (connected) {
                 CompletionHandler<Void, Object> completionHandler = connectCompletionHandler;
                 Object attach = connectAttachment;
@@ -356,6 +356,10 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 resetRead();
                 return;
             }
+//            if (direct && readBuffer == null) {
+//                readCompletionHandler.completed(-3, readAttachment);
+//                return;
+//            }
             boolean directRead = direct || (Thread.currentThread() == readWorker.getWorkerThread() && readWorker.invoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER);
 
             long readSize = 0;
@@ -383,6 +387,11 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 }, SelectionKey.OP_READ);
                 return;
             }
+            //释放内存
+//            if (readSize == 0 && readBuffer.position() == 0) {
+//                readBuffer = null;
+//                readCompletionHandler.completed(-2, readAttachment);
+//            }
 
             if (readSize != 0 || !hasRemain) {
                 CompletionHandler<Number, Object> completionHandler = readCompletionHandler;

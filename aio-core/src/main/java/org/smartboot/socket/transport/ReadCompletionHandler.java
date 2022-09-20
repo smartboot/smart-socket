@@ -30,6 +30,15 @@ class ReadCompletionHandler implements CompletionHandler<Integer, TcpAioSession>
     @Override
     public void completed(final Integer result, final TcpAioSession aioSession) {
         try {
+            //释放缓冲区
+            if (result == -2) {
+                aioSession.releaseReadBuffer();
+                return;
+            }
+            if (result == -3) {
+                aioSession.continueRead();
+                return;
+            }
             // 接收到的消息进行预处理
             NetMonitor monitor = aioSession.getServerConfig().getMonitor();
             if (monitor != null) {
