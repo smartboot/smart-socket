@@ -40,8 +40,8 @@ public class DelimiterFrameDecoder implements SmartDecoder {
     private int position;
 
     public DelimiterFrameDecoder(byte[] endFLag, int unitBufferSize) {
-        if(endFLag == null){
-            throw new RuntimeException("endFLag cannot be null");
+        if(endFLag == null || endFLag.length == 0){
+            throw new RuntimeException("endFLag cannot be empty");
         }
         if(unitBufferSize < 1){
             throw new RuntimeException("unitBufferSize Must be greater than 1");
