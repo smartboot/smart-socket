@@ -281,7 +281,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             // 优先获取SelectionKey,若无关注事件触发则阻塞在selector.select(),减少select被调用次数
             Set<SelectionKey> keySet = selector.selectedKeys();
             try {
-                int count = 0;
                 while (running) {
                     Consumer<Selector> selectorConsumer;
                     while ((selectorConsumer = consumers.poll()) != null) {
