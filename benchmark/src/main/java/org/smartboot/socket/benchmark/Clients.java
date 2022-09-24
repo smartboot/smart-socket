@@ -22,7 +22,7 @@ public class Clients {
         int count = Integer.parseInt(System.getProperty("count", "1000"));
         String host = System.getProperty("host", "127.0.0.1");
         int port = Integer.parseInt(System.getProperty("port", "8080"));
-        AsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider();
+        AsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(true);
         AsynchronousChannelGroup[] groups = new AsynchronousChannelGroup[1];
         for (int i = 0; i < groups.length; i++) {
             groups[i] = provider.openAsynchronousChannelGroup(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
@@ -47,13 +47,14 @@ public class Clients {
 
         for (int i = 0; i < count; i++) {
             AioQuickClient client = new AioQuickClient(host, port, new StringProtocol(), processor);
-            client.setReadBufferSize(1);
+            client.setReadBufferSize(1024 * 1024);
             try {
                 client.start(groups[i % groups.length]);
                 synchronized (client) {
                     client.wait(1);
                 }
             } catch (Throwable throwable) {
+                count--;
                 throwable.printStackTrace();
                 client.shutdownNow();
             }

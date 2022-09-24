@@ -105,6 +105,11 @@ final class IoServerConfig {
     private boolean aioEnhance = true;
 
     /**
+     * 低内存模式
+     */
+    private boolean lowMemory = false;
+
+    /**
      * 获取默认内存块大小
      *
      * @return 内存块大小
@@ -244,6 +249,14 @@ final class IoServerConfig {
 
     public void setAioEnhance(boolean aioEnhance) {
         this.aioEnhance = aioEnhance;
+    }
+
+    public boolean isLowMemory() {
+        return lowMemory;
+    }
+
+    public void setLowMemory(boolean lowMemory) {
+        this.lowMemory = lowMemory;
     }
 
     @Override

@@ -24,7 +24,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * AIO传输层会话。
@@ -105,12 +105,12 @@ final class TcpAioSession extends AioSession {
      * @param writeCompletionHandler 写回调
      * @param bufferPage             绑定内存页
      */
-    TcpAioSession(AsynchronousSocketChannel channel, final IoServerConfig config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, BufferPage bufferPage) {
+    TcpAioSession(AsynchronousSocketChannel channel, final IoServerConfig config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, BufferPage bufferPage, Supplier<VirtualBuffer> virtualBufferSupplier) {
         this.channel = channel;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.ioServerConfig = config;
-
+        this.function = virtualBufferSupplier;
         Consumer<WriteBuffer> flushConsumer = var -> {
             if (!semaphore.tryAcquire()) {
                 return;
@@ -125,33 +125,20 @@ final class TcpAioSession extends AioSession {
         byteBuf = new WriteBuffer(bufferPage, flushConsumer, ioServerConfig.getWriteBufferSize(), ioServerConfig.getWriteBufferCapacity());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
+        doRead();
     }
 
-    private Function<Void, VirtualBuffer> function;
+    private final Supplier<VirtualBuffer> function;
 
-    void initSession(Function<Void, VirtualBuffer> function) {
-        this.function = function;
-        initSession(function.apply(null));
-    }
-
-    /**
-     * 初始化AioSession
-     */
-    void initSession(VirtualBuffer readBuffer) {
-        this.readBuffer = readBuffer;
+    void doRead() {
+        this.readBuffer = function.get();
         this.readBuffer.buffer().flip();
         signalRead();
     }
 
-    void releaseReadBuffer() {
-//        System.out.println("release buffer");
+    void suspendRead() {
         this.readBuffer.clean();
         this.readBuffer = null;
-    }
-
-    void continueRead() {
-//        System.out.println("continue read");
-        initSession(function);
     }
 
     /**
