@@ -11,6 +11,7 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
 import java.nio.channels.CompletionHandler;
 
@@ -30,6 +31,15 @@ class ReadCompletionHandler implements CompletionHandler<Integer, TcpAioSession>
     @Override
     public void completed(final Integer result, final TcpAioSession aioSession) {
         try {
+            //释放缓冲区
+            if (result == EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL) {
+                aioSession.suspendRead();
+                return;
+            }
+            if (result == EnhanceAsynchronousChannelProvider.READABLE_SIGNAL) {
+                aioSession.doRead();
+                return;
+            }
             // 接收到的消息进行预处理
             NetMonitor monitor = aioSession.getServerConfig().getMonitor();
             if (monitor != null) {

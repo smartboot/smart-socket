@@ -33,7 +33,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * AIO服务端。
@@ -77,10 +76,6 @@ public final class AioQuickServer {
     private WriteCompletionHandler aioWriteCompletionHandler;
     private BufferPagePool innerBufferPool = null;
 
-    /**
-     * 连接会话实例化Function
-     */
-    private Function<AsynchronousSocketChannel, TcpAioSession> aioSessionFunction;
     /**
      * asynchronousServerSocketChannel
      */
@@ -126,16 +121,15 @@ public final class AioQuickServer {
         if (config.isBannerEnabled()) {
             System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + (config.isAioEnhance() ? "[enhance]" : "") + "::\t(" + IoServerConfig.VERSION + ")");
         }
-        start0(channel -> new TcpAioSession(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage()));
+        start0();
     }
 
     /**
      * 内部启动逻辑
      *
-     * @param aioSessionFunction 实例化会话的Function
      * @throws IOException IO异常
      */
-    private void start0(Function<AsynchronousSocketChannel, TcpAioSession> aioSessionFunction) throws IOException {
+    private void start0() throws IOException {
         checkAndResetConfig();
         try {
             aioWriteCompletionHandler = new WriteCompletionHandler();
@@ -143,11 +137,10 @@ public final class AioQuickServer {
                 this.bufferPool = config.getBufferFactory().create();
                 this.innerBufferPool = bufferPool;
             }
-            this.aioSessionFunction = aioSessionFunction;
             AsynchronousChannelProvider provider;
             if (config.isAioEnhance()) {
                 aioReadCompletionHandler = new ReadCompletionHandler();
-                provider = new EnhanceAsynchronousChannelProvider();
+                provider = new EnhanceAsynchronousChannelProvider(config.isLowMemory());
             } else {
                 concurrentReadCompletionHandlerExecutor = new ThreadPoolExecutor(1, 1,
                         60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
@@ -205,27 +198,6 @@ public final class AioQuickServer {
                 exc.printStackTrace();
             }
         });
-
-//        Thread acceptThread = new Thread(new Runnable() {
-//
-//            @Override
-//            public void run() {
-//                Future<AsynchronousSocketChannel> nextFuture = serverSocketChannel.accept();
-//                while (acceptRunning) {
-//                    try {
-//                        AsynchronousSocketChannel channel = nextFuture.get();
-//                        nextFuture = serverSocketChannel.accept();
-//                        createSession(channel);
-//                    } catch (Exception e) {
-//                        e.printStackTrace();
-//                        config.getProcessor().stateEvent(null, StateMachineEnum.ACCEPT_EXCEPTION, e);
-//                        nextFuture = serverSocketChannel.accept();
-//                    }
-//                }
-//            }
-//        }, "smart-socket:accept");
-//        acceptThread.setDaemon(true);
-//        acceptThread.start();
     }
 
     /**
@@ -253,8 +225,7 @@ public final class AioQuickServer {
             }
             if (acceptChannel != null) {
                 acceptChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
-                session = aioSessionFunction.apply(acceptChannel);
-                session.initSession(readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
+                session = new TcpAioSession(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage(), () -> readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
                 IOUtil.close(channel);
@@ -426,4 +397,10 @@ public final class AioQuickServer {
         this.readBufferFactory = readBufferFactory;
         return this;
     }
+
+    public AioQuickServer setLowMemory(boolean lowMemory) {
+        this.config.setLowMemory(lowMemory);
+        return this;
+    }
+
 }

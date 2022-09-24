@@ -1,0 +1,43 @@
+networks:
+  smart-network:
+    driver: bridge
+services:
+  server:
+    container_name:   server
+    hostname:   server
+    image: smartboot/smart-socket-benchmark:0.1
+    read_only: true
+    restart: always
+    user: root:root
+    privileged: true
+    tmpfs:
+      - /tmp
+    networks:
+      smart-network: {}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "1"
+    command: -Xmx2000M -Xmn100M -Dport=8080 org.smartboot.socket.benchmark.Server &
+
+  client:
+    depends_on:
+      - server
+    image: smartboot/smart-socket-benchmark:0.1
+    read_only: true
+    restart: always
+    user: root:root
+    tmpfs:
+      - /tmp
+    sysctls:
+      net.ipv4.ip_local_port_range: "1024 65535"
+    privileged: true
+    networks:
+      smart-network: {}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "1"
+    command: -Xmx100M  -Dcount=50000 -Dhost=server -Dport=8080 org.smartboot.socket.benchmark.Clients

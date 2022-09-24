@@ -281,12 +281,31 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             // 优先获取SelectionKey,若无关注事件触发则阻塞在selector.select(),减少select被调用次数
             Set<SelectionKey> keySet = selector.selectedKeys();
             try {
+                int count = 0;
                 while (running) {
                     Consumer<Selector> selectorConsumer;
                     while ((selectorConsumer = consumers.poll()) != null) {
                         selectorConsumer.accept(selector);
                     }
-                    selector.select();
+//                    selector.select();
+                    int i = selector.select();
+                    if (i <= 0) {
+                        count++;
+                        //触发了死循环
+                        if (count > 10 && keySet.isEmpty()) {
+//                            selector.keys().forEach(key -> {
+//                                int ops = key.interestOps();
+//                                key.interestOps(0);
+//                                key.interestOps(ops);
+//                            });
+//                            System.out.println("修复..." + selector.keys().size());
+//                            System.out.println("select i:= " + i);
+                            continue;
+                        }
+                    } else {
+                        count = 0;
+                    }
+
                     // 执行本次已触发待处理的事件
                     for (SelectionKey key : keySet) {
                         invoker = 0;

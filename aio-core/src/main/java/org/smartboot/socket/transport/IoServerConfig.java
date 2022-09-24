@@ -39,7 +39,7 @@ final class IoServerConfig {
     /**
      * 当前smart-socket版本号
      */
-    public static final String VERSION = "v1.6.0";
+    public static final String VERSION = "v1.6.1-SNAPSHOT";
 
     /**
      * 消息体缓存大小,字节
@@ -103,6 +103,11 @@ final class IoServerConfig {
      * 启用 aio 增强
      */
     private boolean aioEnhance = true;
+
+    /**
+     * 低内存模式
+     */
+    private boolean lowMemory = false;
 
     /**
      * 获取默认内存块大小
@@ -244,6 +249,14 @@ final class IoServerConfig {
 
     public void setAioEnhance(boolean aioEnhance) {
         this.aioEnhance = aioEnhance;
+    }
+
+    public boolean isLowMemory() {
+        return lowMemory;
+    }
+
+    public void setLowMemory(boolean lowMemory) {
+        this.lowMemory = lowMemory;
     }
 
     @Override

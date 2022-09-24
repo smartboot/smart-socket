@@ -120,14 +120,16 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private SocketAddress remote;
     private int writeInvoker;
 
-    public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel) throws IOException {
+    private boolean lowMemory;
+
+    public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
         super(group.provider());
         this.group = group;
         this.channel = channel;
         readWorker = group.getReadWorker();
         writeWorker = group.getWriteWorker();
         connectWorker = group.getConnectWorker();
-        channel.configureBlocking(false);
+        this.lowMemory = lowMemory;
     }
 
     @Override
@@ -319,6 +321,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             if (connected || channel.connect(remote)) {
                 connected = channel.finishConnect();
             }
+            channel.configureBlocking(false);
             if (connected) {
                 CompletionHandler<Void, Object> completionHandler = connectCompletionHandler;
                 Object attach = connectAttachment;
@@ -356,6 +359,13 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 resetRead();
                 return;
             }
+            if (lowMemory && direct && readBuffer == null) {
+                CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
+                Object attach = readAttachment;
+                resetRead();
+                completionHandler.completed(EnhanceAsynchronousChannelProvider.READABLE_SIGNAL, attach);
+                return;
+            }
             boolean directRead = direct || (Thread.currentThread() == readWorker.getWorkerThread() && readWorker.invoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER);
 
             long readSize = 0;
@@ -382,6 +392,11 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     }
                 }, SelectionKey.OP_READ);
                 return;
+            }
+            //释放内存
+            if (lowMemory && readSize == 0 && readBuffer.position() == 0) {
+                readBuffer = null;
+                readCompletionHandler.completed(EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL, readAttachment);
             }
 
             if (readSize != 0 || !hasRemain) {
