@@ -39,7 +39,7 @@ final class IoServerConfig {
     /**
      * 当前smart-socket版本号
      */
-    public static final String VERSION = "v1.6.1-SNAPSHOT";
+    public static final String VERSION = "v1.5.21";
 
     /**
      * 消息体缓存大小,字节
