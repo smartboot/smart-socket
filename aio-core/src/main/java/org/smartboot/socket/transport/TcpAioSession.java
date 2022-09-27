@@ -105,12 +105,12 @@ final class TcpAioSession extends AioSession {
      * @param writeCompletionHandler 写回调
      * @param bufferPage             绑定内存页
      */
-    TcpAioSession(AsynchronousSocketChannel channel, final IoServerConfig config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, BufferPage bufferPage, Supplier<VirtualBuffer> virtualBufferSupplier) {
+    TcpAioSession(AsynchronousSocketChannel channel, final IoServerConfig config, ReadCompletionHandler readCompletionHandler, WriteCompletionHandler writeCompletionHandler, BufferPage bufferPage, Supplier<VirtualBuffer> supplier) {
         this.channel = channel;
         this.readCompletionHandler = readCompletionHandler;
         this.writeCompletionHandler = writeCompletionHandler;
         this.ioServerConfig = config;
-        this.function = virtualBufferSupplier;
+        this.function = supplier;
         Consumer<WriteBuffer> flushConsumer = var -> {
             if (!semaphore.tryAcquire()) {
                 return;

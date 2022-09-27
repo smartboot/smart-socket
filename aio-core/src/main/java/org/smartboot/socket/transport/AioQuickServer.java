@@ -15,6 +15,7 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.VirtualBufferFactory;
 import org.smartboot.socket.buffer.BufferFactory;
 import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * AIO服务端。
@@ -179,6 +181,7 @@ public final class AioQuickServer {
     }
 
     private void startAcceptThread() {
+        Supplier<VirtualBuffer> supplier = () -> readBufferFactory.newBuffer(bufferPool.allocateBufferPage());
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
             @Override
             public void completed(AsynchronousSocketChannel channel, Void attachment) {
@@ -189,7 +192,7 @@ public final class AioQuickServer {
                     failed(throwable, attachment);
                     serverSocketChannel.accept(attachment, this);
                 } finally {
-                    createSession(channel);
+                    createSession(channel, supplier);
                 }
             }
 
@@ -215,7 +218,7 @@ public final class AioQuickServer {
      *
      * @param channel 当前已建立连接通道
      */
-    private void createSession(AsynchronousSocketChannel channel) {
+    private void createSession(AsynchronousSocketChannel channel, Supplier<VirtualBuffer> supplier) {
         //连接成功则构造AIOSession对象
         TcpAioSession session = null;
         AsynchronousSocketChannel acceptChannel = channel;
@@ -225,7 +228,7 @@ public final class AioQuickServer {
             }
             if (acceptChannel != null) {
                 acceptChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
-                session = new TcpAioSession(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage(), () -> readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
+                session = new TcpAioSession(channel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage(), supplier);
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
                 IOUtil.close(channel);
