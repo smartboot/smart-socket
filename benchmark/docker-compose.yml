@@ -6,7 +6,7 @@ services:
     container_name:   server
     hostname:   server
     image: smartboot/smart-socket-benchmark:0.1
-    read_only: true
+#    read_only: true
     restart: always
     user: root:root
     privileged: true

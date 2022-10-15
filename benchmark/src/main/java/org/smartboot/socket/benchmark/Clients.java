@@ -19,7 +19,7 @@ import java.util.concurrent.ThreadFactory;
  */
 public class Clients {
     public static void main(String[] args) throws IOException {
-        int count = Integer.parseInt(System.getProperty("count", "1000"));
+        int count = Integer.parseInt(System.getProperty("count", "10000"));
         String host = System.getProperty("host", "127.0.0.1");
         int port = Integer.parseInt(System.getProperty("port", "8080"));
         AsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(true);
