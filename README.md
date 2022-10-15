@@ -14,6 +14,8 @@ smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO �
 ### 推荐
 - 《[smart-socket 单机百万长连接实战教程](https://mp.weixin.qq.com/s/l_IBSBI6SAY4FmomwLFa-Q)》
 - 《[新手小白必读：通信协议](https://mp.weixin.qq.com/s/2w9C8CQvhOXZsLEOd6Gzww)》
+- 《[图解通信框架的调度模型](https://mp.weixin.qq.com/s/Hq4T-X7LtjIOVi1aEEvxKQ)》
+- 《[通信框架 smart-socket 设计概览](https://mp.weixin.qq.com/s/M9sMfDKahgsR8LgX0M4CVQ)》
 
 ### 性能排行
 ![输入图片说明](image.png)
