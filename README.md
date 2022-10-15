@@ -1,16 +1,11 @@
 ## smart-socket [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu) 
 ![](gvp.png)
-smart-socket是一款国产开源的 Java AIO 通信框架，支持 TCP、UDP、SSL/TLS 。
+smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO 的实现使其有着超越各大语言的通信性能和稳定性。
 
-作为一款极简、易用、高性能的通信框架，现已广泛运用于物联网、证券、电力、电商等诸多领域。
-
-
->**官方QQ群：** 172299083 、**830015805**（因深受阿里云销售代理混入群内发广告的困扰，凡是申请入群者请先为本项目**[捐赠5元](https://smartboot.gitee.io/book/donation.html#%E6%8D%90%E8%B5%A0%E6%96%B9%E5%BC%8F)，并备注您的QQ号**，我们将人工审核入群人员。在此，我们对该入群方式表示歉意，同时希望互联网大厂们还技术社区一片宁静，感恩！）  
->**微信公众号：** 搜索 "smart_boot" 或者扫描底部二维码。
->
+凭借自身极简、易用、高性能的特性，smart-socket 得到了诸多 [开发人员和企业](https://www.yuque.com/smartboot/smart-socket/users) 的认可和青睐。
 
 ### 项目特色
-1. 高性能、高并发、低延迟、低能耗
+1. 高性能、高并发、低延迟、绿色节能。
 2. 代码量极少，可读性强。核心代码不到 1500 行，工程结构、包层次清晰。
 3. 学习门槛低，二次开发只需实现 2 个接口（Protocol、MessageProcessor）,具备通信开发经验的几乎无学习成本。
 4. 良好的线程模型、内存模型设计，保障服务高效稳定的运行。
@@ -23,14 +18,7 @@ smart-socket是一款国产开源的 Java AIO 通信框架，支持 TCP、UDP、
 ### 性能排行
 ![输入图片说明](image.png)
 
-### 案例
-1. [smart-http](https://gitee.com/smartboot/smart-http) 国内首款基于smart-socket实现的Http服务器
-2. [smart-servlet](https://gitee.com/smartboot/smart-servlet) 一款实现了Servlet 3.1规范，支持多应用隔离部署的的 Web 容器
-3. [irtu-gps](https://gitee.com/wendal/irtu-gps) 基于iRTU项目,实现GPS数据的接收和展示
-4. [企业案例](https://gitee.com/smartboot/smart-socket/issues/IHV69)
-> 如果您的项目中使用了 smart-socket 并愿意在此处展现给大众，欢迎留言反馈。
-
-### 插件
+### 插件清单
 | Plugin | 用途 |
 |---|---|
 |BlackListPlugin|黑名单插件,smart-socket会拒绝与黑名单中的IP建立连接|
@@ -45,16 +33,16 @@ smart-socket是一款国产开源的 Java AIO 通信框架，支持 TCP、UDP、
 - 感谢码云提供的代码托管和 Pages 服务。
 - 感谢 JetBrains 为 smart-socket 提供的 IDEA License。     
     <a href="https://www.jetbrains.com/?from=smart-socket"><img src="jetbrains.png" width="20%" height="20%"/></a>
-- 感谢为 smart-socket [捐赠](https://smartboot.gitee.io/book/donation.html)的每一位朋友。
+- 感谢为 smart-socket [捐赠](https://www.yuque.com/smartboot/smart-socket/donation)的每一位朋友。
 - 感谢一直以来陪伴 smart-socket 成长的朋友。
 
-### 如何正确的交流互动
-1. 如果对本项目有任何使用上的疑问，请通过 [Issues](https://gitee.com/smartboot/smart-socket/issues) 进行交流互动（其他渠道无法确保第一时间回复，包括官方QQ 群）。我们需要将共性问题通过 issue 沉淀下来分享给其他的使用者。
-2. 若仅是发表个人对这个项目的主观感受，欢迎直接在下面留言。
 
-### 关于作者
-Edit By 三刀  
-E-mail:zhengjunweimail@163.com  
-Update Date: 2019-11-07
 
-<img src="wx.jpg" width="50%" height="50%"/>
+### 加入社群
+
+- **官方QQ群：** 172299083 、830015805。入群条件：
+  1. 普通用户[捐赠5元](https://www.yuque.com/smartboot/smart-socket/donation#cbPHp)，并备注您的QQ号，我们将人工审核入群人员。
+  2. 企业用户，完成【[案例登记](https://gitee.com/smartboot/smart-socket/issues/IHV69)】并在加群时备注企业名。
+- 扫描底部二维码关注三刀公众号
+
+​	<img src="wx.jpg" width="50%" height="50%"/>
