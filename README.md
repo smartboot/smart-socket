@@ -13,7 +13,7 @@ smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO �
 
 ### 推荐
 - 《[smart-socket 单机百万长连接实战教程](https://mp.weixin.qq.com/s/l_IBSBI6SAY4FmomwLFa-Q)》
-- 《[新手必读：通信协议](https://mp.weixin.qq.com/s/2w9C8CQvhOXZsLEOd6Gzww)》
+- 《[新手小白必读：通信协议](https://mp.weixin.qq.com/s/2w9C8CQvhOXZsLEOd6Gzww)》
 
 ### 性能排行
 ![输入图片说明](image.png)
@@ -33,10 +33,6 @@ smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO �
 - 感谢码云提供的代码托管和 Pages 服务。
 - 感谢 JetBrains 为 smart-socket 提供的 IDEA License。     
     <a href="https://www.jetbrains.com/?from=smart-socket"><img src="jetbrains.png" width="20%" height="20%"/></a>
-- 感谢为 smart-socket [捐赠](https://www.yuque.com/smartboot/smart-socket/donation)的每一位朋友。
-- 感谢一直以来陪伴 smart-socket 成长的朋友。
-
-
 
 ### 加入社群
 
