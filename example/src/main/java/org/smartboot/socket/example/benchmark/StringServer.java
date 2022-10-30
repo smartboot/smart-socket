@@ -1,7 +1,5 @@
 package org.smartboot.socket.example.benchmark;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.plugins.BufferPageMonitorPlugin;
@@ -19,13 +17,11 @@ import java.io.IOException;
  * @version V1.0 , 2018/11/23
  */
 public class StringServer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StringServer.class);
 
     public static void main(String[] args) throws IOException {
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
             public void process0(AioSession session, String msg) {
-//                LOGGER.info(msg);
                 WriteBuffer outputStream = session.writeBuffer();
 
                 try {
@@ -33,15 +29,12 @@ public class StringServer {
                     outputStream.writeInt(bytes.length);
                     outputStream.write(bytes);
                 } catch (IOException e) {
-//                    e.printStackTrace();
+                    e.printStackTrace();
                 }
             }
 
             @Override
             public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-                if (throwable != null) {
-                    LOGGER.error(stateMachineEnum + " exception:", throwable);
-                }
             }
         };
 

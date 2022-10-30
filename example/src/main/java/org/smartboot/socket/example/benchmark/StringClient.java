@@ -1,7 +1,5 @@
 package org.smartboot.socket.example.benchmark;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
@@ -15,49 +13,36 @@ import org.smartboot.socket.transport.WriteBuffer;
 import java.io.IOException;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * @author 三刀
  * @version V1.0 , 2018/11/23
  */
 public class StringClient {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StringClient.class);
-
 
     public static void main(String[] args) throws IOException {
         BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 32, 10, true);
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
             public void process0(AioSession session, String msg) {
-
             }
 
             @Override
             public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-                if (throwable != null) {
-                    throwable.printStackTrace();
-                }
+
             }
         };
-        processor.addPlugin(new MonitorPlugin(5));
+        processor.addPlugin(new MonitorPlugin<>(5));
         AsynchronousChannelGroup asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider().openAsynchronousChannelGroup(Runtime.getRuntime().availableProcessors(), r -> new Thread(r, "ClientGroup"));
         for (int i = 0; i < 10; i++) {
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        new StringClient().test(asynchronousChannelGroup, bufferPagePool, processor);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (ExecutionException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
+            new Thread(() -> {
+                try {
+                    new StringClient().test(asynchronousChannelGroup, bufferPagePool, processor);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            }.start();
+
+            }).start();
         }
 
     }
@@ -72,13 +57,10 @@ public class StringClient {
         byte[] data = "smart-socket".getBytes();
         while (true) {
             int num = (int) (Math.random() * 10) + 1;
-//            int num = 4;
             outputStream.writeInt(data.length * num);
             while (num-- > 0) {
                 outputStream.write(data);
             }
-
-//            Thread.sleep(100);
         }
     }
 }
