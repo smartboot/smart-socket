@@ -92,11 +92,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
     public final boolean preProcess(AioSession session, T t) {
         sessionMap.put(session, System.currentTimeMillis());
         //是否心跳响应消息
-        if (isHeartMessage(session, t)) {
-            //延长心跳监测时间
-            return false;
-        }
-        return true;
+        return !isHeartMessage(session, t);
     }
 
     @Override
@@ -136,10 +132,10 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
 
     private void registerHeart(final AioSession session, final long heartRate) {
         if (heartRate <= 0) {
-            LOGGER.info("session:{} 因心跳超时时间为:{},终止启动心跳监测任务", session, heartRate);
+            LOGGER.info("session:{} 因心跳间隔为:{},终止启动心跳监测任务", session, heartRate);
             return;
         }
-        LOGGER.debug("session:{}注册心跳任务,超时时间:{}", session, heartRate);
+        LOGGER.debug("session:{}注册心跳任务,心跳间隔:{}", session, heartRate);
         QuickTimerTask.SCHEDULED_EXECUTOR_SERVICE.schedule(new TimerTask() {
             @Override
             public void run() {
