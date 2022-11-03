@@ -16,7 +16,8 @@ import org.smartboot.socket.transport.AioSession;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author 三刀
@@ -26,7 +27,7 @@ public class StringProtocol implements Protocol<String> {
 
     private final Charset charset;
 
-    private final HashMap<AioSession, FixedLengthFrameDecoder> decoderMap = new HashMap<>();
+    private final Map<AioSession, FixedLengthFrameDecoder> decoderMap = new ConcurrentHashMap<>();
     private long lastClearTime = System.currentTimeMillis();
 
     public StringProtocol(Charset charset) {

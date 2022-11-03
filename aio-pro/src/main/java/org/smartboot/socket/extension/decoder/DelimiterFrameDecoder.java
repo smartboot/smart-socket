@@ -102,13 +102,11 @@ public class DelimiterFrameDecoder implements SmartDecoder {
         }
         byte[] data = new byte[(position) * bufferList.get(0).capacity() + bufferList.get(position).limit()];
         int index = 0;
-        for (int i = 0; i < position; i++) {
+        for (int i = 0; i <= position; i++) {
             ByteBuffer b = bufferList.get(i);
             System.arraycopy(b.array(), b.position(), data, index, b.remaining());
             index += b.remaining();
         }
-        ByteBuffer lastBuffer = bufferList.get(position);
-        System.arraycopy(lastBuffer.array(), lastBuffer.position(), data, index, lastBuffer.remaining());
         return ByteBuffer.wrap(data);
     }
 
