@@ -17,9 +17,6 @@ import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
 /**
  * @author 三刀
  * @version V1.0 , 2020/4/16
@@ -28,15 +25,16 @@ public class SslDemo {
     public static void main(String[] args) throws Exception {
         IntegerServerProcessor serverProcessor = new IntegerServerProcessor();
         AioQuickServer sslQuickServer = new AioQuickServer(8080, new IntegerProtocol(), serverProcessor);
-        SslPlugin sslServerPlugin = new SslPlugin(new ServerSSLContextFactory(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"),"123456", "123456") , ClientAuth.OPTIONAL);
+        ServerSSLContextFactory serverFactory = new ServerSSLContextFactory(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"), "123456", "123456");
+        SslPlugin<Integer> sslServerPlugin = new SslPlugin<>(serverFactory, ClientAuth.OPTIONAL);
         serverProcessor.addPlugin(sslServerPlugin);
         sslQuickServer.start();
 
         IntegerClientProcessor clientProcessor = new IntegerClientProcessor();
         AioQuickClient sslQuickClient = new AioQuickClient("localhost", 8080, new IntegerProtocol(), clientProcessor);
-        SslPlugin sslPlugin = new SslPlugin(new ClientSSLContextFactory(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"), "123456"));
+        ClientSSLContextFactory clientFactory=new ClientSSLContextFactory(SslDemo.class.getClassLoader().getResourceAsStream("server.keystore"), "123456");
+        SslPlugin<Integer> sslPlugin = new SslPlugin<>(clientFactory);
         clientProcessor.addPlugin(sslPlugin);
-//        clientProcessor.addPlugin(new SslPlugin());
         AioSession aioSession = sslQuickClient.start();
         aioSession.writeBuffer().writeInt(1);
         aioSession.writeBuffer().flush();
