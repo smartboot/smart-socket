@@ -51,6 +51,7 @@ public final class SslService {
 
         @Override
         public void failed(Throwable exc, HandshakeModel attachment) {
+            exc.printStackTrace();
             attachment.setEof(true);
             attachment.getHandshakeCallback().callback();
         }
@@ -202,9 +203,8 @@ public final class SslService {
             handshakeModel.getHandshakeCallback().callback();
 
         } catch (Exception e) {
+            handshakeCompletionHandler.failed(e, handshakeModel);
             logger.warn("ignore doHandshake exception: {}", e.getMessage());
-            handshakeModel.setEof(true);
-            handshakeModel.getHandshakeCallback().callback();
         }
     }
 
