@@ -136,11 +136,15 @@ public final class SslService {
                             case OK:
                                 break;
                             case BUFFER_OVERFLOW:
-                                logger.warn("doHandshake BUFFER_OVERFLOW");
+                                System.err.println("doHandshake BUFFER_OVERFLOW");
                                 break;
                             //两种情况会触发BUFFER_UNDERFLOW,1:读到的数据不够,2:netReadBuffer空间太小
                             case BUFFER_UNDERFLOW:
-                                logger.warn("doHandshake BUFFER_UNDERFLOW");
+                                if (netReadBuffer.position() > 0) {
+                                    handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletionHandler);
+                                } else {
+                                    System.out.println("doHandshake BUFFER_UNDERFLOW");
+                                }
                                 return;
                             default:
                                 throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
