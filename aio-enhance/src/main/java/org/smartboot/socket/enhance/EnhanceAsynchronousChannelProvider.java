@@ -34,18 +34,6 @@ public final class EnhanceAsynchronousChannelProvider extends AsynchronousChanne
      * 可读信号
      */
     public static final int READABLE_SIGNAL = -3;
-    /**
-     * 低内存模式
-     */
-    private final boolean lowMemory;
-
-    public EnhanceAsynchronousChannelProvider(boolean lowMemory) {
-        this.lowMemory = lowMemory;
-    }
-
-    public EnhanceAsynchronousChannelProvider() {
-        this(false);
-    }
 
     @Override
     public AsynchronousChannelGroup openAsynchronousChannelGroup(int nThreads, ThreadFactory threadFactory) throws IOException {
@@ -62,12 +50,12 @@ public final class EnhanceAsynchronousChannelProvider extends AsynchronousChanne
 
     @Override
     public AsynchronousServerSocketChannel openAsynchronousServerSocketChannel(AsynchronousChannelGroup group) throws IOException {
-        return new EnhanceAsynchronousServerSocketChannel(checkAndGet(group), lowMemory);
+        return new EnhanceAsynchronousServerSocketChannel(checkAndGet(group));
     }
 
     @Override
     public AsynchronousSocketChannel openAsynchronousSocketChannel(AsynchronousChannelGroup group) throws IOException {
-        return new EnhanceAsynchronousSocketChannel(checkAndGet(group), SocketChannel.open(), lowMemory);
+        return new EnhanceAsynchronousSocketChannel(checkAndGet(group), SocketChannel.open());
     }
 
     private EnhanceAsynchronousChannelGroup checkAndGet(AsynchronousChannelGroup group) {

@@ -36,15 +36,13 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     private Object attachment;
     private SelectionKey selectionKey;
     private boolean acceptPending;
-    private final boolean lowMemory;
 
-    EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup, boolean lowMemory) throws IOException {
+    EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup) throws IOException {
         super(enhanceAsynchronousChannelGroup.provider());
         this.enhanceAsynchronousChannelGroup = enhanceAsynchronousChannelGroup;
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.configureBlocking(false);
         acceptWorker = enhanceAsynchronousChannelGroup.getAcceptWorker();
-        this.lowMemory = lowMemory;
     }
 
     @Override
@@ -95,7 +93,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                 socketChannel = serverSocketChannel.accept();
             }
             if (socketChannel != null) {
-                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = new EnhanceAsynchronousSocketChannel(enhanceAsynchronousChannelGroup, socketChannel, lowMemory);
+                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = new EnhanceAsynchronousSocketChannel(enhanceAsynchronousChannelGroup, socketChannel);
                 socketChannel.configureBlocking(false);
                 socketChannel.finishConnect();
                 CompletionHandler<AsynchronousSocketChannel, Object> completionHandler = acceptCompletionHandler;

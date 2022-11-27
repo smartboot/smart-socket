@@ -99,15 +99,6 @@ final class IoServerConfig {
      */
     private BufferFactory bufferFactory = BufferFactory.DISABLED_BUFFER_FACTORY;
 
-    /**
-     * 启用 aio 增强
-     */
-    private boolean aioEnhance = true;
-
-    /**
-     * 低内存模式
-     */
-    private boolean lowMemory = false;
 
     /**
      * 获取默认内存块大小
@@ -243,22 +234,6 @@ final class IoServerConfig {
         this.backlog = backlog;
     }
 
-    public boolean isAioEnhance() {
-        return aioEnhance;
-    }
-
-    public void setAioEnhance(boolean aioEnhance) {
-        this.aioEnhance = aioEnhance;
-    }
-
-    public boolean isLowMemory() {
-        return lowMemory;
-    }
-
-    public void setLowMemory(boolean lowMemory) {
-        this.lowMemory = lowMemory;
-    }
-
     @Override
     public String toString() {
         return "IoServerConfig{" +
@@ -275,7 +250,6 @@ final class IoServerConfig {
                 ", socketOptions=" + socketOptions +
                 ", threadNum=" + threadNum +
                 ", bufferFactory=" + bufferFactory +
-                ", aioEnhance=" + aioEnhance +
                 '}';
     }
 }

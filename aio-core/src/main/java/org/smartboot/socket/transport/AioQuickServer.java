@@ -26,13 +26,9 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.security.InvalidParameterException;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -67,15 +63,11 @@ public final class AioQuickServer {
     /**
      * 读回调事件处理
      */
-    private ReadCompletionHandler aioReadCompletionHandler;
-    /**
-     * ConcurrentReadCompletionHandler 回调守护线程
-     */
-    private ThreadPoolExecutor concurrentReadCompletionHandlerExecutor;
+    private final ReadCompletionHandler aioReadCompletionHandler = new ReadCompletionHandler();
     /**
      * 写回调事件处理
      */
-    private WriteCompletionHandler aioWriteCompletionHandler;
+    private final WriteCompletionHandler aioWriteCompletionHandler = new WriteCompletionHandler();
     private BufferPagePool innerBufferPool = null;
 
     /**
@@ -121,7 +113,7 @@ public final class AioQuickServer {
      */
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
-            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + (config.isAioEnhance() ? "[enhance]" : "") + "::\t(" + IoServerConfig.VERSION + ")");
+            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + "::\t(" + IoServerConfig.VERSION + ")");
         }
         start0();
     }
@@ -132,24 +124,12 @@ public final class AioQuickServer {
      * @throws IOException IO异常
      */
     private void start0() throws IOException {
-        checkAndResetConfig();
         try {
-            aioWriteCompletionHandler = new WriteCompletionHandler();
             if (bufferPool == null) {
                 this.bufferPool = config.getBufferFactory().create();
                 this.innerBufferPool = bufferPool;
             }
-            AsynchronousChannelProvider provider;
-            if (config.isAioEnhance()) {
-                aioReadCompletionHandler = new ReadCompletionHandler();
-                provider = new EnhanceAsynchronousChannelProvider(config.isLowMemory());
-            } else {
-                concurrentReadCompletionHandlerExecutor = new ThreadPoolExecutor(1, 1,
-                        60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-                aioReadCompletionHandler = new ConcurrentReadCompletionHandler(new Semaphore(config.getThreadNum() - 1), concurrentReadCompletionHandlerExecutor);
-                provider = AsynchronousChannelProvider.provider();
-            }
-            asynchronousChannelGroup = provider.openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
+            asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider().openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
                 private byte index = 0;
 
                 @Override
@@ -201,16 +181,6 @@ public final class AioQuickServer {
                 exc.printStackTrace();
             }
         });
-    }
-
-    /**
-     * 检查配置项
-     */
-    private void checkAndResetConfig() {
-        //确保单核CPU默认初始化至少2个线程
-        if (config.getThreadNum() == 1) {
-            config.setThreadNum(2);
-        }
     }
 
     /**
@@ -271,10 +241,6 @@ public final class AioQuickServer {
         if (innerBufferPool != null) {
             innerBufferPool.release();
         }
-        if (concurrentReadCompletionHandlerExecutor != null) {
-            concurrentReadCompletionHandlerExecutor.shutdown();
-            concurrentReadCompletionHandlerExecutor = null;
-        }
     }
 
     /**
@@ -285,16 +251,6 @@ public final class AioQuickServer {
      */
     public final AioQuickServer setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
-        return this;
-    }
-
-    /**
-     * 是否启用 AIO 增强模式。默认：true
-     *
-     * @param enabled true:启用；false:禁用
-     */
-    public AioQuickServer setAioEnhance(boolean enabled) {
-        config.setAioEnhance(enabled);
         return this;
     }
 
@@ -398,11 +354,6 @@ public final class AioQuickServer {
 
     public final AioQuickServer setReadBufferFactory(VirtualBufferFactory readBufferFactory) {
         this.readBufferFactory = readBufferFactory;
-        return this;
-    }
-
-    public AioQuickServer setLowMemory(boolean lowMemory) {
-        this.config.setLowMemory(lowMemory);
         return this;
     }
 
