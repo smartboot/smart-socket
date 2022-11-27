@@ -50,24 +50,8 @@ import java.util.function.Supplier;
  * @author 三刀
  * @version V1.0.0
  */
-public final class AioQuickServer {
-    /**
-     * Server端服务配置。
-     * <p>调用AioQuickServer的各setXX()方法，都是为了设置config的各配置项</p>
-     */
-    private final IoServerConfig config = new IoServerConfig();
-    /**
-     * 内存池
-     */
-    private BufferPagePool bufferPool;
-    /**
-     * 读回调事件处理
-     */
-    private final ReadCompletionHandler aioReadCompletionHandler = new ReadCompletionHandler();
-    /**
-     * 写回调事件处理
-     */
-    private final WriteCompletionHandler aioWriteCompletionHandler = new WriteCompletionHandler();
+public final class AioQuickServer extends SessionResource {
+
     private BufferPagePool innerBufferPool = null;
 
     /**
@@ -198,7 +182,7 @@ public final class AioQuickServer {
             }
             if (acceptChannel != null) {
                 acceptChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
-                session = new TcpAioSession(acceptChannel, config, aioReadCompletionHandler, aioWriteCompletionHandler, bufferPool.allocateBufferPage(), supplier);
+                session = new TcpAioSession(acceptChannel, this, supplier);
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
                 IOUtil.close(channel);

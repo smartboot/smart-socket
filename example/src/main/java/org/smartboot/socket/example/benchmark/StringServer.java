@@ -44,7 +44,7 @@ public class StringServer {
                 .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
                 .setBufferFactory(() -> bufferPagePool)
                 .setWriteBuffer(4096, 512);
-        processor.addPlugin(new BufferPageMonitorPlugin<>(server, 6));
+//        processor.addPlugin(new BufferPageMonitorPlugin<>(server, 6));
         processor.addPlugin(new MonitorPlugin<>(5));
         server.start();
 

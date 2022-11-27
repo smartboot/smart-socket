@@ -50,22 +50,13 @@ import java.util.concurrent.TimeUnit;
  * @author 三刀
  * @version V1.0.0
  */
-public final class AioQuickClient {
-    /**
-     * 客户端服务配置。
-     * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
-     */
-    private final IoServerConfig config = new IoServerConfig();
+public final class AioQuickClient extends SessionResource {
     /**
      * 网络连接的会话对象
      *
      * @see TcpAioSession
      */
     private TcpAioSession session;
-    /**
-     * 内存池
-     */
-    private BufferPagePool bufferPool = null;
 
     private BufferPagePool innerBufferPool = null;
     /**
@@ -111,8 +102,7 @@ public final class AioQuickClient {
      * @param <A>        附件对象类型
      * @throws IOException
      */
-    public <A> void start(A attachment,
-                          CompletionHandler<AioSession, ? super A> handler) throws IOException {
+    public <A> void start(A attachment, CompletionHandler<AioSession, ? super A> handler) throws IOException {
         this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, Thread::new);
         start(asynchronousChannelGroup, attachment, handler);
     }
@@ -126,8 +116,7 @@ public final class AioQuickClient {
      * @param <A>                      附件对象类型
      * @throws IOException
      */
-    public <A> void start(AsynchronousChannelGroup asynchronousChannelGroup, A attachment,
-                          CompletionHandler<AioSession, ? super A> handler) throws IOException {
+    public <A> void start(AsynchronousChannelGroup asynchronousChannelGroup, A attachment, CompletionHandler<AioSession, ? super A> handler) throws IOException {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
         if (bufferPool == null) {
             bufferPool = config.getBufferFactory().create();
@@ -155,7 +144,7 @@ public final class AioQuickClient {
                         throw new RuntimeException("NetMonitor refuse channel");
                     }
                     //连接成功则构造AIOSession对象
-                    session = new TcpAioSession(connectedChannel, config, new ReadCompletionHandler(), new WriteCompletionHandler(), bufferPool.allocateBufferPage(), () -> readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
+                    session = new TcpAioSession(connectedChannel, AioQuickClient.this, () -> readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
                     handler.completed(session, attachment);
                 } catch (Exception e) {
                     failed(e, socketChannel);

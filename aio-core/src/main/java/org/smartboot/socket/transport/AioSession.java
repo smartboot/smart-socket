@@ -45,6 +45,11 @@ public abstract class AioSession {
      */
     protected byte status = SESSION_STATUS_ENABLED;
     /**
+     * 是否读通道以至末尾
+     */
+    boolean eof;
+    int modCount = 0;
+    /**
      * 附件对象
      */
     private Object attachment;
