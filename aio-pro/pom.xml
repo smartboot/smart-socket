@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
-        <version>1.5.23</version>
+        <version>1.6.0-SNAPSHOT</version>
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
     <dependencies>
