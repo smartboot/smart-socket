@@ -1,6 +1,7 @@
 package org.smartboot.socket.benchmark;
 
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
@@ -22,7 +23,7 @@ public class Clients {
         int count = Integer.parseInt(System.getProperty("count", "10000"));
         String host = System.getProperty("host", "127.0.0.1");
         int port = Integer.parseInt(System.getProperty("port", "8080"));
-        AsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(true);
+        AsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider();
         AsynchronousChannelGroup[] groups = new AsynchronousChannelGroup[1];
         for (int i = 0; i < groups.length; i++) {
             groups[i] = provider.openAsynchronousChannelGroup(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
@@ -44,10 +45,10 @@ public class Clients {
             }
         };
         processor.addPlugin(new MonitorPlugin<>(5));
-
+        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024, Runtime.getRuntime().availableProcessors() + 1, true);
         for (int i = 0; i < count; i++) {
             AioQuickClient client = new AioQuickClient(host, port, new StringProtocol(), processor);
-            client.setReadBufferSize(1024 * 1024);
+            client.setReadBufferSize(1024 * 1024).setBufferFactory(() -> bufferPagePool);
             try {
                 client.start(groups[i % groups.length]);
                 synchronized (client) {
