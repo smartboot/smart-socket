@@ -171,7 +171,7 @@ public final class SslService {
                                 logger.warn("NEED_WRAP BUFFER_OVERFLOW");
                                 break;
                             case BUFFER_UNDERFLOW:
-                                throw new SSLException("Buffer underflow occured after a wrap. I don't think we should ever get here.");
+                                throw new SSLException("Buffer underflow occurred after a wrap. I don't think we should ever get here.");
                             case CLOSED:
                                 logger.warn("closed");
                                 try {
