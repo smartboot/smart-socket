@@ -109,7 +109,6 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                 acceptWorker.addRegister(selector -> {
                     try {
                         selectionKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, EnhanceAsynchronousServerSocketChannel.this);
-//                        selectionKey.attach(EnhanceAsynchronousServerSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         acceptCompletionHandler.failed(e, attachment);
                     }
