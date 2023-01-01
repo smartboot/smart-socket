@@ -22,6 +22,8 @@ import java.nio.channels.CompletionHandler;
  * @version V1.0.0
  */
 class ReadCompletionHandler implements CompletionHandler<Integer, TcpAioSession> {
+    public static final ReadCompletionHandler READ_COMPLETION_HANDLER = new ReadCompletionHandler();
+
     /**
      * 处理消息读回调事件
      *

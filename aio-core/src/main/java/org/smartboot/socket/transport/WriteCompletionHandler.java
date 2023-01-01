@@ -21,6 +21,7 @@ import java.nio.channels.CompletionHandler;
  * @version V1.0.0
  */
 final class WriteCompletionHandler implements CompletionHandler<Integer, TcpAioSession> {
+    public static final WriteCompletionHandler WRITE_COMPLETION_HANDLER = new WriteCompletionHandler();
 
     @Override
     public void completed(final Integer result, final TcpAioSession aioSession) {

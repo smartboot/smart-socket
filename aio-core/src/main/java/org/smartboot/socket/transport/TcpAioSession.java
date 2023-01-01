@@ -277,7 +277,7 @@ final class TcpAioSession extends AioSession {
         if (monitor != null) {
             monitor.beforeRead(this);
         }
-        channel.read(readBuffer, 0L, TimeUnit.MILLISECONDS, this, sessionResource.aioReadCompletionHandler);
+        channel.read(readBuffer, 0L, TimeUnit.MILLISECONDS, this, ReadCompletionHandler.READ_COMPLETION_HANDLER);
     }
 
 
@@ -309,7 +309,7 @@ final class TcpAioSession extends AioSession {
         if (monitor != null) {
             monitor.beforeWrite(this);
         }
-        channel.write(writeBuffer.buffer(), 0L, TimeUnit.MILLISECONDS, this, sessionResource.aioWriteCompletionHandler);
+        channel.write(writeBuffer.buffer(), 0L, TimeUnit.MILLISECONDS, this, WriteCompletionHandler.WRITE_COMPLETION_HANDLER);
     }
 
     /**
