@@ -14,12 +14,14 @@ import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.VirtualBuffer;
+import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -52,6 +54,60 @@ import java.util.function.Supplier;
  * @version V1.0.0
  */
 final class TcpAioSession extends AioSession {
+    /**
+     * 读事件回调处理
+     */
+    private static final CompletionHandler<Integer, TcpAioSession> READ_COMPLETION_HANDLER = new CompletionHandler<Integer, TcpAioSession>() {
+        @Override
+        public void completed(Integer result, TcpAioSession aioSession) {
+            try {
+                aioSession.readCompleted(result);
+            } catch (Throwable throwable) {
+                failed(throwable, aioSession);
+            }
+        }
+
+        @Override
+        public void failed(Throwable exc, TcpAioSession aioSession) {
+            try {
+                aioSession.sessionResource.config.getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                aioSession.close(false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    };
+    /**
+     * 写事件回调处理
+     */
+    private static final CompletionHandler<Integer, TcpAioSession> WRITE_COMPLETION_HANDLER = new CompletionHandler<Integer, TcpAioSession>() {
+        @Override
+        public void completed(Integer result, TcpAioSession aioSession) {
+            try {
+                aioSession.writeCompleted(result);
+            } catch (Throwable throwable) {
+                failed(throwable, aioSession);
+            }
+        }
+
+        @Override
+        public void failed(Throwable exc, TcpAioSession aioSession) {
+            try {
+                aioSession.sessionResource.config.getProcessor().stateEvent(aioSession, StateMachineEnum.OUTPUT_EXCEPTION, exc);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                aioSession.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    };
 
     /**
      * 底层通信channel对象
@@ -115,21 +171,19 @@ final class TcpAioSession extends AioSession {
         signalRead();
     }
 
-    void suspendRead() {
-        this.readBuffer.clean();
-        this.readBuffer = null;
-    }
-
     /**
      * 触发AIO的写操作,
      * <p>需要调用控制同步</p>
      */
-    void writeCompleted() {
+    void writeCompleted(int result) {
+        NetMonitor monitor = sessionResource.config.getMonitor();
+        if (monitor != null) {
+            monitor.afterWrite(this, result);
+        }
         if (writeBuffer == null) {
             writeBuffer = byteBuf.pollItem();
         } else if (!writeBuffer.buffer().hasRemaining()) {
             writeBuffer.clean();
-//            byteBuf.reuse(writeBuffer);
             writeBuffer = byteBuf.pollItem();
         }
 
@@ -215,9 +269,25 @@ final class TcpAioSession extends AioSession {
     }
 
 
-    void flipRead(boolean eof) {
-        this.eof = eof;
+    void readCompleted(int result) {
+        //释放缓冲区
+        if (result == EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL) {
+            this.readBuffer.clean();
+            this.readBuffer = null;
+            return;
+        }
+        if (result == EnhanceAsynchronousChannelProvider.READABLE_SIGNAL) {
+            doRead();
+            return;
+        }
+        // 接收到的消息进行预处理
+        NetMonitor monitor = sessionResource.config.getMonitor();
+        if (monitor != null) {
+            monitor.afterRead(this, result);
+        }
+        this.eof = result == -1;
         this.readBuffer.buffer().flip();
+        signalRead();
     }
 
     /**
@@ -273,11 +343,11 @@ final class TcpAioSession extends AioSession {
         }
 
         //read from channel
-        NetMonitor monitor = getServerConfig().getMonitor();
+        NetMonitor monitor = sessionResource.config.getMonitor();
         if (monitor != null) {
             monitor.beforeRead(this);
         }
-        channel.read(readBuffer, 0L, TimeUnit.MILLISECONDS, this, ReadCompletionHandler.READ_COMPLETION_HANDLER);
+        channel.read(readBuffer, 0L, TimeUnit.MILLISECONDS, this, READ_COMPLETION_HANDLER);
     }
 
 
@@ -305,11 +375,11 @@ final class TcpAioSession extends AioSession {
      * @param writeBuffer 存放待输出数据的buffer
      */
     private void continueWrite(VirtualBuffer writeBuffer) {
-        NetMonitor monitor = getServerConfig().getMonitor();
+        NetMonitor monitor = sessionResource.config.getMonitor();
         if (monitor != null) {
             monitor.beforeWrite(this);
         }
-        channel.write(writeBuffer.buffer(), 0L, TimeUnit.MILLISECONDS, this, WriteCompletionHandler.WRITE_COMPLETION_HANDLER);
+        channel.write(writeBuffer.buffer(), 0L, TimeUnit.MILLISECONDS, this, WRITE_COMPLETION_HANDLER);
     }
 
     /**
@@ -317,7 +387,7 @@ final class TcpAioSession extends AioSession {
      * @throws IOException IO异常
      * @see AsynchronousSocketChannel#getLocalAddress()
      */
-    public final InetSocketAddress getLocalAddress() throws IOException {
+    public InetSocketAddress getLocalAddress() throws IOException {
         assertChannel();
         return (InetSocketAddress) channel.getLocalAddress();
     }
@@ -327,7 +397,7 @@ final class TcpAioSession extends AioSession {
      * @throws IOException IO异常
      * @see AsynchronousSocketChannel#getRemoteAddress()
      */
-    public final InetSocketAddress getRemoteAddress() throws IOException {
+    public InetSocketAddress getRemoteAddress() throws IOException {
         assertChannel();
         return (InetSocketAddress) channel.getRemoteAddress();
     }
@@ -343,10 +413,6 @@ final class TcpAioSession extends AioSession {
         }
     }
 
-    IoServerConfig getServerConfig() {
-        return this.sessionResource.config;
-    }
-
     /**
      * 获得数据输入流对象。
      * <p>
@@ -359,7 +425,7 @@ final class TcpAioSession extends AioSession {
      * @return 同步读操作的流对象
      * @throws IOException io异常
      */
-    public final InputStream getInputStream() throws IOException {
+    public InputStream getInputStream() throws IOException {
         return inputStream == null ? getInputStream(-1) : inputStream;
     }
 
@@ -370,7 +436,7 @@ final class TcpAioSession extends AioSession {
      * @return 同步读操作的流对象
      * @throws IOException io异常
      */
-    public final InputStream getInputStream(int length) throws IOException {
+    public InputStream getInputStream(int length) throws IOException {
         if (inputStream != null) {
             throw new IOException("pre inputStream has not closed");
         }
