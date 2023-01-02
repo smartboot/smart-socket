@@ -64,6 +64,11 @@ public final class AioQuickServer extends SessionResource {
      */
     private AsynchronousChannelGroup asynchronousChannelGroup;
 
+    /**
+     * 是否开启低内存模式
+     */
+    private boolean lowMemory;
+
     private VirtualBufferFactory readBufferFactory = bufferPage -> bufferPage.allocate(config.getReadBufferSize());
 
     /**
@@ -114,7 +119,7 @@ public final class AioQuickServer extends SessionResource {
                 this.bufferPool = config.getBufferFactory().create();
                 this.innerBufferPool = bufferPool;
             }
-            asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider().openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
+            asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
                 private byte index = 0;
 
                 @Override
@@ -342,4 +347,8 @@ public final class AioQuickServer extends SessionResource {
         return this;
     }
 
+    public AioQuickServer setLowMemory(boolean lowMemory) {
+        this.lowMemory = lowMemory;
+        return this;
+    }
 }

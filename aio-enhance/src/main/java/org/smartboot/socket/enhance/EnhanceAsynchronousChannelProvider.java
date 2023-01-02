@@ -43,10 +43,6 @@ public final class EnhanceAsynchronousChannelProvider extends AsynchronousChanne
         this.lowMemory = lowMemory;
     }
 
-    public EnhanceAsynchronousChannelProvider() {
-        this(false);
-    }
-
     @Override
     public AsynchronousChannelGroup openAsynchronousChannelGroup(int nThreads, ThreadFactory threadFactory) throws IOException {
         return new EnhanceAsynchronousChannelGroup(this, new ThreadPoolExecutor(nThreads, nThreads,

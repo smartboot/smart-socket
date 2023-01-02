@@ -2,7 +2,6 @@ package org.smartboot.socket.example.benchmark;
 
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
-import org.smartboot.socket.extension.plugins.BufferPageMonitorPlugin;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.extension.protocol.StringProtocol;
@@ -43,6 +42,7 @@ public class StringServer {
         server.setReadBufferSize(1024 * 1024)
                 .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
                 .setBufferFactory(() -> bufferPagePool)
+                .setLowMemory(true)
                 .setWriteBuffer(4096, 512);
 //        processor.addPlugin(new BufferPageMonitorPlugin<>(server, 6));
         processor.addPlugin(new MonitorPlugin<>(5));

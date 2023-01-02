@@ -33,7 +33,7 @@ public class StringClient {
             }
         };
         processor.addPlugin(new MonitorPlugin<>(5));
-        AsynchronousChannelGroup asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider().openAsynchronousChannelGroup(Runtime.getRuntime().availableProcessors(), r -> new Thread(r, "ClientGroup"));
+        AsynchronousChannelGroup asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(false).openAsynchronousChannelGroup(Runtime.getRuntime().availableProcessors(), r -> new Thread(r, "ClientGroup"));
         for (int i = 0; i < 10; i++) {
             new Thread(() -> {
                 try {
