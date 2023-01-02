@@ -14,6 +14,7 @@ import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.VirtualBufferFactory;
 import org.smartboot.socket.buffer.BufferFactory;
+import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
@@ -30,7 +31,7 @@ import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * AIO服务端。
@@ -145,7 +146,7 @@ public final class AioQuickServer extends SessionResource {
     }
 
     private void startAcceptThread() {
-        Supplier<VirtualBuffer> supplier = () -> readBufferFactory.newBuffer(bufferPool.allocateBufferPage());
+        Function<BufferPage, VirtualBuffer> function = bufferPage -> readBufferFactory.newBuffer(bufferPage);
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
             @Override
             public void completed(AsynchronousSocketChannel channel, Void attachment) {
@@ -156,7 +157,7 @@ public final class AioQuickServer extends SessionResource {
                     failed(throwable, attachment);
                     serverSocketChannel.accept(attachment, this);
                 } finally {
-                    createSession(channel, supplier);
+                    createSession(channel, function);
                 }
             }
 
@@ -172,7 +173,7 @@ public final class AioQuickServer extends SessionResource {
      *
      * @param channel 当前已建立连接通道
      */
-    private void createSession(AsynchronousSocketChannel channel, Supplier<VirtualBuffer> supplier) {
+    private void createSession(AsynchronousSocketChannel channel, Function<BufferPage, VirtualBuffer> function) {
         //连接成功则构造AIOSession对象
         TcpAioSession session = null;
         AsynchronousSocketChannel acceptChannel = channel;
@@ -182,7 +183,7 @@ public final class AioQuickServer extends SessionResource {
             }
             if (acceptChannel != null) {
                 acceptChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
-                session = new TcpAioSession(acceptChannel, this, supplier);
+                session = new TcpAioSession(acceptChannel, this.config, bufferPool.allocateBufferPage(), function);
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
                 IOUtil.close(channel);

@@ -36,13 +36,15 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     private Object attachment;
     private SelectionKey selectionKey;
     private boolean acceptPending;
+    private final boolean lowMemory;
 
-    EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup) throws IOException {
+    EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup, boolean lowMemory) throws IOException {
         super(enhanceAsynchronousChannelGroup.provider());
         this.enhanceAsynchronousChannelGroup = enhanceAsynchronousChannelGroup;
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.configureBlocking(false);
         acceptWorker = enhanceAsynchronousChannelGroup.getAcceptWorker();
+        this.lowMemory = lowMemory;
     }
 
     @Override
@@ -93,7 +95,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                 socketChannel = serverSocketChannel.accept();
             }
             if (socketChannel != null) {
-                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = new EnhanceAsynchronousSocketChannel(enhanceAsynchronousChannelGroup, socketChannel);
+                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = new EnhanceAsynchronousSocketChannel(enhanceAsynchronousChannelGroup, socketChannel, lowMemory);
                 socketChannel.configureBlocking(false);
                 socketChannel.finishConnect();
                 CompletionHandler<AsynchronousSocketChannel, Object> completionHandler = acceptCompletionHandler;
@@ -109,6 +111,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                 acceptWorker.addRegister(selector -> {
                     try {
                         selectionKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, EnhanceAsynchronousServerSocketChannel.this);
+//                        selectionKey.attach(EnhanceAsynchronousServerSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         acceptCompletionHandler.failed(e, attachment);
                     }

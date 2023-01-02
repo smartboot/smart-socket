@@ -120,14 +120,16 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private SocketAddress remote;
     private int writeInvoker;
 
+    private boolean lowMemory;
 
-    public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel) throws IOException {
+    public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
         super(group.provider());
         this.group = group;
         this.channel = channel;
         readWorker = group.getReadWorker();
         writeWorker = group.getWriteWorker();
         connectWorker = group.getConnectWorker();
+        this.lowMemory = lowMemory;
     }
 
     @Override
@@ -357,7 +359,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 resetRead();
                 return;
             }
-            if (direct && readBuffer == null) {
+            if (lowMemory && direct && readBuffer == null) {
                 CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
                 Object attach = readAttachment;
                 resetRead();
@@ -392,7 +394,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 return;
             }
             //释放内存
-            if (readSize == 0 && readBuffer.position() == 0) {
+            if (lowMemory && readSize == 0 && readBuffer.position() == 0) {
                 readBuffer = null;
                 readCompletionHandler.completed(EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL, readAttachment);
             }

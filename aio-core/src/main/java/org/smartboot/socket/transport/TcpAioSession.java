@@ -13,6 +13,7 @@ package org.smartboot.socket.transport;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
@@ -25,7 +26,7 @@ import java.nio.channels.CompletionHandler;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * AIO传输层会话。
@@ -70,7 +71,7 @@ final class TcpAioSession extends AioSession {
         @Override
         public void failed(Throwable exc, TcpAioSession aioSession) {
             try {
-                aioSession.sessionResource.config.getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
+                aioSession.config.getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -97,7 +98,7 @@ final class TcpAioSession extends AioSession {
         @Override
         public void failed(Throwable exc, TcpAioSession aioSession) {
             try {
-                aioSession.sessionResource.config.getProcessor().stateEvent(aioSession, StateMachineEnum.OUTPUT_EXCEPTION, exc);
+                aioSession.config.getProcessor().stateEvent(aioSession, StateMachineEnum.OUTPUT_EXCEPTION, exc);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -137,15 +138,17 @@ final class TcpAioSession extends AioSession {
      */
     private InputStream inputStream;
 
-    private final SessionResource sessionResource;
+    private final BufferPage bufferPage;
+    private final IoServerConfig config;
 
     /**
      * @param channel Socket通道
      */
-    TcpAioSession(AsynchronousSocketChannel channel, final SessionResource sessionResource, Supplier<VirtualBuffer> supplier) {
+    TcpAioSession(AsynchronousSocketChannel channel, IoServerConfig config, BufferPage bufferPage, Function<BufferPage, VirtualBuffer> function) {
         this.channel = channel;
-        this.sessionResource = sessionResource;
-        this.function = supplier;
+        this.config = config;
+        this.bufferPage = bufferPage;
+        this.function = function;
         Consumer<WriteBuffer> flushConsumer = var -> {
             if (!semaphore.tryAcquire()) {
                 return;
@@ -157,16 +160,16 @@ final class TcpAioSession extends AioSession {
                 continueWrite(writeBuffer);
             }
         };
-        byteBuf = new WriteBuffer(sessionResource.bufferPool.allocateBufferPage(), flushConsumer, sessionResource.config.getWriteBufferSize(), sessionResource.config.getWriteBufferCapacity());
+        byteBuf = new WriteBuffer(bufferPage, flushConsumer, config.getWriteBufferSize(), config.getWriteBufferCapacity());
         //触发状态机
-        sessionResource.config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
+        config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         doRead();
     }
 
-    private final Supplier<VirtualBuffer> function;
+    private final Function<BufferPage, VirtualBuffer> function;
 
     void doRead() {
-        this.readBuffer = function.get();
+        this.readBuffer = function.apply(bufferPage);
         this.readBuffer.buffer().flip();
         signalRead();
     }
@@ -176,7 +179,7 @@ final class TcpAioSession extends AioSession {
      * <p>需要调用控制同步</p>
      */
     void writeCompleted(int result) {
-        NetMonitor monitor = sessionResource.config.getMonitor();
+        NetMonitor monitor = config.getMonitor();
         if (monitor != null) {
             monitor.afterWrite(this, result);
         }
@@ -240,12 +243,12 @@ final class TcpAioSession extends AioSession {
                 }
             } finally {
                 IOUtil.close(channel);
-                sessionResource.config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
+                config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
             }
         } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && byteBuf.isEmpty()) {
             close(true);
         } else {
-            sessionResource.config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
+            config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
             byteBuf.flush();
         }
     }
@@ -281,7 +284,7 @@ final class TcpAioSession extends AioSession {
             return;
         }
         // 接收到的消息进行预处理
-        NetMonitor monitor = sessionResource.config.getMonitor();
+        NetMonitor monitor = config.getMonitor();
         if (monitor != null) {
             monitor.afterRead(this, result);
         }
@@ -299,11 +302,11 @@ final class TcpAioSession extends AioSession {
             return;
         }
         final ByteBuffer readBuffer = this.readBuffer.buffer();
-        final MessageProcessor messageProcessor = sessionResource.config.getProcessor();
+        final MessageProcessor messageProcessor = config.getProcessor();
         while (readBuffer.hasRemaining() && status == SESSION_STATUS_ENABLED) {
             Object dataEntry;
             try {
-                dataEntry = sessionResource.config.getProtocol().decode(readBuffer, this);
+                dataEntry = config.getProtocol().decode(readBuffer, this);
             } catch (Exception e) {
                 messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, e);
                 throw e;
@@ -343,7 +346,7 @@ final class TcpAioSession extends AioSession {
         }
 
         //read from channel
-        NetMonitor monitor = sessionResource.config.getMonitor();
+        NetMonitor monitor = config.getMonitor();
         if (monitor != null) {
             monitor.beforeRead(this);
         }
@@ -375,7 +378,7 @@ final class TcpAioSession extends AioSession {
      * @param writeBuffer 存放待输出数据的buffer
      */
     private void continueWrite(VirtualBuffer writeBuffer) {
-        NetMonitor monitor = sessionResource.config.getMonitor();
+        NetMonitor monitor = config.getMonitor();
         if (monitor != null) {
             monitor.beforeWrite(this);
         }

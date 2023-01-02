@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * AIO实现的客户端服务。
  *
- *
  * <h2>示例：</h2>
  * <p>
  * <pre>
@@ -100,7 +99,6 @@ public final class AioQuickClient extends SessionResource {
      * @param attachment 可传入回调方法中的附件对象
      * @param handler    异步回调
      * @param <A>        附件对象类型
-     * @throws IOException
      */
     public <A> void start(A attachment, CompletionHandler<AioSession, ? super A> handler) throws IOException {
         this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, Thread::new);
@@ -114,7 +112,6 @@ public final class AioQuickClient extends SessionResource {
      * @param attachment               可传入回调方法中的附件对象
      * @param handler                  异步回调
      * @param <A>                      附件对象类型
-     * @throws IOException
      */
     public <A> void start(AsynchronousChannelGroup asynchronousChannelGroup, A attachment, CompletionHandler<AioSession, ? super A> handler) throws IOException {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
@@ -144,7 +141,7 @@ public final class AioQuickClient extends SessionResource {
                         throw new RuntimeException("NetMonitor refuse channel");
                     }
                     //连接成功则构造AIOSession对象
-                    session = new TcpAioSession(connectedChannel, AioQuickClient.this, () -> readBufferFactory.newBuffer(bufferPool.allocateBufferPage()));
+                    session = new TcpAioSession(connectedChannel, AioQuickClient.this.config, bufferPool.allocateBufferPage(), bufferPage -> readBufferFactory.newBuffer(bufferPage));
                     handler.completed(session, attachment);
                 } catch (Exception e) {
                     failed(e, socketChannel);
