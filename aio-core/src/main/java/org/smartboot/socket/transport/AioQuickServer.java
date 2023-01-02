@@ -51,7 +51,7 @@ import java.util.function.Function;
  * @author 三刀
  * @version V1.0.0
  */
-public final class AioQuickServer extends SessionResource {
+public final class AioQuickServer {
 
     private BufferPagePool innerBufferPool = null;
 
@@ -68,6 +68,16 @@ public final class AioQuickServer extends SessionResource {
      * 是否开启低内存模式
      */
     private boolean lowMemory;
+    /**
+     * 客户端服务配置。
+     * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
+     */
+    private final IoServerConfig config = new IoServerConfig();
+
+    /**
+     * 内存池
+     */
+    private BufferPagePool bufferPool = null;
 
     private VirtualBufferFactory readBufferFactory = bufferPage -> bufferPage.allocate(config.getReadBufferSize());
 
