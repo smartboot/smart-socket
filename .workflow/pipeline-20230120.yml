@@ -1,0 +1,23 @@
+version: '1.0'
+name: pipeline-20230120
+displayName: pipeline-20230120
+triggers:
+  trigger: auto
+  push:
+    branches:
+      prefix:
+        - ''
+stages:
+  - name: stage-3e80956c
+    displayName: 未命名
+    strategy: naturally
+    trigger: auto
+    executor: []
+    steps:
+      - step: sc@opensca
+        name: open_sca
+        displayName: OpenSCA 开源组件检测
+        detectPath: ./
+        notify: []
+        strategy:
+          retry: '0'
