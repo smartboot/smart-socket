@@ -47,10 +47,6 @@ stages:
           - '# 注意事项：如无需自定义settings配置且需要私有依赖仓库，可在该任务配置《私有仓库》处添加私有依赖'
           - '# mvn -U clean package -s ./settings.xml'
           - ''
-        artifacts:
-          - name: BUILD_ARTIFACT
-            path:
-              - ./target
         settings: []
         caches:
           - ~/.m2
