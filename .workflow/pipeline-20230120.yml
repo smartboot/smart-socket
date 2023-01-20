@@ -9,7 +9,7 @@ triggers:
         - ''
 stages:
   - name: stage-3e80956c
-    displayName: 未命名
+    displayName: OpenSCA开源组件检查
     strategy: naturally
     trigger: auto
     executor: []
