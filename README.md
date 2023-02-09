@@ -41,7 +41,7 @@ smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO �
 ### 🥳加入社群
 
 - **官方QQ群：** 172299083 、830015805。入群条件：
-  1. 普通用户：[捐赠5元](https://www.yuque.com/smartboot/smart-socket/donation#cbPHp)，并备注您的QQ号，我们将人工审核入群人员。
+  1. 普通用户：[捐赠5元](https://smartboot.tech/donation.html)，并备注您的QQ号，我们将人工审核入群人员。
   2. 企业用户：完成【[案例登记](https://gitee.com/smartboot/smart-socket/issues/IHV69)】并在加群时备注企业名。
 - 扫描底部二维码关注三刀公众号
 
