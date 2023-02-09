@@ -294,17 +294,17 @@ public final class WriteBuffer extends OutputStream {
         if (count == 0) {
             return null;
         }
+        VirtualBuffer x = items[takeIndex];
+        items[takeIndex] = null;
+        if (++takeIndex == items.length) {
+            takeIndex = 0;
+        }
         synchronized (this) {
-            VirtualBuffer x = items[takeIndex];
-            items[takeIndex] = null;
-            if (++takeIndex == items.length) {
-                takeIndex = 0;
-            }
             if (count-- == items.length) {
                 this.notifyAll();
             }
-            return x;
         }
+        return x;
     }
 
     /**
