@@ -88,6 +88,12 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             return;
         }
         ByteBuffer appBuffer = appReadBuffer.buffer();
+        //netBuffer还有残留，尝试解码
+        if (netReadBuffer.buffer().hasRemaining()) {
+            appBuffer.compact();
+            doUnWrap(netReadBuffer.buffer(), appReadBuffer.buffer());
+            appBuffer.flip();
+        }
         //appBuffer还有残留数据，先腾空
         if (appBuffer.hasRemaining()) {
             int pos = dst.position();
@@ -102,25 +108,20 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             handler.completed(dst.position() - pos, attachment);
             return;
         }
-        //netBuffer还有残留，尝试解码
-        if (netReadBuffer.buffer().hasRemaining()) {
-            appBuffer.clear();
-            doUnWrap();
-            appBuffer.flip();
-            if (appBuffer.hasRemaining()) {
-                //回调
-                read(dst, timeout, unit, attachment, handler);
-                return;
-            }
-        }
+
 
         asynchronousSocketChannel.read(netReadBuffer.buffer(), timeout, unit, attachment, new CompletionHandler<Integer, A>() {
+            int index = 0;
+
             @Override
             public void completed(Integer result, A attachment) {
                 int pos = dst.position();
                 ByteBuffer appBuffer = appReadBuffer.buffer();
+//                if (appBuffer.hasRemaining()) {
+//                    logger.error("error appReadBuffer:" + appBuffer);
+//                }
                 appBuffer.clear();
-                doUnWrap();
+                SSLEngineResult.Status status = doUnWrap(netReadBuffer.buffer(), appReadBuffer.buffer());
                 appBuffer.flip();
                 //appBuffer较多
                 if (appBuffer.remaining() > dst.remaining()) {
@@ -130,14 +131,19 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                     appBuffer.limit(limit);
                 } else if (appBuffer.hasRemaining()) {
                     dst.put(appBuffer);
-                } else if (result > 0) {
-                    logger.error("there maybe a bug when you see it.");
-//                    System.out.println("aaaaaa" + this);
-                    appBuffer.compact();
-                    asynchronousSocketChannel.read(netReadBuffer.buffer(), timeout, unit, attachment, this);
+                } else if (result > 0) {//说明appBuffer.remaining==0
+                    if (index >= 16) {
+                        logger.error("maybe trigger bug here...");
+                    }
+                    if (status == SSLEngineResult.Status.OK && index < 16) {
+                        index++;
+                        completed(result, attachment);
+                    } else {
+                        asynchronousSocketChannel.read(netReadBuffer.buffer(), timeout, unit, attachment, this);
+                    }
                     return;
                 }
-
+                index = 0;
                 handler.completed(result != -1 ? dst.position() - pos : result, attachment);
             }
 
@@ -148,11 +154,9 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         });
     }
 
-    private void doUnWrap() {
+    private SSLEngineResult.Status doUnWrap(ByteBuffer netBuffer, ByteBuffer appBuffer) {
+        netBuffer.flip();
         try {
-            ByteBuffer netBuffer = netReadBuffer.buffer();
-            ByteBuffer appBuffer = appReadBuffer.buffer();
-            netBuffer.flip();
             SSLEngineResult result = sslEngine.unwrap(netBuffer, appBuffer);
             boolean closed = false;
             while (!closed && result.getStatus() != SSLEngineResult.Status.OK) {
@@ -162,19 +166,14 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                         break;
                     case BUFFER_UNDERFLOW:
                         if (netBuffer.limit() == netBuffer.capacity()) {
-                            logger.warn("BUFFER_UNDERFLOW error");
+                            logger.error("BUFFER_UNDERFLOW error");
                         } else {
                             if (logger.isDebugEnabled()) {
                                 logger.debug("BUFFER_UNDERFLOW,continue read:" + netBuffer);
                             }
-                            if (netBuffer.position() > 0) {
-                                netBuffer.compact();
-                            } else {
-                                netBuffer.position(netBuffer.limit());
-                                netBuffer.limit(netBuffer.capacity());
-                            }
                         }
-                        return;
+//                        logger.error("doUnWrap return, " + netBuffer);
+                        return result.getStatus();
                     case CLOSED:
                         logger.warn("doUnWrap Result:" + result.getStatus());
                         closed = true;
@@ -184,9 +183,11 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                 }
                 result = sslEngine.unwrap(netBuffer, appBuffer);
             }
-            netBuffer.compact();
+            return result.getStatus();
         } catch (SSLException e) {
             throw new RuntimeException(e);
+        } finally {
+            netBuffer.compact();
         }
     }
 
@@ -206,7 +207,15 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             checkInitialized();
         }
         int pos = src.position();
-        doWrap(src);
+        try {
+            doWrap(src);
+        } catch (SSLException e) {
+            handler.failed(e, attachment);
+            return;
+        }
+        if (src.position() - pos == 0) {
+            logger.error("write error:" + src + " netWrite:" + netWriteBuffer.buffer());
+        }
         asynchronousSocketChannel.write(netWriteBuffer.buffer(), timeout, unit, attachment, new CompletionHandler<Integer, A>() {
             @Override
             public void completed(Integer result, A attachment) {
@@ -246,36 +255,35 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         }
     }
 
-    private void doWrap(ByteBuffer writeBuffer) {
-        try {
-            ByteBuffer netBuffer = netWriteBuffer.buffer();
-            netBuffer.compact();
-            int limit = writeBuffer.limit();
-            if (adaptiveWriteSize > 0 && writeBuffer.remaining() > adaptiveWriteSize) {
-                writeBuffer.limit(writeBuffer.position() + adaptiveWriteSize);
-            }
-            SSLEngineResult result = sslEngine.wrap(writeBuffer, netBuffer);
-            while (result.getStatus() != SSLEngineResult.Status.OK) {
-                switch (result.getStatus()) {
-                    case BUFFER_OVERFLOW:
-                        netBuffer.clear();
-                        writeBuffer.limit(writeBuffer.position() + ((writeBuffer.limit() - writeBuffer.position() >> 1)));
-                        adaptiveWriteSize = writeBuffer.remaining();
-//                        logger.info("doWrap BUFFER_OVERFLOW maybeSize:{}", maybeWriteSize);
-                        break;
-                    case BUFFER_UNDERFLOW:
-                        logger.info("doWrap BUFFER_UNDERFLOW");
-                        break;
-                    default:
-                        logger.warn("doWrap Result:" + result.getStatus());
-                }
-                result = sslEngine.wrap(writeBuffer, netBuffer);
-            }
-            writeBuffer.limit(limit);
-            netBuffer.flip();
-        } catch (SSLException e) {
-            throw new RuntimeException(e);
+    private void doWrap(ByteBuffer writeBuffer) throws SSLException {
+        ByteBuffer netBuffer = netWriteBuffer.buffer();
+        netBuffer.compact();
+        int limit = writeBuffer.limit();
+        if (adaptiveWriteSize > 0 && writeBuffer.remaining() > adaptiveWriteSize) {
+            writeBuffer.limit(writeBuffer.position() + adaptiveWriteSize);
         }
+        SSLEngineResult result = sslEngine.wrap(writeBuffer, netBuffer);
+        while (result.getStatus() != SSLEngineResult.Status.OK) {
+            switch (result.getStatus()) {
+                case BUFFER_OVERFLOW:
+                    netBuffer.clear();
+                    writeBuffer.limit(writeBuffer.position() + ((writeBuffer.limit() - writeBuffer.position() >> 1)));
+                    adaptiveWriteSize = writeBuffer.remaining();
+//                        logger.info("doWrap BUFFER_OVERFLOW maybeSize:{}", maybeWriteSize);
+                    break;
+                case BUFFER_UNDERFLOW:
+                    logger.info("doWrap BUFFER_UNDERFLOW");
+                    break;
+                case CLOSED:
+                    throw new SSLException("SSLEngine has " + result.getStatus());
+                default:
+                    logger.warn("doWrap Result:" + result.getStatus());
+            }
+            result = sslEngine.wrap(writeBuffer, netBuffer);
+        }
+        writeBuffer.limit(limit);
+        netBuffer.flip();
+
     }
 
     @Override
