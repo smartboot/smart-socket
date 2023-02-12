@@ -88,6 +88,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             return;
         }
         ByteBuffer appBuffer = appReadBuffer.buffer();
+        //appBuffer还有残留数据，先腾空
         if (appBuffer.hasRemaining()) {
             int pos = dst.position();
             if (appBuffer.remaining() > dst.remaining()) {
@@ -101,6 +102,17 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             handler.completed(dst.position() - pos, attachment);
             return;
         }
+        //netBuffer还有残留，尝试解码
+        if (netReadBuffer.buffer().hasRemaining()) {
+            appBuffer.clear();
+            doUnWrap();
+            appBuffer.flip();
+            if (appBuffer.hasRemaining()) {
+                //回调
+                read(dst, timeout, unit, attachment, handler);
+                return;
+            }
+        }
 
         asynchronousSocketChannel.read(netReadBuffer.buffer(), timeout, unit, attachment, new CompletionHandler<Integer, A>() {
             @Override
@@ -110,6 +122,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                 appBuffer.clear();
                 doUnWrap();
                 appBuffer.flip();
+                //appBuffer较多
                 if (appBuffer.remaining() > dst.remaining()) {
                     int limit = appBuffer.limit();
                     appBuffer.limit(appBuffer.position() + dst.remaining());
@@ -118,6 +131,8 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                 } else if (appBuffer.hasRemaining()) {
                     dst.put(appBuffer);
                 } else if (result > 0) {
+                    logger.error("there maybe a bug when you see it.");
+//                    System.out.println("aaaaaa" + this);
                     appBuffer.compact();
                     asynchronousSocketChannel.read(netReadBuffer.buffer(), timeout, unit, attachment, this);
                     return;
