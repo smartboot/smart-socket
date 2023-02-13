@@ -113,7 +113,7 @@ public final class AioQuickServer {
      */
     public void start() throws IOException {
         if (config.isBannerEnabled()) {
-            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + "::\t(" + IoServerConfig.VERSION + ")");
+            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + "::\t(" + IoServerConfig.VERSION + ") [port: " + config.getPort() + ", threadNum:" + config.getThreadNum() + "]");
         }
         start0();
     }
@@ -156,8 +156,6 @@ public final class AioQuickServer {
             shutdown();
             throw e;
         }
-        System.out.println("smart-socket server started on port " + config.getPort() + ",threadNum:" + config.getThreadNum());
-        System.out.println("smart-socket server config is " + config);
     }
 
     private void startAcceptThread() {
