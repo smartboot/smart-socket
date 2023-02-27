@@ -104,7 +104,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     serverSocketChannel.doAccept();
                 } else if (selectionKey.isConnectable()) {
                     EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
-                    asynchronousSocketChannel.doConnect();
+                    asynchronousSocketChannel.doConnect(null);
                 }
             });
             commonExecutorService.execute(commonWorkers[i]);

@@ -100,10 +100,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 当前是否正在执行 connect 操作
      */
     private boolean connectionPending;
-    /**
-     * 远程连接的地址
-     */
-    private SocketAddress remote;
     private int writeInvoker;
 
     private final boolean lowMemory;
@@ -197,8 +193,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         connectionPending = true;
         this.connectAttachment = attachment;
         this.connectCompletionHandler = (CompletionHandler<Void, Object>) handler;
-        this.remote = remote;
-        doConnect();
+        doConnect(remote);
     }
 
     @Override
@@ -279,7 +274,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         return channel.getLocalAddress();
     }
 
-    public void doConnect() {
+    public void doConnect(SocketAddress remote) {
         try {
             //此前通过Future调用,且触发了cancel
             if (connectFuture != null && connectFuture.isDone()) {
