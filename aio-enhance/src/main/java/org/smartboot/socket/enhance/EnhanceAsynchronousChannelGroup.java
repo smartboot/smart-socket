@@ -221,7 +221,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         /**
          * 当前Worker绑定的Selector
          */
-        private final Selector selector;
+        final Selector selector;
         private final Consumer<SelectionKey> consumer;
         private final ConcurrentLinkedQueue<Consumer<Selector>> consumers = new ConcurrentLinkedQueue<>();
         int invoker = 0;
