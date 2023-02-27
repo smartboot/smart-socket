@@ -96,7 +96,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
             }
             if (socketChannel != null) {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = new EnhanceAsynchronousSocketChannel(enhanceAsynchronousChannelGroup, socketChannel, lowMemory);
-                socketChannel.configureBlocking(false);
+
                 socketChannel.finishConnect();
                 CompletionHandler<AsynchronousSocketChannel, Object> completionHandler = acceptCompletionHandler;
                 Object attach = attachment;
