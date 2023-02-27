@@ -56,17 +56,10 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      */
     private ByteBuffer readBuffer;
     /**
-     * 用于接收 read 通道数据的缓冲区集合
-     */
-    private ByteBufferArray scatteringReadBuffer;
-    /**
      * 存放待输出数据的缓冲区
      */
     private ByteBuffer writeBuffer;
-    /**
-     * 存放待输出数据的缓冲区集合
-     */
-    private ByteBufferArray gatheringWriteBuffer;
+
     /**
      * read 回调事件处理器
      */
@@ -225,16 +218,15 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     @Override
     public <A> void read(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
-        read0(dst, null, timeout, unit, attachment, handler);
+        read0(dst, timeout, unit, attachment, handler);
     }
 
-    private <V extends Number, A> void read0(ByteBuffer readBuffer, ByteBufferArray scattering, long timeout, TimeUnit unit, A attachment, CompletionHandler<V, ? super A> handler) {
+    private <V extends Number, A> void read0(ByteBuffer readBuffer, long timeout, TimeUnit unit, A attachment, CompletionHandler<V, ? super A> handler) {
         if (readPending) {
             throw new ReadPendingException();
         }
         readPending = true;
         this.readBuffer = readBuffer;
-        this.scatteringReadBuffer = scattering;
         this.readAttachment = attachment;
         if (timeout > 0) {
             readFuture = new FutureCompletionHandler<>((CompletionHandler<Number, Object>) handler, readAttachment);
@@ -256,22 +248,21 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     @Override
     public <A> void read(ByteBuffer[] dsts, int offset, int length, long timeout, TimeUnit unit, A attachment, CompletionHandler<Long, ? super A> handler) {
-        read0(null, new ByteBufferArray(dsts, offset, length), timeout, unit, attachment, handler);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public <A> void write(ByteBuffer src, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
-        write0(src, null, timeout, unit, attachment, handler);
+        write0(src, timeout, unit, attachment, handler);
     }
 
-    private <V extends Number, A> void write0(ByteBuffer writeBuffer, ByteBufferArray gathering, long timeout, TimeUnit unit, A attachment, CompletionHandler<V, ? super A> handler) {
+    private <V extends Number, A> void write0(ByteBuffer writeBuffer, long timeout, TimeUnit unit, A attachment, CompletionHandler<V, ? super A> handler) {
         if (writePending) {
             throw new WritePendingException();
         }
 
         writePending = true;
         this.writeBuffer = writeBuffer;
-        this.gatheringWriteBuffer = gathering;
         this.writeAttachment = attachment;
         if (timeout > 0) {
             writeFuture = new FutureCompletionHandler<>((CompletionHandler<Number, Object>) handler, writeAttachment);
@@ -287,13 +278,13 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     public Future<Integer> write(ByteBuffer src) {
         FutureCompletionHandler<Integer, Object> writeFuture = new FutureCompletionHandler<>();
         this.writeFuture = writeFuture;
-        write0(src, null, 0, TimeUnit.MILLISECONDS, null, writeFuture);
+        write0(src, 0, TimeUnit.MILLISECONDS, null, writeFuture);
         return writeFuture;
     }
 
     @Override
     public <A> void write(ByteBuffer[] srcs, int offset, int length, long timeout, TimeUnit unit, A attachment, CompletionHandler<Long, ? super A> handler) {
-        write0(null, new ByteBufferArray(srcs, offset, length), timeout, unit, attachment, handler);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -362,13 +353,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             long readSize = 0;
             boolean hasRemain = true;
             if (directRead) {
-                if (scatteringReadBuffer != null) {
-                    readSize = channel.read(scatteringReadBuffer.getBuffers(), scatteringReadBuffer.getOffset(), scatteringReadBuffer.getLength());
-                    hasRemain = hasRemaining(scatteringReadBuffer);
-                } else {
-                    readSize = channel.read(readBuffer);
-                    hasRemain = readBuffer.hasRemaining();
-                }
+                readSize = channel.read(readBuffer);
+                hasRemain = readBuffer.hasRemaining();
             }
 
             //注册至异步线程
@@ -393,13 +379,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             if (readSize != 0 || !hasRemain) {
                 CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
                 Object attach = readAttachment;
-                ByteBufferArray scattering = scatteringReadBuffer;
                 resetRead();
-                if (scattering == null) {
-                    completionHandler.completed((int) readSize, attach);
-                } else {
-                    completionHandler.completed(readSize, attach);
-                }
+                completionHandler.completed((int) readSize, attach);
 
                 if (!readPending && readSelectionKey != null) {
                     group.removeOps(readSelectionKey, SelectionKey.OP_READ);
@@ -436,7 +417,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         readCompletionHandler = null;
         readAttachment = null;
         readBuffer = null;
-        scatteringReadBuffer = null;
     }
 
     public void doWrite() {
@@ -456,13 +436,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             int writeSize = 0;
             boolean hasRemain = true;
             if (invoker < EnhanceAsynchronousChannelGroup.MAX_INVOKER) {
-                if (gatheringWriteBuffer != null) {
-                    writeSize = (int) channel.write(gatheringWriteBuffer.getBuffers(), gatheringWriteBuffer.getOffset(), gatheringWriteBuffer.getLength());
-                    hasRemain = hasRemaining(gatheringWriteBuffer);
-                } else {
-                    writeSize = channel.write(writeBuffer);
-                    hasRemain = writeBuffer.hasRemaining();
-                }
+                writeSize = channel.write(writeBuffer);
+                hasRemain = writeBuffer.hasRemaining();
             } else {
                 writeInvoker = 0;
             }
@@ -511,22 +486,12 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         }
     }
 
-    private boolean hasRemaining(ByteBufferArray scattering) {
-        for (int i = 0; i < scattering.getLength(); i++) {
-            if (scattering.getBuffers()[scattering.getOffset() + i].hasRemaining()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private void resetWrite() {
         writePending = false;
         writeFuture = null;
         writeAttachment = null;
         writeCompletionHandler = null;
         writeBuffer = null;
-        gatheringWriteBuffer = null;
     }
 
     @Override
