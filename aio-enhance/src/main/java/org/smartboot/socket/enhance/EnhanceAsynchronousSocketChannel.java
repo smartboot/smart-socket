@@ -351,10 +351,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             boolean directRead = direct || (Thread.currentThread() == readWorker.getWorkerThread() && readWorker.invoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER);
 
             long readSize = 0;
-            boolean hasRemain = true;
             if (directRead) {
                 readSize = channel.read(readBuffer);
-                hasRemain = readBuffer.hasRemaining();
             }
 
             //注册至异步线程
@@ -376,7 +374,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 readCompletionHandler.completed(EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL, readAttachment);
             }
 
-            if (readSize != 0 || !hasRemain) {
+            if (readSize != 0 || !readBuffer.hasRemaining()) {
                 CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
                 Object attach = readAttachment;
                 resetRead();
@@ -434,10 +432,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 invoker = ++writeInvoker;
             }
             int writeSize = 0;
-            boolean hasRemain = true;
             if (invoker < EnhanceAsynchronousChannelGroup.MAX_INVOKER) {
                 writeSize = channel.write(writeBuffer);
-                hasRemain = writeBuffer.hasRemaining();
             } else {
                 writeInvoker = 0;
             }
@@ -456,7 +452,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 return;
             }
 
-            if (writeSize != 0 || !hasRemain) {
+            if (writeSize != 0 || !writeBuffer.hasRemaining()) {
                 CompletionHandler<Number, Object> completionHandler = writeCompletionHandler;
                 Object attach = writeAttachment;
                 resetWrite();
