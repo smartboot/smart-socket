@@ -43,7 +43,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
         this.enhanceAsynchronousChannelGroup = enhanceAsynchronousChannelGroup;
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.configureBlocking(false);
-        acceptWorker = enhanceAsynchronousChannelGroup.getAcceptWorker();
+        acceptWorker = enhanceAsynchronousChannelGroup.getCommonWorker();
         this.lowMemory = lowMemory;
     }
 

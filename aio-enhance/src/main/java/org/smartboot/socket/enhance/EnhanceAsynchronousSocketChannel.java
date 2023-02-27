@@ -49,11 +49,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     /**
      * 处理 write 事件的线程资源
      */
-    private final EnhanceAsynchronousChannelGroup.Worker writeWorker;
-    /**
-     * 处理 connect 事件的线程资源
-     */
-    private final EnhanceAsynchronousChannelGroup.Worker connectWorker;
+    private final EnhanceAsynchronousChannelGroup.Worker commonWorker;
+
     /**
      * 用于接收 read 通道数据的缓冲区，经解码后腾出缓冲区以供下一批数据的读取
      */
@@ -99,9 +96,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private Object connectAttachment;
     private SelectionKey readSelectionKey;
     private SelectionKey readFutureSelectionKey;
-    private SelectionKey writeSelectionKey;
+    private SelectionKey commonSelectionKey;
     private SelectionKey writeFutureSelectionKey;
-    private SelectionKey connectSelectionKey;
     /**
      * 当前是否正在执行 write 操作
      */
@@ -120,15 +116,14 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private SocketAddress remote;
     private int writeInvoker;
 
-    private boolean lowMemory;
+    private final boolean lowMemory;
 
     public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
         super(group.provider());
         this.group = group;
         this.channel = channel;
         readWorker = group.getReadWorker();
-        writeWorker = group.getWriteWorker();
-        connectWorker = group.getConnectWorker();
+        commonWorker = group.getCommonWorker();
         this.lowMemory = lowMemory;
     }
 
@@ -150,17 +145,13 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             readFutureSelectionKey.cancel();
             readFutureSelectionKey = null;
         }
-        if (writeSelectionKey != null) {
-            writeSelectionKey.cancel();
-            writeSelectionKey = null;
+        if (commonSelectionKey != null) {
+            commonSelectionKey.cancel();
+            commonSelectionKey = null;
         }
         if (writeFutureSelectionKey != null) {
             writeFutureSelectionKey.cancel();
             writeFutureSelectionKey = null;
-        }
-        if (connectSelectionKey != null) {
-            connectSelectionKey.cancel();
-            connectSelectionKey = null;
         }
         if (exception != null) {
             throw exception;
@@ -327,10 +318,10 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 Object attach = connectAttachment;
                 resetConnect();
                 completionHandler.completed(null, attach);
-            } else if (connectSelectionKey == null) {
-                connectWorker.addRegister(selector -> {
+            } else if (commonSelectionKey == null) {
+                commonWorker.addRegister(selector -> {
                     try {
-                        connectSelectionKey = channel.register(selector, SelectionKey.OP_CONNECT, EnhanceAsynchronousSocketChannel.this);
+                        commonSelectionKey = channel.register(selector, SelectionKey.OP_CONNECT, EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         connectCompletionHandler.failed(e, connectAttachment);
                     }
@@ -457,8 +448,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             }
             int invoker = 0;
             //防止无限递归导致堆栈溢出
-            if (writeWorker.getWorkerThread() == Thread.currentThread()) {
-                invoker = ++writeWorker.invoker;
+            if (commonWorker.getWorkerThread() == Thread.currentThread()) {
+                invoker = ++commonWorker.invoker;
             } else if (readWorker.getWorkerThread() != Thread.currentThread()) {
                 invoker = ++writeInvoker;
             }
@@ -478,7 +469,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
             //注册至异步线程
             if (writeFuture != null && writeSize == 0) {
-                group.removeOps(writeSelectionKey, SelectionKey.OP_WRITE);
+                group.removeOps(commonSelectionKey, SelectionKey.OP_WRITE);
                 group.registerFuture(selector -> {
                     try {
                         writeFutureSelectionKey = channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
@@ -495,16 +486,16 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 Object attach = writeAttachment;
                 resetWrite();
                 completionHandler.completed(writeSize, attach);
-            } else if (writeSelectionKey == null) {
-                writeWorker.addRegister(selector -> {
+            } else if (commonSelectionKey == null) {
+                commonWorker.addRegister(selector -> {
                     try {
-                        writeSelectionKey = channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
+                        commonSelectionKey = channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         writeCompletionHandler.failed(e, writeAttachment);
                     }
                 });
             } else {
-                group.interestOps(writeWorker, writeSelectionKey, SelectionKey.OP_WRITE);
+                group.interestOps(commonWorker, commonSelectionKey, SelectionKey.OP_WRITE);
             }
         } catch (Throwable e) {
             if (writeCompletionHandler == null) {
