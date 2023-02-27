@@ -87,7 +87,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      */
     private Object connectAttachment;
     private SelectionKey readSelectionKey;
-    private SelectionKey readFutureSelectionKey;
     /**
      * 当前是否正在执行 write 操作
      */
@@ -127,10 +126,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         if (readSelectionKey != null) {
             readSelectionKey.cancel();
             readSelectionKey = null;
-        }
-        if (readFutureSelectionKey != null) {
-            readFutureSelectionKey.cancel();
-            readFutureSelectionKey = null;
         }
         SelectionKey key = channel.keyFor(commonWorker.selector);
         if (key != null) {
@@ -207,23 +202,20 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     @Override
     public <A> void read(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
-        read0(dst, timeout, unit, attachment, handler);
+        if (timeout > 0) {
+            throw new UnsupportedOperationException();
+        }
+        read0(dst, attachment, handler);
     }
 
-    private <V extends Number, A> void read0(ByteBuffer readBuffer, long timeout, TimeUnit unit, A attachment, CompletionHandler<V, ? super A> handler) {
+    private <V extends Number, A> void read0(ByteBuffer readBuffer, A attachment, CompletionHandler<V, ? super A> handler) {
         if (readPending) {
             throw new ReadPendingException();
         }
         readPending = true;
         this.readBuffer = readBuffer;
         this.readAttachment = attachment;
-        if (timeout > 0) {
-            readFuture = new FutureCompletionHandler<>((CompletionHandler<Number, Object>) handler, readAttachment);
-            readCompletionHandler = (CompletionHandler<Number, Object>) readFuture;
-            group.getScheduledExecutor().schedule(readFuture, timeout, unit);
-        } else {
-            this.readCompletionHandler = (CompletionHandler<Number, Object>) handler;
-        }
+        this.readCompletionHandler = (CompletionHandler<Number, Object>) handler;
         doRead(readFuture != null);
     }
 
@@ -340,14 +332,14 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             //注册至异步线程
             if (readFuture != null && readSize == 0) {
                 group.removeOps(readSelectionKey, SelectionKey.OP_READ);
-                group.registerFuture(selector -> {
+                commonWorker.addRegister(selector -> {
                     try {
-                        readFutureSelectionKey = channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
+                        channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
                     } catch (ClosedChannelException e) {
                         e.printStackTrace();
                         doRead(true);
                     }
-                }, SelectionKey.OP_READ);
+                });
                 return;
             }
             //释放内存

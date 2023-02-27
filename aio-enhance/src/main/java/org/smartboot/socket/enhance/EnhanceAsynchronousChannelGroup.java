@@ -17,7 +17,6 @@ import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -54,10 +53,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
      */
     private final AtomicInteger readIndex = new AtomicInteger(0);
     private final AtomicInteger commonIndex = new AtomicInteger(0);
-    /**
-     * 定时任务线程池
-     */
-    private final ScheduledThreadPoolExecutor scheduledExecutor;
 
     private Worker futureWorker;
     /**
@@ -105,12 +100,15 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                 } else if (selectionKey.isConnectable()) {
                     EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                     asynchronousSocketChannel.doConnect(null);
+                } else if (selectionKey.isReadable()) {
+                    //仅同步read会用到此线程资源
+                    EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
+                    removeOps(selectionKey, SelectionKey.OP_READ);
+                    asynchronousSocketChannel.doRead(true);
                 }
             });
             commonExecutorService.execute(commonWorkers[i]);
         }
-
-        scheduledExecutor = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, "smart-socket:scheduled"));
     }
 
     /**
@@ -165,10 +163,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         return commonWorkers[(commonIndex.getAndIncrement() & Integer.MAX_VALUE) % commonWorkers.length];
     }
 
-    public ScheduledThreadPoolExecutor getScheduledExecutor() {
-        return scheduledExecutor;
-    }
-
     @Override
     public boolean isShutdown() {
         return readExecutorService.isShutdown();
@@ -187,7 +181,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         if (futureExecutorService != null) {
             futureExecutorService.shutdown();
         }
-        scheduledExecutor.shutdown();
     }
 
     @Override
@@ -198,7 +191,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         if (futureExecutorService != null) {
             futureExecutorService.shutdownNow();
         }
-        scheduledExecutor.shutdownNow();
     }
 
     @Override
