@@ -54,11 +54,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
     private final AtomicInteger readIndex = new AtomicInteger(0);
     private final AtomicInteger commonIndex = new AtomicInteger(0);
 
-    private Worker futureWorker;
-    /**
-     * 同步IO线程池
-     */
-    private ExecutorService futureExecutorService;
     /**
      * group运行状态
      */
@@ -102,6 +97,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     asynchronousSocketChannel.doConnect(null);
                 } else if (selectionKey.isReadable()) {
                     //仅同步read会用到此线程资源
+                    System.out.println("........");
                     EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                     removeOps(selectionKey, SelectionKey.OP_READ);
                     asynchronousSocketChannel.doRead(true);
@@ -109,33 +105,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             });
             commonExecutorService.execute(commonWorkers[i]);
         }
-    }
-
-    /**
-     * 同步IO注册异步线程，防止主IO线程阻塞
-     */
-    public synchronized void registerFuture(Consumer<Selector> register, int opType) throws IOException {
-        if (futureWorker == null) {
-            futureExecutorService = getSingleThreadExecutor("smart-socket:future");
-            futureWorker = new Worker(Selector.open(), selectionKey -> {
-                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
-                switch (opType) {
-                    case SelectionKey.OP_READ:
-                        removeOps(selectionKey, SelectionKey.OP_READ);
-                        asynchronousSocketChannel.doRead(true);
-                        break;
-                    case SelectionKey.OP_WRITE:
-                        removeOps(selectionKey, SelectionKey.OP_WRITE);
-                        asynchronousSocketChannel.doWrite();
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("unSupport opType: " + opType);
-                }
-
-            });
-            futureExecutorService.execute(futureWorker);
-        }
-        futureWorker.addRegister(register);
     }
 
     private ThreadPoolExecutor getSingleThreadExecutor(final String prefix) {
@@ -178,9 +147,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         running = false;
         readExecutorService.shutdown();
         commonExecutorService.shutdown();
-        if (futureExecutorService != null) {
-            futureExecutorService.shutdown();
-        }
     }
 
     @Override
@@ -188,9 +154,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         running = false;
         readExecutorService.shutdownNow();
         commonExecutorService.shutdownNow();
-        if (futureExecutorService != null) {
-            futureExecutorService.shutdownNow();
-        }
     }
 
     @Override
