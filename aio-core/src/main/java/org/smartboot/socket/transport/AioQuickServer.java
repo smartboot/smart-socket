@@ -112,6 +112,10 @@ public final class AioQuickServer {
      * @throws IOException IO异常
      */
     public void start() throws IOException {
+        if (bufferPool == null) {
+            this.bufferPool = config.getBufferFactory().create();
+            this.innerBufferPool = bufferPool;
+        }
         asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
             private byte index = 0;
 
@@ -120,6 +124,7 @@ public final class AioQuickServer {
                 return bufferPool.newThread(r, "smart-socket:Thread-" + (++index));
             }
         });
+        start(asynchronousChannelGroup);
     }
 
     /**
