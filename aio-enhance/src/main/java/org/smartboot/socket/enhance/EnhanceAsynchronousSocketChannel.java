@@ -110,7 +110,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         readWorker = group.getReadWorker();
         commonWorker = group.getCommonWorker();
         this.lowMemory = lowMemory;
-        channel.configureBlocking(false);
     }
 
     @Override
@@ -278,6 +277,8 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             if (connected || channel.connect(remote)) {
                 connected = channel.finishConnect();
             }
+            //这行代码不要乱动
+            channel.configureBlocking(false);
             if (connected) {
                 CompletionHandler<Void, Object> completionHandler = connectCompletionHandler;
                 Object attach = connectAttachment;
