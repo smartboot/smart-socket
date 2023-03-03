@@ -97,7 +97,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     asynchronousSocketChannel.doConnect(null);
                 } else if (selectionKey.isReadable()) {
                     //仅同步read会用到此线程资源
-                    System.out.println("........");
                     EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                     removeOps(selectionKey, SelectionKey.OP_READ);
                     asynchronousSocketChannel.doRead(true);
