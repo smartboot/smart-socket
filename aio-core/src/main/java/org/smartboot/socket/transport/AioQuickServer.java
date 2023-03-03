@@ -112,10 +112,19 @@ public final class AioQuickServer {
      * @throws IOException IO异常
      */
     public void start() throws IOException {
-        if (config.isBannerEnabled()) {
-            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + "::\t(" + IoServerConfig.VERSION + ") [port: " + config.getPort() + ", threadNum:" + config.getThreadNum() + "]");
+        if (bufferPool == null) {
+            this.bufferPool = config.getBufferFactory().create();
+            this.innerBufferPool = bufferPool;
         }
-        start0();
+        asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
+            private byte index = 0;
+
+            @Override
+            public Thread newThread(Runnable r) {
+                return bufferPool.newThread(r, "smart-socket:Thread-" + (++index));
+            }
+        });
+        start(asynchronousChannelGroup);
     }
 
     /**
@@ -123,20 +132,16 @@ public final class AioQuickServer {
      *
      * @throws IOException IO异常
      */
-    private void start0() throws IOException {
+    public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
+        if (config.isBannerEnabled()) {
+            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + "::\t(" + IoServerConfig.VERSION + ") [port: " + config.getPort() + ", threadNum:" + config.getThreadNum() + "]");
+        }
         try {
             if (bufferPool == null) {
                 this.bufferPool = config.getBufferFactory().create();
                 this.innerBufferPool = bufferPool;
             }
-            asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
-                private byte index = 0;
 
-                @Override
-                public Thread newThread(Runnable r) {
-                    return bufferPool.newThread(r, "smart-socket:Thread-" + (++index));
-                }
-            });
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
             //set socket options
             if (config.getSocketOptions() != null) {
@@ -224,17 +229,19 @@ public final class AioQuickServer {
             e.printStackTrace();
         }
 
-        if (!asynchronousChannelGroup.isTerminated()) {
+        if (asynchronousChannelGroup != null) {
+            if (!asynchronousChannelGroup.isTerminated()) {
+                try {
+                    asynchronousChannelGroup.shutdownNow();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             try {
-                asynchronousChannelGroup.shutdownNow();
-            } catch (IOException e) {
+                asynchronousChannelGroup.awaitTermination(3, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }
-        try {
-            asynchronousChannelGroup.awaitTermination(3, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
         if (innerBufferPool != null) {
             innerBufferPool.release();

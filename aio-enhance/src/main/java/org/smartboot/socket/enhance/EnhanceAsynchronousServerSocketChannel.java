@@ -43,7 +43,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
         this.enhanceAsynchronousChannelGroup = enhanceAsynchronousChannelGroup;
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.configureBlocking(false);
-        acceptWorker = enhanceAsynchronousChannelGroup.getAcceptWorker();
+        acceptWorker = enhanceAsynchronousChannelGroup.getCommonWorker();
         this.lowMemory = lowMemory;
     }
 
@@ -96,6 +96,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
             }
             if (socketChannel != null) {
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = new EnhanceAsynchronousSocketChannel(enhanceAsynchronousChannelGroup, socketChannel, lowMemory);
+                //这行代码不要乱动
                 socketChannel.configureBlocking(false);
                 socketChannel.finishConnect();
                 CompletionHandler<AsynchronousSocketChannel, Object> completionHandler = acceptCompletionHandler;

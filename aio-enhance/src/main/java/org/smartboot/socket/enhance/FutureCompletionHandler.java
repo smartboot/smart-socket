@@ -15,21 +15,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-final class FutureCompletionHandler<V, A> implements CompletionHandler<V, A>, Future<V>, Runnable {
-    private CompletionHandler<V, A> completionHandler;
-    private A attach;
+final class FutureCompletionHandler<V, A> implements CompletionHandler<V, A>, Future<V> {
     private V result;
     private boolean done = false;
     private boolean cancel = false;
     private Throwable exception;
-
-    public FutureCompletionHandler(CompletionHandler<V, A> completionHandler, A attach) {
-        this.completionHandler = completionHandler;
-        this.attach = attach;
-    }
-
-    public FutureCompletionHandler() {
-    }
 
     @Override
     public void completed(V result, A selectionKey) {
@@ -38,18 +28,12 @@ final class FutureCompletionHandler<V, A> implements CompletionHandler<V, A>, Fu
         synchronized (this) {
             this.notify();
         }
-        if (completionHandler != null) {
-            completionHandler.completed(result, attach);
-        }
     }
 
     @Override
     public void failed(Throwable exc, A attachment) {
         exception = exc;
         done = true;
-        if (completionHandler != null) {
-            completionHandler.failed(exc, attachment);
-        }
     }
 
     @Override
@@ -101,11 +85,4 @@ final class FutureCompletionHandler<V, A> implements CompletionHandler<V, A>, Fu
         throw new TimeoutException();
     }
 
-    @Override
-    public synchronized void run() {
-        if (!done) {
-            cancel(true);
-            completionHandler.failed(new TimeoutException(), attach);
-        }
-    }
 }
