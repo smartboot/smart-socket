@@ -236,7 +236,10 @@ final class TcpAioSession extends AioSession {
         if (immediate) {
             try {
                 byteBuf.close();
-                readBuffer.clean();
+                if (readBuffer != null) {
+                    readBuffer.clean();
+                    readBuffer = null;
+                }
                 if (writeBuffer != null) {
                     writeBuffer.clean();
                     writeBuffer = null;
