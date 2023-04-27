@@ -197,9 +197,11 @@ public final class Worker implements Runnable {
         executorService.shutdown();
         try {
             executorService.awaitTermination(timeout, timeUnit);
+        } catch (InterruptedException ignored) { }
+        try {
             selector.close();
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
