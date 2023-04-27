@@ -183,6 +183,9 @@ public final class Worker implements Runnable {
         return true;
     }
 
+    private static final Long timeout = 1000L;
+
+    private static final TimeUnit timeUnit = TimeUnit.MILLISECONDS;
 
     void shutdown() {
         try {
@@ -193,9 +196,12 @@ public final class Worker implements Runnable {
         selector.wakeup();
         executorService.shutdown();
         try {
+            executorService.awaitTermination(timeout, timeUnit);
+        } catch (InterruptedException ignored) { }
+        try {
             selector.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 }
