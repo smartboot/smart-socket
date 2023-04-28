@@ -179,6 +179,9 @@ public final class WriteBuffer extends OutputStream {
 
     @Override
     public synchronized void write(byte[] b, int off, int len) throws IOException {
+        if (len == 0) {
+            return;
+        }
         if (writeInBuf == null) {
             writeInBuf = bufferPage.allocate(Math.max(chunkSize, len));
         }
@@ -254,7 +257,7 @@ public final class WriteBuffer extends OutputStream {
     }
 
     @Override
-    public void flush() {
+    public synchronized void flush() {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
