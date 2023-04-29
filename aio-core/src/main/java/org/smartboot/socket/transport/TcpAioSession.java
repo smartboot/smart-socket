@@ -292,8 +292,10 @@ final class TcpAioSession extends AioSession {
             monitor.afterRead(this, result);
         }
         this.eof = result == -1;
-        this.readBuffer.buffer().flip();
-        signalRead();
+        if (SESSION_STATUS_CLOSED != status) {
+            this.readBuffer.buffer().flip();
+            signalRead();
+        }
     }
 
     /**
