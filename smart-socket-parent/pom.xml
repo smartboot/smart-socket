@@ -15,23 +15,18 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.smartboot.socket</groupId>
     <artifactId>smart-socket-parent</artifactId>
-    <version>1.5.26</version>
+    <version>1.5.27</version>
 
     <packaging>pom</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.36</slf4j.version>
-        <aio.version>1.5.26</aio.version>
+        <aio.version>1.5.27</aio.version>
         <junit.version>4.13.2</junit.version>
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.smartboot.socket</groupId>
-                <artifactId>aio-enhance</artifactId>
-                <version>${aio.version}</version>
-            </dependency>
             <dependency>
                 <groupId>org.smartboot.socket</groupId>
                 <artifactId>aio-core</artifactId>
@@ -272,6 +267,5 @@
     <modules>
         <module>../aio-core</module>
         <module>../aio-pro</module>
-        <module>../aio-enhance</module>
     </modules>
 </project>
