@@ -257,7 +257,7 @@ public final class WriteBuffer extends OutputStream {
     }
 
     @Override
-    public synchronized void flush() {
+    public void flush() {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
@@ -293,7 +293,7 @@ public final class WriteBuffer extends OutputStream {
         return count == 0 && (writeInBuf == null || writeInBuf.buffer().position() == 0);
     }
 
-    VirtualBuffer pollItem() {
+    private VirtualBuffer pollItem() {
         if (count == 0) {
             return null;
         }
@@ -302,10 +302,8 @@ public final class WriteBuffer extends OutputStream {
         if (++takeIndex == items.length) {
             takeIndex = 0;
         }
-        synchronized (this) {
-            if (count-- == items.length) {
-                this.notifyAll();
-            }
+        if (count-- == items.length) {
+            this.notifyAll();
         }
         return x;
     }
