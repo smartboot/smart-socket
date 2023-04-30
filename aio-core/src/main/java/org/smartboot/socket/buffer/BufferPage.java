@@ -10,7 +10,7 @@
 package org.smartboot.socket.buffer;
 
 
-import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
@@ -82,6 +82,9 @@ public final class BufferPage {
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
+        if (size == 0) {
+            throw new UnsupportedOperationException("cannot allocate zero bytes");
+        }
         VirtualBuffer virtualBuffer;
         Thread thread = Thread.currentThread();
         if (thread instanceof FastBufferThread) {
@@ -275,7 +278,7 @@ public final class BufferPage {
      */
     void release() {
         if (buffer.isDirect()) {
-            Unsafe.getUnsafe().invokeCleaner(buffer);
+            ((DirectBuffer) buffer).cleaner().clean();
         }
     }
 
