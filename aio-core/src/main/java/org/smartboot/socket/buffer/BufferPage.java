@@ -82,6 +82,9 @@ public final class BufferPage {
      * @return 虚拟内存对象
      */
     public VirtualBuffer allocate(final int size) {
+        if (size == 0) {
+            throw new UnsupportedOperationException("cannot allocate zero bytes");
+        }
         VirtualBuffer virtualBuffer;
         Thread thread = Thread.currentThread();
         if (thread instanceof FastBufferThread) {

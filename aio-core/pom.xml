@@ -19,13 +19,7 @@
     <parent>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
-        <version>1.6.4</version>
+        <version>1.6.5</version>
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
-    <dependencies>
-        <dependency>
-            <groupId>org.smartboot.socket</groupId>
-            <artifactId>aio-enhance</artifactId>
-        </dependency>
-    </dependencies>
 </project>

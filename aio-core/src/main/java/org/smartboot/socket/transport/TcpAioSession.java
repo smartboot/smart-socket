@@ -184,10 +184,10 @@ final class TcpAioSession extends AioSession {
             monitor.afterWrite(this, result);
         }
         if (writeBuffer == null) {
-            writeBuffer = byteBuf.pollItem();
+            writeBuffer = byteBuf.poll();
         } else if (!writeBuffer.buffer().hasRemaining()) {
             writeBuffer.clean();
-            writeBuffer = byteBuf.pollItem();
+            writeBuffer = byteBuf.poll();
         }
 
         if (writeBuffer != null) {
@@ -292,8 +292,10 @@ final class TcpAioSession extends AioSession {
             monitor.afterRead(this, result);
         }
         this.eof = result == -1;
-        this.readBuffer.buffer().flip();
-        signalRead();
+        if (SESSION_STATUS_CLOSED != status) {
+            this.readBuffer.buffer().flip();
+            signalRead();
+        }
     }
 
     /**
