@@ -328,7 +328,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 //防止无限递归导致堆栈溢出
                 if (readWorker.getWorkerThread() == Thread.currentThread()) {
                     direct = ++readWorker.invoker < EnhanceAsynchronousChannelGroup.MAX_INVOKER;
-                } else {
+                } else if (commonWorker.getWorkerThread() != Thread.currentThread()) {
                     direct = ++readInvoker < EnhanceAsynchronousChannelGroup.MAX_INVOKER;
                 }
             }
