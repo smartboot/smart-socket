@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
+import org.smartboot.socket.enhance.FutureCompletionHandler;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -193,7 +194,9 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
     @Override
     public Future<Integer> read(ByteBuffer dst) {
-        throw new UnsupportedOperationException();
+        FutureCompletionHandler<Integer, Object> readFuture = new FutureCompletionHandler<>();
+        read(dst, 0, TimeUnit.MILLISECONDS, null, readFuture);
+        return readFuture;
     }
 
     @Override

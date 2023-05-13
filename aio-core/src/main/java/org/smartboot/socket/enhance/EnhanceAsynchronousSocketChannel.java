@@ -72,8 +72,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * connect 回调事件处理器
      */
     private CompletionHandler<Void, Object> connectCompletionHandler;
-    private FutureCompletionHandler<Void, Void> connectFuture;
-    private FutureCompletionHandler<? extends Number, Object> readFuture;
     /**
      * read 回调事件关联绑定的附件对象
      */
@@ -197,7 +195,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     public Future<Void> connect(SocketAddress remote) {
         FutureCompletionHandler<Void, Void> connectFuture = new FutureCompletionHandler<>();
         connect(remote, null, connectFuture);
-        this.connectFuture = connectFuture;
         return connectFuture;
     }
 
@@ -217,13 +214,12 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         this.readBuffer = readBuffer;
         this.readAttachment = attachment;
         this.readCompletionHandler = (CompletionHandler<Number, Object>) handler;
-        doRead(readFuture != null);
+        doRead(handler instanceof FutureCompletionHandler);
     }
 
     @Override
     public Future<Integer> read(ByteBuffer readBuffer) {
         FutureCompletionHandler<Integer, Object> readFuture = new FutureCompletionHandler<>();
-        this.readFuture = readFuture;
         read(readBuffer, 0, TimeUnit.MILLISECONDS, null, readFuture);
         return readFuture;
     }
@@ -271,7 +267,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     public void doConnect(SocketAddress remote) {
         try {
             //此前通过Future调用,且触发了cancel
-            if (connectFuture != null && connectFuture.isDone()) {
+            if (connectCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) connectCompletionHandler).isDone()) {
                 resetConnect();
                 return;
             }
@@ -303,7 +299,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     private void resetConnect() {
         connectionPending = false;
-        connectFuture = null;
         connectAttachment = null;
         connectCompletionHandler = null;
     }
@@ -311,7 +306,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     public void doRead(boolean direct) {
         try {
             //此前通过Future调用,且触发了cancel
-            if (readFuture != null && readFuture.isDone()) {
+            if (readCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) readCompletionHandler).isDone()) {
                 group.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 resetRead();
                 return;
@@ -343,7 +338,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             }
 
             //注册至异步线程
-            if (readFuture != null && readSize == 0) {
+            if (readSize == 0 && readCompletionHandler instanceof FutureCompletionHandler) {
                 group.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 commonWorker.addRegister(selector -> {
                     try {
@@ -398,7 +393,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     private void resetRead() {
         readPending = false;
-        readFuture = null;
         readCompletionHandler = null;
         readAttachment = null;
         readBuffer = null;

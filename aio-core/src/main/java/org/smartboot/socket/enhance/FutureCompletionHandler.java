@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-final class FutureCompletionHandler<V, A> implements CompletionHandler<V, A>, Future<V> {
+public final class FutureCompletionHandler<V, A> implements CompletionHandler<V, A>, Future<V> {
     private V result;
     private boolean done = false;
     private boolean cancel = false;
