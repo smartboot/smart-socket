@@ -72,7 +72,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * connect 回调事件处理器
      */
     private CompletionHandler<Void, Object> connectCompletionHandler;
-    private FutureCompletionHandler<Void, Void> connectFuture;
     /**
      * read 回调事件关联绑定的附件对象
      */
@@ -194,7 +193,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     public Future<Void> connect(SocketAddress remote) {
         FutureCompletionHandler<Void, Void> connectFuture = new FutureCompletionHandler<>();
         connect(remote, null, connectFuture);
-        this.connectFuture = connectFuture;
         return connectFuture;
     }
 
@@ -267,7 +265,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     public void doConnect(SocketAddress remote) {
         try {
             //此前通过Future调用,且触发了cancel
-            if (connectFuture != null && connectFuture.isDone()) {
+            if (connectCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) connectCompletionHandler).isDone()) {
                 resetConnect();
                 return;
             }
@@ -299,7 +297,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     private void resetConnect() {
         connectionPending = false;
-        connectFuture = null;
         connectAttachment = null;
         connectCompletionHandler = null;
     }
