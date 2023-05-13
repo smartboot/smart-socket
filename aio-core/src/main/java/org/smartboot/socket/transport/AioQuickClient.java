@@ -260,7 +260,7 @@ public final class AioQuickClient {
      *
      * @param flag 是否立即停止
      */
-    private void shutdown0(boolean flag) {
+    private synchronized void shutdown0(boolean flag) {
         if (session != null) {
             session.close(flag);
             session = null;
