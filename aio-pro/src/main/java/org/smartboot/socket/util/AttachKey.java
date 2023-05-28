@@ -47,6 +47,10 @@ public final class AttachKey<T> {
         }
     }
 
+    public static void reset() {
+        INDEX_BUILDER.set(0);
+    }
+
     public static <T> AttachKey<T> valueOf(String name) {
         AttachKey<T> option = NAMES.get(name);
         if (option == null) {
