@@ -155,7 +155,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
             @Override
             public void failed(Throwable exc, A attachment) {
-                logger.error("read failed...", exc);
                 handler.failed(exc, attachment);
             }
         });
