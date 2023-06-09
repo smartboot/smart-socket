@@ -64,25 +64,22 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
     @Override
     public <A> void read(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
         if (handshake) {
-            handshakeModel.setHandshakeCallback(new HandshakeCallback() {
-                @Override
-                public void callback() {
-                    handshake = false;
-                    synchronized (SslAsynchronousSocketChannel.this) {
-                        //释放内存
-                        handshakeModel.getAppWriteBuffer().clean();
-                        netReadBuffer.buffer().clear();
-                        netWriteBuffer.buffer().clear();
-                        appReadBuffer.buffer().clear().flip();
-                        SslAsynchronousSocketChannel.this.notifyAll();
-                    }
-                    if (handshakeModel.isEof()) {
-                        handler.completed(-1, attachment);
-                    } else {
-                        SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
-                    }
-                    handshakeModel = null;
+            handshakeModel.setHandshakeCallback(() -> {
+                handshake = false;
+                synchronized (SslAsynchronousSocketChannel.this) {
+                    //释放内存
+                    handshakeModel.getAppWriteBuffer().clean();
+                    netReadBuffer.buffer().flip();
+                    netWriteBuffer.buffer().clear();
+                    appReadBuffer.buffer().clear().flip();
+                    SslAsynchronousSocketChannel.this.notifyAll();
                 }
+                if (handshakeModel.getException() != null) {
+                    handler.failed(handshakeModel.getException(), attachment);
+                } else {
+                    SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
+                }
+                handshakeModel = null;
             });
             //触发握手
             sslService.doHandshake(handshakeModel);
@@ -90,9 +87,10 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         }
         ByteBuffer appBuffer = appReadBuffer.buffer();
         //netBuffer还有残留，尝试解码
-        if (netReadBuffer.buffer().hasRemaining()) {
+        ByteBuffer netBuffer = netReadBuffer.buffer();
+        if (netBuffer.hasRemaining()) {
             appBuffer.compact();
-            doUnWrap(netReadBuffer.buffer(), appReadBuffer.buffer());
+            doUnWrap(netBuffer, appBuffer);
             appBuffer.flip();
         }
         //appBuffer还有残留数据，先腾空
@@ -110,19 +108,25 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             return;
         }
 
-
-        asynchronousSocketChannel.read(netReadBuffer.buffer(), timeout, unit, attachment, new CompletionHandler<Integer, A>() {
+        netBuffer.compact();
+        asynchronousSocketChannel.read(netBuffer, timeout, unit, attachment, new CompletionHandler<Integer, A>() {
             int index = 0;
 
             @Override
             public void completed(Integer result, A attachment) {
+                if (result < 0) {
+                    handler.completed(result, attachment);
+                    return;
+                }
+                ByteBuffer netBuffer = netReadBuffer.buffer();
+                netBuffer.flip();
                 int pos = dst.position();
                 ByteBuffer appBuffer = appReadBuffer.buffer();
 //                if (appBuffer.hasRemaining()) {
 //                    logger.error("error appReadBuffer:" + appBuffer);
 //                }
                 appBuffer.clear();
-                SSLEngineResult.Status status = doUnWrap(netReadBuffer.buffer(), appReadBuffer.buffer());
+                SSLEngineResult.Status status = doUnWrap(netBuffer, appBuffer);
                 appBuffer.flip();
                 //appBuffer较多
                 if (appBuffer.remaining() > dst.remaining()) {
@@ -140,23 +144,25 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                         index++;
                         completed(result, attachment);
                     } else {
-                        asynchronousSocketChannel.read(netReadBuffer.buffer(), timeout, unit, attachment, this);
+                        netBuffer.compact();
+                        asynchronousSocketChannel.read(netBuffer, timeout, unit, attachment, this);
                     }
                     return;
                 }
                 index = 0;
-                handler.completed(result != -1 ? dst.position() - pos : result, attachment);
+                handler.completed(dst.position() - pos, attachment);
             }
 
             @Override
             public void failed(Throwable exc, A attachment) {
+                logger.error("read failed...", exc);
                 handler.failed(exc, attachment);
             }
         });
+
     }
 
     private SSLEngineResult.Status doUnWrap(ByteBuffer netBuffer, ByteBuffer appBuffer) {
-        netBuffer.flip();
         try {
             SSLEngineResult result = sslEngine.unwrap(netBuffer, appBuffer);
             boolean closed = false;
@@ -187,8 +193,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             return result.getStatus();
         } catch (SSLException e) {
             throw new RuntimeException(e);
-        } finally {
-            netBuffer.compact();
         }
     }
 
@@ -272,7 +276,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                     netBuffer.clear();
                     writeBuffer.limit(writeBuffer.position() + ((writeBuffer.limit() - writeBuffer.position() >> 1)));
                     adaptiveWriteSize = writeBuffer.remaining();
-//                        logger.info("doWrap BUFFER_OVERFLOW maybeSize:{}", maybeWriteSize);
                     break;
                 case BUFFER_UNDERFLOW:
                     logger.info("doWrap BUFFER_UNDERFLOW");

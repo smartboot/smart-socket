@@ -19,7 +19,13 @@
     <parent>
         <groupId>org.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
-        <version>1.5.29</version>
+        <version>1.5.30-SNAPSHOT</version>
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+    </dependencies>
 </project>

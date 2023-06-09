@@ -28,7 +28,7 @@ class HandshakeModel {
 
     private VirtualBuffer netReadBuffer;
     private HandshakeCallback handshakeCallback;
-    private boolean eof;
+    private Throwable exception;
     private boolean finished;
 
     public AsynchronousSocketChannel getSocketChannel() {
@@ -95,12 +95,11 @@ class HandshakeModel {
         this.handshakeCallback = handshakeCallback;
     }
 
-    public boolean isEof() {
-        return eof;
+    public Throwable getException() {
+        return exception;
     }
 
-    public void setEof(boolean eof) {
-        this.eof = eof;
+    public void setException(Throwable exception) {
+        this.exception = exception;
     }
-
 }

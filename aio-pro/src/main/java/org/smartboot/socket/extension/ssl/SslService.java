@@ -19,6 +19,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
@@ -42,7 +43,8 @@ public final class SslService {
         @Override
         public void completed(Integer result, HandshakeModel attachment) {
             if (result == -1) {
-                attachment.setEof(true);
+                failed(new IOException("eof"), attachment);
+                return;
             }
             synchronized (attachment) {
                 doHandshake(attachment);
@@ -51,8 +53,7 @@ public final class SslService {
 
         @Override
         public void failed(Throwable exc, HandshakeModel attachment) {
-            exc.printStackTrace();
-            attachment.setEof(true);
+            attachment.setException(exc);
             attachment.getHandshakeCallback().callback();
         }
     };
@@ -105,7 +106,7 @@ public final class SslService {
             SSLEngine engine = handshakeModel.getSslEngine();
 
             //握手阶段网络断链
-            if (handshakeModel.isEof()) {
+            if (handshakeModel.getException() != null) {
                 logger.info("the ssl handshake is terminated");
                 handshakeModel.getHandshakeCallback().callback();
                 return;
@@ -130,7 +131,6 @@ public final class SslService {
 
                         if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
                             handshakeModel.setFinished(true);
-                            netReadBuffer.clear();
                         }
                         switch (result.getStatus()) {
                             case OK:
