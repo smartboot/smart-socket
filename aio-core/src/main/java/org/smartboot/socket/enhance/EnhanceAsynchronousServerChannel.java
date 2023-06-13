@@ -13,14 +13,11 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.ByteBuffer;
-import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
-import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.ReadPendingException;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.ShutdownChannelGroupException;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritePendingException;
 import java.util.Set;
@@ -33,15 +30,11 @@ import java.util.concurrent.TimeUnit;
  * @author 三刀
  * @version V1.0 , 2018/5/24
  */
-final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
+class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
     /**
      * 实际的Socket通道
      */
-    private final SocketChannel channel;
-    /**
-     * 处理当前连接IO事件的资源组
-     */
-    private final EnhanceAsynchronousChannelGroup group;
+    protected final SocketChannel channel;
     /**
      * 处理 read 事件的线程资源
      */
@@ -49,7 +42,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     /**
      * 处理 write 事件的线程资源
      */
-    private final EnhanceAsynchronousChannelGroup.Worker commonWorker;
+    protected final EnhanceAsynchronousChannelGroup.Worker commonWorker;
 
     /**
      * 用于接收 read 通道数据的缓冲区，经解码后腾出缓冲区以供下一批数据的读取
@@ -69,10 +62,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      */
     private CompletionHandler<Number, Object> writeCompletionHandler;
     /**
-     * connect 回调事件处理器
-     */
-    private CompletionHandler<Void, Object> connectCompletionHandler;
-    /**
      * read 回调事件关联绑定的附件对象
      */
     private Object readAttachment;
@@ -80,10 +69,6 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * write 回调事件关联绑定的附件对象
      */
     private Object writeAttachment;
-    /**
-     * connect 回调事件关联绑定的附件对象
-     */
-    private Object connectAttachment;
     private SelectionKey readSelectionKey;
     /**
      * 当前是否正在执行 write 操作
@@ -93,17 +78,13 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 当前是否正在执行 read 操作
      */
     private boolean readPending;
-    /**
-     * 当前是否正在执行 connect 操作
-     */
-    private boolean connectionPending;
+
     private int writeInvoker;
 
     private final boolean lowMemory;
 
-    public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
+    public EnhanceAsynchronousServerChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
         super(group.provider());
-        this.group = group;
         this.channel = channel;
         readWorker = group.getReadWorker();
         commonWorker = group.getCommonWorker();
@@ -111,7 +92,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     }
 
     @Override
-    public void close() throws IOException {
+    public final void close() throws IOException {
         IOException exception = null;
         try {
             if (channel.isOpen()) {
@@ -134,70 +115,56 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     }
 
     @Override
-    public AsynchronousSocketChannel bind(SocketAddress local) throws IOException {
+    public final AsynchronousSocketChannel bind(SocketAddress local) throws IOException {
         channel.bind(local);
         return this;
     }
 
     @Override
-    public <T> AsynchronousSocketChannel setOption(SocketOption<T> name, T value) throws IOException {
+    public final <T> AsynchronousSocketChannel setOption(SocketOption<T> name, T value) throws IOException {
         channel.setOption(name, value);
         return this;
     }
 
     @Override
-    public <T> T getOption(SocketOption<T> name) throws IOException {
+    public final <T> T getOption(SocketOption<T> name) throws IOException {
         return channel.getOption(name);
     }
 
     @Override
-    public Set<SocketOption<?>> supportedOptions() {
+    public final Set<SocketOption<?>> supportedOptions() {
         return channel.supportedOptions();
     }
 
     @Override
-    public AsynchronousSocketChannel shutdownInput() throws IOException {
+    public final AsynchronousSocketChannel shutdownInput() throws IOException {
         channel.shutdownInput();
         return this;
     }
 
     @Override
-    public AsynchronousSocketChannel shutdownOutput() throws IOException {
+    public final AsynchronousSocketChannel shutdownOutput() throws IOException {
         channel.shutdownOutput();
         return this;
     }
 
     @Override
-    public SocketAddress getRemoteAddress() throws IOException {
+    public final SocketAddress getRemoteAddress() throws IOException {
         return channel.getRemoteAddress();
     }
 
     @Override
     public <A> void connect(SocketAddress remote, A attachment, CompletionHandler<Void, ? super A> handler) {
-        if (group.isTerminated()) {
-            throw new ShutdownChannelGroupException();
-        }
-        if (channel.isConnected()) {
-            throw new AlreadyConnectedException();
-        }
-        if (connectionPending) {
-            throw new ConnectionPendingException();
-        }
-        connectionPending = true;
-        this.connectAttachment = attachment;
-        this.connectCompletionHandler = (CompletionHandler<Void, Object>) handler;
-        doConnect(remote);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Future<Void> connect(SocketAddress remote) {
-        FutureCompletionHandler<Void, Void> connectFuture = new FutureCompletionHandler<>();
-        connect(remote, null, connectFuture);
-        return connectFuture;
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public <A> void read(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
+    public final <A> void read(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
         if (timeout > 0) {
             throw new UnsupportedOperationException();
         }
@@ -216,19 +183,19 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     }
 
     @Override
-    public Future<Integer> read(ByteBuffer readBuffer) {
+    public final Future<Integer> read(ByteBuffer readBuffer) {
         FutureCompletionHandler<Integer, Object> readFuture = new FutureCompletionHandler<>();
         read(readBuffer, 0, TimeUnit.MILLISECONDS, null, readFuture);
         return readFuture;
     }
 
     @Override
-    public <A> void read(ByteBuffer[] dsts, int offset, int length, long timeout, TimeUnit unit, A attachment, CompletionHandler<Long, ? super A> handler) {
+    public final <A> void read(ByteBuffer[] dsts, int offset, int length, long timeout, TimeUnit unit, A attachment, CompletionHandler<Long, ? super A> handler) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public <A> void write(ByteBuffer src, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
+    public final <A> void write(ByteBuffer src, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
         if (timeout > 0) {
             throw new UnsupportedOperationException();
         }
@@ -248,60 +215,21 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     }
 
     @Override
-    public Future<Integer> write(ByteBuffer src) {
+    public final Future<Integer> write(ByteBuffer src) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public <A> void write(ByteBuffer[] srcs, int offset, int length, long timeout, TimeUnit unit, A attachment, CompletionHandler<Long, ? super A> handler) {
+    public final <A> void write(ByteBuffer[] srcs, int offset, int length, long timeout, TimeUnit unit, A attachment, CompletionHandler<Long, ? super A> handler) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public SocketAddress getLocalAddress() throws IOException {
+    public final SocketAddress getLocalAddress() throws IOException {
         return channel.getLocalAddress();
     }
 
-    public void doConnect(SocketAddress remote) {
-        try {
-            //此前通过Future调用,且触发了cancel
-            if (connectCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) connectCompletionHandler).isDone()) {
-                resetConnect();
-                return;
-            }
-            boolean connected = channel.isConnectionPending();
-            if (connected || channel.connect(remote)) {
-                connected = channel.finishConnect();
-            }
-            //这行代码不要乱动
-            channel.configureBlocking(false);
-            if (connected) {
-                CompletionHandler<Void, Object> completionHandler = connectCompletionHandler;
-                Object attach = connectAttachment;
-                resetConnect();
-                completionHandler.completed(null, attach);
-            } else {
-                commonWorker.addRegister(selector -> {
-                    try {
-                        channel.register(selector, SelectionKey.OP_CONNECT, EnhanceAsynchronousSocketChannel.this);
-                    } catch (ClosedChannelException e) {
-                        connectCompletionHandler.failed(e, connectAttachment);
-                    }
-                });
-            }
-        } catch (IOException e) {
-            connectCompletionHandler.failed(e, connectAttachment);
-        }
-
-    }
-
-    private void resetConnect() {
-        connectionPending = false;
-        connectAttachment = null;
-        connectCompletionHandler = null;
-    }
-
-    public void doRead(boolean direct) {
+    public final void doRead(boolean direct) {
         try {
             //此前通过Future调用,且触发了cancel
             if (readCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) readCompletionHandler).isDone()) {
@@ -330,7 +258,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 commonWorker.addRegister(selector -> {
                     try {
-                        channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
+                        channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousServerChannel.this);
                     } catch (ClosedChannelException e) {
                         e.printStackTrace();
                         doRead(true);
@@ -356,7 +284,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             } else if (readSelectionKey == null) {
                 readWorker.addRegister(selector -> {
                     try {
-                        readSelectionKey = channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
+                        readSelectionKey = channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousServerChannel.this);
                     } catch (ClosedChannelException e) {
                         readCompletionHandler.failed(e, readAttachment);
                     }
@@ -386,7 +314,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         readBuffer = null;
     }
 
-    public void doWrite() {
+    public final void doWrite() {
         try {
             int invoker = 0;
             //防止无限递归导致堆栈溢出
@@ -414,7 +342,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 if (commonSelectionKey == null) {
                     commonWorker.addRegister(selector -> {
                         try {
-                            channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
+                            channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousServerChannel.this);
                         } catch (ClosedChannelException e) {
                             writeCompletionHandler.failed(e, writeAttachment);
                         }
@@ -445,7 +373,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     }
 
     @Override
-    public boolean isOpen() {
+    public final boolean isOpen() {
         return channel.isOpen();
     }
 }

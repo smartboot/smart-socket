@@ -63,7 +63,7 @@ public final class EnhanceAsynchronousChannelProvider extends AsynchronousChanne
 
     @Override
     public AsynchronousSocketChannel openAsynchronousSocketChannel(AsynchronousChannelGroup group) throws IOException {
-        return new EnhanceAsynchronousSocketChannel(checkAndGet(group), SocketChannel.open(), lowMemory);
+        return new EnhanceAsynchronousClientChannel(checkAndGet(group), SocketChannel.open(), lowMemory);
     }
 
     private EnhanceAsynchronousChannelGroup checkAndGet(AsynchronousChannelGroup group) {

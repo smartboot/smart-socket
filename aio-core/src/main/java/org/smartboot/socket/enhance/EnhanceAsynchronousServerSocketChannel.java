@@ -88,7 +88,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                 socketChannel = serverSocketChannel.accept();
             }
             if (socketChannel != null) {
-                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = new EnhanceAsynchronousSocketChannel(enhanceAsynchronousChannelGroup, socketChannel, lowMemory);
+                EnhanceAsynchronousServerChannel asynchronousSocketChannel = new EnhanceAsynchronousServerChannel(enhanceAsynchronousChannelGroup, socketChannel, lowMemory);
                 //这行代码不要乱动
                 socketChannel.configureBlocking(false);
                 socketChannel.finishConnect();
