@@ -94,8 +94,8 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     EnhanceAsynchronousServerSocketChannel serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) selectionKey.attachment();
                     serverSocketChannel.doAccept();
                 } else if (selectionKey.isConnectable()) {
-                    EnhanceAsynchronousClientChannel asynchronousSocketChannel = (EnhanceAsynchronousClientChannel) selectionKey.attachment();
-                    asynchronousSocketChannel.doConnect(null);
+                    Runnable runnable = (Runnable) selectionKey.attachment();
+                    runnable.run();
                 } else if (selectionKey.isReadable()) {
                     //仅同步read会用到此线程资源
                     EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();

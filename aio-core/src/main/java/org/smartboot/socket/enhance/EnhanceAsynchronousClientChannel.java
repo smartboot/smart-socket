@@ -32,24 +32,11 @@ final class EnhanceAsynchronousClientChannel extends EnhanceAsynchronousServerCh
      * 处理当前连接IO事件的资源组
      */
     private final EnhanceAsynchronousChannelGroup group;
-    /**
-     * connect 回调事件处理器
-     */
-    private CompletionHandler<Void, Object> connectCompletionHandler;
-    /**
-     * connect 回调事件关联绑定的附件对象
-     */
-    private Object connectAttachment;
-    /**
-     * 当前是否正在执行 connect 操作
-     */
-    private boolean connectionPending;
 
     public EnhanceAsynchronousClientChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
         super(group, channel, lowMemory);
         this.group = group;
     }
-
 
     @Override
     public <A> void connect(SocketAddress remote, A attachment, CompletionHandler<Void, ? super A> handler) {
@@ -59,13 +46,10 @@ final class EnhanceAsynchronousClientChannel extends EnhanceAsynchronousServerCh
         if (channel.isConnected()) {
             throw new AlreadyConnectedException();
         }
-        if (connectionPending) {
+        if (channel.isConnectionPending()) {
             throw new ConnectionPendingException();
         }
-        connectionPending = true;
-        this.connectAttachment = attachment;
-        this.connectCompletionHandler = (CompletionHandler<Void, Object>) handler;
-        doConnect(remote);
+        doConnect(remote, attachment, handler);
     }
 
     @Override
@@ -76,11 +60,10 @@ final class EnhanceAsynchronousClientChannel extends EnhanceAsynchronousServerCh
     }
 
 
-    public void doConnect(SocketAddress remote) {
+    public <A> void doConnect(SocketAddress remote, A attachment, CompletionHandler<Void, ? super A> completionHandler) {
         try {
             //此前通过Future调用,且触发了cancel
-            if (connectCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) connectCompletionHandler).isDone()) {
-                resetConnect();
+            if (completionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) completionHandler).isDone()) {
                 return;
             }
             boolean connected = channel.isConnectionPending();
@@ -90,29 +73,20 @@ final class EnhanceAsynchronousClientChannel extends EnhanceAsynchronousServerCh
             //这行代码不要乱动
             channel.configureBlocking(false);
             if (connected) {
-                CompletionHandler<Void, Object> completionHandler = connectCompletionHandler;
-                Object attach = connectAttachment;
-                resetConnect();
-                completionHandler.completed(null, attach);
+                completionHandler.completed(null, attachment);
             } else {
                 commonWorker.addRegister(selector -> {
                     try {
-                        channel.register(selector, SelectionKey.OP_CONNECT, EnhanceAsynchronousClientChannel.this);
+                        channel.register(selector, SelectionKey.OP_CONNECT, (Runnable) () -> doConnect(remote, attachment, completionHandler));
                     } catch (ClosedChannelException e) {
-                        connectCompletionHandler.failed(e, connectAttachment);
+                        completionHandler.failed(e, attachment);
                     }
                 });
             }
         } catch (IOException e) {
-            connectCompletionHandler.failed(e, connectAttachment);
+            completionHandler.failed(e, attachment);
         }
 
-    }
-
-    private void resetConnect() {
-        connectionPending = false;
-        connectAttachment = null;
-        connectCompletionHandler = null;
     }
 
 }
