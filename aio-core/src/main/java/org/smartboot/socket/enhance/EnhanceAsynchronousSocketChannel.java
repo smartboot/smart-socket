@@ -305,7 +305,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         try {
             //此前通过Future调用,且触发了cancel
             if (readCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) readCompletionHandler).isDone()) {
-                group.removeOps(readSelectionKey, SelectionKey.OP_READ);
+                EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 resetRead();
                 return;
             }
@@ -327,7 +327,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
             //注册至异步线程
             if (readSize == 0 && readCompletionHandler instanceof FutureCompletionHandler) {
-                group.removeOps(readSelectionKey, SelectionKey.OP_READ);
+                EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 commonWorker.addRegister(selector -> {
                     try {
                         channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
@@ -351,7 +351,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 completionHandler.completed((int) readSize, attach);
 
                 if (!readPending && readSelectionKey != null) {
-                    group.removeOps(readSelectionKey, SelectionKey.OP_READ);
+                    EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 }
             } else if (readSelectionKey == null) {
                 readWorker.addRegister(selector -> {
@@ -362,7 +362,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     }
                 });
             } else {
-                group.interestOps(readWorker, readSelectionKey, SelectionKey.OP_READ);
+                EnhanceAsynchronousChannelGroup.interestOps(readWorker, readSelectionKey, SelectionKey.OP_READ);
             }
 
         } catch (Throwable e) {
@@ -420,7 +420,7 @@ final class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                         }
                     });
                 } else {
-                    group.interestOps(commonWorker, commonSelectionKey, SelectionKey.OP_WRITE);
+                    EnhanceAsynchronousChannelGroup.interestOps(commonWorker, commonSelectionKey, SelectionKey.OP_WRITE);
                 }
             }
         } catch (Throwable e) {

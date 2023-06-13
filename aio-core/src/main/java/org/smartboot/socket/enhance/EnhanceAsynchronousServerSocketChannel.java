@@ -12,14 +12,7 @@ package org.smartboot.socket.enhance;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
-import java.nio.channels.AcceptPendingException;
-import java.nio.channels.AsynchronousServerSocketChannel;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.CompletionHandler;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -85,7 +78,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
             //此前通过Future调用,且触发了cancel
             if (acceptFuture != null && acceptFuture.isDone()) {
                 resetAccept();
-                enhanceAsynchronousChannelGroup.removeOps(selectionKey, SelectionKey.OP_ACCEPT);
+                EnhanceAsynchronousChannelGroup.removeOps(selectionKey, SelectionKey.OP_ACCEPT);
                 return;
             }
             boolean directAccept = (acceptWorker.getWorkerThread() == Thread.currentThread()
@@ -104,7 +97,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                 resetAccept();
                 completionHandler.completed(asynchronousSocketChannel, attach);
                 if (!acceptPending && selectionKey != null) {
-                    enhanceAsynchronousChannelGroup.removeOps(selectionKey, SelectionKey.OP_ACCEPT);
+                    EnhanceAsynchronousChannelGroup.removeOps(selectionKey, SelectionKey.OP_ACCEPT);
                 }
             }
             //首次注册selector
@@ -118,7 +111,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                     }
                 });
             } else {
-                enhanceAsynchronousChannelGroup.interestOps(acceptWorker, selectionKey, SelectionKey.OP_ACCEPT);
+                EnhanceAsynchronousChannelGroup.interestOps(acceptWorker, selectionKey, SelectionKey.OP_ACCEPT);
             }
         } catch (IOException e) {
             this.acceptCompletionHandler.failed(e, attachment);

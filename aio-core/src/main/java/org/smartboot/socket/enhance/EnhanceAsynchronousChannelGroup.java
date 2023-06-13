@@ -118,7 +118,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
      * @param selectionKey 待操作的selectionKey
      * @param opt          移除的事件
      */
-    public void removeOps(SelectionKey selectionKey, int opt) {
+    public static void removeOps(SelectionKey selectionKey, int opt) {
         if ((selectionKey.interestOps() & opt) != 0) {
             selectionKey.interestOps(selectionKey.interestOps() & ~opt);
         }
@@ -161,7 +161,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         return readExecutorService.awaitTermination(timeout, unit);
     }
 
-    public void interestOps(Worker worker, SelectionKey selectionKey, int opt) {
+    public static void interestOps(Worker worker, SelectionKey selectionKey, int opt) {
         if ((selectionKey.interestOps() & opt) != 0) {
             return;
         }
