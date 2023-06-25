@@ -194,7 +194,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
     }
 
     private <V extends Number, A> void write0(ByteBuffer writeBuffer, A attachment, CompletionHandler<V, ? super A> handler) {
-        if (writeBuffer != null) {
+        if (this.writeCompletionHandler != null) {
             throw new WritePendingException();
         }
         this.writeBuffer = writeBuffer;
