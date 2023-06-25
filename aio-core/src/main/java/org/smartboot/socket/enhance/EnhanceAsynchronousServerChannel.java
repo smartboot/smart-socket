@@ -267,7 +267,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
                 resetRead();
                 completionHandler.completed((int) readSize, attach);
 
-                if (readCompletionHandler != null && readSelectionKey != null) {
+                if (readCompletionHandler == null && readSelectionKey != null) {
                     EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 }
             } else if (readSelectionKey == null) {
