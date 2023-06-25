@@ -70,14 +70,6 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
      */
     private Object writeAttachment;
     private SelectionKey readSelectionKey;
-    /**
-     * 当前是否正在执行 write 操作
-     */
-    private boolean writePending;
-    /**
-     * 当前是否正在执行 read 操作
-     */
-    private boolean readPending;
 
     private int writeInvoker;
 
@@ -172,10 +164,9 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
     }
 
     private <V extends Number, A> void read0(ByteBuffer readBuffer, A attachment, CompletionHandler<V, ? super A> handler) {
-        if (readPending) {
+        if (this.readCompletionHandler != null) {
             throw new ReadPendingException();
         }
-        readPending = true;
         this.readBuffer = readBuffer;
         this.readAttachment = attachment;
         this.readCompletionHandler = (CompletionHandler<Number, Object>) handler;
@@ -203,11 +194,9 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
     }
 
     private <V extends Number, A> void write0(ByteBuffer writeBuffer, A attachment, CompletionHandler<V, ? super A> handler) {
-        if (writePending) {
+        if (writeBuffer != null) {
             throw new WritePendingException();
         }
-
-        writePending = true;
         this.writeBuffer = writeBuffer;
         this.writeAttachment = attachment;
         this.writeCompletionHandler = (CompletionHandler<Number, Object>) handler;
@@ -278,7 +267,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
                 resetRead();
                 completionHandler.completed((int) readSize, attach);
 
-                if (!readPending && readSelectionKey != null) {
+                if (readCompletionHandler != null && readSelectionKey != null) {
                     EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 }
             } else if (readSelectionKey == null) {
@@ -308,7 +297,6 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
     }
 
     private void resetRead() {
-        readPending = false;
         readCompletionHandler = null;
         readAttachment = null;
         readBuffer = null;
@@ -366,7 +354,6 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
     }
 
     private void resetWrite() {
-        writePending = false;
         writeAttachment = null;
         writeCompletionHandler = null;
         writeBuffer = null;
