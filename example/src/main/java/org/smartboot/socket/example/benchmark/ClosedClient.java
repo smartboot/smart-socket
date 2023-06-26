@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
  */
 public class ClosedClient {
     public static void main(String[] args) throws IOException {
-        ExecutorService service = Executors.newFixedThreadPool(4);
+        ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         AioQuickClient client = new AioQuickClient("localhost", 8888, new StringProtocol(), new AbstractMessageProcessor<String>() {
             @Override
             public void process0(AioSession session, String msg) {
@@ -36,7 +36,7 @@ public class ClosedClient {
             }
         });
         byte[] data = "smart-socket".getBytes();
-        int i = 100000;
+        int i = 10000;
         while (i-- > 0) {
             AioSession session = client.start();
             service.execute(() -> {
