@@ -310,13 +310,6 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
             return false;
         }
         try {
-//            int invoker = 0;
-            //防止无限递归导致堆栈溢出
-//            if (commonWorker.getWorkerThread() == Thread.currentThread()) {
-//                invoker = ++commonWorker.invoker;
-//            } else if (readWorker.getWorkerThread() != Thread.currentThread()) {
-//                invoker = ++writeInvoker;
-//            }
             int writeSize = channel.write(writeBuffer);
 
             if (writeSize != 0 || !writeBuffer.hasRemaining()) {
