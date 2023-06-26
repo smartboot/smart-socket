@@ -15,14 +15,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.smartboot.socket</groupId>
     <artifactId>smart-socket-parent</artifactId>
-    <version>1.5.30</version>
+    <version>1.5.31</version>
 
     <packaging>pom</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.36</slf4j.version>
-        <aio.version>1.5.30</aio.version>
+        <aio.version>1.5.31</aio.version>
         <junit.version>4.13.2</junit.version>
     </properties>
     <dependencyManagement>
