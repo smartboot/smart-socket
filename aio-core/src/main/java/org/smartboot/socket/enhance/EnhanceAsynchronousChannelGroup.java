@@ -89,7 +89,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
                     //直接调用interestOps的效果比 removeOps(selectionKey, SelectionKey.OP_WRITE) 更好
                     selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
-                    asynchronousSocketChannel.doWrite();
+                    while (asynchronousSocketChannel.doWrite()) ;
                 } else if (selectionKey.isAcceptable()) {
                     EnhanceAsynchronousServerSocketChannel serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) selectionKey.attachment();
                     serverSocketChannel.doAccept();

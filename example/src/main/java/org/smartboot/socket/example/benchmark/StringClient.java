@@ -29,7 +29,9 @@ public class StringClient {
 
             @Override
             public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-
+                if (throwable != null) {
+                    throwable.printStackTrace();
+                }
             }
         };
         processor.addPlugin(new MonitorPlugin<>(5));
@@ -38,7 +40,7 @@ public class StringClient {
             new Thread(() -> {
                 try {
                     new StringClient().test(asynchronousChannelGroup, bufferPagePool, processor);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     e.printStackTrace();
                 }
 

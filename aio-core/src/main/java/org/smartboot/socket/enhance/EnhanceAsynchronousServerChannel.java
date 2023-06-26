@@ -71,9 +71,11 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
     private Object writeAttachment;
     private SelectionKey readSelectionKey;
 
-    private int writeInvoker;
-
     private final boolean lowMemory;
+    /**
+     * 中断写操作
+     */
+    private boolean writeInterrupted;
 
     public EnhanceAsynchronousServerChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
         super(group.provider());
@@ -200,7 +202,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
         this.writeBuffer = writeBuffer;
         this.writeAttachment = attachment;
         this.writeCompletionHandler = (CompletionHandler<Number, Object>) handler;
-        doWrite();
+        while (doWrite()) ;
     }
 
     @Override
@@ -302,29 +304,32 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
         readBuffer = null;
     }
 
-    public final void doWrite() {
+    public final boolean doWrite() {
+        if (writeInterrupted) {
+            writeInterrupted = false;
+            return false;
+        }
         try {
-            int invoker = 0;
+//            int invoker = 0;
             //防止无限递归导致堆栈溢出
-            if (commonWorker.getWorkerThread() == Thread.currentThread()) {
-                invoker = ++commonWorker.invoker;
-            } else if (readWorker.getWorkerThread() != Thread.currentThread()) {
-                invoker = ++writeInvoker;
-            }
-            int writeSize = 0;
-            boolean hasRemain = true;
-            if (invoker < EnhanceAsynchronousChannelGroup.MAX_INVOKER) {
-                writeSize = channel.write(writeBuffer);
-                hasRemain = writeBuffer.hasRemaining();
-            } else {
-                writeInvoker = 0;
-            }
+//            if (commonWorker.getWorkerThread() == Thread.currentThread()) {
+//                invoker = ++commonWorker.invoker;
+//            } else if (readWorker.getWorkerThread() != Thread.currentThread()) {
+//                invoker = ++writeInvoker;
+//            }
+            int writeSize = channel.write(writeBuffer);
+            boolean hasRemain = writeBuffer.hasRemaining();
 
             if (writeSize != 0 || !hasRemain) {
                 CompletionHandler<Number, Object> completionHandler = writeCompletionHandler;
                 Object attach = writeAttachment;
                 resetWrite();
+                writeInterrupted = true;
                 completionHandler.completed(writeSize, attach);
+                if (!writeInterrupted) {
+                    return true;
+                }
+                writeInterrupted = false;
             } else {
                 SelectionKey commonSelectionKey = channel.keyFor(commonWorker.selector);
                 if (commonSelectionKey == null) {
@@ -351,6 +356,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
                 writeCompletionHandler.failed(e, writeAttachment);
             }
         }
+        return false;
     }
 
     private void resetWrite() {
