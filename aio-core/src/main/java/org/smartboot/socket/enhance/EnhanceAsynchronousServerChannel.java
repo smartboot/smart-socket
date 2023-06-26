@@ -318,9 +318,8 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
 //                invoker = ++writeInvoker;
 //            }
             int writeSize = channel.write(writeBuffer);
-            boolean hasRemain = writeBuffer.hasRemaining();
 
-            if (writeSize != 0 || !hasRemain) {
+            if (writeSize != 0 || !writeBuffer.hasRemaining()) {
                 CompletionHandler<Number, Object> completionHandler = writeCompletionHandler;
                 Object attach = writeAttachment;
                 resetWrite();
