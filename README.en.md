@@ -1,6 +1,6 @@
 ## smart-socket [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu) 
 
-[![](https://img.shields.io/badge/lang-Chinese-<green>.svg)](https://github.com/theTJCloudWalker/smart-socket/blob/add-english-readme/README.md)[![](https://img.shields.io/badge/lang-English-<green>.svg)](https://github.com/theTJCloudWalker/smart-socket/blob/add-english-readme/README.en.md)
+[![](https://img.shields.io/badge/lang-Chinese-<green>.svg)](https://github.com/theTJCloudWalker/smart-socket/blob/add-english-readme/README.md) [![](https://img.shields.io/badge/lang-English-<green>.svg)](https://github.com/theTJCloudWalker/smart-socket/blob/add-english-readme/README.en.md)
 
 **smart-socket** is an open source communication framework 100% self-developed by [smart-boot](https://smartboot.gitee.io/), by strengthening the implementation of AIO so that it has  better communication performance and stability beyond other major languages.
 
