@@ -25,13 +25,13 @@ With its simplicity, ease of use and high performance, smart-socket has been rec
 ![输入图片说明](image.png)
 
 ### 🎈List of plugins
-| Plugin | 用途 |
+| Plugin | Usage |
 |---|---|
 |BlackListPlugin|Blacklist plugin, smart-socket will refuse to establish a connection with the IP in the blacklist|
 |BufferPageMonitorPlugin|Memory pool monitoring plugin|
 |HeartPlugin|Heartbeat plugin|
-|MonitorPlugin|服务指标监控插件|
-|SocketOptionPlugin|Service Metrics Monitoring Plugin|
+|MonitorPlugin|Service Metrics Monitoring Plugin|
+|SocketOptionPlugin|Connection property configuration plugin|
 |SslPlugin|TLS/SSL encrypted communication plugin|
 |StreamMonitorPlugin|Transport layer communication stream monitoring plugin|
 
