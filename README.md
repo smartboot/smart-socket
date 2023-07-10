@@ -1,6 +1,6 @@
 ## smart-socket [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu) 
 
-[![](https://img.shields.io/badge/lang-Chinese-<green>.svg)](https://github.com/theTJCloudWalker/smart-socket/blob/add-english-readme/README.md)[![](https://img.shields.io/badge/lang-English-<green>.svg)]((https://github.com/theTJCloudWalker/smart-socket/blob/add-english-readme/README.en.md))
+[![](https://img.shields.io/badge/lang-Chinese-<green>.svg)](https://github.com/theTJCloudWalker/smart-socket/blob/add-english-readme/README.md)[![](https://img.shields.io/badge/lang-English-<green>.svg)](https://github.com/theTJCloudWalker/smart-socket/blob/add-english-readme/README.en.md)
 
 smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO 的实现使其有着超越各大语言的通信性能和稳定性。
 
