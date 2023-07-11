@@ -1,5 +1,7 @@
 ## smart-socket [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu) 
 
+[![](https://img.shields.io/badge/lang-Chinese-<green>.svg)](https://github.com/theTJCloudWalker/smart-socket/blob/add-english-readme/README.md) [![](https://img.shields.io/badge/lang-English-<green>.svg)](https://github.com/theTJCloudWalker/smart-socket/blob/add-english-readme/README.en.md)
+
 smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO 的实现使其有着超越各大语言的通信性能和稳定性。
 
 凭借自身极简、易用、高性能的特性，smart-socket 得到了诸多 [开发人员和企业](https://smartboot.gitee.io/smart-socket/users.html) 的认可和青睐。
@@ -11,7 +13,7 @@ smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO �
 2. 代码量极少，可读性强。核心代码不到 1500 行，工程结构、包层次清晰。
 3. 学习门槛低，二次开发只需实现 2 个接口（Protocol、MessageProcessor）,具备通信开发经验的几乎无学习成本。
 4. 良好的线程模型、内存模型设计，保障服务高效稳定的运行。
-5. 支持自定义插件，并已提供了丰富地插件，包括：SSL/TLS通信插件、心跳插件、断链重连插件、服务指标统计插件、黑名单插件、内存池监测插件。
+5. 支持自定义插件，并已提供了丰富的插件，包括：SSL/TLS通信插件、心跳插件、断链重连插件、服务指标统计插件、黑名单插件、内存池监测插件。
 
 ### 🍭推荐
 - 《[smart-socket 单机百万长连接实战教程](https://mp.weixin.qq.com/s/l_IBSBI6SAY4FmomwLFa-Q)》
