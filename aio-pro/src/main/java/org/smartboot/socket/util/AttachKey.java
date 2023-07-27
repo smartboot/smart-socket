@@ -31,30 +31,21 @@ public final class AttachKey<T> {
      */
     private static final AtomicInteger INDEX_BUILDER = new AtomicInteger(0);
     /**
-     * 附件名称
-     */
-    private final String key;
-    /**
      * 附件索引
      */
     private final int index;
 
-    private AttachKey(String key) {
-        this.key = key;
+    private AttachKey() {
         this.index = INDEX_BUILDER.getAndIncrement();
         if (this.index < 0 || this.index >= MAX_ATTACHE_COUNT) {
             throw new RuntimeException("too many attach key");
         }
     }
 
-    public static void reset() {
-        INDEX_BUILDER.set(0);
-    }
-
     public static <T> AttachKey<T> valueOf(String name) {
         AttachKey<T> option = NAMES.get(name);
         if (option == null) {
-            option = new AttachKey<T>(name);
+            option = new AttachKey<T>();
             AttachKey<T> old = NAMES.putIfAbsent(name, option);
             if (old != null) {
                 option = old;
@@ -63,12 +54,8 @@ public final class AttachKey<T> {
         return option;
     }
 
-    public String getKey() {
-        return key;
-    }
-
-
-    int getIndex() {
+    @Override
+    public int hashCode() {
         return index;
     }
 }
