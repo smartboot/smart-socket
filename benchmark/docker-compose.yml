@@ -19,7 +19,7 @@ services:
       options:
         max-size: "100m"
         max-file: "1"
-    command: -Xmx1000M -Xmn20M -Dport=8080 org.smartboot.socket.benchmark.Server &
+    command: -Dport=8080 org.smartboot.socket.benchmark.Server &
 
   client:
     depends_on:
@@ -40,4 +40,4 @@ services:
       options:
         max-size: "100m"
         max-file: "1"
-    command: -Xmx50M  -Dcount=50000 -Dhost=server -Dport=8080 org.smartboot.socket.benchmark.Clients
+    command:  -Dcount=50000 -Dhost=server -Dport=8080 org.smartboot.socket.benchmark.Clients
