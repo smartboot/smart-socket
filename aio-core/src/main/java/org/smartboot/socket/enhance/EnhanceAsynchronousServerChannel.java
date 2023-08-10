@@ -222,6 +222,9 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
 
     public final void doRead(boolean direct) {
         try {
+            if (readCompletionHandler == null) {
+                return;
+            }
             //此前通过Future调用,且触发了cancel
             if (readCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) readCompletionHandler).isDone()) {
                 EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
