@@ -1,3 +1,18 @@
+/*
+ * Copyright 2012 The Netty Project
+ *
+ * The Netty Project licenses this file to you under the Apache License,
+ * version 2.0 (the "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at:
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 package org.smartboot.socket.timer;
 
 import org.slf4j.Logger;
@@ -9,7 +24,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,14 +60,6 @@ public class HashedWheelTimer implements Timer {
 
     private volatile long startTime;
 
-    public HashedWheelTimer() {
-        this(Executors.defaultThreadFactory());
-    }
-
-    public HashedWheelTimer(long tickDuration, TimeUnit unit, int ticksPerWheel) {
-        this(Executors.defaultThreadFactory(), tickDuration, unit, ticksPerWheel);
-    }
-
     public HashedWheelTimer(ThreadFactory threadFactory) {
         this(threadFactory, 100, TimeUnit.MILLISECONDS);
     }
@@ -62,12 +68,8 @@ public class HashedWheelTimer implements Timer {
         this(threadFactory, tickDuration, unit, 512);
     }
 
-    public HashedWheelTimer(ThreadFactory threadFactory, long tickDuration, TimeUnit unit, int ticksPerWheel) {
-        this(threadFactory, tickDuration, unit, ticksPerWheel, -1);
-    }
 
-    public HashedWheelTimer(ThreadFactory threadFactory, long tickDuration, TimeUnit unit, int ticksPerWheel,
-                            long maxPendingTimeouts) {
+    public HashedWheelTimer(ThreadFactory threadFactory, long tickDuration, TimeUnit unit, int ticksPerWheel) {
 
         if (threadFactory == null) {
             throw new NullPointerException("threadFactory");
@@ -578,6 +580,4 @@ public class HashedWheelTimer implements Timer {
             return head;
         }
     }
-
-    public static final HashedWheelTimer TIMER = new HashedWheelTimer();
 }
