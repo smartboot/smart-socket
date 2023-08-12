@@ -71,14 +71,12 @@ public class HashedWheelTimer implements Timer, Runnable {
     }
 
     private static int normalizeTicksPerWheel(int ticksPerWheel) {
-        // Fixed calculation process to avoid multi-cycle inefficiency
         int n = ticksPerWheel - 1;
         n |= n >>> 1;
         n |= n >>> 2;
         n |= n >>> 4;
         n |= n >>> 8;
         n |= n >>> 16;
-        // Prevent spillage, 1073741824 = 2^30
         return (n < 0) ? 1 : (n >= 1073741824) ? 1073741824 : n + 1;
     }
 
@@ -100,9 +98,6 @@ public class HashedWheelTimer implements Timer, Runnable {
         return timeout;
     }
 
-    /**
-     * Returns the number of pending timeouts of this {@link Timer}.
-     */
     public long pendingTimeouts() {
         return pendingTimeouts.get();
     }
@@ -114,12 +109,11 @@ public class HashedWheelTimer implements Timer, Runnable {
         startTime = System.nanoTime();
         while (running) {
             final long deadline = waitForNextTick();
-            int idx = (int) (tick & mask);
             //移除已取消的任务
             processCancelledTasks();
             //将新任务分配至各分桶
             transferTimeoutsToBuckets();
-            wheel[idx].execute(deadline);
+            wheel[(int) (tick & mask)].execute(deadline);
             tick++;
         }
     }
@@ -309,8 +303,7 @@ public class HashedWheelTimer implements Timer, Runnable {
                     if (timeout.deadline <= deadline) {
                         timeout.execute();
                     } else {
-                        // The timeout was placed into a wrong slot. This should never happen.
-                        throw new IllegalStateException(String.format("timeout.deadline (%d) > deadline (%d)", timeout.deadline, deadline));
+                        throw new IllegalStateException();
                     }
                 } else if (timeout.isCancelled()) {
                     next = remove(timeout);
