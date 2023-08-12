@@ -4,7 +4,7 @@ public interface TimerTask {
     /**
      * 定时任务是否已执行
      */
-    boolean isExecuted();
+    boolean isDone();
 
     boolean isCancelled();
 

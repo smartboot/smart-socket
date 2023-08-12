@@ -235,7 +235,7 @@ public class HashedWheelTimer implements Timer, Runnable {
         }
 
         @Override
-        public boolean isExecuted() {
+        public boolean isDone() {
             return state() == ST_EXPIRED;
         }
 
