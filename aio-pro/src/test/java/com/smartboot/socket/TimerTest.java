@@ -13,7 +13,7 @@ public class TimerTest {
         int i = 5000000;
         CountDownLatch countDownLatch = new CountDownLatch(i);
         while (i-- > 0) {
-            timer.newTimeout(new Runnable() {
+            timer.schedule(new Runnable() {
                 @Override
                 public void run() {
                     countDownLatch.countDown();
