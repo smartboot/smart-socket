@@ -43,6 +43,8 @@ public class HashedWheelTimer implements Timer, Runnable {
 
     private boolean running = true;
 
+    public static final HashedWheelTimer DEFAULT_TIMER = new HashedWheelTimer(r -> new Thread(r, "defaultHashedWheelTimer"));
+
     public HashedWheelTimer(ThreadFactory threadFactory) {
         this(threadFactory, 100, 512);
     }
@@ -84,6 +86,19 @@ public class HashedWheelTimer implements Timer, Runnable {
     @Override
     public void shutdown() {
         running = false;
+    }
+
+    public TimerTask scheduleWithFixedDelay(Runnable runnable, long delay, TimeUnit unit) {
+        return schedule(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    runnable.run();
+                } finally {
+                    schedule(this, delay, unit);
+                }
+            }
+        }, delay, unit);
     }
 
     @Override

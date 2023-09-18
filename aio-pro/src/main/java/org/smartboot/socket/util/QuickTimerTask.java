@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
  * 服务器定时任务
  *
  * @author 三刀
+ * @deprecated
  */
 public abstract class QuickTimerTask implements Runnable {
     public static final ScheduledExecutorService SCHEDULED_EXECUTOR_SERVICE = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {

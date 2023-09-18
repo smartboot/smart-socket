@@ -12,8 +12,8 @@ package org.smartboot.socket.extension.plugins;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.timer.HashedWheelTimer;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.util.QuickTimerTask;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
@@ -75,7 +75,7 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
      */
     private long onlineCount;
 
-    private boolean udp;
+    private final boolean udp;
 
     public MonitorPlugin() {
         this(60);
@@ -88,8 +88,7 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
     public MonitorPlugin(int seconds, boolean udp) {
         this.seconds = seconds;
         this.udp = udp;
-        long mills = TimeUnit.SECONDS.toMillis(seconds);
-        QuickTimerTask.scheduleAtFixedRate(this, mills, mills);
+        HashedWheelTimer.DEFAULT_TIMER.scheduleWithFixedDelay(this, seconds, TimeUnit.SECONDS);
     }
 
 

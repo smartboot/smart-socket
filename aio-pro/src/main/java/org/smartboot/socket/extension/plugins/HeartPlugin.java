@@ -12,8 +12,8 @@ package org.smartboot.socket.extension.plugins;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.timer.HashedWheelTimer;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.util.QuickTimerTask;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -136,7 +136,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
             return;
         }
         LOGGER.debug("session:{}注册心跳任务,心跳间隔:{}", session, heartRate);
-        QuickTimerTask.SCHEDULED_EXECUTOR_SERVICE.schedule(new TimerTask() {
+        HashedWheelTimer.DEFAULT_TIMER.schedule(new TimerTask() {
             @Override
             public void run() {
                 if (session.isInvalid()) {

@@ -77,7 +77,7 @@ public class HeartPluginDemo {
                     byte[] content = ("content message -" + i).getBytes();
                     writeBuffer.writeInt(content.length);
                     writeBuffer.write(content);
-                }catch (IOException e){
+                } catch (IOException e) {
                     System.out.println("心跳检测超时----- ");
                     assert "writeBuffer has closed".equals(e.getMessage());
                 }

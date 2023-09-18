@@ -13,11 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.timer.HashedWheelTimer;
+import org.smartboot.socket.timer.TimerTask;
 import org.smartboot.socket.transport.AioQuickServer;
-import org.smartboot.socket.util.QuickTimerTask;
 
 import java.lang.reflect.Field;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,7 +35,7 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
 
     private AioQuickServer server;
 
-    private ScheduledFuture<?> future;
+    private TimerTask future;
 
     public BufferPageMonitorPlugin(AioQuickServer server, int seconds) {
         this.seconds = seconds;
@@ -44,8 +44,7 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
     }
 
     private void init() {
-        long mills = TimeUnit.SECONDS.toMillis(seconds);
-        future = QuickTimerTask.scheduleAtFixedRate(() -> {
+        future = HashedWheelTimer.DEFAULT_TIMER.scheduleWithFixedDelay(() -> {
             {
                 if (server == null) {
                     LOGGER.error("unKnow server or client need to monitor!");
@@ -73,12 +72,12 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
                     LOGGER.error("", e);
                 }
             }
-        }, mills, mills);
+        }, seconds, TimeUnit.SECONDS);
     }
 
     private void shutdown() {
         if (future != null) {
-            future.cancel(true);
+            future.cancel();
             future = null;
         }
     }
