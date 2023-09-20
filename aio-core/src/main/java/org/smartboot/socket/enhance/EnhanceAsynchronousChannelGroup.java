@@ -73,7 +73,12 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         for (int i = 0; i < threadNum; i++) {
             readWorkers[i] = new Worker(Selector.open(), selectionKey -> {
                 EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
-                asynchronousSocketChannel.doRead(true);
+                try {
+                    asynchronousSocketChannel.readInvoker = 0;
+                    asynchronousSocketChannel.doRead(true);
+                } finally {
+                    asynchronousSocketChannel.readInvoker = 0;
+                }
             });
             this.readExecutorService.execute(readWorkers[i]);
         }
@@ -92,7 +97,12 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     while (asynchronousSocketChannel.doWrite()) ;
                 } else if (selectionKey.isAcceptable()) {
                     EnhanceAsynchronousServerSocketChannel serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) selectionKey.attachment();
-                    serverSocketChannel.doAccept();
+                    try {
+                        serverSocketChannel.acceptInvoker = 0;
+                        serverSocketChannel.doAccept();
+                    } finally {
+                        serverSocketChannel.acceptInvoker = 0;
+                    }
                 } else if (selectionKey.isConnectable()) {
                     Runnable runnable = (Runnable) selectionKey.attachment();
                     runnable.run();
@@ -179,7 +189,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         final Selector selector;
         private final Consumer<SelectionKey> consumer;
         private final ConcurrentLinkedQueue<Consumer<Selector>> consumers = new ConcurrentLinkedQueue<>();
-        int invoker = 0;
         private Thread workerThread;
 
         Worker(Selector selector, Consumer<SelectionKey> consumer) {
@@ -215,7 +224,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
 
                     // 执行本次已触发待处理的事件
                     for (SelectionKey key : keySet) {
-                        invoker = 0;
                         consumer.accept(key);
                     }
                     keySet.clear();

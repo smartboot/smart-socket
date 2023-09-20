@@ -25,6 +25,8 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -50,6 +52,7 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0.0
  */
 public final class AioQuickClient {
+    private static final ScheduledExecutorService CONNECT_TIMEOUT_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
     /**
      * 网络连接的会话对象
      *
@@ -71,10 +74,6 @@ public final class AioQuickClient {
      */
     private SocketAddress localAddress;
 
-    /**
-     * 连接超时时间
-     */
-    private int connectTimeout;
     /**
      * 客户端服务配置。
      * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
@@ -189,7 +188,18 @@ public final class AioQuickClient {
      * @see AsynchronousSocketChannel#connect(SocketAddress)
      */
     public AioSession start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
+        return start(-1, asynchronousChannelGroup);
+    }
+
+    public AioSession start(int connectTimeout, AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
         CompletableFuture<AioSession> future = new CompletableFuture<>();
+        if (connectTimeout > 0) {
+            CONNECT_TIMEOUT_EXECUTOR.schedule(() -> {
+                if (!future.isDone() && !future.isCancelled()) {
+                    shutdownNow();
+                }
+            }, connectTimeout, TimeUnit.MILLISECONDS);
+        }
         start(asynchronousChannelGroup, future, new CompletionHandler<AioSession, CompletableFuture<AioSession>>() {
             @Override
             public void completed(AioSession session, CompletableFuture<AioSession> future) {
@@ -233,9 +243,13 @@ public final class AioQuickClient {
      * @throws IOException IOException
      * @see AioQuickClient#start(AsynchronousChannelGroup)
      */
-    public final AioSession start() throws IOException {
+    public AioSession start() throws IOException {
+        return start(-1);
+    }
+
+    public AioSession start(int connectTimeout) throws IOException {
         this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, Thread::new);
-        return start(asynchronousChannelGroup);
+        return start(connectTimeout, asynchronousChannelGroup);
     }
 
     /**
@@ -244,14 +258,14 @@ public final class AioQuickClient {
      * 调用该方法会触发AioSession的close方法，并且如果当前客户端若是通过执行{@link AioQuickClient#start()}方法构建的，同时会触发asynchronousChannelGroup的shutdown动作。
      * </p>
      */
-    public final void shutdown() {
+    public void shutdown() {
         shutdown0(false);
     }
 
     /**
      * 立即关闭客户端
      */
-    public final void shutdownNow() {
+    public void shutdownNow() {
         shutdown0(true);
     }
 
@@ -283,7 +297,7 @@ public final class AioQuickClient {
      * @param size 单位：byte
      * @return 当前AIOQuickClient对象
      */
-    public final AioQuickClient setReadBufferSize(int size) {
+    public AioQuickClient setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
         return this;
     }
@@ -304,7 +318,7 @@ public final class AioQuickClient {
      * @param <V>          泛型
      * @return 当前客户端实例
      */
-    public final <V> AioQuickClient setOption(SocketOption<V> socketOption, V value) {
+    public <V> AioQuickClient setOption(SocketOption<V> socketOption, V value) {
         config.setOption(socketOption, value);
         return this;
     }
@@ -316,7 +330,7 @@ public final class AioQuickClient {
      * @param port  若传0则由系统指定
      * @return 当前客户端实例
      */
-    public final AioQuickClient bindLocal(String local, int port) {
+    public AioQuickClient bindLocal(String local, int port) {
         localAddress = local == null ? new InetSocketAddress(port) : new InetSocketAddress(local, port);
         return this;
     }
@@ -330,7 +344,7 @@ public final class AioQuickClient {
      * @param bufferPool 内存池对象
      * @return 当前客户端实例
      */
-    public final AioQuickClient setBufferPagePool(BufferPagePool bufferPool) {
+    public AioQuickClient setBufferPagePool(BufferPagePool bufferPool) {
         this.bufferPool = bufferPool;
         this.config.setBufferFactory(BufferFactory.DISABLED_BUFFER_FACTORY);
         return this;
@@ -345,7 +359,7 @@ public final class AioQuickClient {
      * @param bufferFactory 内存池工厂
      * @return 当前客户端实例
      */
-    public final AioQuickClient setBufferFactory(BufferFactory bufferFactory) {
+    public AioQuickClient setBufferFactory(BufferFactory bufferFactory) {
         this.config.setBufferFactory(bufferFactory);
         this.bufferPool = null;
         return this;
@@ -358,24 +372,13 @@ public final class AioQuickClient {
      * @param bufferCapacity 内存块数量上限
      * @return 当前客户端实例
      */
-    public final AioQuickClient setWriteBuffer(int bufferSize, int bufferCapacity) {
+    public AioQuickClient setWriteBuffer(int bufferSize, int bufferCapacity) {
         config.setWriteBufferSize(bufferSize);
         config.setWriteBufferCapacity(bufferCapacity);
         return this;
     }
 
-    /**
-     * 客户端连接超时时间，单位:毫秒
-     *
-     * @param timeout 超时时间
-     * @return 当前客户端实例
-     */
-    public final AioQuickClient connectTimeout(int timeout) {
-        this.connectTimeout = timeout;
-        return this;
-    }
-
-    public final AioQuickClient setReadBufferFactory(VirtualBufferFactory readBufferFactory) {
+    public AioQuickClient setReadBufferFactory(VirtualBufferFactory readBufferFactory) {
         this.readBufferFactory = readBufferFactory;
         return this;
     }

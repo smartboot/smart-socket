@@ -12,7 +12,14 @@ package org.smartboot.socket.enhance;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
-import java.nio.channels.*;
+import java.nio.channels.AcceptPendingException;
+import java.nio.channels.AsynchronousServerSocketChannel;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.CompletionHandler;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -30,6 +37,8 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     private SelectionKey selectionKey;
     private boolean acceptPending;
     private final boolean lowMemory;
+
+    int acceptInvoker;
 
     EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup, boolean lowMemory) throws IOException {
         super(enhanceAsynchronousChannelGroup.provider());
@@ -81,10 +90,8 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                 EnhanceAsynchronousChannelGroup.removeOps(selectionKey, SelectionKey.OP_ACCEPT);
                 return;
             }
-            boolean directAccept = (acceptWorker.getWorkerThread() == Thread.currentThread()
-                    && acceptWorker.invoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER);
             SocketChannel socketChannel = null;
-            if (directAccept) {
+            if (acceptInvoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER) {
                 socketChannel = serverSocketChannel.accept();
             }
             if (socketChannel != null) {

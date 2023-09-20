@@ -77,6 +77,8 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
      */
     private boolean writeInterrupted;
 
+    int readInvoker;
+
     public EnhanceAsynchronousServerChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
         super(group.provider());
         this.channel = channel;
@@ -238,7 +240,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
                 completionHandler.completed(EnhanceAsynchronousChannelProvider.READABLE_SIGNAL, attach);
                 return;
             }
-            boolean directRead = direct || (Thread.currentThread() == readWorker.getWorkerThread() && readWorker.invoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER);
+            boolean directRead = direct || readInvoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER;
 
             long readSize = 0;
             boolean hasRemain = true;
@@ -254,7 +256,6 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
                     try {
                         channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousServerChannel.this);
                     } catch (ClosedChannelException e) {
-                        e.printStackTrace();
                         doRead(true);
                     }
                 });
