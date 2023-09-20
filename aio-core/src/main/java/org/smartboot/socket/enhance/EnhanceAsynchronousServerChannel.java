@@ -77,7 +77,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
      */
     private boolean writeInterrupted;
 
-    int readInvoker;
+    byte readInvoker;
 
     public EnhanceAsynchronousServerChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
         super(group.provider());
