@@ -177,7 +177,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         }
         selectionKey.interestOps(selectionKey.interestOps() | opt);
         //Worker线程无需wakeup
-        if (worker.getWorkerThread() != Thread.currentThread()) {
+        if (worker.workerThread != Thread.currentThread()) {
             selectionKey.selector().wakeup();
         }
     }
@@ -202,10 +202,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         final void addRegister(Consumer<Selector> register) {
             consumers.offer(register);
             selector.wakeup();
-        }
-
-        public final Thread getWorkerThread() {
-            return workerThread;
         }
 
         @Override
