@@ -1,8 +1,5 @@
 package org.smartboot.socket.timer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadFactory;
@@ -11,8 +8,6 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class HashedWheelTimer implements Timer, Runnable {
-
-    private static final Logger LOG = LoggerFactory.getLogger(HashedWheelTimer.class);
 
     /**
      * 指针波动频率
@@ -175,7 +170,7 @@ public class HashedWheelTimer implements Timer, Runnable {
 
             if (sleepTimeMs <= 0) {
                 if (currentTime <= 0) {
-                    LOG.warn("System.nanoTime() is overflow");
+                    System.out.println("System.nanoTime() is overflow");
                     return waitForNextTick();
                 } else {
                     return currentTime;
@@ -262,9 +257,7 @@ public class HashedWheelTimer implements Timer, Runnable {
             try {
                 runnable.run();
             } catch (Throwable t) {
-                if (LOG.isWarnEnabled()) {
-                    LOG.warn("An exception was thrown", t);
-                }
+                t.printStackTrace();
             }
         }
 
