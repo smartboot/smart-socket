@@ -75,6 +75,10 @@ public final class AioQuickClient {
     private SocketAddress localAddress;
 
     /**
+     * 连接超时时间
+     */
+    private int connectTimeout;
+    /**
      * 客户端服务配置。
      * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
      */
@@ -124,6 +128,14 @@ public final class AioQuickClient {
      */
     public <A> void start(AsynchronousChannelGroup asynchronousChannelGroup, A attachment, CompletionHandler<AioSession, ? super A> handler) throws IOException {
         AsynchronousSocketChannel socketChannel = AsynchronousSocketChannel.open(asynchronousChannelGroup);
+        if (connectTimeout > 0) {
+            CONNECT_TIMEOUT_EXECUTOR.schedule(() -> {
+                if (session == null) {
+                    System.out.println("connect timeout,close channel...");
+                    IOUtil.close(socketChannel);
+                }
+            }, connectTimeout, TimeUnit.MILLISECONDS);
+        }
         if (bufferPool == null) {
             bufferPool = config.getBufferFactory().create();
             this.innerBufferPool = bufferPool;
@@ -188,18 +200,7 @@ public final class AioQuickClient {
      * @see AsynchronousSocketChannel#connect(SocketAddress)
      */
     public AioSession start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
-        return start(-1, asynchronousChannelGroup);
-    }
-
-    public AioSession start(int connectTimeout, AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
         CompletableFuture<AioSession> future = new CompletableFuture<>();
-        if (connectTimeout > 0) {
-            CONNECT_TIMEOUT_EXECUTOR.schedule(() -> {
-                if (!future.isDone() && !future.isCancelled()) {
-                    shutdownNow();
-                }
-            }, connectTimeout, TimeUnit.MILLISECONDS);
-        }
         start(asynchronousChannelGroup, future, new CompletionHandler<AioSession, CompletableFuture<AioSession>>() {
             @Override
             public void completed(AioSession session, CompletableFuture<AioSession> future) {
@@ -216,15 +217,11 @@ public final class AioQuickClient {
             }
         });
         try {
-            if (connectTimeout > 0) {
-                return future.get(connectTimeout, TimeUnit.MILLISECONDS);
-            } else {
-                return future.get();
-            }
+            return future.get();
         } catch (Exception e) {
             future.cancel(false);
             shutdownNow();
-            throw new IOException(e);
+            throw new IOException(e.getCause() == null ? e : e.getCause());
         }
     }
 
@@ -244,12 +241,8 @@ public final class AioQuickClient {
      * @see AioQuickClient#start(AsynchronousChannelGroup)
      */
     public AioSession start() throws IOException {
-        return start(-1);
-    }
-
-    public AioSession start(int connectTimeout) throws IOException {
         this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, Thread::new);
-        return start(connectTimeout, asynchronousChannelGroup);
+        return start(asynchronousChannelGroup);
     }
 
     /**
@@ -378,7 +371,18 @@ public final class AioQuickClient {
         return this;
     }
 
-    public AioQuickClient setReadBufferFactory(VirtualBufferFactory readBufferFactory) {
+    /**
+     * 客户端连接超时时间，单位:毫秒
+     *
+     * @param timeout 超时时间
+     * @return 当前客户端实例
+     */
+    public AioQuickClient connectTimeout(int timeout) {
+        this.connectTimeout = timeout;
+        return this;
+    }
+
+    public final AioQuickClient setReadBufferFactory(VirtualBufferFactory readBufferFactory) {
         this.readBufferFactory = readBufferFactory;
         return this;
     }
