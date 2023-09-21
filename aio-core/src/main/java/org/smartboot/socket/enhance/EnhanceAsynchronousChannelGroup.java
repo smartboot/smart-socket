@@ -73,12 +73,8 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         for (int i = 0; i < threadNum; i++) {
             readWorkers[i] = new Worker(Selector.open(), selectionKey -> {
                 EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
-                try {
-                    asynchronousSocketChannel.readInvoker = 0;
-                    asynchronousSocketChannel.doRead(true);
-                } finally {
-                    asynchronousSocketChannel.readInvoker = 0;
-                }
+                asynchronousSocketChannel.readInvoker = 0;
+                asynchronousSocketChannel.doRead(true);
             });
             this.readExecutorService.execute(readWorkers[i]);
         }
@@ -97,12 +93,8 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     while (asynchronousSocketChannel.doWrite()) ;
                 } else if (selectionKey.isAcceptable()) {
                     EnhanceAsynchronousServerSocketChannel serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) selectionKey.attachment();
-                    try {
-                        serverSocketChannel.acceptInvoker = 0;
-                        serverSocketChannel.doAccept();
-                    } finally {
-                        serverSocketChannel.acceptInvoker = 0;
-                    }
+                    serverSocketChannel.acceptInvoker = 0;
+                    serverSocketChannel.doAccept();
                 } else if (selectionKey.isConnectable()) {
                     Runnable runnable = (Runnable) selectionKey.attachment();
                     runnable.run();
