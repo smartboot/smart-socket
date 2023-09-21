@@ -131,8 +131,8 @@ public final class AioQuickClient {
         if (connectTimeout > 0) {
             CONNECT_TIMEOUT_EXECUTOR.schedule(() -> {
                 if (session == null) {
-                    System.out.println("connect timeout,close channel...");
                     IOUtil.close(socketChannel);
+                    shutdownNow();
                 }
             }, connectTimeout, TimeUnit.MILLISECONDS);
         }
