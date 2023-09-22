@@ -38,7 +38,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     private boolean acceptPending;
     private final boolean lowMemory;
 
-    int acceptInvoker;
+    private int acceptInvoker;
 
     EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup, boolean lowMemory) throws IOException {
         super(enhanceAsynchronousChannelGroup.provider());
@@ -122,8 +122,9 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
             }
         } catch (IOException e) {
             this.acceptCompletionHandler.failed(e, attachment);
+        } finally {
+            acceptInvoker = 0;
         }
-
     }
 
     private void resetAccept() {

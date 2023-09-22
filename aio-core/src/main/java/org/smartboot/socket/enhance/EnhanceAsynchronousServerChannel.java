@@ -77,7 +77,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
      */
     private boolean writeInterrupted;
 
-    byte readInvoker;
+    private byte readInvoker;
 
     public EnhanceAsynchronousServerChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
         super(group.provider());
@@ -287,7 +287,6 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
             } else {
                 EnhanceAsynchronousChannelGroup.interestOps(readWorker, readSelectionKey, SelectionKey.OP_READ);
             }
-
         } catch (Throwable e) {
             if (readCompletionHandler == null) {
                 e.printStackTrace();
@@ -299,6 +298,8 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
             } else {
                 readCompletionHandler.failed(e, readAttachment);
             }
+        } finally {
+            readInvoker = 0;
         }
     }
 
