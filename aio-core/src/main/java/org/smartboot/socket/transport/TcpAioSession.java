@@ -345,7 +345,7 @@ final class TcpAioSession extends AioSession {
         readBuffer.compact();
         //读缓冲区已满
         if (!readBuffer.hasRemaining()) {
-            RuntimeException exception = new RuntimeException("readBuffer overflow");
+            DecoderException exception = new DecoderException("readBuffer overflow. The current TCP connection will be closed. Please fix your " + config.getProtocol().getClass().getSimpleName() + "#decode bug.");
             messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, exception);
             throw exception;
         }

@@ -242,7 +242,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
             }
             boolean directRead = direct || readInvoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER;
 
-            long readSize = 0;
+            int readSize = 0;
             boolean hasRemain = true;
             if (directRead) {
                 readSize = channel.read(readBuffer);
@@ -271,7 +271,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
                 CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
                 Object attach = readAttachment;
                 resetRead();
-                completionHandler.completed((int) readSize, attach);
+                completionHandler.completed(readSize, attach);
 
                 if (readCompletionHandler == null && readSelectionKey != null) {
                     EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);

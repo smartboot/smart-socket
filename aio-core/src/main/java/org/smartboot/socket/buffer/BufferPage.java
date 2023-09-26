@@ -87,9 +87,8 @@ public final class BufferPage {
         }
         VirtualBuffer virtualBuffer;
         Thread thread = Thread.currentThread();
-        if (thread instanceof FastBufferThread) {
-            FastBufferThread fastBufferThread = (FastBufferThread) thread;
-            virtualBuffer = fastBufferThread.getPageIndex() < poolPages.length ? poolPages[fastBufferThread.getPageIndex()].allocate0(size) : allocate0(size);
+        if (thread.getThreadGroup() == BufferPagePool.FAST_THREAD_GROUP && thread.hashCode() < poolPages.length) {
+            virtualBuffer = poolPages[thread.hashCode()].allocate0(size);
         } else {
             virtualBuffer = allocate0(size);
         }

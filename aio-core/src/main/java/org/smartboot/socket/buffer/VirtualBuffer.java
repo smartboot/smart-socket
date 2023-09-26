@@ -33,7 +33,7 @@ public final class VirtualBuffer {
     /**
      * 是否已回收
      */
-    private Semaphore clean = new Semaphore(1);
+    private final Semaphore clean = new Semaphore(1);
     /**
      * 当前虚拟buffer映射的实际buffer.position
      */

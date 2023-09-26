@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.util;
+package org.smartboot.socket.transport;
 
 /**
  * @author 三刀
@@ -16,9 +16,6 @@ package org.smartboot.socket.util;
 public class DecoderException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
-
-    public DecoderException() {
-    }
 
     public DecoderException(String message) {
         super(message);

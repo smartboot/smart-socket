@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class BufferPagePool {
 
+    static final ThreadGroup FAST_THREAD_GROUP = new ThreadGroup("fastGroup");
+
     /**
      * 守护线程在空闲时期回收内存资源
      */
@@ -64,9 +66,14 @@ public final class BufferPagePool {
      */
     public Thread newThread(Runnable target, String name) {
         assertEnabled();
-        FastBufferThread thread = new FastBufferThread(target, name);
-        thread.setPageIndex((int) (thread.getId() % bufferPages.length));
-        return thread;
+        return new Thread(FAST_THREAD_GROUP, target, name) {
+            final int hashCode = (int) (super.getId() % bufferPages.length);
+
+            @Override
+            public int hashCode() {
+                return hashCode;
+            }
+        };
     }
 
     /**
