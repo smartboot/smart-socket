@@ -135,6 +135,10 @@ public final class AioQuickServer {
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
         if (config.isBannerEnabled()) {
             System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + "::\t(" + IoServerConfig.VERSION + ") [port: " + config.getPort() + ", threadNum:" + config.getThreadNum() + "]");
+            System.out.println("Technical Support:");
+            System.out.println("  Document: http://smartboot.tech]");
+            System.out.println("  Gitee: https://gitee.com/smartboot/smart-socket");
+            System.out.println("  Github: https://github.com/smartboot/smart-socket");
         }
         try {
             if (bufferPool == null) {
