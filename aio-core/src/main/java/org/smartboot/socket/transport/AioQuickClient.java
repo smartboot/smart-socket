@@ -52,7 +52,11 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0.0
  */
 public final class AioQuickClient {
-    private static final ScheduledExecutorService CONNECT_TIMEOUT_EXECUTOR = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "connection-timeout-monitor"));
+    private static final ScheduledExecutorService CONNECT_TIMEOUT_EXECUTOR = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread thread = new Thread(r, "connection-timeout-monitor");
+        thread.setDaemon(true);
+        return thread;
+    });
     /**
      * 网络连接的会话对象
      *
