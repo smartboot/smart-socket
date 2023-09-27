@@ -11,7 +11,7 @@ package com.smartboot.socket.decoder;
 
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.transport.DecoderException;
+import org.smartboot.socket.DecoderException;
 
 import java.io.IOException;
 import java.io.InputStream;

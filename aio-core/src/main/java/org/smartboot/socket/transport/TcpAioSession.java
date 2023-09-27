@@ -16,6 +16,7 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
+import org.smartboot.socket.DecoderException;
 
 import java.io.IOException;
 import java.io.InputStream;

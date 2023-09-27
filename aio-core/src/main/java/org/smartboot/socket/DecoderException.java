@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.transport;
+package org.smartboot.socket;
 
 /**
  * @author 三刀
@@ -27,9 +27,5 @@ public class DecoderException extends RuntimeException {
 
     public DecoderException(Throwable cause) {
         super(cause);
-    }
-
-    public DecoderException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
     }
 }

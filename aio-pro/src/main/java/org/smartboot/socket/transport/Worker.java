@@ -4,6 +4,7 @@ import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
+import org.smartboot.socket.DecoderException;
 
 import java.io.IOException;
 import java.net.SocketAddress;
