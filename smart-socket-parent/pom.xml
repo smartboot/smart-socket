@@ -162,6 +162,7 @@
                     <aggregate>true</aggregate>
                     <show>public</show>
                     <additionalparam>-Xdoclint:none</additionalparam>
+                    <failOnError>false</failOnError>
                 </configuration>
                 <executions>
                     <execution>

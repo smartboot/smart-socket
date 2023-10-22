@@ -101,6 +101,8 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
                     removeOps(selectionKey, SelectionKey.OP_READ);
                     asynchronousSocketChannel.doRead(true);
+                } else {
+                    throw new IllegalStateException("unexpect callback,key valid:" + selectionKey.isValid() + " ,interestOps:" + selectionKey.interestOps());
                 }
             });
             commonExecutorService.execute(commonWorkers[i]);
@@ -108,8 +110,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
     }
 
     private ThreadPoolExecutor getSingleThreadExecutor(final String prefix) {
-        return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(), r -> new Thread(r, prefix));
+        return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), r -> new Thread(r, prefix));
     }
 
     /**
