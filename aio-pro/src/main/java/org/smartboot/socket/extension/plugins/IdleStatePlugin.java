@@ -21,7 +21,11 @@ import java.util.concurrent.TimeUnit;
 public class IdleStatePlugin<T> extends AbstractPlugin<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IdleStatePlugin.class);
 
-    private final HashedWheelTimer timer = new HashedWheelTimer(r -> new Thread(r, "idleMonitor"));
+    private static final HashedWheelTimer timer = new HashedWheelTimer(r -> {
+        Thread thread = new Thread(r, "idleStateMonitor");
+        thread.setDaemon(true);
+        return thread;
+    });
 
 
     private final int idleTimeout;

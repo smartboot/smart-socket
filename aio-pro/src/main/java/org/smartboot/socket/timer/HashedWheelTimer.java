@@ -38,7 +38,11 @@ public class HashedWheelTimer implements Timer, Runnable {
 
     private boolean running = true;
 
-    public static final HashedWheelTimer DEFAULT_TIMER = new HashedWheelTimer(r -> new Thread(r, "defaultHashedWheelTimer"));
+    public static final HashedWheelTimer DEFAULT_TIMER = new HashedWheelTimer(r -> {
+        Thread thread = new Thread(r, "defaultHashedWheelTimer");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     public HashedWheelTimer(ThreadFactory threadFactory) {
         this(threadFactory, 100, 512);
