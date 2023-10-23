@@ -66,8 +66,10 @@ public class IdleStatePlugin<T> extends AbstractPlugin<T> {
             this.task = timer.scheduleWithFixedDelay(() -> {
                 long currentTime = System.currentTimeMillis();
                 if ((currentTime - readTimestamp) > IdleStatePlugin.this.idleTimeout || (currentTime - writeTimestamp) > IdleStatePlugin.this.idleTimeout) {
-                    LOGGER.info("close session:{} by IdleStatePlugin", asynchronousSocketChannel);
                     try {
+                        if (asynchronousSocketChannel.isOpen() && LOGGER.isDebugEnabled()) {
+                            LOGGER.info("close session:{} by IdleStatePlugin", asynchronousSocketChannel.getRemoteAddress());
+                        }
                         close();
                     } catch (IOException e) {
                         LOGGER.debug("close exception", e);
