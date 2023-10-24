@@ -233,7 +233,20 @@ public final class AioQuickServer {
             e.printStackTrace();
         }
 
-        asynchronousChannelGroup.shutdown();
+        if (asynchronousChannelGroup != null) {
+            if (!asynchronousChannelGroup.isTerminated()) {
+                try {
+                    asynchronousChannelGroup.shutdownNow();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                asynchronousChannelGroup.awaitTermination(3, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         if (innerBufferPool != null) {
             innerBufferPool.release();
         }
