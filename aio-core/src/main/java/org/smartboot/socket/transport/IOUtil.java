@@ -10,16 +10,14 @@
 package org.smartboot.socket.transport;
 
 import java.io.IOException;
-import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.NotYetConnectedException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author 三刀
  * @version V1.0 , 2019/12/2
  */
-public final class IOUtil {
+final class IOUtil {
     /**
      * @param channel 需要被关闭的通道
      */
@@ -43,21 +41,4 @@ public final class IOUtil {
         }
     }
 
-    public static void shutdown(AsynchronousChannelGroup asynchronousChannelGroup) {
-        if (asynchronousChannelGroup == null) {
-            return;
-        }
-        if (!asynchronousChannelGroup.isTerminated()) {
-            try {
-                asynchronousChannelGroup.shutdownNow();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        try {
-            asynchronousChannelGroup.awaitTermination(3, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 }

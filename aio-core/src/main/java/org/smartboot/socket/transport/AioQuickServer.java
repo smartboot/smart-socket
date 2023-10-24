@@ -233,7 +233,7 @@ public final class AioQuickServer {
             e.printStackTrace();
         }
 
-        IOUtil.shutdown(asynchronousChannelGroup);
+        asynchronousChannelGroup.shutdown();
         if (innerBufferPool != null) {
             innerBufferPool.release();
         }
