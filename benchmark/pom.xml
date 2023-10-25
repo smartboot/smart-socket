@@ -18,7 +18,7 @@
         <dependency>
             <groupId>org.smartboot.socket</groupId>
             <artifactId>aio-pro</artifactId>
-            <version>1.5.35</version>
+            <version>1.5.36</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
