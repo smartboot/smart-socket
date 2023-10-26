@@ -14,6 +14,7 @@ import org.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousChannelGroup;
+import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -64,7 +65,9 @@ public class ServerShutdow {
 
             }).start();
         }
+        System.out.println("start sleep:" + new Date());
         Thread.sleep(10000);
+        System.out.println("end sleep:" + new Date());
         server.shutdown();
         Thread.sleep(Integer.MAX_VALUE);
     }
