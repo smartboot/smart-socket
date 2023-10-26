@@ -44,21 +44,21 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
     /**
      * write工作组
      */
-    private final Worker[] commonWorkers;
+    final Worker commonWorker;
     /**
      * read工作组
      */
     private final Worker[] readWorkers;
+    final Worker writeWorker;
     /**
      * 线程池分配索引
      */
     private final AtomicInteger readIndex = new AtomicInteger(0);
-    private final AtomicInteger commonIndex = new AtomicInteger(0);
 
     /**
      * group运行状态
      */
-    private boolean running = true;
+    boolean running = true;
 
     /**
      * Initialize a new instance of this class.
@@ -79,38 +79,34 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         }
 
         //init threadPool for write and connect
-        final int commonThreadNum = 1;
-        commonExecutorService = getSingleThreadExecutor("smart-socket:common");
-        this.commonWorkers = new Worker[commonThreadNum];
+        writeWorker = new Worker(Selector.open(), selectionKey -> {
+            EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
+            //直接调用interestOps的效果比 removeOps(selectionKey, SelectionKey.OP_WRITE) 更好
+            if (running) {
+                selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
+            }
+            while (asynchronousSocketChannel.doWrite()) ;
+        });
+        commonWorker = new Worker(Selector.open(), selectionKey -> {
+            if (selectionKey.isAcceptable()) {
+                EnhanceAsynchronousServerSocketChannel serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) selectionKey.attachment();
+                serverSocketChannel.doAccept();
+            } else if (selectionKey.isConnectable()) {
+                Runnable runnable = (Runnable) selectionKey.attachment();
+                runnable.run();
+            } else if (selectionKey.isReadable()) {
+                //仅同步read会用到此线程资源
+                EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
+                removeOps(selectionKey, SelectionKey.OP_READ);
+                asynchronousSocketChannel.doRead(true);
+            } else {
+                throw new IllegalStateException("unexpect callback,key valid:" + selectionKey.isValid() + " ,interestOps:" + selectionKey.interestOps());
+            }
+        });
 
-        for (int i = 0; i < commonThreadNum; i++) {
-            commonWorkers[i] = new Worker(Selector.open(), selectionKey -> {
-                if (selectionKey.isWritable()) {
-                    EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
-                    //直接调用interestOps的效果比 removeOps(selectionKey, SelectionKey.OP_WRITE) 更好
-                    selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
-                    while (asynchronousSocketChannel.doWrite()) ;
-                } else if (selectionKey.isAcceptable()) {
-                    EnhanceAsynchronousServerSocketChannel serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) selectionKey.attachment();
-                    serverSocketChannel.doAccept();
-                } else if (selectionKey.isConnectable()) {
-                    Runnable runnable = (Runnable) selectionKey.attachment();
-                    runnable.run();
-                } else if (selectionKey.isReadable()) {
-                    //仅同步read会用到此线程资源
-                    EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
-                    removeOps(selectionKey, SelectionKey.OP_READ);
-                    asynchronousSocketChannel.doRead(true);
-                } else {
-                    throw new IllegalStateException("unexpect callback,key valid:" + selectionKey.isValid() + " ,interestOps:" + selectionKey.interestOps());
-                }
-            });
-            commonExecutorService.execute(commonWorkers[i]);
-        }
-    }
-
-    private ThreadPoolExecutor getSingleThreadExecutor(final String prefix) {
-        return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), r -> new Thread(r, prefix));
+        commonExecutorService = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), r -> new Thread(r, "smart-socket:common"));
+        commonExecutorService.execute(writeWorker);
+        commonExecutorService.execute(commonWorker);
     }
 
     /**
@@ -129,10 +125,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         return readWorkers[(readIndex.getAndIncrement() & Integer.MAX_VALUE) % readWorkers.length];
     }
 
-    public Worker getCommonWorker() {
-        return commonWorkers[(commonIndex.getAndIncrement() & Integer.MAX_VALUE) % commonWorkers.length];
-    }
-
     @Override
     public boolean isShutdown() {
         return readExecutorService.isShutdown();
@@ -146,15 +138,18 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
     @Override
     public void shutdown() {
         running = false;
+        commonWorker.workerThread.interrupt();
+        writeWorker.workerThread.interrupt();
+        for (Worker worker : readWorkers) {
+            worker.workerThread.interrupt();
+        }
         readExecutorService.shutdown();
         commonExecutorService.shutdown();
     }
 
     @Override
     public void shutdownNow() {
-        running = false;
-        readExecutorService.shutdownNow();
-        commonExecutorService.shutdownNow();
+        shutdown();
     }
 
     @Override
@@ -215,6 +210,13 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     }
                     keySet.clear();
                 }
+                selector.keys().forEach(key -> {
+                    try {
+                        consumer.accept(key);
+                    } catch (Throwable throwable) {
+                        throwable.printStackTrace();
+                    }
+                });
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {

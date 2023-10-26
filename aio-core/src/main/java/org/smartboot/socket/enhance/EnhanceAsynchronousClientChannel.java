@@ -75,7 +75,7 @@ final class EnhanceAsynchronousClientChannel extends EnhanceAsynchronousServerCh
             if (connected) {
                 completionHandler.completed(null, attachment);
             } else {
-                commonWorker.addRegister(selector -> {
+                group.commonWorker.addRegister(selector -> {
                     try {
                         channel.register(selector, SelectionKey.OP_CONNECT, (Runnable) () -> doConnect(remote, attachment, completionHandler));
                     } catch (ClosedChannelException e) {

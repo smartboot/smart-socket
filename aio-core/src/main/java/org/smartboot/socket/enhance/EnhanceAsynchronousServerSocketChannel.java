@@ -30,7 +30,6 @@ import java.util.concurrent.Future;
 final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSocketChannel {
     private final ServerSocketChannel serverSocketChannel;
     private final EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup;
-    private final EnhanceAsynchronousChannelGroup.Worker acceptWorker;
     private CompletionHandler<AsynchronousSocketChannel, Object> acceptCompletionHandler;
     private FutureCompletionHandler<AsynchronousSocketChannel, Void> acceptFuture;
     private Object attachment;
@@ -45,7 +44,6 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
         this.enhanceAsynchronousChannelGroup = enhanceAsynchronousChannelGroup;
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.configureBlocking(false);
-        acceptWorker = enhanceAsynchronousChannelGroup.getCommonWorker();
         this.lowMemory = lowMemory;
     }
 
@@ -109,7 +107,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
             }
             //首次注册selector
             else if (selectionKey == null) {
-                acceptWorker.addRegister(selector -> {
+                enhanceAsynchronousChannelGroup.commonWorker.addRegister(selector -> {
                     try {
                         selectionKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, EnhanceAsynchronousServerSocketChannel.this);
 //                        selectionKey.attach(EnhanceAsynchronousServerSocketChannel.this);
@@ -118,7 +116,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                     }
                 });
             } else {
-                EnhanceAsynchronousChannelGroup.interestOps(acceptWorker, selectionKey, SelectionKey.OP_ACCEPT);
+                EnhanceAsynchronousChannelGroup.interestOps(enhanceAsynchronousChannelGroup.commonWorker, selectionKey, SelectionKey.OP_ACCEPT);
             }
         } catch (IOException e) {
             this.acceptCompletionHandler.failed(e, attachment);

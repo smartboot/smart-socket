@@ -30,7 +30,6 @@ import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -234,18 +233,7 @@ public final class AioQuickServer {
         }
 
         if (asynchronousChannelGroup != null) {
-            if (!asynchronousChannelGroup.isTerminated()) {
-                try {
-                    asynchronousChannelGroup.shutdownNow();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            try {
-                asynchronousChannelGroup.awaitTermination(3, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            asynchronousChannelGroup.shutdown();
         }
         if (innerBufferPool != null) {
             innerBufferPool.release();
