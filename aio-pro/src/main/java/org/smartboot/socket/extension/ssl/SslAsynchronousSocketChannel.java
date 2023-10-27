@@ -63,29 +63,18 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
     @Override
     public <A> void read(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
+        //处于握手阶段
         if (handshake) {
-            handshakeModel.setHandshakeCallback(() -> {
-                handshake = false;
-                synchronized (SslAsynchronousSocketChannel.this) {
-                    //释放内存
-                    handshakeModel.getAppWriteBuffer().clean();
-                    netReadBuffer.buffer().flip();
-                    netWriteBuffer.buffer().clear();
-                    appReadBuffer.buffer().clear().flip();
-                    SslAsynchronousSocketChannel.this.notifyAll();
-                }
-                if (handshakeModel.getException() != null) {
-                    handler.failed(handshakeModel.getException(), attachment);
-                } else {
-                    SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
-                }
-                handshakeModel = null;
-            });
-            //触发握手
-            sslService.doHandshake(handshakeModel);
+            doHandshake(dst, timeout, unit, attachment, handler);
             return;
         }
+
         ByteBuffer appBuffer = appReadBuffer.buffer();
+        //appBuffer还有残留数据，先腾空
+        if (appBuffer.hasRemaining()) {
+            handleAppBuffer(dst, attachment, handler, appBuffer);
+            return;
+        }
         //netBuffer还有残留，尝试解码
         ByteBuffer netBuffer = netReadBuffer.buffer();
         if (netBuffer.hasRemaining()) {
@@ -95,16 +84,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         }
         //appBuffer还有残留数据，先腾空
         if (appBuffer.hasRemaining()) {
-            int pos = dst.position();
-            if (appBuffer.remaining() > dst.remaining()) {
-                int limit = appBuffer.limit();
-                appBuffer.limit(appBuffer.position() + dst.remaining());
-                dst.put(appBuffer);
-                appBuffer.limit(limit);
-            } else {
-                dst.put(appBuffer);
-            }
-            handler.completed(dst.position() - pos, attachment);
+            handleAppBuffer(dst, attachment, handler, appBuffer);
             return;
         }
 
@@ -118,39 +98,39 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                     handler.completed(result, attachment);
                     return;
                 }
-                ByteBuffer netBuffer = netReadBuffer.buffer();
-                netBuffer.flip();
-                int pos = dst.position();
+
+                // 密文解包
                 ByteBuffer appBuffer = appReadBuffer.buffer();
-//                if (appBuffer.hasRemaining()) {
-//                    logger.error("error appReadBuffer:" + appBuffer);
-//                }
-                appBuffer.clear();
-                SSLEngineResult.Status status = doUnWrap(netBuffer, appBuffer);
-                appBuffer.flip();
-                //appBuffer较多
-                if (appBuffer.remaining() > dst.remaining()) {
-                    int limit = appBuffer.limit();
-                    appBuffer.limit(appBuffer.position() + dst.remaining());
-                    dst.put(appBuffer);
-                    appBuffer.limit(limit);
-                } else if (appBuffer.hasRemaining()) {
-                    dst.put(appBuffer);
-                } else if (result > 0) {//说明appBuffer.remaining==0
-                    if (index >= 16) {
-                        logger.error("maybe trigger bug here...");
-                    }
-                    if (status == SSLEngineResult.Status.OK && index < 16) {
-                        index++;
-                        completed(result, attachment);
-                    } else {
-                        netBuffer.compact();
-                        asynchronousSocketChannel.read(netBuffer, timeout, unit, attachment, this);
-                    }
+                if (appBuffer.hasRemaining()) {
+                    failed(new IOException("解包算法异常..."), attachment);
                     return;
                 }
-                index = 0;
-                handler.completed(dst.position() - pos, attachment);
+                appBuffer.clear();
+                ByteBuffer netBuffer = netReadBuffer.buffer();
+                netBuffer.flip();
+                SSLEngineResult.Status status = doUnWrap(netBuffer, appBuffer);
+                appBuffer.flip();
+
+                //说明解包成功
+                if (appBuffer.hasRemaining()) {
+                    if (status != SSLEngineResult.Status.OK) {
+                        throw new IllegalStateException();
+                    }
+                    index = 0;
+                    handleAppBuffer(dst, attachment, handler, appBuffer);
+                    return;
+                }
+                if (index >= 16) {
+                    logger.error("maybe trigger bug here...");
+                }
+                if (status == SSLEngineResult.Status.OK && index < 16) {
+                    logger.warn("Possible exception on appBuffer.");
+                    index++;
+                    completed(result, attachment);
+                } else {
+                    netBuffer.compact();
+                    asynchronousSocketChannel.read(netBuffer, timeout, unit, attachment, this);
+                }
             }
 
             @Override
@@ -161,6 +141,41 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
     }
 
+    private <A> void handleAppBuffer(ByteBuffer dst, A attachment, CompletionHandler<Integer, ? super A> handler, ByteBuffer appBuffer) {
+        int pos = dst.position();
+        if (appBuffer.remaining() > dst.remaining()) {
+            int limit = appBuffer.limit();
+            appBuffer.limit(appBuffer.position() + dst.remaining());
+            dst.put(appBuffer);
+            appBuffer.limit(limit);
+        } else {
+            dst.put(appBuffer);
+        }
+        handler.completed(dst.position() - pos, attachment);
+    }
+
+    private <A> void doHandshake(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
+        handshakeModel.setHandshakeCallback(() -> {
+            handshake = false;
+            synchronized (SslAsynchronousSocketChannel.this) {
+                //释放内存
+                handshakeModel.getAppWriteBuffer().clean();
+                netReadBuffer.buffer().flip();
+                netWriteBuffer.buffer().clear();
+                appReadBuffer.buffer().clear().flip();
+                SslAsynchronousSocketChannel.this.notifyAll();
+            }
+            if (handshakeModel.getException() != null) {
+                handler.failed(handshakeModel.getException(), attachment);
+            } else {
+                SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
+            }
+            handshakeModel = null;
+        });
+        //触发握手
+        sslService.doHandshake(handshakeModel);
+    }
+
     private SSLEngineResult.Status doUnWrap(ByteBuffer netBuffer, ByteBuffer appBuffer) {
         try {
             SSLEngineResult result = sslEngine.unwrap(netBuffer, appBuffer);
@@ -168,10 +183,10 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             while (!closed && result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
-                        logger.warn("BUFFER_OVERFLOW error");
+                        logger.warn("BUFFER_OVERFLOW error,net:{} app:{}", netBuffer, appBuffer);
                         break;
                     case BUFFER_UNDERFLOW:
-                        if (netBuffer.limit() == netBuffer.capacity()) {
+                        if (netBuffer.limit() == netBuffer.capacity() && !netBuffer.hasRemaining()) {
                             logger.error("BUFFER_UNDERFLOW error");
                         } else {
                             if (logger.isDebugEnabled()) {
