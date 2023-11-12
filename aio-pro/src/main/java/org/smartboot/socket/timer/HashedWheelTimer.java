@@ -57,7 +57,7 @@ public class HashedWheelTimer implements Timer, Runnable {
         // 创建长度为2^n大小的时间轮
         wheel = createWheel(ticksPerWheel);
         mask = wheel.length - 1;
-        this.tickDuration = TimeUnit.MILLISECONDS.toNanos(tickDuration);
+        this.tickDuration = tickDuration;
         Thread workerThread = threadFactory.newThread(this);
         workerThread.start();
     }
@@ -102,7 +102,7 @@ public class HashedWheelTimer implements Timer, Runnable {
 
     @Override
     public TimerTask schedule(Runnable runnable, long delay, TimeUnit unit) {
-        long deadline = System.nanoTime() + unit.toNanos(delay) - startTime;
+        long deadline = System.currentTimeMillis() + unit.toMillis(delay);
         if (deadline <= 0) {
             throw new IllegalArgumentException();
         }
@@ -120,14 +120,14 @@ public class HashedWheelTimer implements Timer, Runnable {
 
     @Override
     public void run() {
-        startTime = System.nanoTime();
+        startTime = System.currentTimeMillis();
         while (running) {
             final long deadline = waitForNextTick();
             //移除已取消的任务
             processCancelledTasks();
             //将新任务分配至各分桶
             transferTimeoutsToBuckets();
-            wheel[(int) (tick & mask)].execute(deadline);
+            wheel[(int) (tick & mask)].execute(deadline, tickDuration);
             tick++;
         }
     }
@@ -143,10 +143,8 @@ public class HashedWheelTimer implements Timer, Runnable {
                 continue;
             }
 
-            long calculated = timeout.deadline / tickDuration;
-            timeout.remainingRounds = (calculated - tick) / wheel.length;
-
-            final long ticks = Math.max(calculated, tick); // Ensure we don't schedule for past.
+            long calculated = (timeout.deadline - startTime) / tickDuration;
+            final long ticks = Math.max(calculated, tick);
             int stopIndex = (int) (ticks & mask);
 
             HashedWheelBucket bucket = wheel[stopIndex];
@@ -165,24 +163,17 @@ public class HashedWheelTimer implements Timer, Runnable {
     }
 
     private long waitForNextTick() {
-        long deadline = tickDuration * (tick + 1);
+        long deadline = startTime + tickDuration * (tick + 1);
 
         while (true) {
-            long currentTime = System.nanoTime() - startTime;
             //时间对齐
-            long sleepTimeMs = (deadline - currentTime + 999999) / 1000000;
-
-            if (sleepTimeMs <= 0) {
-                if (currentTime <= 0) {
-                    System.out.println("System.nanoTime() is overflow");
-                    return waitForNextTick();
-                } else {
-                    return currentTime;
-                }
+            long currentTime = System.currentTimeMillis();
+            if (deadline <= currentTime) {
+                return currentTime;
             }
 
             try {
-                Thread.sleep(sleepTimeMs);
+                Thread.sleep(deadline - currentTime);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -203,13 +194,10 @@ public class HashedWheelTimer implements Timer, Runnable {
 
         private volatile int state = ST_INIT;
 
-        // 剩余的轮训圈数
-        long remainingRounds;
+        private HashedWheelTimerTask next;
+        private HashedWheelTimerTask prev;
 
-        HashedWheelTimerTask next;
-        HashedWheelTimerTask prev;
-
-        HashedWheelBucket bucket;
+        private HashedWheelBucket bucket;
 
         HashedWheelTimerTask(HashedWheelTimer timer, Runnable runnable, long deadline) {
             this.timer = timer;
@@ -306,21 +294,15 @@ public class HashedWheelTimer implements Timer, Runnable {
             }
         }
 
-        public void execute(long deadline) {
+        public void execute(long deadline, long tickDuration) {
             HashedWheelTimerTask timeout = head;
             while (timeout != null) {
                 HashedWheelTimerTask next = timeout.next;
-                if (timeout.remainingRounds <= 0) {
+                if (timeout.deadline <= deadline || timeout.deadline < System.currentTimeMillis() + tickDuration) {
                     next = remove(timeout);
-                    if (timeout.deadline <= deadline) {
-                        timeout.execute();
-                    } else {
-                        throw new IllegalStateException();
-                    }
+                    timeout.execute();
                 } else if (timeout.isCancelled()) {
                     next = remove(timeout);
-                } else {
-                    timeout.remainingRounds--;
                 }
                 timeout = next;
             }
