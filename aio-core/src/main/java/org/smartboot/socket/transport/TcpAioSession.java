@@ -10,13 +10,13 @@
 package org.smartboot.socket.transport;
 
 
+import org.smartboot.socket.DecoderException;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
-import org.smartboot.socket.DecoderException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -255,24 +255,6 @@ final class TcpAioSession extends AioSession {
             config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
             byteBuf.flush();
         }
-    }
-
-    /**
-     * 获取当前Session的唯一标识
-     *
-     * @return sessionId
-     */
-    public String getSessionID() {
-        return "aioSession-" + hashCode();
-    }
-
-    /**
-     * 当前会话是否已失效
-     *
-     * @return 是否失效
-     */
-    public boolean isInvalid() {
-        return status != SESSION_STATUS_ENABLED;
     }
 
 
