@@ -93,7 +93,7 @@ public abstract class AioSession {
      *
      * @return sessionId
      */
-    public final String getSessionID() {
+    public String getSessionID() {
         return "aioSession-" + hashCode();
     }
 
@@ -102,7 +102,7 @@ public abstract class AioSession {
      *
      * @return 是否失效
      */
-    public final boolean isInvalid() {
+    public boolean isInvalid() {
         return status != SESSION_STATUS_ENABLED;
     }
 
