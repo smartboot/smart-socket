@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * @author 三刀（zhengjunweimail@163.com）
  * @version V1.0 , 2023/10/22
  */
-public class IdleStatePlugin<T> extends AbstractPlugin<T> {
+public final class IdleStatePlugin<T> extends AbstractPlugin<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IdleStatePlugin.class);
 
     private static final HashedWheelTimer timer = new HashedWheelTimer(r -> {
@@ -54,7 +54,7 @@ public class IdleStatePlugin<T> extends AbstractPlugin<T> {
         return new IdleMonitorChannel(channel);
     }
 
-    public class IdleMonitorChannel extends AsynchronousSocketChannelProxy {
+    class IdleMonitorChannel extends AsynchronousSocketChannelProxy {
         TimerTask task;
         long readTimestamp;
         long writeTimestamp;
@@ -71,7 +71,7 @@ public class IdleStatePlugin<T> extends AbstractPlugin<T> {
                 long currentTime = System.currentTimeMillis();
                 if ((currentTime - readTimestamp) > IdleStatePlugin.this.idleTimeout || (currentTime - writeTimestamp) > IdleStatePlugin.this.idleTimeout) {
                     try {
-                        if (asynchronousSocketChannel.isOpen() && LOGGER.isDebugEnabled()) {
+                        if (asynchronousSocketChannel.isOpen() && LOGGER.isInfoEnabled()) {
                             LOGGER.info("close session:{} by IdleStatePlugin", asynchronousSocketChannel.getRemoteAddress());
                         }
                         close();
