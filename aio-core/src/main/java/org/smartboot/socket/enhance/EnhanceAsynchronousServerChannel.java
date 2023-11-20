@@ -94,6 +94,9 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
         } catch (IOException e) {
             exception = e;
         }
+        if (readCompletionHandler != null) {
+            doRead(true);
+        }
         if (readSelectionKey != null) {
             readSelectionKey.cancel();
             readSelectionKey = null;
@@ -300,7 +303,10 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
                     ioException.printStackTrace();
                 }
             } else {
-                readCompletionHandler.failed(e, readAttachment);
+                CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
+                Object attach = readAttachment;
+                resetRead();
+                completionHandler.failed(e, attach);
             }
         } finally {
             readInvoker = 0;

@@ -72,7 +72,7 @@ public final class IdleStatePlugin<T> extends AbstractPlugin<T> {
                 if ((currentTime - readTimestamp) > IdleStatePlugin.this.idleTimeout || (currentTime - writeTimestamp) > IdleStatePlugin.this.idleTimeout) {
                     try {
                         if (asynchronousSocketChannel.isOpen() && LOGGER.isDebugEnabled()) {
-                            LOGGER.info("close session:{} by IdleStatePlugin", asynchronousSocketChannel.getRemoteAddress());
+                            LOGGER.debug("close session:{} by IdleStatePlugin", asynchronousSocketChannel.getRemoteAddress());
                         }
                         close();
                     } catch (IOException e) {
