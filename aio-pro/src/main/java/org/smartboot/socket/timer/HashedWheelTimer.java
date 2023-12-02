@@ -97,13 +97,15 @@ public class HashedWheelTimer implements Timer, Runnable {
             try {
                 runnable.run();
             } finally {
-                timeout.deadline = System.currentTimeMillis() + unit.toMillis(delay);
-                timeout.bucket = null;
-                timeout.next = null;
-                timeout.prev = null;
-                timeout.state = HashedWheelTimerTask.ST_INIT;
-                pendingTimeouts.incrementAndGet();
-                newTimeouts.add(timeout);
+                if (!timeout.isCancelled()) {
+                    timeout.deadline = System.currentTimeMillis() + unit.toMillis(delay);
+                    timeout.bucket = null;
+                    timeout.next = null;
+                    timeout.prev = null;
+                    timeout.state = HashedWheelTimerTask.ST_INIT;
+                    pendingTimeouts.incrementAndGet();
+                    newTimeouts.add(timeout);
+                }
             }
         };
         pendingTimeouts.incrementAndGet();
@@ -217,12 +219,9 @@ public class HashedWheelTimer implements Timer, Runnable {
         }
 
         @Override
-        public boolean cancel() {
-            if (!compareAndSetState(ST_INIT, ST_CANCELLED)) {
-                return false;
-            }
+        public void cancel() {
+            state = ST_CANCELLED;
             timer.cancelledTimeouts.add(this);
-            return true;
         }
 
         void remove() {

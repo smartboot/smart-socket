@@ -11,5 +11,5 @@ public interface TimerTask {
     /**
      * 取消定时器
      */
-    boolean cancel();
+    void cancel();
 }
