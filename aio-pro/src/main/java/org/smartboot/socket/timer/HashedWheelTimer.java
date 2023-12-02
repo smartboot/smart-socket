@@ -98,6 +98,10 @@ public class HashedWheelTimer implements Timer, Runnable {
                 runnable.run();
             } finally {
                 timeout.deadline = System.currentTimeMillis() + unit.toMillis(delay);
+                timeout.bucket = null;
+                timeout.next = null;
+                timeout.prev = null;
+                timeout.state = HashedWheelTimerTask.ST_INIT;
                 pendingTimeouts.incrementAndGet();
                 newTimeouts.add(timeout);
             }
