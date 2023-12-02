@@ -88,16 +88,25 @@ public class HashedWheelTimer implements Timer, Runnable {
     }
 
     public TimerTask scheduleWithFixedDelay(Runnable runnable, long delay, TimeUnit unit) {
-        return schedule(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    runnable.run();
-                } finally {
-                    schedule(this, delay, unit);
-                }
+        long deadline = System.currentTimeMillis() + unit.toMillis(delay);
+        if (deadline <= 0) {
+            throw new IllegalArgumentException();
+        }
+        HashedWheelTimerTask timeout = new HashedWheelTimerTask(this, () -> {
+
+        }, deadline);
+        timeout.runnable = () -> {
+            try {
+                runnable.run();
+            } finally {
+                timeout.deadline = System.currentTimeMillis() + unit.toMillis(delay);
+                pendingTimeouts.incrementAndGet();
+                newTimeouts.add(timeout);
             }
-        }, delay, unit);
+        };
+        pendingTimeouts.incrementAndGet();
+        newTimeouts.add(timeout);
+        return timeout;
     }
 
     @Override
@@ -106,8 +115,8 @@ public class HashedWheelTimer implements Timer, Runnable {
         if (deadline <= 0) {
             throw new IllegalArgumentException();
         }
-        pendingTimeouts.incrementAndGet();
         HashedWheelTimerTask timeout = new HashedWheelTimerTask(this, runnable, deadline);
+        pendingTimeouts.incrementAndGet();
         newTimeouts.add(timeout);
         return timeout;
     }
@@ -188,9 +197,9 @@ public class HashedWheelTimer implements Timer, Runnable {
         private static final AtomicIntegerFieldUpdater<HashedWheelTimerTask> STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(HashedWheelTimerTask.class, "state");
 
         private final HashedWheelTimer timer;
-        private final Runnable runnable;
+        private Runnable runnable;
 
-        private final long deadline;
+        private long deadline;
 
         private volatile int state = ST_INIT;
 
