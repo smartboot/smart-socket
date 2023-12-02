@@ -92,9 +92,7 @@ public class HashedWheelTimer implements Timer, Runnable {
         if (deadline <= 0) {
             throw new IllegalArgumentException();
         }
-        HashedWheelTimerTask timeout = new HashedWheelTimerTask(this, () -> {
-
-        }, deadline);
+        HashedWheelTimerTask timeout = new HashedWheelTimerTask(this, runnable, deadline);
         timeout.runnable = () -> {
             try {
                 runnable.run();
