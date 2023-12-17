@@ -24,9 +24,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -119,11 +117,6 @@ final class TcpAioSession extends AioSession {
      * 输出流
      */
     private final WriteBuffer byteBuf;
-    /**
-     * 输出信号量,防止并发write导致异常
-     */
-    private final Semaphore semaphore = new Semaphore(1);
-
 
     /**
      * 读缓冲。
@@ -150,18 +143,7 @@ final class TcpAioSession extends AioSession {
         this.config = config;
         this.bufferPage = bufferPage;
         this.function = function;
-        Consumer<WriteBuffer> flushConsumer = var -> {
-            if (!semaphore.tryAcquire()) {
-                return;
-            }
-            TcpAioSession.this.writeBuffer = var.poll();
-            if (writeBuffer == null) {
-                semaphore.release();
-            } else {
-                continueWrite(writeBuffer);
-            }
-        };
-        byteBuf = new WriteBuffer(bufferPage, flushConsumer, config.getWriteBufferSize(), config.getWriteBufferCapacity());
+        byteBuf = new WriteBuffer(bufferPage, this::continueWrite, config.getWriteBufferSize(), config.getWriteBufferCapacity());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         doRead();
@@ -184,6 +166,7 @@ final class TcpAioSession extends AioSession {
         if (monitor != null) {
             monitor.afterWrite(this, result);
         }
+        VirtualBuffer writeBuffer = TcpAioSession.this.writeBuffer;
         if (writeBuffer == null) {
             writeBuffer = byteBuf.poll();
         } else if (!writeBuffer.buffer().hasRemaining()) {
@@ -195,7 +178,7 @@ final class TcpAioSession extends AioSession {
             continueWrite(writeBuffer);
             return;
         }
-        semaphore.release();
+        byteBuf.finishWrite();
         //此时可能是Closing或Closed状态
         if (status != SESSION_STATUS_ENABLED) {
             close();
@@ -366,6 +349,7 @@ final class TcpAioSession extends AioSession {
      * @param writeBuffer 存放待输出数据的buffer
      */
     private void continueWrite(VirtualBuffer writeBuffer) {
+        this.writeBuffer = writeBuffer;
         NetMonitor monitor = config.getMonitor();
         if (monitor != null) {
             monitor.beforeWrite(this);

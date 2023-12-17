@@ -15,6 +15,7 @@ import org.smartboot.socket.buffer.VirtualBuffer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
 /**
@@ -37,7 +38,7 @@ public final class WriteBuffer extends OutputStream {
     /**
      * 缓冲区数据刷新Function
      */
-    private final Consumer<WriteBuffer> consumer;
+    private final Consumer<VirtualBuffer> writeConsumer;
     /**
      * 默认内存块大小
      */
@@ -67,9 +68,14 @@ public final class WriteBuffer extends OutputStream {
      */
     private byte[] cacheByte;
 
-    WriteBuffer(BufferPage bufferPage, Consumer<WriteBuffer> consumer, int chunkSize, int capacity) {
+    /**
+     * 输出信号量,防止并发write导致异常
+     */
+    private final Semaphore semaphore = new Semaphore(1);
+
+    WriteBuffer(BufferPage bufferPage, Consumer<VirtualBuffer> writeConsumer, int chunkSize, int capacity) {
         this.bufferPage = bufferPage;
-        this.consumer = consumer;
+        this.writeConsumer = writeConsumer;
         this.items = new VirtualBuffer[capacity];
         this.chunkSize = chunkSize;
     }
@@ -116,7 +122,10 @@ public final class WriteBuffer extends OutputStream {
         if (!forceFlush && writeInBuf.buffer().hasRemaining()) {
             return;
         }
-        consumer.accept(this);
+        if (semaphore.tryAcquire()) {
+            writeConsumer.accept(poll());
+        }
+
         if (writeInBuf == null || writeInBuf.buffer().position() == 0) {
             return;
         }
@@ -235,8 +244,13 @@ public final class WriteBuffer extends OutputStream {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
-        if (this.count > 0 || (writeInBuf != null && writeInBuf.buffer().position() > 0)) {
-            consumer.accept(this);
+        if (semaphore.tryAcquire()) {
+            VirtualBuffer virtualBuffer = poll();
+            if (virtualBuffer == null) {
+                semaphore.release();
+            } else {
+                writeConsumer.accept(virtualBuffer);
+            }
         }
     }
 
@@ -265,6 +279,10 @@ public final class WriteBuffer extends OutputStream {
      */
     boolean isEmpty() {
         return count == 0 && (writeInBuf == null || writeInBuf.buffer().position() == 0);
+    }
+
+    void finishWrite() {
+        semaphore.release();
     }
 
     private VirtualBuffer pollItem() {
