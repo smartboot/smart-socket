@@ -72,11 +72,13 @@ public final class UdpChannel {
         }
         //已经持有write信号量，每个session在responseTasks中只会存一个带输出buffer
         responseTasks.offer(new ResponseUnit(session, virtualBuffer));
-        if (selectionKey == null) {
-            worker.addRegister(selector -> selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE));
-        } else {
-            if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) == 0) {
-                selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
+        synchronized (this) {
+            if (selectionKey == null) {
+                worker.addRegister(selector -> selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE));
+            } else {
+                if ((selectionKey.interestOps() & SelectionKey.OP_WRITE) == 0) {
+                    selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
+                }
             }
         }
     }

@@ -21,6 +21,8 @@ import org.smartboot.socket.transport.WriteBuffer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author 三刀
@@ -28,6 +30,7 @@ import java.net.SocketAddress;
  */
 public class UdpClient {
     public static void main(String[] args) throws IOException, InterruptedException {
+        AtomicInteger atomicInteger = new AtomicInteger(0);
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
             public void process0(AioSession channel, String msg) {
@@ -35,6 +38,7 @@ public class UdpClient {
                     InetSocketAddress remoteAddress = channel.getRemoteAddress();
                     if (remoteAddress.getPort() == 9999) {
                         System.out.println(channel + " receive response:" + msg);
+                        atomicInteger.decrementAndGet();
                     } else {
                         System.out.println("server receive request:" + msg);
                         WriteBuffer buffer = channel.writeBuffer();
@@ -64,13 +68,14 @@ public class UdpClient {
 
         //客户端
         int i = 10;
+        CountDownLatch latch = new CountDownLatch(i);
         final SocketAddress remote = new InetSocketAddress("localhost", 9999);
         while (i-- > 0) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        int count = 10;
+                        int count = 100;
                         UdpChannel channel = bootstrap.open();
                         AioSession aioSession = channel.connect(remote);
                         WriteBuffer writeBuffer = aioSession.writeBuffer();
@@ -80,8 +85,10 @@ public class UdpClient {
                             writeBuffer.writeInt(msg.length);
                             writeBuffer.write(msg);
                             writeBuffer.flush();
+                            atomicInteger.incrementAndGet();
                         }
                         System.out.println("发送完毕");
+                        latch.countDown();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -89,7 +96,9 @@ public class UdpClient {
             }).start();
 
         }
+        latch.await();
         Thread.sleep(1000);
+        System.out.println(atomicInteger.get());
         bootstrap.shutdown();
     }
 }
