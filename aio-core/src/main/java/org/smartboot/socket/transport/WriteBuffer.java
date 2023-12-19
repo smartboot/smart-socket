@@ -124,11 +124,11 @@ public final class WriteBuffer extends OutputStream {
         }
         if (semaphore.tryAcquire()) {
             writeConsumer.accept(poll());
+            if (writeInBuf == null || writeInBuf.buffer().position() == 0) {
+                return;
+            }
         }
 
-        if (writeInBuf == null || writeInBuf.buffer().position() == 0) {
-            return;
-        }
         writeInBuf.buffer().flip();
         VirtualBuffer virtualBuffer = writeInBuf;
         writeInBuf = null;
