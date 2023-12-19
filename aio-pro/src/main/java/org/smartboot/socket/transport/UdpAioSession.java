@@ -11,13 +11,11 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
-import org.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.function.Consumer;
 
 /**
  * @author 三刀
@@ -34,11 +32,7 @@ final class UdpAioSession extends AioSession {
     UdpAioSession(final UdpChannel udpChannel, final SocketAddress remote, BufferPage bufferPage) {
         this.udpChannel = udpChannel;
         this.remote = remote;
-        Consumer<VirtualBuffer> consumer = var -> {
-            udpChannel.write(var, UdpAioSession.this);
-            UdpAioSession.this.byteBuf.finishWrite();
-        };
-        this.byteBuf = new WriteBuffer(bufferPage, consumer, udpChannel.config.getWriteBufferSize(), 1);
+        this.byteBuf = new WriteBuffer(bufferPage, buffer -> udpChannel.write(buffer, UdpAioSession.this), udpChannel.config.getWriteBufferSize(), 1);
         udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
 

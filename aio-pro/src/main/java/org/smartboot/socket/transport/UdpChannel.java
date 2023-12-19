@@ -17,13 +17,11 @@ import org.smartboot.socket.buffer.VirtualBuffer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Semaphore;
 
 /**
  * 封装UDP底层真实渠道对象,并提供通信及会话管理
@@ -39,7 +37,6 @@ public final class UdpChannel {
      * 待输出消息
      */
     private ConcurrentLinkedQueue<ResponseUnit> responseTasks;
-    private final Semaphore writeSemaphore = new Semaphore(1);
     private Worker worker;
     final IoServerConfig config;
     /**
@@ -70,12 +67,10 @@ public final class UdpChannel {
     }
 
     void write(VirtualBuffer virtualBuffer, UdpAioSession session) {
-        if (writeSemaphore.tryAcquire() && responseTasks.isEmpty() && send(virtualBuffer.buffer(), session) > 0) {
-            virtualBuffer.clean();
-            writeSemaphore.release();
-            session.writeBuffer().flush();
+        if (send(virtualBuffer, session)) {
             return;
         }
+        //已经持有write信号量，每个session在responseTasks中只会存一个带输出buffer
         responseTasks.offer(new ResponseUnit(session, virtualBuffer));
         if (selectionKey == null) {
             worker.addRegister(selector -> selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE));
@@ -96,7 +91,6 @@ public final class UdpChannel {
                 failResponseUnit = null;
             }
             if (responseUnit == null) {
-                writeSemaphore.release();
                 if (responseTasks.isEmpty()) {
                     selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
                     if (!responseTasks.isEmpty()) {
@@ -105,10 +99,7 @@ public final class UdpChannel {
                 }
                 return;
             }
-            if (send(responseUnit.response.buffer(), responseUnit.session) > 0) {
-                responseUnit.response.clean();
-                responseUnit.session.writeBuffer().flush();
-            } else {
+            if (!send(responseUnit.response, responseUnit.session)) {
                 failResponseUnit = responseUnit;
                 LOGGER.warn("send fail,will retry...");
                 break;
@@ -116,20 +107,26 @@ public final class UdpChannel {
         }
     }
 
-    private int send(ByteBuffer byteBuffer, UdpAioSession session) {
+    private boolean send(VirtualBuffer virtualBuffer, UdpAioSession session) {
         if (config.getMonitor() != null) {
             config.getMonitor().beforeWrite(session);
         }
         int size = 0;
         try {
-            size = channel.send(byteBuffer, session.getRemoteAddress());
+            size = channel.send(virtualBuffer.buffer(), session.getRemoteAddress());
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+        if (size == 0) {
+            return false;
         }
         if (config.getMonitor() != null) {
             config.getMonitor().afterWrite(session, size);
         }
-        return size;
+        virtualBuffer.clean();
+        session.writeBuffer().finishWrite();
+        session.writeBuffer().flush();
+        return true;
     }
 
     /**
