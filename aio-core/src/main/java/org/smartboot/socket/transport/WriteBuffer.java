@@ -122,16 +122,15 @@ public final class WriteBuffer extends OutputStream {
         if (!forceFlush && writeInBuf.buffer().hasRemaining()) {
             return;
         }
-        if (semaphore.tryAcquire()) {
-            writeConsumer.accept(poll());
-            if (writeInBuf == null || writeInBuf.buffer().position() == 0) {
-                return;
-            }
-        }
-
         writeInBuf.buffer().flip();
         VirtualBuffer virtualBuffer = writeInBuf;
         writeInBuf = null;
+        if (count == 0 && semaphore.tryAcquire()) {
+            writeConsumer.accept(virtualBuffer);
+            return;
+        }
+
+
         try {
             while (count == items.length) {
                 this.wait();
@@ -149,6 +148,8 @@ public final class WriteBuffer extends OutputStream {
             count++;
         } catch (InterruptedException e1) {
             throw new RuntimeException(e1);
+        } finally {
+            flush();
         }
     }
 
