@@ -17,7 +17,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -28,10 +27,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * @version V1.0 , 2018/10/31
  */
 public final class BufferPage {
-    /**
-     * 同组内存池中的各内存页
-     */
-    private final BufferPage[] poolPages;
     /**
      * 条件锁
      */
@@ -57,8 +52,7 @@ public final class BufferPage {
      * @param size   缓存页大小
      * @param direct 是否使用堆外内存
      */
-    BufferPage(BufferPage[] poolPages, int size, boolean direct) {
-        this.poolPages = Objects.requireNonNull(poolPages);
+    BufferPage(int size, boolean direct) {
         availableBuffers = new LinkedList<>();
         this.buffer = allocate0(size, direct);
         availableBuffers.add(new VirtualBuffer(this, null, buffer.position(), buffer.limit()));
@@ -85,13 +79,7 @@ public final class BufferPage {
         if (size == 0) {
             throw new UnsupportedOperationException("cannot allocate zero bytes");
         }
-        VirtualBuffer virtualBuffer;
-        Thread thread = Thread.currentThread();
-        if (thread.getThreadGroup() == BufferPagePool.FAST_THREAD_GROUP && thread.hashCode() < poolPages.length) {
-            virtualBuffer = poolPages[thread.hashCode()].allocate0(size);
-        } else {
-            virtualBuffer = allocate0(size);
-        }
+        VirtualBuffer virtualBuffer = allocate0(size);
         return virtualBuffer == null ? new VirtualBuffer(null, allocate0(size, false), 0, 0) : virtualBuffer;
     }
 

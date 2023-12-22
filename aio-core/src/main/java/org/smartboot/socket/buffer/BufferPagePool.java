@@ -22,8 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class BufferPagePool {
 
-    static final ThreadGroup FAST_THREAD_GROUP = new ThreadGroup("fastGroup");
-
     /**
      * 守护线程在空闲时期回收内存资源
      */
@@ -50,31 +48,13 @@ public final class BufferPagePool {
     public BufferPagePool(final int pageSize, final int pageNum, final boolean isDirect) {
         bufferPages = new BufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
-            bufferPages[i] = new BufferPage(bufferPages, pageSize, isDirect);
+            bufferPages[i] = new BufferPage(pageSize, isDirect);
         }
         if (pageNum == 0 || pageSize == 0) {
             future.cancel(false);
         }
     }
 
-    /**
-     * 申请FastBufferThread的线程对象,配合线程池申请会有更好的性能表现
-     *
-     * @param target Runnable
-     * @param name   线程名
-     * @return FastBufferThread线程对象
-     */
-    public Thread newThread(Runnable target, String name) {
-        assertEnabled();
-        return new Thread(FAST_THREAD_GROUP, target, name) {
-            final int hashCode = (int) (super.getId() % bufferPages.length);
-
-            @Override
-            public int hashCode() {
-                return hashCode;
-            }
-        };
-    }
 
     /**
      * 申请内存页
