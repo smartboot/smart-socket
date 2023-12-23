@@ -29,7 +29,6 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 
 /**
@@ -72,7 +71,7 @@ public final class AioQuickServer {
      * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
      */
     private final IoServerConfig config = new IoServerConfig();
-
+    private static long threadSeqNumber;
     /**
      * 内存池
      */
@@ -115,14 +114,7 @@ public final class AioQuickServer {
             this.bufferPool = config.getBufferFactory().create();
             this.innerBufferPool = bufferPool;
         }
-        asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(config.getThreadNum(), new ThreadFactory() {
-            private byte index = 0;
-
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "smart-socket:Thread-" + (++index));
-            }
-        });
+        asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(config.getThreadNum(), r -> new Thread(r, "smart-socket:Thread-" + (threadSeqNumber++)));
         start(asynchronousChannelGroup);
     }
 
