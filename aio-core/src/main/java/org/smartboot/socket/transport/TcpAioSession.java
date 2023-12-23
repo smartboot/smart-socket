@@ -167,6 +167,7 @@ final class TcpAioSession extends AioSession {
             monitor.afterWrite(this, result);
         }
         VirtualBuffer writeBuffer = TcpAioSession.this.writeBuffer;
+        TcpAioSession.this.writeBuffer = null;
         if (writeBuffer == null) {
             writeBuffer = byteBuf.poll();
         } else if (!writeBuffer.buffer().hasRemaining()) {

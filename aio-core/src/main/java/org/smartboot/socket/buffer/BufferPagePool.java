@@ -62,16 +62,13 @@ public final class BufferPagePool {
      * @return 缓存页对象
      */
     public BufferPage allocateBufferPage() {
-        assertEnabled();
-        //轮训游标，均衡分配内存页
-        return bufferPages[(cursor.getAndIncrement() & Integer.MAX_VALUE) % bufferPages.length];
+        if (enabled) {
+            //轮训游标，均衡分配内存页
+            return bufferPages[(cursor.getAndIncrement() & Integer.MAX_VALUE) % bufferPages.length];
+        }
+        throw new IllegalStateException("buffer pool is disable");
     }
 
-    private void assertEnabled() {
-        if (!enabled) {
-            throw new IllegalStateException("buffer pool is disable");
-        }
-    }
 
     /**
      * 释放回收内存
