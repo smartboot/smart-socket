@@ -193,7 +193,12 @@ public final class WriteBuffer extends OutputStream {
             return;
         }
         if (writeInBuf == null) {
-            writeInBuf = bufferPage.allocate(Math.max(chunkSize, len));
+            if (chunkSize >= len) {
+                writeInBuf = bufferPage.allocate(chunkSize);
+            } else {
+                int m = len % chunkSize;
+                writeInBuf = bufferPage.allocate(m == 0 ? len : len + chunkSize - m);
+            }
         }
         ByteBuffer writeBuffer = writeInBuf.buffer();
         if (closed) {
