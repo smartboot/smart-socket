@@ -332,9 +332,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         appReadBuffer.clean();
         try {
             sslEngine.closeInbound();
-        } catch (SSLException e) {
-            System.err.println("ignore closeInbound exception: " + e.getMessage());
-            e.printStackTrace();
+        } catch (SSLException ignore) {
         }
         sslEngine.closeOutbound();
         asynchronousSocketChannel.close();
