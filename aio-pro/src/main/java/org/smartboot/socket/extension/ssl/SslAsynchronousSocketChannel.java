@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.extension.ssl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
@@ -31,7 +29,6 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0 , 2020/4/16
  */
 public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy {
-    private static final Logger logger = LoggerFactory.getLogger(SslAsynchronousSocketChannel.class);
     private final VirtualBuffer netWriteBuffer;
     private final VirtualBuffer netReadBuffer;
     private final VirtualBuffer appReadBuffer;
@@ -121,10 +118,10 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                     return;
                 }
                 if (index >= 16) {
-                    logger.error("maybe trigger bug here...");
+                    System.err.println("maybe trigger bug here...");
                 }
                 if (status == SSLEngineResult.Status.OK && index < 16) {
-                    logger.warn("Possible exception on appBuffer.");
+                    System.err.println("Possible exception on appBuffer.");
                     index++;
                     completed(result, attachment);
                 } else {
@@ -183,24 +180,32 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             while (!closed && result.getStatus() != SSLEngineResult.Status.OK) {
                 switch (result.getStatus()) {
                     case BUFFER_OVERFLOW:
-                        logger.warn("BUFFER_OVERFLOW error,net:{} app:{}", netBuffer, appBuffer);
+                        if (sslService.isDebug()) {
+                            System.out.println("BUFFER_OVERFLOW error,net:" + netBuffer + " app:" + appBuffer);
+                        }
                         break;
                     case BUFFER_UNDERFLOW:
                         if (netBuffer.limit() == netBuffer.capacity() && !netBuffer.hasRemaining()) {
-                            logger.error("BUFFER_UNDERFLOW error");
+                            if (sslService.isDebug()) {
+                                System.err.println("BUFFER_UNDERFLOW error");
+                            }
                         } else {
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("BUFFER_UNDERFLOW,continue read:" + netBuffer);
+                            if (sslService.isDebug()) {
+                                System.out.println("BUFFER_UNDERFLOW,continue read:" + netBuffer);
                             }
                         }
 //                        logger.error("doUnWrap return, " + netBuffer);
                         return result.getStatus();
                     case CLOSED:
-                        logger.warn("doUnWrap Result:" + result.getStatus());
+                        if (sslService.isDebug()) {
+                            System.out.println("doUnWrap Result:" + result.getStatus());
+                        }
                         closed = true;
                         break;
                     default:
-                        logger.warn("doUnWrap Result:" + result.getStatus());
+                        if (sslService.isDebug()) {
+                            System.out.println("doUnWrap Result:" + result.getStatus());
+                        }
                 }
                 result = sslEngine.unwrap(netBuffer, appBuffer);
             }
@@ -235,7 +240,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             return;
         }
         if (src.position() - pos == 0) {
-            logger.error("write error:" + src + " netWrite:" + netWriteBuffer.buffer());
+            System.err.println("write error:" + src + " netWrite:" + netWriteBuffer.buffer());
         }
         asynchronousSocketChannel.write(netWriteBuffer.buffer(), timeout, unit, attachment, new CompletionHandler<Integer, A>() {
             @Override
@@ -292,12 +297,16 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                     adaptiveWriteSize = writeBuffer.remaining();
                     break;
                 case BUFFER_UNDERFLOW:
-                    logger.info("doWrap BUFFER_UNDERFLOW");
+                    if (sslService.isDebug()) {
+                        System.err.println("doWrap BUFFER_UNDERFLOW");
+                    }
                     break;
                 case CLOSED:
                     throw new SSLException("SSLEngine has " + result.getStatus());
                 default:
-                    logger.warn("doWrap Result:" + result.getStatus());
+                    if (sslService.isDebug()) {
+                        System.out.println("doWrap Result:" + result.getStatus());
+                    }
             }
             result = sslEngine.wrap(writeBuffer, netBuffer);
         }
@@ -324,7 +333,8 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         try {
             sslEngine.closeInbound();
         } catch (SSLException e) {
-            logger.warn("ignore closeInbound exception: {}", e.getMessage());
+            System.err.println("ignore closeInbound exception: " + e.getMessage());
+            e.printStackTrace();
         }
         sslEngine.closeOutbound();
         asynchronousSocketChannel.close();

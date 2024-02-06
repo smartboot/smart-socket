@@ -76,4 +76,7 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
         return new SslAsynchronousSocketChannel(channel, sslService, bufferPagePool.allocateBufferPage());
     }
 
+    public void debug(boolean debug) {
+        sslService.debug(debug);
+    }
 }

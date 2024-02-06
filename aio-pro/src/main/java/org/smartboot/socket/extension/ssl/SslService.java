@@ -10,8 +10,6 @@
 package org.smartboot.socket.extension.ssl;
 
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 
 import javax.net.ssl.SSLContext;
@@ -33,9 +31,7 @@ import java.util.function.Consumer;
  * @version V1.0 , 2018/1/1
  */
 public final class SslService {
-
-    private static final Logger logger = LoggerFactory.getLogger(SslService.class);
-
+    private boolean debug;
     private final SSLContext sslContext;
 
     private final Consumer<SSLEngine> consumer;
@@ -107,14 +103,16 @@ public final class SslService {
 
             //握手阶段网络断链
             if (handshakeModel.getException() != null) {
-                logger.info("the ssl handshake is terminated");
+                if (debug) {
+                    System.out.println("the ssl handshake is terminated");
+                }
                 handshakeModel.getHandshakeCallback().callback();
                 return;
             }
             while (!handshakeModel.isFinished()) {
                 handshakeStatus = engine.getHandshakeStatus();
-                if (logger.isDebugEnabled()) {
-                    logger.info("握手状态:" + handshakeStatus);
+                if (debug) {
+                    System.out.println("握手状态:" + handshakeStatus);
                 }
                 switch (handshakeStatus) {
                     case NEED_UNWRAP:
@@ -152,7 +150,9 @@ public final class SslService {
                         break;
                     case NEED_WRAP:
                         if (netWriteBuffer.hasRemaining()) {
-                            logger.info("数据未输出完毕...");
+                            if (debug) {
+                                System.out.println("数据未输出完毕...");
+                            }
                             handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletionHandler);
                             return;
                         }
@@ -168,17 +168,23 @@ public final class SslService {
                                 handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletionHandler);
                                 return;
                             case BUFFER_OVERFLOW:
-                                logger.warn("NEED_WRAP BUFFER_OVERFLOW");
+                                if (debug) {
+                                    System.out.println("NEED_WRAP BUFFER_OVERFLOW");
+                                }
                                 break;
                             case BUFFER_UNDERFLOW:
                                 throw new SSLException("Buffer underflow occurred after a wrap. I don't think we should ever get here.");
                             case CLOSED:
-                                logger.warn("closed");
+                                if (debug) {
+                                    System.out.println("closed");
+                                }
                                 try {
                                     netWriteBuffer.flip();
                                     netReadBuffer.clear();
                                 } catch (Exception e) {
-                                    logger.warn("Failed to send server's CLOSE message due to socket channel's failure.");
+                                    if (debug) {
+                                        System.out.println("Failed to send server's CLOSE message due to socket channel's failure.");
+                                    }
                                 }
                                 break;
                             default:
@@ -192,24 +198,37 @@ public final class SslService {
                         }
                         break;
                     case FINISHED:
-                        logger.info("HandshakeFinished");
+                        if (debug) {
+                            System.out.println("HandshakeFinished");
+                        }
                         break;
                     case NOT_HANDSHAKING:
-                        logger.error("NOT_HANDSHAKING");
+                        if (debug) {
+                            System.out.println("NOT_HANDSHAKING");
+                        }
                         break;
                     default:
                         throw new IllegalStateException("Invalid SSL status: " + handshakeStatus);
                 }
             }
-            if (logger.isDebugEnabled()) {
-                logger.debug("握手完毕");
+            if (debug) {
+                System.out.println("握手完毕");
             }
             handshakeModel.getHandshakeCallback().callback();
 
         } catch (Exception e) {
+            if (debug) {
+                System.out.println("ignore doHandshake exception:" + e.getMessage());
+            }
             handshakeCompletionHandler.failed(e, handshakeModel);
-            logger.warn("ignore doHandshake exception: {}", e.getMessage());
         }
     }
 
+    public void debug(boolean debug) {
+        this.debug = debug;
+    }
+
+    boolean isDebug() {
+        return debug;
+    }
 }
