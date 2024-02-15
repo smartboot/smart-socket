@@ -36,6 +36,10 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
         this(factory, consumer, BufferFactory.DISABLED_BUFFER_FACTORY.create());
     }
 
+    public SslPlugin(SSLContextFactory factory) throws Exception {
+        this(factory, sslEngine -> sslEngine.setUseClientMode(false), BufferFactory.DISABLED_BUFFER_FACTORY.create());
+    }
+
     public SslPlugin(SSLContextFactory factory, Consumer<SSLEngine> consumer, BufferPagePool bufferPagePool) throws Exception {
         this.bufferPagePool = bufferPagePool;
         sslService = new SslService(factory.create(), consumer);
