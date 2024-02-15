@@ -4,8 +4,9 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -17,25 +18,52 @@ import java.util.Base64;
 import java.util.List;
 
 public class PemServerSSLContextFactory implements SSLContextFactory {
-    private final File pemFile;
+    private List<byte[]> certificates = new ArrayList<>();
+    private byte[] keyBytes;
 
-    public PemServerSSLContextFactory(File pemFile) {
-        this.pemFile = pemFile;
+    public PemServerSSLContextFactory(InputStream fullPem) throws IOException {
+        readPem(fullPem);
+    }
+
+    public PemServerSSLContextFactory(InputStream certPem, InputStream keyPem) throws IOException {
+        readPem(certPem);
+        readPem(keyPem);
     }
 
     @Override
     public SSLContext create() throws Exception {
-
-        List<Certificate> certificates = new ArrayList<>();
-        PrivateKey privateKey = null;
-        // 生成证书
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
-        // 读取PEM文件
-        FileReader fileReader = new FileReader(pemFile);
-        BufferedReader bufferedReader = new BufferedReader(fileReader);
-        StringBuilder sb = new StringBuilder();
+        // 证书
+        Certificate[] chain = new Certificate[certificates.size()];
+        for (int i = 0; i < certificates.size(); i++) {
+            chain[i] = cf.generateCertificate(new ByteArrayInputStream(certificates.get(i)));
+        }
+        //私钥
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+        PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
 
+        // 生成KeyStore
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, null);
+        ks.setKeyEntry("keyAlias", privateKey, new char[0], chain);
+
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+        keyManagerFactory.init(ks, "".toCharArray());
+
+        // 生成SSLContext
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
+        certificates = null;
+        keyBytes = null;
+        return sslContext;
+    }
+
+    private void readPem(InputStream inputStream) throws IOException {
+        InputStreamReader reader = new InputStreamReader(inputStream);
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        StringBuilder sb = new StringBuilder();
         String line;
         while ((line = bufferedReader.readLine()) != null) {
             switch (line) {
@@ -44,15 +72,11 @@ public class PemServerSSLContextFactory implements SSLContextFactory {
                     sb.setLength(0);
                     break;
                 case "-----END CERTIFICATE-----": {
-                    byte[] bytes = Base64.getDecoder().decode(sb.toString());
-                    certificates.add(cf.generateCertificate(new ByteArrayInputStream(bytes)));
+                    certificates.add(Base64.getDecoder().decode(sb.toString()));
                     break;
                 }
                 case "-----END PRIVATE KEY-----": {
-                    byte[] bytes = Base64.getDecoder().decode(sb.toString());
-                    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-                    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(bytes);
-                    privateKey = keyFactory.generatePrivate(keySpec);
+                    keyBytes = Base64.getDecoder().decode(sb.toString());
                     break;
                 }
                 default:
@@ -60,18 +84,5 @@ public class PemServerSSLContextFactory implements SSLContextFactory {
                     break;
             }
         }
-
-        // 生成KeyStore
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(null, null);
-        ks.setKeyEntry("keyAlias", privateKey, new char[0], certificates.toArray(new Certificate[0]));
-
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
-        keyManagerFactory.init(ks, "".toCharArray());
-
-        // 生成SSLContext
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
-        return sslContext;
     }
 }

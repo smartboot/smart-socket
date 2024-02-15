@@ -25,6 +25,8 @@ import java.util.function.Consumer;
 /**
  * SSL/TLS通信插件
  *
+ * 证书生成工具：https://github.com/FiloSottile/mkcert
+ *
  * @author 三刀
  * @version V1.0 , 2020/4/17
  */
