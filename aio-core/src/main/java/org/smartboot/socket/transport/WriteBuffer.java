@@ -15,6 +15,7 @@ import org.smartboot.socket.buffer.VirtualBuffer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.WritePendingException;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
@@ -218,6 +219,17 @@ public final class WriteBuffer extends OutputStream {
         }
     }
 
+    private Consumer<WriteBuffer> completionConsumer;
+
+    public synchronized void write(byte[] bytes, int offset, int len, Consumer<WriteBuffer> consumer) throws IOException {
+        if (completionConsumer != null) {
+            throw new WritePendingException();
+        }
+        this.completionConsumer = consumer;
+        write(bytes, offset, len);
+        flush();
+    }
+
     public void write(ByteBuffer buffer) {
         write(VirtualBuffer.wrap(buffer));
     }
@@ -293,6 +305,11 @@ public final class WriteBuffer extends OutputStream {
 
     private VirtualBuffer pollItem() {
         if (count == 0) {
+            if (completionConsumer != null) {
+                Consumer<WriteBuffer> consumer = completionConsumer;
+                this.completionConsumer = null;
+                consumer.accept(this);
+            }
             return null;
         }
         VirtualBuffer x = items[takeIndex];
