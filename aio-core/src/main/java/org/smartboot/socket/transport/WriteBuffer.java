@@ -221,6 +221,17 @@ public final class WriteBuffer extends OutputStream {
 
     private Consumer<WriteBuffer> completionConsumer;
 
+    /**
+     * 执行异步输出操作。
+     * 此方法会将指定的字节流异步写入，并在完成时通知提供的消费者。
+     *
+     * @param bytes 待输出的字节流。
+     * @param offset 字节流中开始输出的偏移量。
+     * @param len 要输出的字节数。
+     * @param consumer 完成输出后调用的消费者接口，用于处理写入完成后的缓冲区。
+     * @throws IOException 如果在写入过程中发生I/O错误。
+     * @throws WritePendingException 如果已有写入操作未完成，此时再调用此方法会抛出此异常。
+     */
     public synchronized void write(byte[] bytes, int offset, int len, Consumer<WriteBuffer> consumer) throws IOException {
         if (completionConsumer != null) {
             throw new WritePendingException();
@@ -230,10 +241,12 @@ public final class WriteBuffer extends OutputStream {
         flush();
     }
 
+    @Deprecated
     public void write(ByteBuffer buffer) {
         write(VirtualBuffer.wrap(buffer));
     }
 
+    @Deprecated
     public synchronized void write(VirtualBuffer virtualBuffer) {
         if (writeInBuf != null && !virtualBuffer.buffer().isDirect() && writeInBuf.buffer().remaining() > virtualBuffer.buffer().remaining()) {
             writeInBuf.buffer().put(virtualBuffer.buffer());
