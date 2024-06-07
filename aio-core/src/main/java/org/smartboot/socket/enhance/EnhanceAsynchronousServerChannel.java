@@ -298,8 +298,7 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
             if (readCompletionHandler == null) {
                 try {
                     close();
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                } catch (Throwable ignore) {
                 }
             } else {
                 CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
