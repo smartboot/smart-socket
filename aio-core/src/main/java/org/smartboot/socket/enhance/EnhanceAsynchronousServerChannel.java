@@ -296,7 +296,6 @@ class EnhanceAsynchronousServerChannel extends AsynchronousSocketChannel {
             }
         } catch (Throwable e) {
             if (readCompletionHandler == null) {
-                e.printStackTrace();
                 try {
                     close();
                 } catch (IOException ioException) {

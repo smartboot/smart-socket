@@ -241,26 +241,6 @@ public final class WriteBuffer extends OutputStream {
         flush();
     }
 
-    @Deprecated
-    public void write(ByteBuffer buffer) {
-        write(VirtualBuffer.wrap(buffer));
-    }
-
-    @Deprecated
-    public synchronized void write(VirtualBuffer virtualBuffer) {
-        if (writeInBuf != null && !virtualBuffer.buffer().isDirect() && writeInBuf.buffer().remaining() > virtualBuffer.buffer().remaining()) {
-            writeInBuf.buffer().put(virtualBuffer.buffer());
-            virtualBuffer.clean();
-        } else {
-            if (writeInBuf != null) {
-                flushWriteBuffer(true);
-            }
-            virtualBuffer.buffer().compact();
-            writeInBuf = virtualBuffer;
-        }
-        flushWriteBuffer(false);
-    }
-
     /**
      * 初始化8字节的缓存数值
      */
