@@ -17,14 +17,14 @@
     <artifactId>aio-pro</artifactId>
 
     <parent>
-        <groupId>io.github.smartboot.socket</groupId>
+        <groupId>tech.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
         <version>1.5.45</version>
         <relativePath>../smart-socket-parent</relativePath>
     </parent>
     <dependencies>
         <dependency>
-            <groupId>io.github.smartboot.socket</groupId>
+            <groupId>tech.smartboot.socket</groupId>
             <artifactId>aio-core</artifactId>
         </dependency>
         <dependency>
