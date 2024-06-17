@@ -13,7 +13,7 @@
     <name>smart-socket-parent</name>
     <description>A high performance network application framework based on Java AIO</description>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>tech.smartboot.socket</groupId>
+    <groupId>io.github.smartboot.socket</groupId>
     <artifactId>smart-socket-parent</artifactId>
     <version>1.5.45</version>
 
@@ -28,12 +28,12 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>tech.smartboot.socket</groupId>
+                <groupId>io.github.smartboot.socket</groupId>
                 <artifactId>aio-core</artifactId>
                 <version>${aio.version}</version>
             </dependency>
             <dependency>
-                <groupId>tech.smartboot.socket</groupId>
+                <groupId>io.github.smartboot.socket</groupId>
                 <artifactId>aio-pro</artifactId>
                 <version>${aio.version}</version>
             </dependency>
