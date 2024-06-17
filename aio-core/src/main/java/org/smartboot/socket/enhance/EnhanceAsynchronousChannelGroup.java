@@ -116,7 +116,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
      * @param opt          移除的事件
      */
     public static void removeOps(SelectionKey selectionKey, int opt) {
-        if ((selectionKey.interestOps() & opt) != 0) {
+        if (selectionKey.isValid() && (selectionKey.interestOps() & opt) != 0) {
             selectionKey.interestOps(selectionKey.interestOps() & ~opt);
         }
     }
