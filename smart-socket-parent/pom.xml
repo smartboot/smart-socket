@@ -13,7 +13,7 @@
     <name>smart-socket-parent</name>
     <description>A high performance network application framework based on Java AIO</description>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.smartboot.socket</groupId>
+    <groupId>io.github.smartboot.socket</groupId>
     <artifactId>smart-socket-parent</artifactId>
     <version>1.5.45</version>
 
@@ -28,12 +28,12 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.smartboot.socket</groupId>
+                <groupId>io.github.smartboot.socket</groupId>
                 <artifactId>aio-core</artifactId>
                 <version>${aio.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.smartboot.socket</groupId>
+                <groupId>io.github.smartboot.socket</groupId>
                 <artifactId>aio-pro</artifactId>
                 <version>${aio.version}</version>
             </dependency>
@@ -102,6 +102,17 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.4.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>ossrh</publishingServerId>
+                    <tokenAuth>true</tokenAuth>
+                    <autoPublish>true</autoPublish>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
                 <configuration>
@@ -146,8 +157,8 @@
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
-                        <!--                        <phase>verify</phase>-->
-                        <phase>deploy</phase>
+                                                <phase>verify</phase>
+<!--                        <phase>deploy</phase>-->
                         <goals>
                             <goal>sign</goal>
                         </goals>
@@ -173,16 +184,16 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <configuration>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <useReleaseProfile>false</useReleaseProfile>
-                    <releaseProfiles>release</releaseProfiles>
-                    <goals>deploy</goals>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-release-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <autoVersionSubmodules>true</autoVersionSubmodules>-->
+<!--                    <useReleaseProfile>false</useReleaseProfile>-->
+<!--                    <releaseProfiles>release</releaseProfiles>-->
+<!--                    <goals>deploy</goals>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
             <plugin>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
@@ -237,11 +248,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-gpg-plugin</artifactId>
                     <version>1.5</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>2.5</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

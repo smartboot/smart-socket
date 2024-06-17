@@ -8,7 +8,7 @@
 
     <packaging>pom</packaging>
     <parent>
-        <groupId>org.smartboot.socket</groupId>
+        <groupId>io.github.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
         <version>1.5.45</version>
     </parent>
