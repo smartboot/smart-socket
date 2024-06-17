@@ -53,7 +53,7 @@
         </dependencies>
     </dependencyManagement>
 
-    <url>http://git.oschina.net/smartboot/smart-socket</url>
+    <url>https://github.com/smartboot/smart-socket</url>
 
     <licenses>
         <license>
@@ -71,20 +71,20 @@
             <roles>
                 <role>smart-socket作者</role>
             </roles>
-            <url>https://git.oschina.net/smartdms/</url>
+            <url>https://github.com/smthing/</url>
             <timezone>GMT+8</timezone>
             <properties>
                 <picUrl>https://git.oschina.net/uploads/75/351975_smartdms.jpg</picUrl>
             </properties>
             <organization>smartboot</organization>
-            <organizationUrl>https://gitee.com/smartboot</organizationUrl>
+            <organizationUrl>https://github.com/smartboot</organizationUrl>
         </developer>
     </developers>
 
     <scm>
-        <url>http://git.oschina.net/smartboot/smart-socket</url>
-        <connection>scm:git:https://git.oschina.net/smartboot/smart-socket.git</connection>
-        <developerConnection>scm:git:ssh://git.oschina.net:smartboot/smart-socket.git</developerConnection>
+        <url>https://github.com/smartboot/smart-socket</url>
+        <connection>scm:git:https://github.com/smartboot/smart-socket.git</connection>
+        <developerConnection>scm:git:ssh://github.com:smartboot/smart-socket.git</developerConnection>
         <tag>master</tag>
     </scm>
 
@@ -184,16 +184,6 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.apache.maven.plugins</groupId>-->
-<!--                <artifactId>maven-release-plugin</artifactId>-->
-<!--                <configuration>-->
-<!--                    <autoVersionSubmodules>true</autoVersionSubmodules>-->
-<!--                    <useReleaseProfile>false</useReleaseProfile>-->
-<!--                    <releaseProfiles>release</releaseProfiles>-->
-<!--                    <goals>deploy</goals>-->
-<!--                </configuration>-->
-<!--            </plugin>-->
             <plugin>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
