@@ -52,27 +52,39 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
                     return;
                 }
                 try {
-                    Field bufferPoolField = AioQuickServer.class.getDeclaredField("bufferPool");
+                    Field bufferPoolField = AioQuickServer.class.getDeclaredField("writeBufferPool");
                     bufferPoolField.setAccessible(true);
-                    BufferPagePool pagePool = (BufferPagePool) bufferPoolField.get(server);
-                    if (pagePool == null) {
+                    BufferPagePool writeBufferPool = (BufferPagePool) bufferPoolField.get(server);
+                    if (writeBufferPool == null) {
                         LOGGER.error("server maybe has not started!");
                         shutdown();
                         return;
                     }
-                    Field field = BufferPagePool.class.getDeclaredField("bufferPages");
-                    field.setAccessible(true);
-                    BufferPage[] pages = (BufferPage[]) field.get(pagePool);
-                    String logger = "";
-                    for (BufferPage page : pages) {
-                        logger += "\r\n" + page.toString();
+                    LOGGER.info("dump writeBuffer");
+                    dumpBufferPool(writeBufferPool);
+                    Field readBufferPoolField = AioQuickServer.class.getDeclaredField("readBufferPool");
+                    readBufferPoolField.setAccessible(true);
+                    BufferPagePool readBufferPool = (BufferPagePool) readBufferPoolField.get(server);
+                    if (readBufferPool != null && readBufferPool != writeBufferPool) {
+                        LOGGER.info("dump readBuffer");
+                        dumpBufferPool(readBufferPool);
                     }
-                    LOGGER.info(logger);
                 } catch (Exception e) {
                     LOGGER.error("", e);
                 }
             }
         }, seconds, TimeUnit.SECONDS);
+    }
+
+    private static void dumpBufferPool(BufferPagePool writeBufferPool) throws NoSuchFieldException, IllegalAccessException {
+        Field field = BufferPagePool.class.getDeclaredField("bufferPages");
+        field.setAccessible(true);
+        BufferPage[] pages = (BufferPage[]) field.get(writeBufferPool);
+        String logger = "";
+        for (BufferPage page : pages) {
+            logger += "\r\n" + page.toString();
+        }
+        LOGGER.info(logger);
     }
 
     private void shutdown() {
