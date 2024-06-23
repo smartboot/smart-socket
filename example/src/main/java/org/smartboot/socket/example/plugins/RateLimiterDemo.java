@@ -58,7 +58,7 @@ public class RateLimiterDemo {
         AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
         server.setReadBufferSize(1024 * 1024)
                 .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
-                .setBufferFactory(() -> bufferPagePool)
+                .setBufferPagePool(bufferPagePool)
                 .setWriteBuffer(4096, 512);
         processor.addPlugin(new MonitorPlugin<>(10));
         processor.addPlugin(new RateLimiterPlugin<>(512, 1024));

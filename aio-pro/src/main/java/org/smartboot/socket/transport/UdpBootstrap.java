@@ -11,7 +11,6 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.buffer.BufferFactory;
 import org.smartboot.socket.buffer.BufferPagePool;
 
 import java.io.IOException;
@@ -27,10 +26,13 @@ import java.nio.channels.DatagramChannel;
 public class UdpBootstrap {
 
     /**
-     * 内存池
+     * write 内存池
      */
-    private BufferPagePool bufferPool;
-    private BufferPagePool innerBufferPool = null;
+    private BufferPagePool writeBufferPool = null;
+    /**
+     * read 内存池
+     */
+    private BufferPagePool readBufferPool = null;
     /**
      * 服务配置
      */
@@ -80,14 +82,17 @@ public class UdpBootstrap {
             System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket[udp] ::\t(" + IoServerConfig.VERSION + ")");
         }
         //初始化内存池
-        if (bufferPool == null) {
-            this.bufferPool = config.getBufferFactory().create();
-            this.innerBufferPool = bufferPool;
+        if (writeBufferPool == null) {
+            this.writeBufferPool = BufferPagePool.DEFAULT_BUFFER_PAGE_POOL;
         }
+        if (readBufferPool == null) {
+            this.readBufferPool = BufferPagePool.DEFAULT_BUFFER_PAGE_POOL;
+        }
+
         // 初始化工作线程
         if (worker == null) {
             innerWorker = true;
-            worker = new Worker(bufferPool, config.getThreadNum());
+            worker = new Worker(readBufferPool.allocateBufferPage(), writeBufferPool, config.getThreadNum());
         }
 
 
@@ -97,7 +102,7 @@ public class UdpBootstrap {
             InetSocketAddress inetSocketAddress = host == null ? new InetSocketAddress(port) : new InetSocketAddress(host, port);
             channel.socket().bind(inetSocketAddress);
         }
-        return new UdpChannel(channel, worker, config, bufferPool.allocateBufferPage());
+        return new UdpChannel(channel, worker, config, writeBufferPool.allocateBufferPage());
     }
 
     private synchronized void initWorker() throws IOException {
@@ -112,9 +117,6 @@ public class UdpBootstrap {
     public void shutdown() {
         if (innerWorker) {
             worker.shutdown();
-        }
-        if (innerBufferPool != null) {
-            innerBufferPool.release();
         }
     }
 
@@ -161,26 +163,10 @@ public class UdpBootstrap {
      * @return 当前AioQuickServer对象
      */
     public final UdpBootstrap setBufferPagePool(BufferPagePool bufferPool) {
-        this.bufferPool = bufferPool;
-        this.config.setBufferFactory(BufferFactory.DISABLED_BUFFER_FACTORY);
+        this.readBufferPool = bufferPool;
+        this.writeBufferPool = bufferPool;
         return this;
     }
-
-    /**
-     * 设置内存池的构造工厂。
-     * 通过工厂形式生成的内存池会强绑定到当前UdpBootstrap对象，
-     * 在UdpBootstrap执行shutdown时会释放内存池。
-     * <b>在启用内存池的情况下会有更好的性能表现</b>
-     *
-     * @param bufferFactory 内存池工厂
-     * @return 当前AioQuickServer对象
-     */
-    public final UdpBootstrap setBufferFactory(BufferFactory bufferFactory) {
-        this.config.setBufferFactory(bufferFactory);
-        this.bufferPool = null;
-        return this;
-    }
-
 
 }
 

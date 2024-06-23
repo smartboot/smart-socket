@@ -52,7 +52,7 @@ public class Server {
         AioQuickServer server = new AioQuickServer(port, new StringProtocol(), processor);
         server.setReadBufferSize(1024)
                 .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
-                .setBufferFactory(() -> bufferPagePool)
+                .setBufferPagePool(bufferPagePool)
                 .setLowMemory(true)
                 .setWriteBuffer(4096, 1);
         processor.addPlugin(new MonitorPlugin<>(5));

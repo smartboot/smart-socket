@@ -12,7 +12,6 @@ package org.smartboot.socket.transport;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.buffer.BufferFactory;
 
 import java.net.SocketOption;
 import java.util.HashMap;
@@ -93,12 +92,6 @@ final class IoServerConfig {
      * 线程数
      */
     private int threadNum = 1;
-
-    /**
-     * 内存池工厂
-     */
-    private BufferFactory bufferFactory = BufferFactory.DISABLED_BUFFER_FACTORY;
-
 
     /**
      * 获取默认内存块大小
@@ -218,14 +211,6 @@ final class IoServerConfig {
         this.threadNum = threadNum;
     }
 
-    public BufferFactory getBufferFactory() {
-        return bufferFactory;
-    }
-
-    public void setBufferFactory(BufferFactory bufferFactory) {
-        this.bufferFactory = bufferFactory;
-    }
-
     public int getBacklog() {
         return backlog;
     }
@@ -249,7 +234,6 @@ final class IoServerConfig {
                 ", bannerEnabled=" + bannerEnabled +
                 ", socketOptions=" + socketOptions +
                 ", threadNum=" + threadNum +
-                ", bufferFactory=" + bufferFactory +
                 '}';
     }
 }

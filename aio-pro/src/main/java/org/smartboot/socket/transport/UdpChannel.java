@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public final class UdpChannel {
     private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
-    private final BufferPage bufferPage;
+    private final BufferPage writeBufferPage;
 
     /**
      * 待输出消息
@@ -47,14 +47,14 @@ public final class UdpChannel {
     //发送失败的
     private ResponseUnit failResponseUnit;
 
-    UdpChannel(final DatagramChannel channel, IoServerConfig config, BufferPage bufferPage) {
+    UdpChannel(final DatagramChannel channel, IoServerConfig config, BufferPage writeBufferPage) {
         this.channel = channel;
-        this.bufferPage = bufferPage;
+        this.writeBufferPage = writeBufferPage;
         this.config = config;
     }
 
-    UdpChannel(final DatagramChannel channel, Worker worker, IoServerConfig config, BufferPage bufferPage) {
-        this(channel, config, bufferPage);
+    UdpChannel(final DatagramChannel channel, Worker worker, IoServerConfig config, BufferPage writeBufferPage) {
+        this(channel, config, writeBufferPage);
         responseTasks = new ConcurrentLinkedQueue<>();
         this.worker = worker;
         worker.addRegister(selector -> {
@@ -135,7 +135,7 @@ public final class UdpChannel {
      * 建立与远程服务的连接会话,通过AioSession可进行数据传输
      */
     public AioSession connect(SocketAddress remote) {
-        return new UdpAioSession(this, remote, bufferPage);
+        return new UdpAioSession(this, remote, writeBufferPage);
     }
 
     public AioSession connect(String host, int port) {
@@ -169,11 +169,6 @@ public final class UdpChannel {
             failResponseUnit.response.clean();
         }
     }
-
-    BufferPage getBufferPage() {
-        return bufferPage;
-    }
-
 
     DatagramChannel getChannel() {
         return channel;

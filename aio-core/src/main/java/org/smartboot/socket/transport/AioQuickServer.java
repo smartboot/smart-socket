@@ -12,9 +12,6 @@ package org.smartboot.socket.transport;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.VirtualBufferFactory;
-import org.smartboot.socket.buffer.BufferFactory;
-import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
@@ -29,7 +26,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * AIO服务端。
@@ -51,8 +48,6 @@ import java.util.function.Function;
  */
 public final class AioQuickServer {
 
-    private BufferPagePool innerBufferPool = null;
-
     /**
      * asynchronousServerSocketChannel
      */
@@ -65,7 +60,7 @@ public final class AioQuickServer {
     /**
      * 是否开启低内存模式
      */
-    private boolean lowMemory;
+    private boolean lowMemory = true;
     /**
      * 客户端服务配置。
      * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
@@ -73,11 +68,14 @@ public final class AioQuickServer {
     private final IoServerConfig config = new IoServerConfig();
     private static long threadSeqNumber;
     /**
-     * 内存池
+     * write 内存池
      */
-    private BufferPagePool bufferPool = null;
+    private BufferPagePool writeBufferPool = null;
+    /**
+     * read 内存池
+     */
+    private BufferPagePool readBufferPool = null;
 
-    private VirtualBufferFactory readBufferFactory = bufferPage -> bufferPage.allocate(config.getReadBufferSize());
 
     /**
      * 设置服务端启动必要参数配置
@@ -110,10 +108,6 @@ public final class AioQuickServer {
      * @throws IOException IO异常
      */
     public void start() throws IOException {
-        if (bufferPool == null) {
-            this.bufferPool = config.getBufferFactory().create();
-            this.innerBufferPool = bufferPool;
-        }
         asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(config.getThreadNum(), r -> new Thread(r, "smart-socket:Thread-" + (threadSeqNumber++)));
         start(asynchronousChannelGroup);
     }
@@ -132,9 +126,11 @@ public final class AioQuickServer {
             System.out.println(" - Github: https://github.com/smartboot/smart-socket");
         }
         try {
-            if (bufferPool == null) {
-                this.bufferPool = config.getBufferFactory().create();
-                this.innerBufferPool = bufferPool;
+            if (writeBufferPool == null) {
+                this.writeBufferPool = BufferPagePool.DEFAULT_BUFFER_PAGE_POOL;
+            }
+            if (readBufferPool == null) {
+                this.readBufferPool = BufferPagePool.DEFAULT_BUFFER_PAGE_POOL;
             }
 
             this.serverSocketChannel = AsynchronousServerSocketChannel.open(asynchronousChannelGroup);
@@ -159,7 +155,7 @@ public final class AioQuickServer {
     }
 
     private void startAcceptThread() {
-        Function<BufferPage, VirtualBuffer> function = bufferPage -> readBufferFactory.newBuffer(bufferPage);
+        Supplier<VirtualBuffer> readBufferSupplier = () -> readBufferPool.allocateBufferPage().allocate(config.getReadBufferSize());
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
             @Override
             public void completed(AsynchronousSocketChannel channel, Void attachment) {
@@ -170,7 +166,7 @@ public final class AioQuickServer {
                     failed(throwable, attachment);
                     serverSocketChannel.accept(attachment, this);
                 } finally {
-                    createSession(channel, function);
+                    createSession(channel, readBufferSupplier);
                 }
             }
 
@@ -186,7 +182,7 @@ public final class AioQuickServer {
      *
      * @param channel 当前已建立连接通道
      */
-    private void createSession(AsynchronousSocketChannel channel, Function<BufferPage, VirtualBuffer> function) {
+    private void createSession(AsynchronousSocketChannel channel, Supplier<VirtualBuffer> readBufferSupplier) {
         //连接成功则构造AIOSession对象
         TcpAioSession session = null;
         AsynchronousSocketChannel acceptChannel = channel;
@@ -196,7 +192,7 @@ public final class AioQuickServer {
             }
             if (acceptChannel != null) {
                 acceptChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
-                session = new TcpAioSession(acceptChannel, this.config, bufferPool.allocateBufferPage(), function);
+                session = new TcpAioSession(acceptChannel, this.config, writeBufferPool.allocateBufferPage(), readBufferSupplier);
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
                 IOUtil.close(channel);
@@ -226,9 +222,6 @@ public final class AioQuickServer {
 
         if (asynchronousChannelGroup != null) {
             asynchronousChannelGroup.shutdown();
-        }
-        if (innerBufferPool != null) {
-            innerBufferPool.release();
         }
     }
 
@@ -294,7 +287,7 @@ public final class AioQuickServer {
      * @param bufferCapacity 内存块数量上限
      * @return 当前AioQuickServer对象
      */
-    public final AioQuickServer setWriteBuffer(int bufferSize, int bufferCapacity) {
+    public AioQuickServer setWriteBuffer(int bufferSize, int bufferCapacity) {
         config.setWriteBufferSize(bufferSize);
         config.setWriteBufferCapacity(bufferCapacity);
         return this;
@@ -320,29 +313,13 @@ public final class AioQuickServer {
      * @param bufferPool 内存池对象
      * @return 当前AioQuickServer对象
      */
-    public final AioQuickServer setBufferPagePool(BufferPagePool bufferPool) {
-        this.bufferPool = bufferPool;
-        this.config.setBufferFactory(BufferFactory.DISABLED_BUFFER_FACTORY);
-        return this;
+    public AioQuickServer setBufferPagePool(BufferPagePool bufferPool) {
+        return setBufferPagePool(bufferPool, bufferPool);
     }
 
-    /**
-     * 设置内存池的构造工厂。
-     * 通过工厂形式生成的内存池会强绑定到当前AioQuickServer对象，
-     * 在AioQuickServer执行shutdown时会释放内存池。
-     * <b>在启用内存池的情况下会有更好的性能表现</b>
-     *
-     * @param bufferFactory 内存池工厂
-     * @return 当前AioQuickServer对象
-     */
-    public final AioQuickServer setBufferFactory(BufferFactory bufferFactory) {
-        this.config.setBufferFactory(bufferFactory);
-        this.bufferPool = null;
-        return this;
-    }
-
-    public final AioQuickServer setReadBufferFactory(VirtualBufferFactory readBufferFactory) {
-        this.readBufferFactory = readBufferFactory;
+    public AioQuickServer setBufferPagePool(BufferPagePool readBufferPool, BufferPagePool writeBufferPool) {
+        this.writeBufferPool = writeBufferPool;
+        this.readBufferPool = readBufferPool;
         return this;
     }
 

@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version V1.0 , 2018/10/31
  */
 public final class BufferPagePool {
-
     /**
      * 守护线程在空闲时期回收内存资源
      */
@@ -30,6 +29,7 @@ public final class BufferPagePool {
         thread.setDaemon(true);
         return thread;
     });
+    public static final BufferPagePool DEFAULT_BUFFER_PAGE_POOL = new BufferPagePool(0, 1, false);
     /**
      * 内存页游标
      */

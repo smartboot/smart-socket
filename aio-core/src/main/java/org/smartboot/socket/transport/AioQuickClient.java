@@ -12,8 +12,6 @@ package org.smartboot.socket.transport;
 
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
-import org.smartboot.socket.VirtualBufferFactory;
-import org.smartboot.socket.buffer.BufferFactory;
 import org.smartboot.socket.buffer.BufferPagePool;
 
 import java.io.IOException;
@@ -64,7 +62,6 @@ public final class AioQuickClient {
      */
     private TcpAioSession session;
 
-    private BufferPagePool innerBufferPool = null;
     /**
      * IO事件处理线程组。
      * <p>
@@ -89,11 +86,14 @@ public final class AioQuickClient {
     private final IoServerConfig config = new IoServerConfig();
 
     /**
-     * 内存池
+     * write 内存池
      */
-    private BufferPagePool bufferPool = null;
+    private BufferPagePool writeBufferPool = null;
+    /**
+     * read 内存池
+     */
+    private BufferPagePool readBufferPool = null;
 
-    private VirtualBufferFactory readBufferFactory = bufferPage -> bufferPage.allocate(config.getReadBufferSize());
 
     /**
      * 当前构造方法设置了启动Aio客户端的必要参数，基本实现开箱即用。
@@ -140,9 +140,11 @@ public final class AioQuickClient {
                 }
             }, connectTimeout, TimeUnit.MILLISECONDS);
         }
-        if (bufferPool == null) {
-            bufferPool = config.getBufferFactory().create();
-            this.innerBufferPool = bufferPool;
+        if (writeBufferPool == null) {
+            this.writeBufferPool = BufferPagePool.DEFAULT_BUFFER_PAGE_POOL;
+        }
+        if (readBufferPool == null) {
+            this.readBufferPool = BufferPagePool.DEFAULT_BUFFER_PAGE_POOL;
         }
         //set socket options
         if (config.getSocketOptions() != null) {
@@ -166,7 +168,7 @@ public final class AioQuickClient {
                         throw new RuntimeException("NetMonitor refuse channel");
                     }
                     //连接成功则构造AIOSession对象
-                    session = new TcpAioSession(connectedChannel, config, bufferPool.allocateBufferPage(), bufferPage -> readBufferFactory.newBuffer(bufferPage));
+                    session = new TcpAioSession(connectedChannel, config, writeBufferPool.allocateBufferPage(), () -> readBufferPool.allocateBufferPage().allocate(config.getReadBufferSize()));
                     handler.completed(session, attachment);
                 } catch (Exception e) {
                     failed(e, socketChannel);
@@ -281,11 +283,6 @@ public final class AioQuickClient {
             asynchronousChannelGroup.shutdown();
             asynchronousChannelGroup = null;
         }
-        if (innerBufferPool != null) {
-            innerBufferPool.release();
-            innerBufferPool = null;
-            bufferPool = null;
-        }
     }
 
     /**
@@ -342,23 +339,12 @@ public final class AioQuickClient {
      * @return 当前客户端实例
      */
     public AioQuickClient setBufferPagePool(BufferPagePool bufferPool) {
-        this.bufferPool = bufferPool;
-        this.config.setBufferFactory(BufferFactory.DISABLED_BUFFER_FACTORY);
-        return this;
+        return setBufferPagePool(bufferPool, bufferPool);
     }
 
-    /**
-     * 设置内存池的构造工厂。
-     * 通过工厂形式生成的内存池会强绑定到当前AioQuickClient对象，
-     * 在AioQuickClient执行shutdown时会释放内存池。
-     * <b>在启用内存池的情况下会有更好的性能表现</b>
-     *
-     * @param bufferFactory 内存池工厂
-     * @return 当前客户端实例
-     */
-    public AioQuickClient setBufferFactory(BufferFactory bufferFactory) {
-        this.config.setBufferFactory(bufferFactory);
-        this.bufferPool = null;
+    public AioQuickClient setBufferPagePool(BufferPagePool readBufferPool, BufferPagePool writeBufferPool) {
+        this.writeBufferPool = writeBufferPool;
+        this.readBufferPool = readBufferPool;
         return this;
     }
 
@@ -383,11 +369,6 @@ public final class AioQuickClient {
      */
     public AioQuickClient connectTimeout(int timeout) {
         this.connectTimeout = timeout;
-        return this;
-    }
-
-    public final AioQuickClient setReadBufferFactory(VirtualBufferFactory readBufferFactory) {
-        this.readBufferFactory = readBufferFactory;
         return this;
     }
 }

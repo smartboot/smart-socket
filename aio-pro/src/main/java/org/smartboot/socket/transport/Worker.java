@@ -1,10 +1,11 @@
 package org.smartboot.socket.transport;
 
+import org.smartboot.socket.DecoderException;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
-import org.smartboot.socket.DecoderException;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -34,9 +35,13 @@ public final class Worker implements Runnable {
      */
     private final Selector selector;
     /**
-     * 内存池
+     * write 内存池
      */
-    private final BufferPagePool bufferPool;
+    private BufferPagePool writeBufferPool = null;
+    /**
+     * read 内存池
+     */
+    private BufferPage readBufferPage = null;
     private final BlockingQueue<Runnable> requestQueue = new ArrayBlockingQueue<>(256);
 
     /**
@@ -47,8 +52,13 @@ public final class Worker implements Runnable {
     private VirtualBuffer standbyBuffer;
     private final ExecutorService executorService;
 
-    public Worker(BufferPagePool bufferPool, int threadNum) throws IOException {
-        this.bufferPool = bufferPool;
+    public Worker(BufferPagePool writeBufferPool, int threadNum) throws IOException {
+        this(writeBufferPool.allocateBufferPage(), writeBufferPool, threadNum);
+    }
+
+    public Worker(BufferPage readBufferPage, BufferPagePool writeBufferPool, int threadNum) throws IOException {
+        this.readBufferPage = readBufferPage;
+        this.writeBufferPool = writeBufferPool;
         this.selector = Selector.open();
         try {
             this.requestQueue.put(SELECTOR_CHANNEL);
@@ -56,9 +66,7 @@ public final class Worker implements Runnable {
             throw new RuntimeException(e);
         }
         //启动worker线程组
-        executorService = new ThreadPoolExecutor(threadNum, threadNum,
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(), new ThreadFactory() {
+        executorService = new ThreadPoolExecutor(threadNum, threadNum, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
             int i = 0;
 
             @Override
@@ -138,7 +146,7 @@ public final class Worker implements Runnable {
         IoServerConfig config = channel.config;
         while (count-- > 0) {
             if (standbyBuffer == null) {
-                standbyBuffer = channel.getBufferPage().allocate(config.getReadBufferSize());
+                standbyBuffer = readBufferPage.allocate(config.getReadBufferSize());
             }
             ByteBuffer buffer = standbyBuffer.buffer();
             SocketAddress remote = channel.getChannel().receive(buffer);
@@ -147,11 +155,11 @@ public final class Worker implements Runnable {
                 return true;
             }
             VirtualBuffer readyBuffer = standbyBuffer;
-            standbyBuffer = channel.getBufferPage().allocate(config.getReadBufferSize());
+            standbyBuffer = readBufferPage.allocate(config.getReadBufferSize());
             buffer.flip();
             Runnable runnable = () -> {
                 //解码
-                UdpAioSession session = new UdpAioSession(channel, remote, bufferPool.allocateBufferPage());
+                UdpAioSession session = new UdpAioSession(channel, remote, writeBufferPool.allocateBufferPage());
                 try {
                     NetMonitor netMonitor = config.getMonitor();
                     if (netMonitor != null) {

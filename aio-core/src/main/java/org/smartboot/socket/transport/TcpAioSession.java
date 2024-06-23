@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * AIO传输层会话。
@@ -132,27 +132,25 @@ final class TcpAioSession extends AioSession {
      */
     private InputStream inputStream;
 
-    private final BufferPage bufferPage;
     private final IoServerConfig config;
 
     /**
      * @param channel Socket通道
      */
-    TcpAioSession(AsynchronousSocketChannel channel, IoServerConfig config, BufferPage bufferPage, Function<BufferPage, VirtualBuffer> function) {
+    TcpAioSession(AsynchronousSocketChannel channel, IoServerConfig config, BufferPage writeBufferPage, Supplier<VirtualBuffer> readBufferSupplier) {
         this.channel = channel;
         this.config = config;
-        this.bufferPage = bufferPage;
-        this.function = function;
-        byteBuf = new WriteBuffer(bufferPage, this::continueWrite, config.getWriteBufferSize(), config.getWriteBufferCapacity());
+        this.readBufferSupplier = readBufferSupplier;
+        byteBuf = new WriteBuffer(writeBufferPage, this::continueWrite, config.getWriteBufferSize(), config.getWriteBufferCapacity());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         doRead();
     }
 
-    private final Function<BufferPage, VirtualBuffer> function;
+    private final Supplier<VirtualBuffer> readBufferSupplier;
 
     void doRead() {
-        this.readBuffer = function.apply(bufferPage);
+        this.readBuffer = readBufferSupplier.get();
         this.readBuffer.buffer().flip();
         signalRead();
     }
