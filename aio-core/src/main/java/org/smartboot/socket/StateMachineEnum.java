@@ -83,4 +83,9 @@ public enum StateMachineEnum {
      */
     ACCEPT_EXCEPTION,
 
+    /**
+     * 内部异常
+     */
+    INTERNAL_EXCEPTION,
+
 }

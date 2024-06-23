@@ -198,12 +198,12 @@ public final class AioQuickServer {
                 IOUtil.close(channel);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             if (session == null) {
                 IOUtil.close(channel);
             } else {
                 session.close();
             }
+            config.getProcessor().stateEvent(null, StateMachineEnum.INTERNAL_EXCEPTION, e);
         }
     }
 
@@ -323,8 +323,8 @@ public final class AioQuickServer {
         return this;
     }
 
-    public AioQuickServer setLowMemory(boolean lowMemory) {
-        this.lowMemory = lowMemory;
+    public AioQuickServer disableLowMemory() {
+        this.lowMemory = false;
         return this;
     }
 }
