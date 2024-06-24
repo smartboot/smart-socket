@@ -60,14 +60,17 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
                         shutdown();
                         return;
                     }
-                    LOGGER.info("dump writeBuffer");
-                    dumpBufferPool(writeBufferPool);
                     Field readBufferPoolField = AioQuickServer.class.getDeclaredField("readBufferPool");
                     readBufferPoolField.setAccessible(true);
                     BufferPagePool readBufferPool = (BufferPagePool) readBufferPoolField.get(server);
+
                     if (readBufferPool != null && readBufferPool != writeBufferPool) {
+                        LOGGER.info("dump writeBuffer");
+                        dumpBufferPool(writeBufferPool);
                         LOGGER.info("dump readBuffer");
                         dumpBufferPool(readBufferPool);
+                    } else {
+                        dumpBufferPool(writeBufferPool);
                     }
                 } catch (Exception e) {
                     LOGGER.error("", e);

@@ -231,7 +231,7 @@ public final class AioQuickServer {
      * @param size 单位：byte
      * @return 当前AioQuickServer对象
      */
-    public final AioQuickServer setReadBufferSize(int size) {
+    public AioQuickServer setReadBufferSize(int size) {
         this.config.setReadBufferSize(size);
         return this;
     }
@@ -305,10 +305,9 @@ public final class AioQuickServer {
     }
 
     /**
-     * 设置内存池。
-     * 通过该方法设置的内存池，在AioQuickServer执行shutdown时不会触发内存池的释放。
-     * 该方法适用于多个AioQuickServer、AioQuickClient共享内存池的场景。
-     * <b>在启用内存池的情况下会有更好的性能表现</b>
+     * 设置读写内存池。
+     * 该方法适用于多个AioQuickServer、AioQuickClient共享内存池的场景，
+     * <b>以获得更好的性能表现</b>
      *
      * @param bufferPool 内存池对象
      * @return 当前AioQuickServer对象
@@ -317,12 +316,25 @@ public final class AioQuickServer {
         return setBufferPagePool(bufferPool, bufferPool);
     }
 
+    /**
+     * 设置读写内存池。
+     * 该方法适用于多个AioQuickServer、AioQuickClient共享内存池的场景，
+     * <b>以获得更好的性能表现</b>
+     *
+     * @param readBufferPool  读内存池对象
+     * @param writeBufferPool 写内存池对象
+     * @return 当前AioQuickServer对象
+     */
     public AioQuickServer setBufferPagePool(BufferPagePool readBufferPool, BufferPagePool writeBufferPool) {
         this.writeBufferPool = writeBufferPool;
         this.readBufferPool = readBufferPool;
         return this;
     }
 
+    /**
+     * 禁用低代码模式
+     * @return
+     */
     public AioQuickServer disableLowMemory() {
         this.lowMemory = false;
         return this;
