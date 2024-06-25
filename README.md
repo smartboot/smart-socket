@@ -1,12 +1,23 @@
-## smart-socket [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu) 
+## smart-socket
 
 [![](https://img.shields.io/badge/lang-Chinese-<green>.svg)](README.md) [![](https://img.shields.io/badge/lang-English-<green>.svg)](./README.en.md)
 
-smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO 的实现使其有着超越各大语言的通信性能和稳定性。
+smart-socket 是一款增强了原生 JDK 实现的 AIO 通信框架。
 
-凭借自身极简、易用、高性能的特性，smart-socket 得到了诸多 [开发人员和企业](https://smartboot.gitee.io/smart-socket/users.html) 的认可和青睐。
+换言之，smart-socket 100% 遵循 JDK 对于 AIO 接口规范的定义，只是重新提供了一套代码实现。
+使其有着相较 JDK 官方 AIO 更高的通信性能，更少的资源开销，以及更稳定的运行保障。
 
-**[文档地址](https://smartboot.gitee.io/smart-socket/)**
+- **[文档地址](https://smartboot.tech/smart-socket/)**
+- **[我们的用户](https://smartboot.tech/smart-socket/users.html)**
+
+### 为什么开发 smart-socket?
+- AIO 是一个面向开发人员更友好的设计理念，值得被更多人应用。
+- 原先 JDK 提供的实现存在性能问题，其线程模型限制了 IO 调度效率。
+- 原生 JDK 提供的实现存在资源开销问题，连接越多内存需求越高，难以在低规格服务器中支撑百万级长连接。
+- 原生 JDK 提供的实现存在稳定性问题，Mac 系统下进行压测存在不明原因的死机现象。
+
+
+
 
 ### 🍁项目特色
 1. 高性能、高并发、低延迟、绿色节能。
@@ -14,6 +25,11 @@ smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO �
 3. 学习门槛低，二次开发只需实现 2 个接口（Protocol、MessageProcessor）,具备通信开发经验的几乎无学习成本。
 4. 良好的线程模型、内存模型设计，保障服务高效稳定的运行。
 5. 支持自定义插件，并已提供了丰富的插件，包括：SSL/TLS通信插件、心跳插件、断链重连插件、服务指标统计插件、黑名单插件、内存池监测插件。
+
+### 🍒生态项目
+- [smart-http](https://gitee.com/smartboot/smart-http)
+- [smart-servlet](https://gitee.com/smartboot/smart-servlet)
+- [smart-mqtt](https://gitee.com/smartboot/smart-mqtt)
 
 ### 🍭推荐
 - 《[smart-socket 单机百万长连接实战教程](https://mp.weixin.qq.com/s/l_IBSBI6SAY4FmomwLFa-Q)》
@@ -36,7 +52,8 @@ smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO �
 |StreamMonitorPlugin|传输层通讯码流监控插件|
 
 ### 🍩感谢
-- 感谢码云提供的代码托管和 Pages 服务。
+- 感谢 Gitee 提供的代码托管和曾经的 Pages 服务。
+- 感谢 Github 提供的代码托管和现在的 Pages 服务。
 - 感谢 JetBrains 为 smart-socket 提供的 IDEA License。     
     <a href="https://www.jetbrains.com/?from=smart-socket"><img src="jetbrains.png" width="20%" height="20%"/></a>
 
@@ -47,4 +64,4 @@ smart-socket 是一款100%自研的国产开源通信框架，通过强化 AIO �
   2. 企业用户：完成【[案例登记](https://gitee.com/smartboot/smart-socket/issues/IHV69)】并在加群时备注企业名。
 - 扫描底部二维码关注三刀公众号
 
-​	<img src="wx.jpg" width="50%" height="50%"/>
+<img src="wx.jpg" width="50%" height="50%"/>
