@@ -14,7 +14,6 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AsynchronousChannelProvider;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -194,20 +193,13 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         public final void run() {
             workerThread = Thread.currentThread();
             // 优先获取SelectionKey,若无关注事件触发则阻塞在selector.select(),减少select被调用次数
-            Set<SelectionKey> keySet = selector.selectedKeys();
             try {
                 while (running) {
                     Consumer<Selector> selectorConsumer;
                     while ((selectorConsumer = consumers.poll()) != null) {
                         selectorConsumer.accept(selector);
                     }
-                    selector.select();
-
-                    // 执行本次已触发待处理的事件
-                    for (SelectionKey key : keySet) {
-                        consumer.accept(key);
-                    }
-                    keySet.clear();
+                    selector.select(consumer);
                 }
                 selector.keys().forEach(key -> {
                     try {
