@@ -10,7 +10,7 @@
     <parent>
         <groupId>io.github.smartboot.socket</groupId>
         <artifactId>smart-socket-parent</artifactId>
-        <version>1.5.46</version>
+        <version>1.5.47</version>
     </parent>
     <properties>
         <commons.lang.version>2.6</commons.lang.version>
