@@ -47,6 +47,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
      * 自适应的输出长度
      */
     private int adaptiveWriteSize = -1;
+    private boolean closed = false;
 
     public SslAsynchronousSocketChannel(AsynchronousSocketChannel asynchronousSocketChannel, SslService sslService, BufferPage bufferPage) {
         super(asynchronousSocketChannel);
@@ -327,6 +328,10 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
     @Override
     public void close() throws IOException {
+        if (closed) {
+            return;
+        }
+        closed = true;
         netWriteBuffer.clean();
         netReadBuffer.clean();
         appReadBuffer.clean();
@@ -336,6 +341,5 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         }
         sslEngine.closeOutbound();
         asynchronousSocketChannel.close();
-
     }
 }
