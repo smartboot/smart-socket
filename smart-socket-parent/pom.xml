@@ -15,14 +15,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.smartboot.socket</groupId>
     <artifactId>smart-socket-parent</artifactId>
-    <version>1.5.48-SNAPSHOT</version>
+    <version>1.5.48</version>
 
     <packaging>pom</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.7.36</slf4j.version>
-        <aio.version>1.5.48-SNAPSHOT</aio.version>
+        <aio.version>1.5.48</aio.version>
         <junit.version>4.13.2</junit.version>
     </properties>
     <dependencyManagement>
@@ -104,11 +104,10 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.4.0</version>
+                <version>0.5.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>ossrh</publishingServerId>
-                    <tokenAuth>true</tokenAuth>
                     <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
@@ -170,9 +169,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <!--<links>https://docs.oracle.com/javase/7/docs/api/</links>-->
-                    <aggregate>true</aggregate>
                     <show>public</show>
-                    <additionalparam>-Xdoclint:none</additionalparam>
                     <failOnError>false</failOnError>
                 </configuration>
                 <executions>
