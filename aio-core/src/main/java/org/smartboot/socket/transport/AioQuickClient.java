@@ -13,6 +13,7 @@ package org.smartboot.socket.transport;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -94,6 +95,10 @@ public final class AioQuickClient {
      */
     private BufferPagePool readBufferPool = null;
 
+    /**
+     * 是否开启低内存模式
+     */
+    private boolean lowMemory = true;
 
     /**
      * 当前构造方法设置了启动Aio客户端的必要参数，基本实现开箱即用。
@@ -118,7 +123,9 @@ public final class AioQuickClient {
      * @param <A>        附件对象类型
      */
     public <A> void start(A attachment, CompletionHandler<AioSession, ? super A> handler) throws IOException {
-        this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, Thread::new);
+        this.asynchronousChannelGroup =
+                new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(2,
+                        Thread::new);
         start(asynchronousChannelGroup, attachment, handler);
     }
 
@@ -247,7 +254,9 @@ public final class AioQuickClient {
      * @see AioQuickClient#start(AsynchronousChannelGroup)
      */
     public AioSession start() throws IOException {
-        this.asynchronousChannelGroup = AsynchronousChannelGroup.withFixedThreadPool(2, Thread::new);
+        this.asynchronousChannelGroup =
+                new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(2,
+                        Thread::new);
         return start(asynchronousChannelGroup);
     }
 
@@ -369,6 +378,15 @@ public final class AioQuickClient {
      */
     public AioQuickClient connectTimeout(int timeout) {
         this.connectTimeout = timeout;
+        return this;
+    }
+
+    /**
+     * 禁用低代码模式
+     * @return
+     */
+    public AioQuickClient disableLowMemory() {
+        this.lowMemory = false;
         return this;
     }
 }
