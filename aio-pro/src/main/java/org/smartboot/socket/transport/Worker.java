@@ -94,8 +94,6 @@ public final class Worker implements Runnable {
                 Runnable runnable = requestQueue.take();
                 //服务终止
                 if (runnable == SHUTDOWN_CHANNEL) {
-                    requestQueue.put(SHUTDOWN_CHANNEL);
-                    selector.wakeup();
                     break;
                 } else if (runnable == SELECTOR_CHANNEL) {
                     try {
@@ -109,6 +107,9 @@ public final class Worker implements Runnable {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            requestQueue.offer(SHUTDOWN_CHANNEL);
+            selector.wakeup();
         }
     }
 
@@ -200,6 +201,11 @@ public final class Worker implements Runnable {
         }
         selector.wakeup();
         executorService.shutdown();
+        //关闭所有连接
+        selector.keys().forEach(key -> {
+            UdpChannel udpChannel = (UdpChannel) key.attachment();
+            udpChannel.close();
+        });
         try {
             selector.close();
         } catch (IOException e) {
