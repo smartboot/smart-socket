@@ -145,13 +145,22 @@ public abstract class AioSession {
      */
     public abstract InetSocketAddress getRemoteAddress() throws IOException;
 
-    //执行同步读操作
-    public final int syncRead() throws IOException {
-        return syncRead(0, TimeUnit.MILLISECONDS);
+    /**
+     * 执行同步读操作，读到的数据会写入到当前会话的读缓冲区
+     */
+    public final int read() throws IOException {
+        return read(0, TimeUnit.MILLISECONDS);
     }
 
-    //执行同步读操作
-    public int syncRead(long timeout, TimeUnit unit) throws IOException {
+    /**
+     * 执行同步读操作，读到的数据会写入到当前会话的读缓冲区
+     *
+     * @param timeout 超时时间
+     * @param unit
+     * @return
+     * @throws IOException
+     */
+    public int read(long timeout, TimeUnit unit) throws IOException {
         throw new UnsupportedOperationException();
     }
 }

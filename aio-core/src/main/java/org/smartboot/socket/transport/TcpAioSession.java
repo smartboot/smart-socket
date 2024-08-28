@@ -325,7 +325,7 @@ final class TcpAioSession extends AioSession {
     /**
      * 同步读取数据
      */
-    public int syncRead(long timeout, TimeUnit unit) throws IOException {
+    public int read(long timeout, TimeUnit unit) throws IOException {
         ByteBuffer buffer = readBuffer.buffer();
         buffer.compact();
         int readSize;
