@@ -10,10 +10,10 @@
 package org.smartboot.socket.transport;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author 三刀
@@ -145,31 +145,13 @@ public abstract class AioSession {
      */
     public abstract InetSocketAddress getRemoteAddress() throws IOException;
 
-    /**
-     * 获得数据输入流对象。
-     * <p>
-     * faster模式下调用该方法会触发UnsupportedOperationException异常。
-     * </p>
-     * <p>
-     * MessageProcessor采用异步处理消息的方式时，调用该方法可能会出现异常。
-     * </p>
-     *
-     * @return 输入流
-     * @throws IOException IO异常
-     */
-    public InputStream getInputStream() throws IOException {
-        throw new UnsupportedOperationException();
+    //执行同步读操作
+    public final int syncRead() throws IOException {
+        return syncRead(0, TimeUnit.MILLISECONDS);
     }
 
-    /**
-     * 获取已知长度的InputStream
-     *
-     * @param length InputStream长度
-     * @return 输入流
-     * @throws IOException IO异常
-     */
-    public InputStream getInputStream(int length) throws IOException {
+    //执行同步读操作
+    public int syncRead(long timeout, TimeUnit unit) throws IOException {
         throw new UnsupportedOperationException();
     }
-
 }
