@@ -275,7 +275,7 @@ final class TcpAioSession extends AioSession {
             Object dataEntry;
             try {
                 dataEntry = config.getProtocol().decode(readBuffer, this);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, e);
                 throw e;
             }
