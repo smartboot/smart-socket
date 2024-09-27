@@ -23,7 +23,7 @@
         <dependency>
             <groupId>io.github.smartboot.socket</groupId>
             <artifactId>aio-pro</artifactId>
-            <version>1.5.53</version>
+            <version>1.5.54</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
