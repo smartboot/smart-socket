@@ -1,7 +1,5 @@
 package org.smartboot.socket.buffer;
 
-import sun.nio.ch.DirectBuffer;
-
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -246,7 +244,7 @@ class StaticBufferPage extends AbstractBufferPage {
      */
     public void release() {
         if (buffer.isDirect()) {
-            ((DirectBuffer) buffer).cleaner().clean();
+            UnsafeAccessor.getUnsafe().invokeCleaner(buffer);
         }
     }
 

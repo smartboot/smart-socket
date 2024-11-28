@@ -10,8 +10,6 @@
 package org.smartboot.socket.buffer;
 
 
-import sun.nio.ch.DirectBuffer;
-
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -95,7 +93,7 @@ final class ElasticBufferPage extends AbstractBufferPage {
     private void clean0(VirtualBuffer virtualBuffer) {
         if (direct) {
             try {
-                ((DirectBuffer) virtualBuffer.buffer()).cleaner().clean();
+                UnsafeAccessor.getUnsafe().invokeCleaner(virtualBuffer.buffer());
             } catch (Throwable e) {
                 e.printStackTrace();
             }
