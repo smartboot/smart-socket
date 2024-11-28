@@ -23,17 +23,17 @@ public final class VirtualBuffer {
     /**
      * 当前虚拟buffer的归属内存页
      */
-    private final BufferPage bufferPage;
+    private final AbstractBufferPage bufferPage;
+    /**
+     * 是否已回收
+     */
+    private final Semaphore clean = new Semaphore(1);
     /**
      * 通过ByteBuffer.slice()隐射出来的虚拟ByteBuffer
      *
      * @see ByteBuffer#slice()
      */
     private ByteBuffer buffer;
-    /**
-     * 是否已回收
-     */
-    private final Semaphore clean = new Semaphore(1);
     /**
      * 当前虚拟buffer映射的实际buffer.position
      */
@@ -49,7 +49,7 @@ public final class VirtualBuffer {
      */
     private int capacity;
 
-    VirtualBuffer(BufferPage bufferPage, ByteBuffer buffer, int parentPosition, int parentLimit) {
+    VirtualBuffer(AbstractBufferPage bufferPage, ByteBuffer buffer, int parentPosition, int parentLimit) {
         this.bufferPage = bufferPage;
         this.buffer = buffer;
         this.parentPosition = parentPosition;

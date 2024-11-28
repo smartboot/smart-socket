@@ -39,8 +39,6 @@ import java.util.function.Supplier;
  * <li>{@link TcpAioSession#close()}</li>
  * <li>{@link TcpAioSession#close(boolean)}</li>
  * <li>{@link TcpAioSession#getAttachment()} </li>
- * <li>{@link TcpAioSession#getInputStream()} </li>
- * <li>{@link TcpAioSession#getInputStream(int)} </li>
  * <li>{@link TcpAioSession#getLocalAddress()} </li>
  * <li>{@link TcpAioSession#getRemoteAddress()} </li>
  * <li>{@link TcpAioSession#getSessionID()} </li>
@@ -55,9 +53,13 @@ import java.util.function.Supplier;
  */
 final class TcpAioSession extends AioSession {
     /**
+     * 底层通信channel对象
+     */
+    private final AsynchronousSocketChannel channel;    /**
      * 读事件回调处理
      */
-    private static final CompletionHandler<Integer, TcpAioSession> READ_COMPLETION_HANDLER = new CompletionHandler<Integer, TcpAioSession>() {
+    private static final CompletionHandler<Integer, TcpAioSession> READ_COMPLETION_HANDLER =
+            new CompletionHandler<Integer, TcpAioSession>() {
         @Override
         public void completed(Integer result, TcpAioSession aioSession) {
             try {
@@ -82,9 +84,13 @@ final class TcpAioSession extends AioSession {
         }
     };
     /**
+     * 输出流
+     */
+    private final WriteBuffer byteBuf;    /**
      * 写事件回调处理
      */
-    private static final CompletionHandler<Integer, TcpAioSession> WRITE_COMPLETION_HANDLER = new CompletionHandler<Integer, TcpAioSession>() {
+    private static final CompletionHandler<Integer, TcpAioSession> WRITE_COMPLETION_HANDLER =
+            new CompletionHandler<Integer, TcpAioSession>() {
         @Override
         public void completed(Integer result, TcpAioSession aioSession) {
             try {
@@ -108,16 +114,8 @@ final class TcpAioSession extends AioSession {
             }
         }
     };
-
-    /**
-     * 底层通信channel对象
-     */
-    private final AsynchronousSocketChannel channel;
-    /**
-     * 输出流
-     */
-    private final WriteBuffer byteBuf;
-
+    private final IoServerConfig config;
+    private final Supplier<VirtualBuffer> readBufferSupplier;
     /**
      * 读缓冲。
      * <p>大小取决于AioQuickClient/AioQuickServer设置的setReadBufferSize</p>
@@ -132,22 +130,20 @@ final class TcpAioSession extends AioSession {
      */
     private InputStream inputStream;
 
-    private final IoServerConfig config;
-
     /**
      * @param channel Socket通道
      */
-    TcpAioSession(AsynchronousSocketChannel channel, IoServerConfig config, BufferPage writeBufferPage, Supplier<VirtualBuffer> readBufferSupplier) {
+    TcpAioSession(AsynchronousSocketChannel channel, IoServerConfig config, BufferPage writeBufferPage,
+                  Supplier<VirtualBuffer> readBufferSupplier) {
         this.channel = channel;
         this.config = config;
         this.readBufferSupplier = readBufferSupplier;
-        byteBuf = new WriteBuffer(writeBufferPage, this::continueWrite, config.getWriteBufferSize(), config.getWriteBufferCapacity());
+        byteBuf = new WriteBuffer(writeBufferPage, this::continueWrite, config.getWriteBufferSize(),
+                config.getWriteBufferCapacity());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         doRead();
     }
-
-    private final Supplier<VirtualBuffer> readBufferSupplier;
 
     void doRead() {
         this.readBuffer = readBufferSupplier.get();
@@ -239,7 +235,6 @@ final class TcpAioSession extends AioSession {
         }
     }
 
-
     void readCompleted(int result) {
         //释放缓冲区
         if (result == EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL) {
@@ -277,7 +272,7 @@ final class TcpAioSession extends AioSession {
             Object dataEntry;
             try {
                 dataEntry = config.getProtocol().decode(readBuffer, this);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, e);
                 throw e;
             }
@@ -307,12 +302,18 @@ final class TcpAioSession extends AioSession {
 
         byteBuf.flush();
 
-        readBuffer.compact();
-        //读缓冲区已满
-        if (!readBuffer.hasRemaining()) {
-            DecoderException exception = new DecoderException("readBuffer overflow. The current TCP connection will be closed. Please fix your " + config.getProtocol().getClass().getSimpleName() + "#decode bug.");
-            messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, exception);
-            throw exception;
+        if (readBuffer.hasRemaining()) {
+            readBuffer.compact();
+            //读缓冲区已满
+            if (!readBuffer.hasRemaining()) {
+                DecoderException exception = new DecoderException("readBuffer overflow. The current TCP connection " +
+                        "will be closed. Please fix your " + config.getProtocol().getClass().getSimpleName() +
+                        "#decode bug.");
+                messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, exception);
+                throw exception;
+            }
+        } else {
+            readBuffer.clear();
         }
 
         //read from channel
@@ -323,20 +324,21 @@ final class TcpAioSession extends AioSession {
         channel.read(readBuffer, 0L, TimeUnit.MILLISECONDS, this, READ_COMPLETION_HANDLER);
     }
 
-
     /**
      * 同步读取数据
      */
-    private int synRead() throws IOException {
+    public int read(long timeout, TimeUnit unit) throws IOException {
         ByteBuffer buffer = readBuffer.buffer();
-        if (buffer.remaining() > 0) {
-            return 0;
-        }
+        buffer.compact();
+        int readSize;
         try {
-            buffer.clear();
-            int size = channel.read(buffer).get();
+            if (timeout > 0) {
+                readSize = channel.read(buffer).get();
+            } else {
+                readSize = channel.read(buffer).get(timeout, unit);
+            }
             buffer.flip();
-            return size;
+            return readSize;
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -387,119 +389,8 @@ final class TcpAioSession extends AioSession {
         }
     }
 
-    /**
-     * 获得数据输入流对象。
-     * <p>
-     * faster模式下调用该方法会触发UnsupportedOperationException异常。
-     * </p>
-     * <p>
-     * MessageProcessor采用异步处理消息的方式时，调用该方法可能会出现异常。
-     * </p>
-     *
-     * @return 同步读操作的流对象
-     * @throws IOException io异常
-     */
-    public InputStream getInputStream() throws IOException {
-        return inputStream == null ? getInputStream(-1) : inputStream;
-    }
 
-    /**
-     * 获取已知长度的InputStream
-     *
-     * @param length InputStream长度
-     * @return 同步读操作的流对象
-     * @throws IOException io异常
-     */
-    public InputStream getInputStream(int length) throws IOException {
-        if (inputStream != null) {
-            throw new IOException("pre inputStream has not closed");
-        }
-        synchronized (this) {
-            if (inputStream == null) {
-                inputStream = new InnerInputStream(length);
-            }
-        }
-        return inputStream;
-    }
 
-    /**
-     * 同步读操作的InputStream
-     */
-    private class InnerInputStream extends InputStream {
-        /**
-         * 当前InputSteam可读字节数
-         */
-        private int remainLength;
 
-        InnerInputStream(int length) {
-            this.remainLength = length >= 0 ? length : -1;
-        }
 
-        @Override
-        public int read() throws IOException {
-            if (remainLength == 0) {
-                return -1;
-            }
-            ByteBuffer readBuffer = TcpAioSession.this.readBuffer.buffer();
-            if (readBuffer.hasRemaining()) {
-                remainLength--;
-                return readBuffer.get();
-            }
-            if (synRead() == -1) {
-                remainLength = 0;
-            }
-            return read();
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            if (b == null) {
-                throw new NullPointerException();
-            } else if (off < 0 || len < 0 || len > b.length - off) {
-                throw new IndexOutOfBoundsException();
-            } else if (len == 0) {
-                return 0;
-            }
-            if (remainLength == 0) {
-                return -1;
-            }
-            if (remainLength > 0 && remainLength < len) {
-                len = remainLength;
-            }
-            ByteBuffer readBuffer = TcpAioSession.this.readBuffer.buffer();
-            int size = 0;
-            while (len > 0 && synRead() != -1) {
-                int readSize = Math.min(readBuffer.remaining(), len);
-                readBuffer.get(b, off + size, readSize);
-                size += readSize;
-                len -= readSize;
-            }
-            remainLength -= size;
-            return size;
-        }
-
-        @Override
-        public int available() throws IOException {
-            if (remainLength == 0) {
-                return 0;
-            }
-            if (synRead() == -1) {
-                remainLength = 0;
-                return remainLength;
-            }
-            ByteBuffer readBuffer = TcpAioSession.this.readBuffer.buffer();
-            if (remainLength < -1) {
-                return readBuffer.remaining();
-            } else {
-                return Math.min(remainLength, readBuffer.remaining());
-            }
-        }
-
-        @Override
-        public void close() {
-            if (TcpAioSession.this.inputStream == InnerInputStream.this) {
-                TcpAioSession.this.inputStream = null;
-            }
-        }
-    }
 }

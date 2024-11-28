@@ -21,7 +21,10 @@ import java.nio.channels.CompletionHandler;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 
 /**
@@ -153,6 +156,51 @@ public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
         @Override
         public <A> void write(ByteBuffer src, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
             super.write(src, timeout, unit, attachment, new MonitorCompletionHandler<>(this, handler, outputStreamConsumer, src));
+        }
+
+        @Override
+        public Future<Integer> read(ByteBuffer dst) {
+            Future<Integer> future = super.read(dst);
+            return new Future<Integer>() {
+                @Override
+                public boolean cancel(boolean mayInterruptIfRunning) {
+                    return future.cancel(mayInterruptIfRunning);
+                }
+
+                @Override
+                public boolean isCancelled() {
+                    return future.isCancelled();
+                }
+
+                @Override
+                public boolean isDone() {
+                    return future.isDone();
+                }
+
+                @Override
+                public Integer get() throws InterruptedException, ExecutionException {
+                    int result = future.get();
+                    if (result > 0) {
+                        byte[] bytes = new byte[result];
+                        dst.position(dst.position() - result);
+                        dst.get(bytes);
+                        inputStreamConsumer.accept(StreamMonitorAsynchronousSocketChannel.this, bytes);
+                    }
+                    return result;
+                }
+
+                @Override
+                public Integer get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                    int result = future.get(timeout, unit);
+                    if (result > 0) {
+                        byte[] bytes = new byte[result];
+                        dst.position(dst.position() - result);
+                        dst.get(bytes);
+                        inputStreamConsumer.accept(StreamMonitorAsynchronousSocketChannel.this, bytes);
+                    }
+                    return result;
+                }
+            };
         }
     }
 }

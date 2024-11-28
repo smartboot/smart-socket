@@ -11,6 +11,7 @@ package org.smartboot.socket.extension.ssl;
 
 
 import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -42,8 +43,10 @@ public final class SslService {
                 failed(new IOException("eof"), attachment);
                 return;
             }
-            synchronized (attachment) {
-                doHandshake(attachment);
+            if (result != EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL) {
+                synchronized (attachment) {
+                    doHandshake(attachment);
+                }
             }
         }
 

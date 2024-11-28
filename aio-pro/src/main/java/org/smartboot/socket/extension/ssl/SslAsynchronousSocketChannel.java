@@ -12,6 +12,7 @@ package org.smartboot.socket.extension.ssl;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
+import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 import org.smartboot.socket.enhance.FutureCompletionHandler;
 
 import javax.net.ssl.SSLEngine;
@@ -47,6 +48,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
      * 自适应的输出长度
      */
     private int adaptiveWriteSize = -1;
+    private boolean closed = false;
 
     public SslAsynchronousSocketChannel(AsynchronousSocketChannel asynchronousSocketChannel, SslService sslService, BufferPage bufferPage) {
         super(asynchronousSocketChannel);
@@ -91,7 +93,12 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
             @Override
             public void completed(Integer result, A attachment) {
-                if (result < 0) {
+                if (result == EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL) {
+                    return;
+                } else if (result == EnhanceAsynchronousChannelProvider.READABLE_SIGNAL) {
+                    asynchronousSocketChannel.read(netBuffer, timeout, unit, attachment, this);
+                    return;
+                } else if (result == -1) {
                     handler.completed(result, attachment);
                     return;
                 }
@@ -108,7 +115,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                 SSLEngineResult.Status status = doUnWrap(netBuffer, appBuffer);
                 appBuffer.flip();
 
-                //说明解包成功
+                ////存在doUnWrap为ok，但appBuffer无数据的情况
                 if (appBuffer.hasRemaining()) {
                     if (status != SSLEngineResult.Status.OK) {
                         throw new IllegalStateException();
@@ -120,7 +127,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                 if (index >= 16) {
                     System.err.println("maybe trigger bug here...");
                 }
-                if (status == SSLEngineResult.Status.OK && index < 16) {
+                if (status == SSLEngineResult.Status.OK && index < 16 && netBuffer.hasRemaining()) {
                     System.err.println("Possible exception on appBuffer.");
                     index++;
                     completed(result, attachment);
@@ -327,6 +334,10 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
     @Override
     public void close() throws IOException {
+        if (closed) {
+            return;
+        }
+        closed = true;
         netWriteBuffer.clean();
         netReadBuffer.clean();
         appReadBuffer.clean();
@@ -336,6 +347,5 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         }
         sslEngine.closeOutbound();
         asynchronousSocketChannel.close();
-
     }
 }
