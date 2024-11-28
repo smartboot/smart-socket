@@ -37,16 +37,6 @@ final class ElasticBufferPage extends AbstractBufferPage {
         this.direct = direct;
     }
 
-    /**
-     * 申请物理内存页空间
-     *
-     * @param size   物理空间大小
-     * @param direct true:堆外缓冲区,false:堆内缓冲区
-     * @return 缓冲区
-     */
-    private ByteBuffer allocate0(int size, boolean direct) {
-        return direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
-    }
 
     /**
      * 申请虚拟内存
@@ -69,7 +59,7 @@ final class ElasticBufferPage extends AbstractBufferPage {
         if (virtualBuffer != null) {
             clean0(virtualBuffer);
         }
-        return new VirtualBuffer(this, allocate0(size, direct), 0, size);
+        return new VirtualBuffer(this, direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size), 0, size);
     }
 
 

@@ -39,6 +39,10 @@ public final class BufferPagePool {
      */
     private AbstractBufferPage[] bufferPages;
     private boolean enabled = true;
+    /**
+     * 内存回收任务
+     */
+    private final ScheduledFuture<?> future;
 
     /**
      * @param pageSize 内存页大小
@@ -50,8 +54,27 @@ public final class BufferPagePool {
         for (int i = 0; i < pageNum; i++) {
             bufferPages[i] = pageSize == 0 ? new ElasticBufferPage(isDirect) : new StaticBufferPage(pageSize, isDirect);
         }
-        if (pageNum == 0) {
-            future.cancel(false);
+        if (pageNum > 0) {
+            future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    if (enabled) {
+                        for (AbstractBufferPage bufferPage : bufferPages) {
+                            bufferPage.tryClean();
+                        }
+                    } else {
+                        if (bufferPages != null) {
+                            for (AbstractBufferPage page : bufferPages) {
+                                page.release();
+                            }
+                            bufferPages = null;
+                        }
+                        future.cancel(false);
+                    }
+                }
+            }, 500, 1000, TimeUnit.MILLISECONDS);
+        } else {
+            future = null;
         }
     }
 
@@ -76,28 +99,6 @@ public final class BufferPagePool {
     public void release() {
         enabled = false;
     }
-
-    /**
-     * 内存回收任务
-     */
-    private final ScheduledFuture<?> future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
-        @Override
-        public void run() {
-            if (enabled) {
-                for (AbstractBufferPage bufferPage : bufferPages) {
-                    bufferPage.tryClean();
-                }
-            } else {
-                if (bufferPages != null) {
-                    for (AbstractBufferPage page : bufferPages) {
-                        page.release();
-                    }
-                    bufferPages = null;
-                }
-                future.cancel(false);
-            }
-        }
-    }, 500, 1000, TimeUnit.MILLISECONDS);
 
 
 }
