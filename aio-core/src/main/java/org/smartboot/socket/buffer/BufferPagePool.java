@@ -37,7 +37,7 @@ public final class BufferPagePool {
     /**
      * 内存页组
      */
-    private BufferPage[] bufferPages;
+    private AbstractBufferPage[] bufferPages;
     private boolean enabled = true;
 
     /**
@@ -46,11 +46,11 @@ public final class BufferPagePool {
      * @param isDirect 是否使用直接缓冲区
      */
     public BufferPagePool(final int pageSize, final int pageNum, final boolean isDirect) {
-        bufferPages = new BufferPage[pageNum];
+        bufferPages = new AbstractBufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
-            bufferPages[i] = new BufferPage(pageSize, isDirect);
+            bufferPages[i] = pageSize == 0 ? new ElasticBufferPage(isDirect) : new StaticBufferPage(pageSize, isDirect);
         }
-        if (pageNum == 0 || pageSize == 0) {
+        if (pageNum == 0) {
             future.cancel(false);
         }
     }
@@ -84,12 +84,12 @@ public final class BufferPagePool {
         @Override
         public void run() {
             if (enabled) {
-                for (BufferPage bufferPage : bufferPages) {
+                for (AbstractBufferPage bufferPage : bufferPages) {
                     bufferPage.tryClean();
                 }
             } else {
                 if (bufferPages != null) {
-                    for (BufferPage page : bufferPages) {
+                    for (AbstractBufferPage page : bufferPages) {
                         page.release();
                     }
                     bufferPages = null;
