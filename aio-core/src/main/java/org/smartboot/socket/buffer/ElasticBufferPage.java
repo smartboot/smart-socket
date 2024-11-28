@@ -29,7 +29,6 @@ final class ElasticBufferPage extends AbstractBufferPage {
     private final ConcurrentLinkedQueue<VirtualBuffer> cleanBuffers = new ConcurrentLinkedQueue<>();
     private final boolean direct;
 
-
     /**
      * @param direct 是否使用堆外内存
      */
@@ -95,7 +94,11 @@ final class ElasticBufferPage extends AbstractBufferPage {
      */
     private void clean0(VirtualBuffer virtualBuffer) {
         if (direct) {
-            ((DirectBuffer) virtualBuffer.buffer()).cleaner().clean();
+            try {
+                ((DirectBuffer) virtualBuffer.buffer()).cleaner().clean();
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
         }
     }
 
