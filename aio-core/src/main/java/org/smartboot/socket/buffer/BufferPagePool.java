@@ -44,6 +44,10 @@ public final class BufferPagePool {
      */
     private final ScheduledFuture<?> future;
 
+    public BufferPagePool(int pageNum, boolean direct) {
+        this(0, pageNum, direct);
+    }
+
     /**
      * @param pageSize 内存页大小
      * @param pageNum  内存页个数
