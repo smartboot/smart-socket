@@ -116,6 +116,6 @@ final class ElasticBufferPage extends AbstractBufferPage {
 
     @Override
     public String toString() {
-        return "BufferPage{availableBuffers=" + cleanBuffers + '}';
+        return "BufferPage{direct=" + direct + " ,availableBuffers=" + cleanBuffers + '}';
     }
 }
