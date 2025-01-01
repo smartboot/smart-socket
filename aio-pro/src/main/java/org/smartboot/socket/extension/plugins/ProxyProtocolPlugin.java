@@ -11,6 +11,13 @@ import java.nio.channels.CompletionHandler;
 import java.util.concurrent.TimeUnit;
 
 public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
+    private static final byte AF_UNSPEC_BYTE = 0x00;
+    private static final int AF_IPV4_BYTE = 0x10;
+    private static final byte AF_IPV6_BYTE = 0x20;
+    private static final byte AF_UNIX_BYTE = 0x30;
+    private static final byte TP_UNSPEC_BYTE = 0x00;
+    private static final byte TP_STREAM_BYTE = 0x01;
+    private static final byte TP_DGRAM_BYTE = 0x02;
 
     @Override
     public AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
@@ -19,16 +26,19 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
 
     static class ProxyProtocolChannel extends AsynchronousSocketChannelProxy {
         private static final byte STATE_READY = 0;
-        private static final byte STATE_PROXY = 1;
-        private static final byte STATE_PROTOCOL_TYPE = 2;
-        private static final byte STATE_PROTOCOL_SOURCE_IP = 3;
-        private static final byte STATE_PROTOCOL_DEST_IP = 4;
-        private static final byte STATE_PROTOCOL_SOURCE_PORT = 5;
-        private static final byte STATE_PROTOCOL_DEST_PORT = 6;
-        private static final byte STATE_SKIP_TO_END = 7;
-        private static final byte STATE_END = 8;
-        private byte state = STATE_PROXY;
-        private boolean ipv4;
+        private static final byte STATE_PROXY_SIGN = 1;
+        private static final byte STATE_V2_HEADER = STATE_PROXY_SIGN + 1;
+        private static final byte STATE_V2_IPv4 = STATE_V2_HEADER + 1;
+        private static final byte STATE_V2_IPv6 = STATE_V2_IPv4 + 1;
+        private static final byte STATE_V2_UNIX = STATE_V2_IPv6 + 1;
+        private static final byte STATE_V1_TYPE = STATE_V2_UNIX + 1;
+        private static final byte STATE_V1_SOURCE_IP = STATE_V1_TYPE + 1;
+        private static final byte STATE_V1_DEST_IP = STATE_V1_SOURCE_IP + 1;
+        private static final byte STATE_V1_SOURCE_PORT = STATE_V1_DEST_IP + 1;
+        private static final byte STATE_V1_DEST_PORT = STATE_V1_SOURCE_PORT + 1;
+        private static final byte STATE_V1_SKIP_TO_END = STATE_V1_DEST_PORT + 1;
+        private static final byte STATE_END = STATE_V1_SKIP_TO_END + 1;
+        private byte state = STATE_PROXY_SIGN;
         private String sourceIp;
         private String destIp;
         private SocketAddress remoteAddress;
@@ -51,7 +61,9 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
                     @Override
                     public void completed(Integer result, A attachment) {
                         buffer.flip();
-                        Exception e = decodeProxyProtocol(buffer);
+                        Exception e = null;
+                        e = decodeProxyProtocol(buffer);
+
                         if (e != null) {
                             handler.failed(e, attachment);
                             return;
@@ -79,15 +91,34 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
 
         private Exception decodeProxyProtocol(ByteBuffer buffer) {
             switch (state) {
-                case STATE_PROXY:
-                    if (buffer.remaining() < 6) {
+                case STATE_PROXY_SIGN: {
+                    if (buffer.remaining() < 12) {
                         break;
                     }
-                    if (buffer.get() != 'P' || buffer.get() != 'R' || buffer.get() != 'O' || buffer.get() != 'X' || buffer.get() != 'Y' || buffer.get() != ' ') {
-                        return new IOException("not proxy protocol");
+                    byte b = buffer.get();
+                    if (b == 'P') {
+                        if (buffer.get() != 'R' || buffer.get() != 'O' || buffer.get() != 'X' || buffer.get() != 'Y' || buffer.get() != ' ') {
+                            return new IOException("not proxy protocol");
+                        }
+                        state = STATE_V1_TYPE;
+                    } else if (b == 0x0D) {
+                        //The binary header format starts with a constant 12 bytes block containing the
+                        //protocol signature :
+                        //
+                        //   \x0D \x0A \x0D \x0A \x00 \x0D \x0A \x51 \x55 \x49 \x54 \x0A
+                        //
+                        //Note that this block contains a null byte at the 5th position, so it must not
+                        //be handled as a null-terminated string.
+                        if (buffer.get() != 0x0A || buffer.get() != 0x0D || buffer.get() != 0x0A || buffer.get() != 0x00 || buffer.get() != 0x0D || buffer.get() != 0x0A || buffer.get() != 0x51 || buffer.get() != 0x55 || buffer.get() != 0x49 || buffer.get() != 0x54 || buffer.get() != 0x0A) {
+                            return new IOException("not proxy protocol");
+                        }
+                        state = STATE_V2_HEADER;
+                    } else {
+                        return new IOException("invalid proxy protocol");
                     }
-                    state = STATE_PROTOCOL_TYPE;
-                case STATE_PROTOCOL_TYPE:
+                    return decodeProxyProtocol(buffer);
+                }
+                case STATE_V1_TYPE: {
                     if (buffer.remaining() < 8) {
                         break;
                     }
@@ -100,45 +131,46 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
                         }
                         b = buffer.get();
                         if (b == '4') {
-                            ipv4 = true;
+//                            ipv4 = true;
                         } else if (b == '6') {
-                            ipv4 = false;
+//                            ipv4 = false;
                         } else {
                             return new IOException("invalid proxy protocol");
                         }
                         if (buffer.get() != ' ') {
                             return new IOException("invalid proxy protocol");
                         }
-                        state = STATE_PROTOCOL_SOURCE_IP;
+                        state = STATE_V1_SOURCE_IP;
                     } else if (b == 'U') {
                         if (buffer.get() != 'N' || buffer.get() != 'K' || buffer.get() != 'N' || buffer.get() != 'O' || buffer.get() != 'W' || buffer.get() != 'N' || buffer.get() != ' ') {
                             return new IOException("invalid proxy protocol");
                         }
-                        state = STATE_SKIP_TO_END;
-                        return decodeProxyProtocol(buffer);
+                        state = STATE_V1_SKIP_TO_END;
                     } else {
                         return new IOException("not proxy protocol");
                     }
-                case STATE_PROTOCOL_SOURCE_IP:
+                    return decodeProxyProtocol(buffer);
+                }
+                case STATE_V1_SOURCE_IP:
                     sourceIp = getIp(buffer);
                     if (sourceIp == null) {
                         return null;
                     }
-                    state = STATE_PROTOCOL_DEST_IP;
-                case STATE_PROTOCOL_DEST_IP:
+                    state = STATE_V1_DEST_IP;
+                case STATE_V1_DEST_IP:
                     destIp = getIp(buffer);
                     if (destIp == null) {
                         return null;
                     }
-                case STATE_PROTOCOL_SOURCE_PORT: {
+                case STATE_V1_SOURCE_PORT: {
                     int port = getPort(buffer);
                     if (port == -1) {
                         return null;
                     }
                     remoteAddress = new InetSocketAddress(sourceIp, port);
-                    state = STATE_PROTOCOL_DEST_PORT;
+                    state = STATE_V1_DEST_PORT;
                 }
-                case STATE_PROTOCOL_DEST_PORT: {
+                case STATE_V1_DEST_PORT: {
                     int port = getPort(buffer);
                     if (port == -1) {
                         return null;
@@ -157,7 +189,7 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
                     state = STATE_READY;
                     break;
                 }
-                case STATE_SKIP_TO_END: {
+                case STATE_V1_SKIP_TO_END: {
                     while (buffer.remaining() >= 2) {
                         if (buffer.get() != '\r') {
                             continue;
@@ -169,9 +201,94 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
                     }
                     break;
                 }
+                case STATE_V2_HEADER: {
+                    if (buffer.remaining() < 4) {
+                        return null;
+                    }
+                    int b = buffer.get();
+                    if (b >> 4 != 0x2) {
+                        return new IOException("invalid proxy protocol version");
+                    }
+                    int cmd = b & 0x0F;
+
+                    b = buffer.get();
+                    byte addressFamily = (byte) (b & 0xF0);
+                    if (addressFamily > AF_UNIX_BYTE) {
+                        return new IOException("invalid proxy protocol address family");
+                    }
+                    byte transportProtocol = (byte) (b & 0x0F);
+                    if (transportProtocol > TP_DGRAM_BYTE) {
+                        return new IOException("invalid proxy protocol transport protocol");
+                    }
+
+                    int addressLength = buffer.getShort();
+                    switch (b) {
+                        case AF_UNSPEC_BYTE | TP_UNSPEC_BYTE:
+                            break;
+                        case AF_IPV4_BYTE | TP_STREAM_BYTE:
+                        case AF_IPV4_BYTE | TP_DGRAM_BYTE:
+                            state = STATE_V2_IPv4;
+                            if (addressLength != 12) {
+                                return new IOException("invalid proxy protocol address length");
+                            }
+                            break;
+                        case AF_IPV6_BYTE | TP_STREAM_BYTE:
+                        case AF_IPV6_BYTE | TP_DGRAM_BYTE:
+                            if (addressLength != 36) {
+                                return new IOException("invalid proxy protocol address length");
+                            }
+                            state = STATE_V2_IPv6;
+                            break;
+                        case AF_UNIX_BYTE | TP_STREAM_BYTE:
+                        case AF_UNIX_BYTE | TP_DGRAM_BYTE:
+                            if (addressLength != 216) {
+                                return new IOException("invalid proxy protocol address length");
+                            }
+                            state = STATE_V2_UNIX;
+                            break;
+                        default:
+                            return new IOException("invalid proxy protocol address family");
+                    }
+                    return decodeProxyProtocol(buffer);
+                }
+                case STATE_V2_IPv4: {
+                    if (buffer.remaining() < 12) {
+                        return null;
+                    }
+                    sourceIp = (buffer.get() & 0xFF) + "." + (buffer.get() & 0xFF) + "." + (buffer.get() & 0xFF) + "." + (buffer.get() & 0xFF);
+                    destIp = (buffer.get() & 0xFF) + "." + (buffer.get() & 0xFF) + "." + (buffer.get() & 0xFF) + "." + (buffer.get() & 0xFF);
+                    remoteAddress = new InetSocketAddress(sourceIp, buffer.getShort() & 0xFFFF);
+                    localAddress = new InetSocketAddress(destIp, buffer.getShort() & 0xFFFF);
+                    state = STATE_READY;
+                    break;
+                }
+                case STATE_V2_IPv6: {
+                    if (buffer.remaining() < 36) {
+                        return null;
+                    }
+                    StringBuilder sourceIp = new StringBuilder(Integer.toHexString(buffer.getShort() & 0xFFFF));
+                    for (int i = 0; i < 3; i++) {
+                        sourceIp.append(":").append(Integer.toHexString(buffer.getShort() & 0xFFFF));
+                    }
+                    StringBuilder destIp = new StringBuilder(Integer.toHexString(buffer.getShort() & 0xFFFF));
+                    for (int i = 0; i < 3; i++) {
+                        destIp.append(":").append(Integer.toHexString(buffer.getShort() & 0xFFFF));
+                    }
+                    remoteAddress = new InetSocketAddress(sourceIp.toString(), buffer.getShort() & 0xFFFF);
+                    localAddress = new InetSocketAddress(destIp.toString(), buffer.getShort() & 0xFFFF);
+                    state = STATE_READY;
+                    break;
+                }
+                case STATE_V2_UNIX: {
+                    if (buffer.remaining() < 216) {
+                        return null;
+                    }
+
+                }
             }
             return null;
         }
+
 
         private String getIp(ByteBuffer buffer) {
             int p = buffer.position();
