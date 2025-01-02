@@ -10,6 +10,11 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 参考规范：https://github.com/haproxy/haproxy/blob/master/doc/proxy-protocol.txt
+ *
+ * @param <T>
+ */
 public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
     private static final byte AF_UNSPEC_BYTE = 0x00;
     private static final int AF_IPV4_BYTE = 0x10;
