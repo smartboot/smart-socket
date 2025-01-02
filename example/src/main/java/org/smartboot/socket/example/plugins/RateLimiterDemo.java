@@ -9,11 +9,8 @@
 
 package org.smartboot.socket.example.plugins;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
-import org.smartboot.socket.example.benchmark.StringServer;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.extension.plugins.RateLimiterPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
@@ -29,7 +26,6 @@ import java.io.IOException;
  * @version V1.0 , 2021/10/21
  */
 public class RateLimiterDemo {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StringServer.class);
 
     public static void main(String[] args) throws IOException {
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
@@ -49,7 +45,7 @@ public class RateLimiterDemo {
             @Override
             public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 if (throwable != null) {
-                    LOGGER.error(stateMachineEnum + " exception:", throwable);
+                    throwable.printStackTrace();
                 }
             }
         };

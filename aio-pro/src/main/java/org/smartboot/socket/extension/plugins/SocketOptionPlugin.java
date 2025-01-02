@@ -9,9 +9,6 @@
 
 package org.smartboot.socket.extension.plugins;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
@@ -27,7 +24,6 @@ import java.util.Map;
  */
 public class SocketOptionPlugin<T> extends AbstractPlugin<T> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SocketOptionPlugin.class);
     private Map<SocketOption<Object>, Object> optionMap = new HashMap<>();
 
     @Override
@@ -52,7 +48,7 @@ public class SocketOptionPlugin<T> extends AbstractPlugin<T> {
                 channel.setOption(entry.getKey(), entry.getValue());
             }
         } catch (IOException e) {
-            LOGGER.error("", e);
+            e.printStackTrace();
         }
     }
 

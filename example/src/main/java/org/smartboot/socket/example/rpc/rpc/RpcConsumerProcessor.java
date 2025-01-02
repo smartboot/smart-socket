@@ -11,8 +11,6 @@ package org.smartboot.socket.example.rpc.rpc;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
@@ -37,7 +35,6 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0 , 2018/7/1
  */
 public class RpcConsumerProcessor implements MessageProcessor<byte[]> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RpcConsumerProcessor.class);
     private Map<String, CompletableFuture<RpcResponse>> synchRespMap = new ConcurrentHashMap<>();
     private Map<Class, Object> objectMap = new ConcurrentHashMap<>();
     private AioSession aioSession;

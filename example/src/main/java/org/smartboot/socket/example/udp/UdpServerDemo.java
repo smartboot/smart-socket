@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.example.udp;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
@@ -26,7 +24,6 @@ import java.io.IOException;
  * @version V1.0 , 2021/3/1
  */
 public class UdpServerDemo {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UdpServerDemo.class);
 
     public static void main(String[] args) throws IOException {
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
@@ -49,11 +46,11 @@ public class UdpServerDemo {
                 }
                 switch (stateMachineEnum) {
                     case SESSION_CLOSING:
-                        LOGGER.info("session:{} closing", session);
+                        System.out.println("session:" + session + " closing");
                 }
             }
         };
-        processor.addPlugin(new MonitorPlugin<>(5,true));
+        processor.addPlugin(new MonitorPlugin<>(5, true));
         UdpBootstrap bootstrap = new UdpBootstrap(new StringProtocol(), processor);
         bootstrap.setThreadNum(Runtime.getRuntime().availableProcessors())
                 .setBufferPagePool(new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors(), true))

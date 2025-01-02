@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.example.reconnect;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.extension.protocol.StringProtocol;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
@@ -23,7 +21,6 @@ import java.util.concurrent.ExecutionException;
  * @version V1.0 , 2018/11/23
  */
 public class ReconnectClient {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReconnectClient.class);
     private AioQuickClient client;
     private AioSession session;
     private boolean running = true;
@@ -32,13 +29,13 @@ public class ReconnectClient {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                LOGGER.info("启动连接监测");
+                System.out.println("启动连接监测");
                 while (running) {
                     if (session == null || session.isInvalid()) {
-                        LOGGER.info("连接异常，准备重连...");
+                        System.out.println("连接异常，准备重连...");
                         connect();
                     } else {
-                        LOGGER.info("连接正常...");
+                        System.out.println("连接正常...");
                     }
                     try {
                         Thread.sleep(1000);
@@ -46,17 +43,17 @@ public class ReconnectClient {
                         e.printStackTrace();
                     }
                 }
-                LOGGER.info("终止连接监测");
+                System.out.println("终止连接监测");
             }
         }, "Reconnect-Thread").start();
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                LOGGER.info("模拟连接异常");
+                System.out.println("模拟连接异常");
                 int i = 0;
                 while (i++ < 3) {
-                    LOGGER.info("第 {} 次断开连接", i);
+                    System.out.println("第 " + i + " 次断开连接");
                     if (session != null) {
                         session.close();
                     }
@@ -66,7 +63,7 @@ public class ReconnectClient {
                         e.printStackTrace();
                     }
                 }
-                LOGGER.info("彻底断开连接，不再重连");
+                System.out.println("彻底断开连接，不再重连");
                 shutdown();
             }
         }, "Fault-Thread").start();
@@ -79,14 +76,14 @@ public class ReconnectClient {
     public void connect() {
         try {
             if (client != null) {
-                LOGGER.info("关闭旧客户端");
+                System.out.println("关闭旧客户端");
                 client.shutdownNow();
             }
             client = new AioQuickClient("localhost", 8888, new StringProtocol(), new MessageProcessorImpl());
             session = client.start();
-            LOGGER.info("客户端连接成功");
+            System.out.println("客户端连接成功");
         } catch (IOException e) {
-            LOGGER.error("启动客户端异常:{}", e.getMessage());
+            System.out.println("启动客户端异常:" + e.getMessage());
             if (client != null) {
                 client.shutdownNow();
             }

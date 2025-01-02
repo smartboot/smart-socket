@@ -1,7 +1,5 @@
 package org.smartboot.socket.extension.plugins;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
 import org.smartboot.socket.timer.HashedWheelTimer;
 import org.smartboot.socket.timer.TimerTask;
@@ -19,7 +17,6 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0 , 2023/10/22
  */
 public final class IdleStatePlugin<T> extends AbstractPlugin<T> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IdleStatePlugin.class);
 
     private static final HashedWheelTimer timer = new HashedWheelTimer(r -> {
         Thread thread = new Thread(r, "idleStateMonitor");
@@ -71,12 +68,8 @@ public final class IdleStatePlugin<T> extends AbstractPlugin<T> {
                 long currentTime = System.currentTimeMillis();
                 if ((currentTime - readTimestamp) > IdleStatePlugin.this.idleTimeout || (currentTime - writeTimestamp) > IdleStatePlugin.this.idleTimeout) {
                     try {
-                        if (asynchronousSocketChannel.isOpen() && LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("close session:{} by IdleStatePlugin", asynchronousSocketChannel.getRemoteAddress());
-                        }
                         close();
-                    } catch (IOException e) {
-                        LOGGER.debug("close exception", e);
+                    } catch (IOException ignore) {
                     }
                 }
             }, IdleStatePlugin.this.idleTimeout, TimeUnit.MILLISECONDS);

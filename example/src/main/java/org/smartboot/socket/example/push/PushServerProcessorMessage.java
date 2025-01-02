@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.example.push;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
@@ -24,12 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version V1.0 , 2020/4/25
  */
 public class PushServerProcessorMessage implements MessageProcessor<String> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PushServerProcessorMessage.class);
     private Map<String, AioSession> sessionMap = new ConcurrentHashMap<>();
 
     @Override
     public void process(AioSession session, String msg) {
-        LOGGER.info("收到SendClient发送的消息:{}", msg);
+        System.out.println("收到SendClient发送的消息:" + msg);
         byte[] bytes = msg.getBytes();
         sessionMap.values().forEach(onlineSession -> {
             if (session == onlineSession) {
@@ -37,12 +34,13 @@ public class PushServerProcessorMessage implements MessageProcessor<String> {
             }
             WriteBuffer writeBuffer = onlineSession.writeBuffer();
             try {
-                LOGGER.info("发送Push至ReceiverClient:{}", onlineSession.getSessionID());
+                System.out.println("发送Push至ReceiverClient:" + onlineSession.getSessionID());
                 writeBuffer.writeInt(bytes.length);
                 writeBuffer.write(bytes);
                 writeBuffer.flush();
             } catch (Exception e) {
-                LOGGER.error("Push消息异常", e);
+                System.out.println("Push消息异常");
+                e.printStackTrace();
             }
         });
     }
@@ -51,11 +49,11 @@ public class PushServerProcessorMessage implements MessageProcessor<String> {
     public void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         switch (stateMachineEnum) {
             case NEW_SESSION:
-                LOGGER.info("与客户端:{} 建立连接", session.getSessionID());
+                System.out.println("与客户端:" + session.getSessionID() + " 建立连接");
                 sessionMap.put(session.getSessionID(), session);
                 break;
             case SESSION_CLOSED:
-                LOGGER.info("断开客户端连接: {}", session.getSessionID());
+                System.out.println("断开客户端连接: " + session.getSessionID());
                 sessionMap.remove(session.getSessionID());
                 break;
             default:

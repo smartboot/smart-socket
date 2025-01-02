@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.extension.plugins;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.timer.HashedWheelTimer;
@@ -27,7 +25,6 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0 , 2019/4/14
  */
 public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferPageMonitorPlugin.class);
     /**
      * 任务执行频率
      */
@@ -47,7 +44,7 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
         future = HashedWheelTimer.DEFAULT_TIMER.scheduleWithFixedDelay(() -> {
             {
                 if (server == null) {
-                    LOGGER.error("unKnow server or client need to monitor!");
+                    System.err.println("unKnow server or client need to monitor!");
                     shutdown();
                     return;
                 }
@@ -56,7 +53,7 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
                     bufferPoolField.setAccessible(true);
                     BufferPagePool writeBufferPool = (BufferPagePool) bufferPoolField.get(server);
                     if (writeBufferPool == null) {
-                        LOGGER.error("server maybe has not started!");
+                        System.err.println("server maybe has not started!");
                         shutdown();
                         return;
                     }
@@ -65,15 +62,13 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
                     BufferPagePool readBufferPool = (BufferPagePool) readBufferPoolField.get(server);
 
                     if (readBufferPool != null && readBufferPool != writeBufferPool) {
-                        LOGGER.info("dump writeBuffer");
                         dumpBufferPool(writeBufferPool);
-                        LOGGER.info("dump readBuffer");
                         dumpBufferPool(readBufferPool);
                     } else {
                         dumpBufferPool(writeBufferPool);
                     }
                 } catch (Exception e) {
-                    LOGGER.error("", e);
+                    e.printStackTrace();
                 }
             }
         }, seconds, TimeUnit.SECONDS);
@@ -87,7 +82,7 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
         for (BufferPage page : pages) {
             logger += "\r\n" + page.toString();
         }
-        LOGGER.info(logger);
+        System.out.println(logger);
     }
 
     private void shutdown() {

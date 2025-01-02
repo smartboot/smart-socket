@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.example.benchmark;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
@@ -28,7 +26,6 @@ import java.util.concurrent.ExecutionException;
  * @version V1.0 , 2018/11/23
  */
 public class StringMutilClient {
-    private static final Logger LOGGER = LoggerFactory.getLogger(StringMutilClient.class);
 
     public static void main(String[] args) throws InterruptedException, ExecutionException, IOException {
         System.setProperty("smart-socket.session.writeChunkSize", "" + (1024 * 1024));
