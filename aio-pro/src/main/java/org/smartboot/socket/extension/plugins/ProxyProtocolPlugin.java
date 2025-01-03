@@ -104,6 +104,7 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
                     if (buffer.remaining() < 12) {
                         break;
                     }
+                    buffer.mark();
                     byte b = buffer.get();
                     if (b == 'P') {
                         if (buffer.get() != 'R' || buffer.get() != 'O' || buffer.get() != 'X' || buffer.get() != 'Y' || buffer.get() != ' ') {
@@ -123,7 +124,9 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
                         }
                         state = STATE_V2_HEADER;
                     } else {
-                        return new IOException("invalid proxy protocol");
+                        buffer.reset();
+                        state = STATE_READY;
+//                        return new IOException("invalid proxy protocol");
                     }
                     return decodeProxyProtocol(buffer);
                 }
@@ -342,13 +345,13 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
         @Override
         public SocketAddress getRemoteAddress() throws IOException {
             checkState();
-            return remoteAddress;
+            return remoteAddress == null ? super.getRemoteAddress() : remoteAddress;
         }
 
         @Override
         public SocketAddress getLocalAddress() throws IOException {
             checkState();
-            return localAddress;
+            return localAddress == null ? super.getLocalAddress() : localAddress;
         }
 
         private void checkState() throws IOException {
