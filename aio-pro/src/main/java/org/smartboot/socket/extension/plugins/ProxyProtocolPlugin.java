@@ -65,6 +65,10 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
                 super.read(buffer, timeout, unit, attachment, new CompletionHandler<Integer, A>() {
                     @Override
                     public void completed(Integer result, A attachment) {
+                        if (result < 0) {
+                            handler.completed(result, attachment);
+                            return;
+                        }
                         buffer.flip();
                         Exception e = null;
                         e = decodeProxyProtocol(buffer);
@@ -229,6 +233,7 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
                     int addressLength = buffer.getShort();
                     switch (b) {
                         case AF_UNSPEC_BYTE | TP_UNSPEC_BYTE:
+                            state = STATE_READY;
                             break;
                         case AF_IPV4_BYTE | TP_STREAM_BYTE:
                         case AF_IPV4_BYTE | TP_DGRAM_BYTE:
