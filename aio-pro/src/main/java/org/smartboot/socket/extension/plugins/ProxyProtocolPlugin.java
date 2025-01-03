@@ -232,6 +232,11 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
 
                     int addressLength = buffer.getShort();
                     switch (b) {
+                        // the connection is forwarded for an unknown, unspecified
+                        // or unsupported protocol. The sender should use this family when sending
+                        // LOCAL commands or when dealing with unsupported protocol families. The
+                        // receiver is free to accept the connection anyway and use the real endpoint
+                        // addresses or to reject it. The receiver should ignore address information.
                         case AF_UNSPEC_BYTE | TP_UNSPEC_BYTE:
                             state = STATE_READY;
                             break;
