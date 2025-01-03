@@ -24,12 +24,22 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
     private static final byte TP_STREAM_BYTE = 0x01;
     private static final byte TP_DGRAM_BYTE = 0x02;
 
+    private final boolean strict;
+
+    public ProxyProtocolPlugin() {
+        this(false);
+    }
+
+    public ProxyProtocolPlugin(boolean strict) {
+        this.strict = strict;
+    }
+
     @Override
     public AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
         return new ProxyProtocolChannel(channel);
     }
 
-    static class ProxyProtocolChannel extends AsynchronousSocketChannelProxy {
+    class ProxyProtocolChannel extends AsynchronousSocketChannelProxy {
         private static final byte STATE_READY = 0;
         private static final byte STATE_PROXY_SIGN = 1;
         private static final byte STATE_V2_HEADER = STATE_PROXY_SIGN + 1;
@@ -108,9 +118,15 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
                     byte b = buffer.get();
                     if (b == 'P') {
                         if (buffer.get() != 'R' || buffer.get() != 'O' || buffer.get() != 'X' || buffer.get() != 'Y' || buffer.get() != ' ') {
-                            return new IOException("not proxy protocol");
+                            if (ProxyProtocolPlugin.this.strict) {
+                                return new IOException("not proxy protocol");
+                            } else {
+                                buffer.reset();
+                                state = STATE_READY;
+                            }
+                        } else {
+                            state = STATE_V1_TYPE;
                         }
-                        state = STATE_V1_TYPE;
                     } else if (b == 0x0D) {
                         //The binary header format starts with a constant 12 bytes block containing the
                         //protocol signature :
@@ -120,13 +136,20 @@ public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
                         //Note that this block contains a null byte at the 5th position, so it must not
                         //be handled as a null-terminated string.
                         if (buffer.get() != 0x0A || buffer.get() != 0x0D || buffer.get() != 0x0A || buffer.get() != 0x00 || buffer.get() != 0x0D || buffer.get() != 0x0A || buffer.get() != 0x51 || buffer.get() != 0x55 || buffer.get() != 0x49 || buffer.get() != 0x54 || buffer.get() != 0x0A) {
-                            return new IOException("not proxy protocol");
+                            if (ProxyProtocolPlugin.this.strict) {
+                                return new IOException("not proxy protocol");
+                            } else {
+                                buffer.reset();
+                                state = STATE_READY;
+                            }
+                        } else {
+                            state = STATE_V2_HEADER;
                         }
-                        state = STATE_V2_HEADER;
+                    } else if (strict) {
+                        return new IOException("invalid proxy protocol");
                     } else {
                         buffer.reset();
                         state = STATE_READY;
-//                        return new IOException("invalid proxy protocol");
                     }
                     return decodeProxyProtocol(buffer);
                 }
