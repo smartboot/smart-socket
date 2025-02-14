@@ -19,7 +19,6 @@ import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -55,65 +54,67 @@ final class TcpAioSession extends AioSession {
     /**
      * 底层通信channel对象
      */
-    private final AsynchronousSocketChannel channel;    /**
+    private final AsynchronousSocketChannel channel;
+    /**
      * 读事件回调处理
      */
     private static final CompletionHandler<Integer, TcpAioSession> READ_COMPLETION_HANDLER =
             new CompletionHandler<Integer, TcpAioSession>() {
-        @Override
-        public void completed(Integer result, TcpAioSession aioSession) {
-            try {
-                aioSession.readCompleted(result);
-            } catch (Throwable throwable) {
-                failed(throwable, aioSession);
-            }
-        }
+                @Override
+                public void completed(Integer result, TcpAioSession aioSession) {
+                    try {
+                        aioSession.readCompleted(result);
+                    } catch (Throwable throwable) {
+                        failed(throwable, aioSession);
+                    }
+                }
 
-        @Override
-        public void failed(Throwable exc, TcpAioSession aioSession) {
-            try {
-                aioSession.config.getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            try {
-                aioSession.close(false);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    };
+                @Override
+                public void failed(Throwable exc, TcpAioSession aioSession) {
+                    try {
+                        aioSession.config.getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        aioSession.close(false);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
     /**
      * 输出流
      */
-    private final WriteBuffer byteBuf;    /**
+    private final WriteBuffer byteBuf;
+    /**
      * 写事件回调处理
      */
     private static final CompletionHandler<Integer, TcpAioSession> WRITE_COMPLETION_HANDLER =
             new CompletionHandler<Integer, TcpAioSession>() {
-        @Override
-        public void completed(Integer result, TcpAioSession aioSession) {
-            try {
-                aioSession.writeCompleted(result);
-            } catch (Throwable throwable) {
-                failed(throwable, aioSession);
-            }
-        }
+                @Override
+                public void completed(Integer result, TcpAioSession aioSession) {
+                    try {
+                        aioSession.writeCompleted(result);
+                    } catch (Throwable throwable) {
+                        failed(throwable, aioSession);
+                    }
+                }
 
-        @Override
-        public void failed(Throwable exc, TcpAioSession aioSession) {
-            try {
-                aioSession.config.getProcessor().stateEvent(aioSession, StateMachineEnum.OUTPUT_EXCEPTION, exc);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            try {
-                aioSession.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    };
+                @Override
+                public void failed(Throwable exc, TcpAioSession aioSession) {
+                    try {
+                        aioSession.config.getProcessor().stateEvent(aioSession, StateMachineEnum.OUTPUT_EXCEPTION, exc);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        aioSession.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
     private final IoServerConfig config;
     private final Supplier<VirtualBuffer> readBufferSupplier;
     /**
@@ -125,10 +126,7 @@ final class TcpAioSession extends AioSession {
      * 写缓冲
      */
     private VirtualBuffer writeBuffer;
-    /**
-     * 同步输入流
-     */
-    private InputStream inputStream;
+
 
     /**
      * @param channel Socket通道
@@ -388,9 +386,6 @@ final class TcpAioSession extends AioSession {
             throw new IOException("session is closed");
         }
     }
-
-
-
 
 
 }
