@@ -9,9 +9,6 @@
 
 package org.smartboot.socket.extension.plugins;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.AsynchronousSocketChannel;
@@ -24,7 +21,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @version V1.0 , 2019/3/27
  */
 public final class BlackListPlugin<T> extends AbstractPlugin<T> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BlackListPlugin.class);
     private ConcurrentLinkedQueue<BlackListRule> ipBlackList = new ConcurrentLinkedQueue<>();
 
     @Override
@@ -33,7 +29,7 @@ public final class BlackListPlugin<T> extends AbstractPlugin<T> {
         try {
             inetSocketAddress = (InetSocketAddress) channel.getRemoteAddress();
         } catch (IOException e) {
-            LOGGER.error("get remote address error.", e);
+            e.printStackTrace();
         }
         if (inetSocketAddress == null) {
             return channel;

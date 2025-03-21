@@ -1,7 +1,5 @@
 package org.smartboot.socket.benchmark;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
@@ -21,7 +19,6 @@ import java.io.IOException;
  * @version V1.0 , 2018/11/23
  */
 public class Server {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
     public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(System.getProperty("PORT", "8080"));
@@ -43,7 +40,7 @@ public class Server {
             @Override
             public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 if (throwable != null) {
-                    LOGGER.error(stateMachineEnum + " exception:", throwable);
+                    throwable.printStackTrace();
                 }
             }
         };

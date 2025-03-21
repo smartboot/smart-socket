@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.extension.plugins;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.timer.HashedWheelTimer;
 import org.smartboot.socket.transport.AioSession;
@@ -28,7 +26,6 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0 , 2018/8/19
  */
 public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HeartPlugin.class);
     private static final TimeoutCallback DEFAULT_TIMEOUT_CALLBACK = new TimeoutCallback() {
         @Override
         public void callback(AioSession session, long lastTime) {
@@ -132,21 +129,21 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
 
     private void registerHeart(final AioSession session, final long heartRate) {
         if (heartRate <= 0) {
-            LOGGER.info("session:{} 因心跳间隔为:{},终止启动心跳监测任务", session, heartRate);
+//            LOGGER.info("session:{} 因心跳间隔为:{},终止启动心跳监测任务", session, heartRate);
             return;
         }
-        LOGGER.debug("session:{}注册心跳任务,心跳间隔:{}", session, heartRate);
+//        LOGGER.debug("session:{}注册心跳任务,心跳间隔:{}", session, heartRate);
         HashedWheelTimer.DEFAULT_TIMER.schedule(new TimerTask() {
             @Override
             public void run() {
                 if (session.isInvalid()) {
                     sessionMap.remove(session);
-                    LOGGER.info("session:{} 已失效，移除心跳任务", session);
+//                    LOGGER.info("session:{} 已失效，移除心跳任务", session);
                     return;
                 }
                 Long lastTime = sessionMap.get(session);
                 if (lastTime == null) {
-                    LOGGER.warn("session:{} timeout is null", session);
+//                    LOGGER.warn("session:{} timeout is null", session);
                     lastTime = System.currentTimeMillis();
                     sessionMap.put(session, lastTime);
                 }
@@ -161,7 +158,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
                         sendHeartRequest(session);
                         session.writeBuffer().flush();
                     } catch (IOException e) {
-                        LOGGER.error("heart exception,will close session:{}", session, e);
+//                        LOGGER.error("heart exception,will close session:{}", session, e);
                         session.close(true);
                     }
                 }

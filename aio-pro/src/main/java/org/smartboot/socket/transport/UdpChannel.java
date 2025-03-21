@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
@@ -30,7 +28,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @version V1.0 , 2019/8/18
  */
 public final class UdpChannel {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UdpChannel.class);
     private final BufferPage writeBufferPage;
 
     /**
@@ -103,7 +100,7 @@ public final class UdpChannel {
             }
             if (!send(responseUnit.response, responseUnit.session)) {
                 failResponseUnit = responseUnit;
-                LOGGER.warn("send fail,will retry...");
+                System.err.println("send fail,will retry...");
                 break;
             }
         }
@@ -146,7 +143,6 @@ public final class UdpChannel {
      * 关闭当前连接
      */
     public void close() {
-        LOGGER.info("close channel...");
         if (selectionKey != null) {
             Selector selector = selectionKey.selector();
             selectionKey.cancel();
@@ -157,8 +153,7 @@ public final class UdpChannel {
             if (channel != null) {
                 channel.close();
             }
-        } catch (IOException e) {
-            LOGGER.error("", e);
+        } catch (IOException ignore) {
         }
         //内存回收
         ResponseUnit task;

@@ -37,13 +37,6 @@
                 <artifactId>aio-pro</artifactId>
                 <version>${aio.version}</version>
             </dependency>
-            <!-- 日志系统 -->
-            <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
-            </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>

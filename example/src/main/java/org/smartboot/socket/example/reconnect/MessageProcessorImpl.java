@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.example.reconnect;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
@@ -20,7 +18,6 @@ import org.smartboot.socket.transport.AioSession;
  * @version V1.0 , 2021/1/21
  */
 public class MessageProcessorImpl implements MessageProcessor<String> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReconnectServer.class);
     @Override
     public void process(AioSession session, String msg) {
 

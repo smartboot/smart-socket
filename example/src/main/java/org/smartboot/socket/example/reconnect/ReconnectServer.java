@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.example.reconnect;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.extension.protocol.StringProtocol;
 import org.smartboot.socket.transport.AioQuickServer;
 
@@ -21,7 +19,6 @@ import java.io.IOException;
  * @version V1.0 , 2018/11/23
  */
 public class ReconnectServer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReconnectServer.class);
 
     public static void main(String[] args) throws IOException {
 

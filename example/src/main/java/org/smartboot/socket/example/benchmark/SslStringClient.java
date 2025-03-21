@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.example.benchmark;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
@@ -32,7 +30,6 @@ import java.util.concurrent.ThreadFactory;
  * @version V1.0 , 2018/11/23
  */
 public class SslStringClient {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SslStringClient.class);
 
 
     public static void main(String[] args) throws Exception {
@@ -80,7 +77,8 @@ public class SslStringClient {
 
     }
 
-    public void test(AsynchronousChannelGroup asynchronousChannelGroup, BufferPagePool bufferPagePool, AbstractMessageProcessor<String> processor) throws InterruptedException, ExecutionException, IOException {
+    public void test(AsynchronousChannelGroup asynchronousChannelGroup, BufferPagePool bufferPagePool, AbstractMessageProcessor<String> processor) throws InterruptedException, ExecutionException,
+            IOException {
         AioQuickClient client = new AioQuickClient("localhost", 8888, new StringProtocol(), processor);
         client.setBufferPagePool(bufferPagePool);
         client.setWriteBuffer(1024 * 1024, 10);

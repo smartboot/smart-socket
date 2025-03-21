@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.example.benchmark;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.plugins.BufferPageMonitorPlugin;
@@ -31,7 +29,6 @@ import java.io.IOException;
  * @version V1.0 , 2018/11/23
  */
 public class SslStringServer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SslStringServer.class);
 
     public static void main(String[] args) throws Exception {
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
@@ -52,7 +49,7 @@ public class SslStringServer {
             @Override
             public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
                 if (throwable != null) {
-                    LOGGER.error(stateMachineEnum + " exception:", throwable);
+                    throwable.printStackTrace();
                 }
             }
         };

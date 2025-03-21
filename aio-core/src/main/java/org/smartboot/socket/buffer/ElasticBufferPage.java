@@ -47,7 +47,7 @@ final class ElasticBufferPage extends AbstractBufferPage {
         }
         idle = false;
         VirtualBuffer virtualBuffer = cleanBuffers.poll();
-        if (virtualBuffer != null && virtualBuffer.getCapacity() >= size) {
+        if (virtualBuffer != null && virtualBuffer.getCapacity() == size) {
             virtualBuffer.buffer().clear();
             virtualBuffer.buffer(virtualBuffer.buffer());
             return virtualBuffer;

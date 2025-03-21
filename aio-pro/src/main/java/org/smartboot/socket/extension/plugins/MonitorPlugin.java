@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.extension.plugins;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.timer.HashedWheelTimer;
 import org.smartboot.socket.transport.AioSession;
@@ -25,7 +23,6 @@ import java.util.concurrent.atomic.LongAdder;
  * @version V1.0 , 2018/8/19
  */
 public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(MonitorPlugin.class);
     /**
      * 当前周期内流入字节数
      */
@@ -129,7 +126,7 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
         onlineCount += connectCount - disConnectCount;
         totalProcessMsgNum += curProcessMsgNum;
         totalConnect += connectCount;
-        logger.info("\r\n-----" + seconds + "seconds ----\r\ninflow:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
+        System.out.println("\r\n-----" + seconds + "seconds ----\r\ninflow:\t\t" + curInFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\noutflow:\t" + curOutFlow * 1.0 / (1024 * 1024) + "(MB)"
                 + "\r\nprocess fail:\t" + curDiscardNum
                 + "\r\nprocess count:\t" + curProcessMsgNum
@@ -154,7 +151,7 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
     public void afterRead(AioSession session, int readSize) {
         //出现result为0,说明代码存在问题
         if (readSize == 0) {
-            logger.error("readSize is 0");
+            System.err.println("readSize is 0");
         }
         inFlow.add(readSize);
     }

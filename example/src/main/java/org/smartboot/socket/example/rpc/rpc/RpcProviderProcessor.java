@@ -9,8 +9,6 @@
 
 package org.smartboot.socket.example.rpc.rpc;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
@@ -34,7 +32,6 @@ import java.util.concurrent.Executors;
  * @version V1.0 , 2018/7/1
  */
 public class RpcProviderProcessor implements MessageProcessor<byte[]> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RpcProviderProcessor.class);
     private Map<String, Object> impMap = new HashMap<String, Object>();
     private ExecutorService pool = Executors.newCachedThreadPool();
     /**
@@ -84,10 +81,10 @@ public class RpcProviderProcessor implements MessageProcessor<byte[]> {
                     resp.setReturnObject(obj);
                     resp.setReturnType(method.getReturnType().getName());
                 } catch (InvocationTargetException e) {
-                    LOGGER.error(e.getMessage(), e);
+                    e.printStackTrace();
                     resp.setException(e.getTargetException().getMessage());
                 } catch (Exception e) {
-                    LOGGER.error(e.getMessage(), e);
+                    e.printStackTrace();
                     resp.setException(e.getMessage());
                 }
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
