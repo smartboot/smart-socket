@@ -43,6 +43,17 @@ public final class BufferPagePool {
      * 内存回收任务
      */
     private final ScheduledFuture<?> future;
+    private static boolean directSupported = true;
+
+    static {
+        String version = System.getProperty("java.version");
+        // 处理类似"1.8.0_301"和"9+"两种版本格式
+        int majorVersion = version.startsWith("1.") ? Integer.parseInt(version.split("\\.")[1]) : Integer.parseInt(version.split("\\.")[0]);
+
+        if (majorVersion > 8) {
+            directSupported = false;
+        }
+    }
 
     public BufferPagePool(int pageNum, boolean direct) {
         this(0, pageNum, direct);
@@ -54,6 +65,9 @@ public final class BufferPagePool {
      * @param isDirect 是否使用直接缓冲区
      */
     public BufferPagePool(final int pageSize, final int pageNum, final boolean isDirect) {
+        if (isDirect && !directSupported) {
+            throw new IllegalStateException("当前版本的 smart-socket 申请 Direct ByteBuffer 要求 JDK 版本必须 <= 1.8");
+        }
         bufferPages = new AbstractBufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
             bufferPages[i] = pageSize == 0 ? new ElasticBufferPage(isDirect) : new StaticBufferPage(pageSize, isDirect);
