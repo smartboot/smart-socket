@@ -66,7 +66,7 @@ public final class BufferPagePool {
      */
     public BufferPagePool(final int pageSize, final int pageNum, final boolean isDirect) {
         if (isDirect && !directSupported) {
-            throw new IllegalStateException("当前版本的 smart-socket 申请 Direct ByteBuffer 要求 JDK 版本必须 <= 1.8");
+            throw new IllegalStateException("当前版本的 smart-socket 申请 Direct ByteBuffer 要求 JDK 版本必须 <= 1.8，或者升级 smart-socket 至 1.6.x 版本");
         }
         bufferPages = new AbstractBufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
