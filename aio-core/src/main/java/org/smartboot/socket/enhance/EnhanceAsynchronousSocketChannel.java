@@ -30,11 +30,24 @@ import java.util.concurrent.TimeUnit;
 /**
  * 该类模拟JDK7的AIO处理方式，通过NIO实现异步IO操作。
  * 主要功能包括：
- * 1. 提供异步读写操作接口
- * 2. 支持回调机制处理IO事件
- * 3. 实现了低内存模式的支持
- * 4. 管理Socket连接的生命周期
- * 5. 提供Future和CompletionHandler两种异步操作方式
+ * 1. 提供异步读写操作接口：支持非阻塞的读写操作，提高IO效率
+ * 2. 支持回调机制处理IO事件：通过CompletionHandler接口处理异步操作的结果
+ * 3. 实现了低内存模式的支持：在资源受限环境下优化内存使用
+ * 4. 管理Socket连接的生命周期：包括连接建立、数据传输和连接关闭
+ * 5. 提供Future和CompletionHandler两种异步操作方式：灵活支持不同的编程模型
+ * 
+ * 实现原理：
+ * - 底层使用NIO的SocketChannel实现网络通信
+ * - 通过Worker线程池处理异步IO事件
+ * - 使用SelectionKey管理IO事件的注册与触发
+ * - 支持低内存模式下的内存优化策略
+ *
+ * 该类是smart-socket框架的核心数据传输组件，通过精心设计的事件处理机制，解决了以下问题：
+ * - 避免了传统NIO编程中的复杂性和易错性
+ * - 提供了类似JDK7 AIO的编程体验，但性能更优
+ * - 实现了读写操作的并发控制，避免资源竞争
+ * - 支持连接超时和操作取消等高级特性
+ * - 在低内存环境下能够智能管理缓冲区资源
  *
  * @author 三刀
  * @version V1.0 , 2018/5/24
@@ -196,6 +209,17 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         return channel.getRemoteAddress();
     }
 
+    /**
+     * 异步连接远程地址
+     * 实现了异步连接操作，支持通过CompletionHandler处理连接结果
+     * 
+     * @param remote 远程服务器地址
+     * @param attachment 附加对象，可在连接完成时传递给CompletionHandler
+     * @param handler 连接完成的回调处理器
+     * @throws ShutdownChannelGroupException 如果通道组已关闭
+     * @throws AlreadyConnectedException 如果通道已经连接
+     * @throws ConnectionPendingException 如果连接操作正在进行中
+     */
     @Override
     public <A> void connect(SocketAddress remote, A attachment, CompletionHandler<Void, ? super A> handler) {
         if (group().isTerminated()) {
@@ -308,17 +332,28 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         return channel.getLocalAddress();
     }
 
+    /**
+     * 执行异步读取操作
+     * 该方法实现了复杂的异步读取逻辑，包括以下功能：
+     * 1. 处理Future取消的情况
+     * 2. 支持低内存模式下的读取优化
+     * 3. 实现读取限流，避免单个连接占用过多资源
+     * 4. 处理读取完成后的回调通知
+     * 
+     * @param direct 是否直接读取，true表示立即读取，false表示通过事件触发读取
+     */
     public final void doRead(boolean direct) {
         try {
             if (readCompletionHandler == null) {
                 return;
             }
-            //此前通过Future调用,且触发了cancel
+            // 处理Future调用被取消的情况
             if (readCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) readCompletionHandler).isDone()) {
                 EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
                 resetRead();
                 return;
             }
+            // 低内存模式下的特殊处理：当没有缓冲区时，直接返回可读信号
             if (lowMemory && direct && readBuffer == null) {
                 CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
                 Object attach = readAttachment;
@@ -326,6 +361,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 completionHandler.completed(EnhanceAsynchronousChannelProvider.READABLE_SIGNAL, attach);
                 return;
             }
+            // 判断是否需要直接读取：直接调用或未达到最大调用次数
             boolean directRead = direct || readInvoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER;
 
             int readSize = 0;
@@ -396,27 +432,43 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         readBuffer = null;
     }
 
+    /**
+     * 执行异步写入操作
+     * 该方法实现了复杂的异步写入逻辑，包括以下功能：
+     * 1. 处理写入中断的情况
+     * 2. 支持非阻塞写入操作
+     * 3. 处理写入完成后的回调通知
+     * 4. 管理写入事件的注册
+     * 
+     * @return 是否需要继续写入，true表示需要继续写入，false表示写入完成或需要等待
+     */
     public final boolean doWrite() {
+        // 处理写入中断的情况
         if (writeInterrupted) {
             writeInterrupted = false;
             return false;
         }
         try {
+            // 尝试写入数据
             int writeSize = channel.write(writeBuffer);
 
+            // 写入完成或缓冲区已空
             if (writeSize != 0 || !writeBuffer.hasRemaining()) {
                 CompletionHandler<Number, Object> completionHandler = writeCompletionHandler;
                 Object attach = writeAttachment;
                 resetWrite();
                 writeInterrupted = true;
                 completionHandler.completed(writeSize, attach);
+                // 检查是否需要继续写入
                 if (!writeInterrupted) {
                     return true;
                 }
                 writeInterrupted = false;
             } else {
+                // 注册写事件到选择器
                 SelectionKey commonSelectionKey = channel.keyFor(group().writeWorker.selector);
                 if (commonSelectionKey == null) {
+                    // 首次注册写事件
                     group().writeWorker.addRegister(selector -> {
                         try {
                             channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
@@ -425,10 +477,12 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                         }
                     });
                 } else {
+                    // 更新已存在的选择键的兴趣事件
                     EnhanceAsynchronousChannelGroup.interestOps(group().writeWorker, commonSelectionKey, SelectionKey.OP_WRITE);
                 }
             }
         } catch (Throwable e) {
+            // 异常处理
             if (writeCompletionHandler == null) {
                 e.printStackTrace();
                 try {
