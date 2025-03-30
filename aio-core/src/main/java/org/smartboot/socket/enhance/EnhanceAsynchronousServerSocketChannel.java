@@ -24,19 +24,62 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
+ * 该类实现了异步服务器Socket通道，用于处理客户端连接请求。
+ * 主要功能包括：
+ * 1. 监听并接受客户端的连接请求
+ * 2. 支持异步接受连接操作
+ * 3. 管理服务器Socket的生命周期
+ * 4. 提供回调机制处理连接事件
+ * 
  * @author 三刀
  * @version V1.0 , 2020/5/25
  */
 final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSocketChannel {
+    /**
+     * 底层的服务器Socket通道，用于实际的网络IO操作
+     */
     private final ServerSocketChannel serverSocketChannel;
+    
+    /**
+     * 异步通道组，用于管理通道的线程资源和事件分发
+     */
     private final EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup;
+    
+    /**
+     * 接受连接的回调处理器，用于处理新连接建立后的回调逻辑
+     */
     private CompletionHandler<AsynchronousSocketChannel, Object> acceptCompletionHandler;
+    
+    /**
+     * 用于Future方式调用时的回调处理器
+     */
     private FutureCompletionHandler<AsynchronousSocketChannel, Void> acceptFuture;
+    
+    /**
+     * 接受连接操作的附加对象，可在回调时传递额外的上下文信息
+     */
     private Object attachment;
+    
+    /**
+     * 用于接受连接操作的选择键，管理通道的接受事件注册
+     */
     private SelectionKey selectionKey;
+    
+    /**
+     * 标识是否有待处理的接受连接操作
+     */
     private boolean acceptPending;
+    
+    /**
+     * 是否启用低内存模式
+     * 在低内存模式下，会采用特殊的内存管理策略以减少内存占用
+     */
     private final boolean lowMemory;
 
+    /**
+     * 接受连接操作的调用计数器
+     * 用于限制连续接受连接的次数，避免某个服务器持续占用接受线程
+     */
     private int acceptInvoker;
 
     EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup, boolean lowMemory) throws IOException {
@@ -93,7 +136,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                 socketChannel = serverSocketChannel.accept();
             }
             if (socketChannel != null) {
-                EnhanceAsynchronousServerChannel asynchronousSocketChannel = new EnhanceAsynchronousServerChannel(enhanceAsynchronousChannelGroup, socketChannel, lowMemory);
+                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = new EnhanceAsynchronousSocketChannel(enhanceAsynchronousChannelGroup, socketChannel, lowMemory);
                 //这行代码不要乱动
                 socketChannel.configureBlocking(false);
                 socketChannel.finishConnect();

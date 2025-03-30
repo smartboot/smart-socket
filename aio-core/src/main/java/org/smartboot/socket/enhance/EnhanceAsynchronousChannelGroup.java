@@ -72,7 +72,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         this.readWorkers = new Worker[threadNum];
         for (int i = 0; i < threadNum; i++) {
             readWorkers[i] = new Worker(Selector.open(), selectionKey -> {
-                EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
+                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 asynchronousSocketChannel.doRead(true);
             });
             this.readExecutorService.execute(readWorkers[i]);
@@ -80,7 +80,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
 
         //init threadPool for write and connect
         writeWorker = new Worker(Selector.open(), selectionKey -> {
-            EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
+            EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
             //直接调用interestOps的效果比 removeOps(selectionKey, SelectionKey.OP_WRITE) 更好
             if (running) {
                 selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
@@ -96,7 +96,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                 runnable.run();
             } else if (selectionKey.isReadable()) {
                 //仅同步read会用到此线程资源
-                EnhanceAsynchronousServerChannel asynchronousSocketChannel = (EnhanceAsynchronousServerChannel) selectionKey.attachment();
+                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 removeOps(selectionKey, SelectionKey.OP_READ);
                 asynchronousSocketChannel.doRead(true);
             } else {
@@ -188,6 +188,11 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         final void addRegister(Consumer<Selector> register) {
             consumers.offer(register);
             selector.wakeup();
+        }
+
+
+        EnhanceAsynchronousChannelGroup group() {
+            return EnhanceAsynchronousChannelGroup.this;
         }
 
         @Override

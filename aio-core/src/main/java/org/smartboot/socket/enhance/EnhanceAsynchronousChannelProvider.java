@@ -45,10 +45,7 @@ public final class EnhanceAsynchronousChannelProvider extends AsynchronousChanne
 
     @Override
     public AsynchronousChannelGroup openAsynchronousChannelGroup(int nThreads, ThreadFactory threadFactory) throws IOException {
-        return new EnhanceAsynchronousChannelGroup(this, new ThreadPoolExecutor(nThreads, nThreads,
-                0L, TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(nThreads),
-                threadFactory), nThreads);
+        return new EnhanceAsynchronousChannelGroup(this, new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(nThreads), threadFactory), nThreads);
     }
 
     @Override
@@ -63,7 +60,7 @@ public final class EnhanceAsynchronousChannelProvider extends AsynchronousChanne
 
     @Override
     public AsynchronousSocketChannel openAsynchronousSocketChannel(AsynchronousChannelGroup group) throws IOException {
-        return new EnhanceAsynchronousClientChannel(checkAndGet(group), SocketChannel.open(), lowMemory);
+        return new EnhanceAsynchronousSocketChannel(checkAndGet(group), SocketChannel.open(), lowMemory);
     }
 
     private EnhanceAsynchronousChannelGroup checkAndGet(AsynchronousChannelGroup group) {
