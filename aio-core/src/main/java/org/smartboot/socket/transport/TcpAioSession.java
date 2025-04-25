@@ -330,7 +330,7 @@ final class TcpAioSession extends AioSession {
         buffer.compact();
         int readSize;
         try {
-            if (timeout > 0) {
+            if (timeout <= 0) {
                 readSize = channel.read(buffer).get();
             } else {
                 readSize = channel.read(buffer).get(timeout, unit);
