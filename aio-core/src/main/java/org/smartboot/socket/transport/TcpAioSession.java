@@ -58,63 +58,61 @@ final class TcpAioSession extends AioSession {
     /**
      * 读事件回调处理
      */
-    private static final CompletionHandler<Integer, TcpAioSession> READ_COMPLETION_HANDLER =
-            new CompletionHandler<Integer, TcpAioSession>() {
-                @Override
-                public void completed(Integer result, TcpAioSession aioSession) {
-                    try {
-                        aioSession.readCompleted(result);
-                    } catch (Throwable throwable) {
-                        failed(throwable, aioSession);
-                    }
-                }
+    private static final CompletionHandler<Integer, TcpAioSession> READ_COMPLETION_HANDLER = new CompletionHandler<Integer, TcpAioSession>() {
+        @Override
+        public void completed(Integer result, TcpAioSession aioSession) {
+            try {
+                aioSession.readCompleted(result);
+            } catch (Throwable throwable) {
+                failed(throwable, aioSession);
+            }
+        }
 
-                @Override
-                public void failed(Throwable exc, TcpAioSession aioSession) {
-                    try {
-                        aioSession.config.getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        aioSession.close(false);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            };
+        @Override
+        public void failed(Throwable exc, TcpAioSession aioSession) {
+            try {
+                aioSession.config.getProcessor().stateEvent(aioSession, StateMachineEnum.INPUT_EXCEPTION, exc);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                aioSession.close(false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    };
     /**
      * 输出流
      */
-    private final WriteBuffer byteBuf;
+    private final WriteBufferImpl byteBuf;
     /**
      * 写事件回调处理
      */
-    private static final CompletionHandler<Integer, TcpAioSession> WRITE_COMPLETION_HANDLER =
-            new CompletionHandler<Integer, TcpAioSession>() {
-                @Override
-                public void completed(Integer result, TcpAioSession aioSession) {
-                    try {
-                        aioSession.writeCompleted(result);
-                    } catch (Throwable throwable) {
-                        failed(throwable, aioSession);
-                    }
-                }
+    private static final CompletionHandler<Integer, TcpAioSession> WRITE_COMPLETION_HANDLER = new CompletionHandler<Integer, TcpAioSession>() {
+        @Override
+        public void completed(Integer result, TcpAioSession aioSession) {
+            try {
+                aioSession.writeCompleted(result);
+            } catch (Throwable throwable) {
+                failed(throwable, aioSession);
+            }
+        }
 
-                @Override
-                public void failed(Throwable exc, TcpAioSession aioSession) {
-                    try {
-                        aioSession.config.getProcessor().stateEvent(aioSession, StateMachineEnum.OUTPUT_EXCEPTION, exc);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        aioSession.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            };
+        @Override
+        public void failed(Throwable exc, TcpAioSession aioSession) {
+            try {
+                aioSession.config.getProcessor().stateEvent(aioSession, StateMachineEnum.OUTPUT_EXCEPTION, exc);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                aioSession.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    };
     private final IoServerConfig config;
     private final Supplier<VirtualBuffer> readBufferSupplier;
     /**
@@ -131,13 +129,11 @@ final class TcpAioSession extends AioSession {
     /**
      * @param channel Socket通道
      */
-    TcpAioSession(AsynchronousSocketChannel channel, IoServerConfig config, BufferPage writeBufferPage,
-                  Supplier<VirtualBuffer> readBufferSupplier) {
+    TcpAioSession(AsynchronousSocketChannel channel, IoServerConfig config, BufferPage writeBufferPage, Supplier<VirtualBuffer> readBufferSupplier) {
         this.channel = channel;
         this.config = config;
         this.readBufferSupplier = readBufferSupplier;
-        byteBuf = new WriteBuffer(writeBufferPage, this::continueWrite, config.getWriteBufferSize(),
-                config.getWriteBufferCapacity());
+        byteBuf = new WriteBufferImpl(writeBufferPage, this::continueWrite, config.getWriteBufferSize(), config.getWriteBufferCapacity());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         doRead();

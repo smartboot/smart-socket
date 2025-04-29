@@ -123,7 +123,7 @@ public final class UdpChannel {
             config.getMonitor().afterWrite(session, size);
         }
         virtualBuffer.clean();
-        session.writeBuffer().finishWrite();
+        session.byteBuf.finishWrite();
         session.writeBuffer().flush();
         return true;
     }
