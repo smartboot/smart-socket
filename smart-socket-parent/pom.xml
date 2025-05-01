@@ -15,13 +15,13 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.smartboot.socket</groupId>
     <artifactId>smart-socket-parent</artifactId>
-    <version>1.5.60</version>
+    <version>1.5.61</version>
 
     <packaging>pom</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <aio.version>1.5.60</aio.version>
+        <aio.version>1.5.61</aio.version>
         <junit.version>4.13.2</junit.version>
     </properties>
     <dependencyManagement>
