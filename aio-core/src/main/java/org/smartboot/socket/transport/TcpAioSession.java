@@ -171,7 +171,7 @@ final class TcpAioSession extends AioSession {
         //此时可能是Closing或Closed状态
         if (status != SESSION_STATUS_ENABLED) {
             close();
-        } else {
+        } else if (!byteBuf.isEmpty()) {
             //也许此时有新的消息通过write方法添加到writeCacheQueue中
             byteBuf.flush();
         }
