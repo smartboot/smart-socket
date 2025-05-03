@@ -92,7 +92,7 @@ public class UdpBootstrap {
         // 初始化工作线程
         if (worker == null) {
             innerWorker = true;
-            worker = new Worker(readBufferPool.allocateBufferPage(), writeBufferPool, config.getThreadNum());
+            worker = new Worker(readBufferPool, writeBufferPool, config.getThreadNum());
         }
 
 
@@ -102,7 +102,7 @@ public class UdpBootstrap {
             InetSocketAddress inetSocketAddress = host == null ? new InetSocketAddress(port) : new InetSocketAddress(host, port);
             channel.socket().bind(inetSocketAddress);
         }
-        return new UdpChannel(channel, worker, config, writeBufferPool.allocateBufferPage());
+        return new UdpChannel(channel, worker, config, writeBufferPool);
     }
 
     private synchronized void initWorker() throws IOException {

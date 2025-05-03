@@ -9,7 +9,7 @@
 
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @version V1.0 , 2019/8/18
  */
 public final class UdpChannel {
-    private final BufferPage writeBufferPage;
+    private final BufferPagePool writeBufferPage;
 
     /**
      * 待输出消息
@@ -44,13 +44,13 @@ public final class UdpChannel {
     //发送失败的
     private ResponseUnit failResponseUnit;
 
-    UdpChannel(final DatagramChannel channel, IoServerConfig config, BufferPage writeBufferPage) {
+    UdpChannel(final DatagramChannel channel, IoServerConfig config, BufferPagePool writeBufferPage) {
         this.channel = channel;
         this.writeBufferPage = writeBufferPage;
         this.config = config;
     }
 
-    UdpChannel(final DatagramChannel channel, Worker worker, IoServerConfig config, BufferPage writeBufferPage) {
+    UdpChannel(final DatagramChannel channel, Worker worker, IoServerConfig config, BufferPagePool writeBufferPage) {
         this(channel, config, writeBufferPage);
         responseTasks = new ConcurrentLinkedQueue<>();
         this.worker = worker;

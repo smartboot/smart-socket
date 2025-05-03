@@ -9,7 +9,7 @@
 
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;
@@ -35,7 +35,7 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
     /**
      * 为当前 WriteBuffer 提供数据存放功能的缓存页
      */
-    private final BufferPage bufferPage;
+    private final BufferPagePool pool;
     /**
      * 缓冲区数据刷新Function
      */
@@ -74,8 +74,8 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
      */
     private final Semaphore semaphore = new Semaphore(1);
 
-    WriteBufferImpl(BufferPage bufferPage, Consumer<VirtualBuffer> writeConsumer, int chunkSize, int capacity) {
-        this.bufferPage = bufferPage;
+    WriteBufferImpl(BufferPagePool pool, Consumer<VirtualBuffer> writeConsumer, int chunkSize, int capacity) {
+        this.pool = pool;
         this.writeConsumer = writeConsumer;
         this.items = new VirtualBuffer[capacity];
         this.chunkSize = chunkSize;
@@ -113,7 +113,7 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
      */
     public synchronized void writeByte(byte b) {
         if (writeInBuf == null) {
-            writeInBuf = bufferPage.allocate(chunkSize);
+            writeInBuf = pool.allocateByThreadId(chunkSize);
         }
         writeInBuf.buffer().put(b);
         flushWriteBuffer(false);
@@ -195,10 +195,10 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
         }
         if (writeInBuf == null) {
             if (chunkSize >= len) {
-                writeInBuf = bufferPage.allocate(chunkSize);
+                writeInBuf = pool.allocateByThreadId(chunkSize);
             } else {
                 int m = len % chunkSize;
-                writeInBuf = bufferPage.allocate(m == 0 ? len : len + chunkSize - m);
+                writeInBuf = pool.allocateByThreadId(m == 0 ? len : len + chunkSize - m);
             }
         }
         ByteBuffer writeBuffer = writeInBuf.buffer();

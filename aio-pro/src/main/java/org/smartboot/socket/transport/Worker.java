@@ -3,7 +3,6 @@ package org.smartboot.socket.transport;
 import org.smartboot.socket.DecoderException;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
@@ -41,7 +40,7 @@ public final class Worker implements Runnable {
     /**
      * read 内存池
      */
-    private BufferPage readBufferPage = null;
+    private BufferPagePool readBufferPage = null;
     private final BlockingQueue<Runnable> requestQueue = new ArrayBlockingQueue<>(256);
 
     /**
@@ -53,10 +52,10 @@ public final class Worker implements Runnable {
     private final ExecutorService executorService;
 
     public Worker(BufferPagePool writeBufferPool, int threadNum) throws IOException {
-        this(writeBufferPool.allocateBufferPage(), writeBufferPool, threadNum);
+        this(writeBufferPool, writeBufferPool, threadNum);
     }
 
-    public Worker(BufferPage readBufferPage, BufferPagePool writeBufferPool, int threadNum) throws IOException {
+    public Worker(BufferPagePool readBufferPage, BufferPagePool writeBufferPool, int threadNum) throws IOException {
         this.readBufferPage = readBufferPage;
         this.writeBufferPool = writeBufferPool;
         this.selector = Selector.open();
@@ -147,7 +146,7 @@ public final class Worker implements Runnable {
         IoServerConfig config = channel.config;
         while (count-- > 0) {
             if (standbyBuffer == null) {
-                standbyBuffer = readBufferPage.allocate(config.getReadBufferSize());
+                standbyBuffer = readBufferPage.allocateByThreadId(config.getReadBufferSize());
             }
             ByteBuffer buffer = standbyBuffer.buffer();
             SocketAddress remote = channel.getChannel().receive(buffer);
@@ -156,11 +155,11 @@ public final class Worker implements Runnable {
                 return true;
             }
             VirtualBuffer readyBuffer = standbyBuffer;
-            standbyBuffer = readBufferPage.allocate(config.getReadBufferSize());
+            standbyBuffer = readBufferPage.allocateByThreadId(config.getReadBufferSize());
             buffer.flip();
             Runnable runnable = () -> {
                 //解码
-                UdpAioSession session = new UdpAioSession(channel, remote, writeBufferPool.allocateBufferPage());
+                UdpAioSession session = new UdpAioSession(channel, remote, writeBufferPool);
                 try {
                     NetMonitor netMonitor = config.getMonitor();
                     if (netMonitor != null) {

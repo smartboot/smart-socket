@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 /**
  * SSL/TLS通信插件
- *
+ * <p>
  * 证书生成工具：https://github.com/FiloSottile/mkcert
  *
  * @author 三刀
@@ -31,7 +31,7 @@ import java.util.function.Consumer;
  */
 public final class SslPlugin<T> extends AbstractPlugin<T> {
     private final SslService sslService;
-    private final BufferPagePool bufferPagePool;
+    private final BufferPagePool pool;
 
     public SslPlugin(SSLContextFactory factory, Consumer<SSLEngine> consumer) throws Exception {
         this(factory, consumer, BufferPagePool.DEFAULT_BUFFER_PAGE_POOL);
@@ -41,8 +41,8 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
         this(factory, sslEngine -> sslEngine.setUseClientMode(false), BufferPagePool.DEFAULT_BUFFER_PAGE_POOL);
     }
 
-    public SslPlugin(SSLContextFactory factory, Consumer<SSLEngine> consumer, BufferPagePool bufferPagePool) throws Exception {
-        this.bufferPagePool = bufferPagePool;
+    public SslPlugin(SSLContextFactory factory, Consumer<SSLEngine> consumer, BufferPagePool pool) throws Exception {
+        this.pool = pool;
         sslService = new SslService(factory.create(), consumer);
     }
 
@@ -50,15 +50,15 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
         this(factory, BufferPagePool.DEFAULT_BUFFER_PAGE_POOL);
     }
 
-    public SslPlugin(ClientSSLContextFactory factory, BufferPagePool bufferPagePool) throws Exception {
-        this(factory, sslEngine -> sslEngine.setUseClientMode(true), bufferPagePool);
+    public SslPlugin(ClientSSLContextFactory factory, BufferPagePool pool) throws Exception {
+        this(factory, sslEngine -> sslEngine.setUseClientMode(true), pool);
     }
 
     public SslPlugin(ServerSSLContextFactory factory, ClientAuth clientAuth) throws Exception {
         this(factory, clientAuth, BufferPagePool.DEFAULT_BUFFER_PAGE_POOL);
     }
 
-    public SslPlugin(ServerSSLContextFactory factory, ClientAuth clientAuth, BufferPagePool bufferPagePool) throws Exception {
+    public SslPlugin(ServerSSLContextFactory factory, ClientAuth clientAuth, BufferPagePool pool) throws Exception {
         this(factory, sslEngine -> {
             sslEngine.setUseClientMode(false);
             switch (clientAuth) {
@@ -73,12 +73,12 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
                 default:
                     throw new Error("Unknown auth " + clientAuth);
             }
-        }, bufferPagePool);
+        }, pool);
     }
 
     @Override
     public AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
-        return new SslAsynchronousSocketChannel(channel, sslService, bufferPagePool.allocateBufferPage());
+        return new SslAsynchronousSocketChannel(channel, sslService, pool);
     }
 
     public void debug(boolean debug) {

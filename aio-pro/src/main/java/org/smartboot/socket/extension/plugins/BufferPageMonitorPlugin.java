@@ -9,7 +9,6 @@
 
 package org.smartboot.socket.extension.plugins;
 
-import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.timer.HashedWheelTimer;
 import org.smartboot.socket.timer.TimerTask;
@@ -74,15 +73,8 @@ public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
         }, seconds, TimeUnit.SECONDS);
     }
 
-    private static void dumpBufferPool(BufferPagePool writeBufferPool) throws NoSuchFieldException, IllegalAccessException {
-        Field field = BufferPagePool.class.getDeclaredField("bufferPages");
-        field.setAccessible(true);
-        BufferPage[] pages = (BufferPage[]) field.get(writeBufferPool);
-        String logger = "";
-        for (BufferPage page : pages) {
-            logger += "\r\n" + page.toString();
-        }
-        System.out.println(logger);
+    private static void dumpBufferPool(BufferPagePool writeBufferPool) {
+        System.out.println(writeBufferPool);
     }
 
     private void shutdown() {

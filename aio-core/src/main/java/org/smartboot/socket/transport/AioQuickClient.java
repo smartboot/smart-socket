@@ -175,7 +175,7 @@ public final class AioQuickClient {
                         throw new RuntimeException("NetMonitor refuse channel");
                     }
                     //连接成功则构造AIOSession对象
-                    session = new TcpAioSession(connectedChannel, config, writeBufferPool.allocateBufferPage(), () -> readBufferPool.allocateBufferPage().allocate(config.getReadBufferSize()));
+                    session = new TcpAioSession(connectedChannel, config, writeBufferPool, () -> readBufferPool.allocateSequentially(config.getReadBufferSize()));
                     handler.completed(session, attachment);
                 } catch (Exception e) {
                     failed(e, socketChannel);
@@ -383,6 +383,7 @@ public final class AioQuickClient {
 
     /**
      * 禁用低代码模式
+     *
      * @return
      */
     public AioQuickClient disableLowMemory() {

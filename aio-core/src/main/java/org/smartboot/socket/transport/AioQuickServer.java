@@ -155,7 +155,7 @@ public final class AioQuickServer {
     }
 
     private void startAcceptThread() {
-        Supplier<VirtualBuffer> readBufferSupplier = () -> readBufferPool.allocateBufferPage().allocate(config.getReadBufferSize());
+        Supplier<VirtualBuffer> readBufferSupplier = () -> readBufferPool.allocateSequentially(config.getReadBufferSize());
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
             @Override
             public void completed(AsynchronousSocketChannel channel, Void attachment) {
@@ -192,7 +192,7 @@ public final class AioQuickServer {
             }
             if (acceptChannel != null) {
                 acceptChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
-                session = new TcpAioSession(acceptChannel, this.config, writeBufferPool.allocateBufferPage(), readBufferSupplier);
+                session = new TcpAioSession(acceptChannel, this.config, writeBufferPool, readBufferSupplier);
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
                 IOUtil.close(channel);
@@ -333,6 +333,7 @@ public final class AioQuickServer {
 
     /**
      * 禁用低代码模式
+     *
      * @return
      */
     public AioQuickServer disableLowMemory() {

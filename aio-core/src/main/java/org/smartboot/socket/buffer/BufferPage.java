@@ -16,7 +16,7 @@ package org.smartboot.socket.buffer;
  * @author 三刀
  * @version V1.0 , 2018/10/31
  */
-public interface BufferPage {
+interface BufferPage {
 
 
     /**

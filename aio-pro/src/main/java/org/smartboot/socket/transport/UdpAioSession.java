@@ -10,7 +10,7 @@
 package org.smartboot.socket.transport;
 
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.buffer.BufferPagePool;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -29,10 +29,10 @@ final class UdpAioSession extends AioSession {
 
     final WriteBufferImpl byteBuf;
 
-    UdpAioSession(final UdpChannel udpChannel, final SocketAddress remote, BufferPage writeBufferPage) {
+    UdpAioSession(final UdpChannel udpChannel, final SocketAddress remote, BufferPagePool pool) {
         this.udpChannel = udpChannel;
         this.remote = remote;
-        this.byteBuf = new WriteBufferImpl(writeBufferPage, buffer -> udpChannel.write(buffer, UdpAioSession.this), udpChannel.config.getWriteBufferSize(), 1);
+        this.byteBuf = new WriteBufferImpl(pool, buffer -> udpChannel.write(buffer, UdpAioSession.this), udpChannel.config.getWriteBufferSize(), 1);
         udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
     }
 

@@ -96,20 +96,27 @@ public final class BufferPagePool {
         }
     }
 
-
     /**
-     * 申请内存页
+     * 按顺序从内存页组中分配指定大小的虚拟缓冲区。
+     * 该方法会按顺序依次从内存页中获取缓冲区，使用原子计数器确保顺序分配。
      *
-     * @return 缓存页对象
+     * @param size 要分配的缓冲区大小
+     * @return 分配的虚拟缓冲区
      */
-    public BufferPage allocateBufferPage() {
-        if (enabled) {
-            //轮训游标，均衡分配内存页
-            return bufferPages[(cursor.getAndIncrement() & Integer.MAX_VALUE) % bufferPages.length];
-        }
-        throw new IllegalStateException("buffer pool is disable");
+    public VirtualBuffer allocateSequentially(final int size) {
+        return bufferPages[(cursor.getAndIncrement() & Integer.MAX_VALUE) % bufferPages.length].allocate(size);
     }
 
+    /**
+     * 根据当前线程 ID 从内存页组中分配指定大小的虚拟缓冲区。
+     * 该方法会根据当前线程的 ID 对内存页数量取模，将缓冲区分配到对应的内存页。
+     *
+     * @param size 要分配的缓冲区大小
+     * @return 分配的虚拟缓冲区
+     */
+    public VirtualBuffer allocateByThreadId(final int size) {
+        return bufferPages[(int) ((Thread.currentThread().getId()) % bufferPages.length)].allocate(size);
+    }
 
     /**
      * 释放回收内存
@@ -118,6 +125,13 @@ public final class BufferPagePool {
         enabled = false;
     }
 
-
+    @Override
+    public String toString() {
+        String logger = "";
+        for (BufferPage page : bufferPages) {
+            logger += "\r\n" + page.toString();
+        }
+        return logger;
+    }
 }
 

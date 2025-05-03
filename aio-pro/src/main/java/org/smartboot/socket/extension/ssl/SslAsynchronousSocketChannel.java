@@ -9,7 +9,7 @@
 
 package org.smartboot.socket.extension.ssl;
 
-import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
@@ -50,7 +50,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
     private int adaptiveWriteSize = -1;
     private boolean closed = false;
 
-    public SslAsynchronousSocketChannel(AsynchronousSocketChannel asynchronousSocketChannel, SslService sslService, BufferPage bufferPage) {
+    public SslAsynchronousSocketChannel(AsynchronousSocketChannel asynchronousSocketChannel, SslService sslService, BufferPagePool bufferPage) {
         super(asynchronousSocketChannel);
         this.handshakeModel = sslService.createSSLEngine(asynchronousSocketChannel, bufferPage);
         this.sslService = sslService;

@@ -14,7 +14,7 @@ import org.smartboot.socket.DecoderException;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.buffer.BufferPage;
+import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
@@ -129,7 +129,7 @@ final class TcpAioSession extends AioSession {
     /**
      * @param channel Socket通道
      */
-    TcpAioSession(AsynchronousSocketChannel channel, IoServerConfig config, BufferPage writeBufferPage, Supplier<VirtualBuffer> readBufferSupplier) {
+    TcpAioSession(AsynchronousSocketChannel channel, IoServerConfig config, BufferPagePool writeBufferPage, Supplier<VirtualBuffer> readBufferSupplier) {
         this.channel = channel;
         this.config = config;
         this.readBufferSupplier = readBufferSupplier;
