@@ -149,7 +149,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             }
         });
 
-        commonExecutorService = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), r -> new Thread(r, "smart-socket:common"));
+        commonExecutorService = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), r -> new Thread(r, "smart-socket:common-" + EnhanceAsynchronousChannelGroup.this.hashCode()));
         commonExecutorService.execute(writeWorker);
         commonExecutorService.execute(commonWorker);
     }
