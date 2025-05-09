@@ -30,12 +30,12 @@ import java.util.function.Consumer;
  * 2. 维护多个Worker线程，分别处理读、写和通用事件
  * 3. 通过Selector机制实现事件的监听和分发
  * 4. 支持优雅关闭和资源回收
- *
+ * <p>
  * 该类是smart-socket框架的核心组件，采用了多线程模型来处理不同类型的IO事件：
  * - 读事件由多个Worker线程处理，实现负载均衡
  * - 写事件由单独的Worker线程处理，避免并发写入问题
  * - 通用事件（如accept、connect）由专门的Worker线程处理
- * 
+ * <p>
  * 通过精细的线程分工和事件管理，实现了高性能、低延迟的网络IO处理能力。
  *
  * @author 三刀
@@ -75,6 +75,30 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
     boolean running = true;
 
     /**
+     * 忽略 SelectionKey.OP_ACCEPT，该情况不存在资源回收需求
+     */
+    private static final Consumer<SelectionKey> shutdownCallback = selectionKey -> {
+        int interestOps = selectionKey.interestOps();
+        selectionKey.cancel();
+        if ((interestOps & SelectionKey.OP_CONNECT) > 0) {
+            Runnable runnable = (Runnable) selectionKey.attachment();
+            runnable.run();
+        }
+        if ((interestOps & SelectionKey.OP_READ) > 0) {
+            //仅同步read会用到此线程资源
+            EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
+            removeOps(selectionKey, SelectionKey.OP_READ);
+            asynchronousSocketChannel.doRead(true);
+        }
+        if ((interestOps & SelectionKey.OP_WRITE) > 0) {
+            //仅同步read会用到此线程资源
+            EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
+            removeOps(selectionKey, SelectionKey.OP_READ);
+            asynchronousSocketChannel.doWrite();
+        }
+    };
+
+    /**
      * 初始化异步通道组实例。
      * 该构造函数完成以下初始化工作：
      * 1. 创建读事件处理线程池，包含多个Worker线程，每个Worker都有独立的Selector
@@ -82,9 +106,9 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
      * 3. 创建通用事件处理线程，负责处理accept、connect等操作
      * 4. 所有Worker线程都采用Selector机制实现事件监听
      *
-     * @param provider 异步通道提供者，用于创建异步通道
+     * @param provider            异步通道提供者，用于创建异步通道
      * @param readExecutorService 读事件处理线程池
-     * @param threadNum 读事件处理线程数量
+     * @param threadNum           读事件处理线程数量
      */
     protected EnhanceAsynchronousChannelGroup(AsynchronousChannelProvider provider, ExecutorService readExecutorService, int threadNum) throws IOException {
         super(provider);
@@ -136,7 +160,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
      * 例如：完成读操作后，移除READ事件的关注
      *
      * @param selectionKey 待操作的selectionKey，代表一个Channel的注册信息
-     * @param opt 需要移除的事件类型，如SelectionKey.OP_READ, SelectionKey.OP_WRITE等
+     * @param opt          需要移除的事件类型，如SelectionKey.OP_READ, SelectionKey.OP_WRITE等
      */
     public static void removeOps(SelectionKey selectionKey, int opt) {
         if (selectionKey.isValid() && (selectionKey.interestOps() & opt) != 0) {
@@ -203,9 +227,9 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
      * 2. 处理多线程并发注册场景
      * 3. 优化Selector的唤醒机制
      *
-     * @param worker 当前的Worker实例
+     * @param worker       当前的Worker实例
      * @param selectionKey 待操作的selectionKey
-     * @param opt 需要添加的事件类型，如SelectionKey.OP_READ等
+     * @param opt          需要添加的事件类型，如SelectionKey.OP_READ等
      */
     public static void interestOps(Worker worker, SelectionKey selectionKey, int opt) {
         if ((selectionKey.interestOps() & opt) != 0) {
@@ -292,7 +316,6 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     }
                     // 阻塞等待IO事件
                     selector.select();
-
                     // 处理已就绪的IO事件
                     for (SelectionKey key : keySet) {
                         consumer.accept(key);
@@ -302,7 +325,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                 // 关闭前处理剩余的事件
                 selector.keys().forEach(key -> {
                     try {
-                        consumer.accept(key);
+                        shutdownCallback.accept(key);
                     } catch (Throwable throwable) {
                         throwable.printStackTrace();
                     }
