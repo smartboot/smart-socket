@@ -21,7 +21,6 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <aio.version>1.5.62</aio.version>
         <junit.version>4.13.2</junit.version>
     </properties>
     <dependencyManagement>
@@ -29,12 +28,12 @@
             <dependency>
                 <groupId>io.github.smartboot.socket</groupId>
                 <artifactId>aio-core</artifactId>
-                <version>${aio.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.github.smartboot.socket</groupId>
                 <artifactId>aio-pro</artifactId>
-                <version>${aio.version}</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>

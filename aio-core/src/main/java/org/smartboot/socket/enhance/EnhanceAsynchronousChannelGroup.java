@@ -323,7 +323,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                     keySet.clear();
                 }
                 // 关闭前处理剩余的事件
-                selector.keys().forEach(key -> {
+                selector.keys().stream().filter(SelectionKey::isValid).forEach(key -> {
                     try {
                         shutdownCallback.accept(key);
                     } catch (Throwable throwable) {
