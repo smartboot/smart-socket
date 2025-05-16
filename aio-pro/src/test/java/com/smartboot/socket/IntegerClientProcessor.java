@@ -27,6 +27,9 @@ public class IntegerClientProcessor extends AbstractMessageProcessor<Integer> {
     @Override
     public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         System.out.println("other state:" + stateMachineEnum);
+        if (stateMachineEnum == StateMachineEnum.INPUT_EXCEPTION) {
+            throwable.printStackTrace();
+        }
         if (stateMachineEnum == StateMachineEnum.OUTPUT_EXCEPTION) {
             throwable.printStackTrace();
         }

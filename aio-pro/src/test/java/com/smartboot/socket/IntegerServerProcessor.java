@@ -33,6 +33,8 @@ public class IntegerServerProcessor extends AbstractMessageProcessor<Integer> {
 
     @Override
     public void stateEvent0(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
-
+        if (stateMachineEnum == StateMachineEnum.INPUT_EXCEPTION) {
+            throwable.printStackTrace();
+        }
     }
 }

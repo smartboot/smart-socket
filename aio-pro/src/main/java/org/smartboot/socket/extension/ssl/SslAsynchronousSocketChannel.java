@@ -160,21 +160,24 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
     private <A> void doHandshake(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
         handshakeModel.setHandshakeCallback(() -> {
-            handshake = false;
-            synchronized (SslAsynchronousSocketChannel.this) {
-                //释放内存
-                handshakeModel.getAppWriteBuffer().clean();
-                netReadBuffer.buffer().flip();
-                netWriteBuffer.buffer().clear();
-                appReadBuffer.buffer().clear().flip();
-                SslAsynchronousSocketChannel.this.notifyAll();
+            //释放内存
+            handshakeModel.getAppWriteBuffer().clean();
+            netReadBuffer.buffer().flip();
+            netWriteBuffer.buffer().clear();
+            appReadBuffer.buffer().clear().flip();
+            try {
+                if (handshakeModel.getException() != null) {
+                    handler.failed(handshakeModel.getException(), attachment);
+                } else {
+                    SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
+                }
+                handshakeModel = null;
+            } finally {
+                synchronized (SslAsynchronousSocketChannel.this) {
+                    handshake = false;
+                    SslAsynchronousSocketChannel.this.notifyAll();
+                }
             }
-            if (handshakeModel.getException() != null) {
-                handler.failed(handshakeModel.getException(), attachment);
-            } else {
-                SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
-            }
-            handshakeModel = null;
         });
         //触发握手
         sslService.doHandshake(handshakeModel);
@@ -247,7 +250,12 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
             return;
         }
         if (src.position() - pos == 0) {
-            System.err.println("write error:" + src + " netWrite:" + netWriteBuffer.buffer());
+            if (sslEngine.getSession().isValid()) {
+                System.err.println("write error:" + src + " netWrite:" + netWriteBuffer.buffer());
+            } else {
+                handler.failed(new IOException("connections is closed"), attachment);
+                return;
+            }
         }
         asynchronousSocketChannel.write(netWriteBuffer.buffer(), timeout, unit, attachment, new CompletionHandler<Integer, A>() {
             @Override
@@ -290,7 +298,9 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
     private void doWrap(ByteBuffer writeBuffer) throws SSLException {
         ByteBuffer netBuffer = netWriteBuffer.buffer();
-        netBuffer.compact();
+        if (netBuffer.position() > 0) {
+            throw new IllegalStateException("netBuffer.position() > 0");
+        }
         int limit = writeBuffer.limit();
         if (adaptiveWriteSize > 0 && writeBuffer.remaining() > adaptiveWriteSize) {
             writeBuffer.limit(writeBuffer.position() + adaptiveWriteSize);
