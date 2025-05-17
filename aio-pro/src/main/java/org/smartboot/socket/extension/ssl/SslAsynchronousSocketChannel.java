@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -37,13 +38,14 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
     /**
      * 完成握手置null
      */
-    private HandshakeModel handshakeModel;
+    private final HandshakeModel handshakeModel;
     /**
      * 完成握手置null
      */
     private final SslService sslService;
 
     private boolean handshake = true;
+    private CountDownLatch handshakeLatch = new CountDownLatch(1);
     /**
      * 自适应的输出长度
      */
@@ -64,7 +66,41 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
     public <A> void read(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
         //处于握手阶段
         if (handshake) {
-            doHandshake(dst, timeout, unit, attachment, handler);
+            handshakeModel.setHandshakeCompletionHandler(new HandshakeCompletionHandler() {
+                /**
+                 * 握手结束后释放资源
+                 */
+                private void release(HandshakeModel model) {
+                    model.getAppWriteBuffer().clean();
+                    model.getNetReadBuffer().buffer().flip();
+                    model.getNetWriteBuffer().buffer().clear();
+                    model.getAppReadBuffer().buffer().clear().flip();
+                }
+
+                @Override
+                public void completed(HandshakeModel model) {
+                    if (!handshake) {
+                        return;
+                    }
+                    release(model);
+                    handshake = false;
+                    handshakeLatch.countDown();
+                    read(dst, timeout, unit, attachment, handler);
+                }
+
+                @Override
+                public void failed(Throwable exc, HandshakeModel model) {
+                    if (!handshake) {
+                        return;
+                    }
+                    release(model);
+                    handshake = false;
+                    handshakeLatch.countDown();
+                    handler.failed(exc, attachment);
+                }
+            });
+            //触发握手
+            sslService.doHandshake(handshakeModel);
             return;
         }
 
@@ -158,30 +194,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         handler.completed(dst.position() - pos, attachment);
     }
 
-    private <A> void doHandshake(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
-        handshakeModel.setHandshakeCallback(() -> {
-            //释放内存
-            handshakeModel.getAppWriteBuffer().clean();
-            netReadBuffer.buffer().flip();
-            netWriteBuffer.buffer().clear();
-            appReadBuffer.buffer().clear().flip();
-            try {
-                if (handshakeModel.getException() != null) {
-                    handler.failed(handshakeModel.getException(), attachment);
-                } else {
-                    SslAsynchronousSocketChannel.this.read(dst, timeout, unit, attachment, handler);
-                }
-                handshakeModel = null;
-            } finally {
-                synchronized (SslAsynchronousSocketChannel.this) {
-                    handshake = false;
-                    SslAsynchronousSocketChannel.this.notifyAll();
-                }
-            }
-        });
-        //触发握手
-        sslService.doHandshake(handshakeModel);
-    }
 
     private SSLEngineResult.Status doUnWrap(ByteBuffer netBuffer, ByteBuffer appBuffer) {
         try {
@@ -240,7 +252,12 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
     @Override
     public <A> void write(ByteBuffer src, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
         if (handshake) {
-            checkInitialized();
+            try {
+                handshakeLatch.await();
+            } catch (InterruptedException e) {
+                handler.failed(e, attachment);
+                return;
+            }
         }
         int pos = src.position();
         try {
