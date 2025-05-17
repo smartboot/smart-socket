@@ -35,13 +35,13 @@ import java.util.concurrent.TimeUnit;
  * 3. 实现了低内存模式的支持：在资源受限环境下优化内存使用
  * 4. 管理Socket连接的生命周期：包括连接建立、数据传输和连接关闭
  * 5. 提供Future和CompletionHandler两种异步操作方式：灵活支持不同的编程模型
- * 
+ * <p>
  * 实现原理：
  * - 底层使用NIO的SocketChannel实现网络通信
  * - 通过Worker线程池处理异步IO事件
  * - 使用SelectionKey管理IO事件的注册与触发
  * - 支持低内存模式下的内存优化策略
- *
+ * <p>
  * 该类是smart-socket框架的核心数据传输组件，通过精心设计的事件处理机制，解决了以下问题：
  * - 避免了传统NIO编程中的复杂性和易错性
  * - 提供了类似JDK7 AIO的编程体验，但性能更优
@@ -58,7 +58,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 该通道是非阻塞模式的，支持异步读写操作
      */
     protected final SocketChannel channel;
-    
+
     /**
      * 处理读事件的工作线程，负责异步读取操作的执行
      * 通过Worker线程池来处理读事件，实现真正的异步操作
@@ -71,7 +71,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 采用ByteBuffer实现高效的数据读取和处理
      */
     private ByteBuffer readBuffer;
-    
+
     /**
      * 写缓冲区，用于存储待写入通道的数据
      * 支持异步写入操作，提高IO效率
@@ -83,25 +83,25 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 支持自定义处理读取结果的方式
      */
     private CompletionHandler<Number, Object> readCompletionHandler;
-    
+
     /**
      * 写操作的回调处理器，用于处理异步写入完成后的回调逻辑
      * 支持自定义处理写入结果的方式
      */
     private CompletionHandler<Number, Object> writeCompletionHandler;
-    
+
     /**
      * 读操作的附加对象，可在回调时传递额外的上下文信息
      * 用于在异步操作完成时传递自定义数据
      */
     private Object readAttachment;
-    
+
     /**
      * 写操作的附加对象，可在回调时传递额外的上下文信息
      * 用于在异步操作完成时传递自定义数据
      */
     private Object writeAttachment;
-    
+
     /**
      * 用于读操作的选择键，管理通道的读事件注册
      * 通过SelectionKey实现事件的监听和触发
@@ -114,7 +114,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 适用于资源受限的环境
      */
     private final boolean lowMemory;
-    
+
     /**
      * 写操作中断标志
      * 用于控制写操作的中断状态，防止写操作重入
@@ -212,13 +212,13 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     /**
      * 异步连接远程地址
      * 实现了异步连接操作，支持通过CompletionHandler处理连接结果
-     * 
-     * @param remote 远程服务器地址
+     *
+     * @param remote     远程服务器地址
      * @param attachment 附加对象，可在连接完成时传递给CompletionHandler
-     * @param handler 连接完成的回调处理器
+     * @param handler    连接完成的回调处理器
      * @throws ShutdownChannelGroupException 如果通道组已关闭
-     * @throws AlreadyConnectedException 如果通道已经连接
-     * @throws ConnectionPendingException 如果连接操作正在进行中
+     * @throws AlreadyConnectedException     如果通道已经连接
+     * @throws ConnectionPendingException    如果连接操作正在进行中
      */
     @Override
     public <A> void connect(SocketAddress remote, A attachment, CompletionHandler<Void, ? super A> handler) {
@@ -339,7 +339,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 2. 支持低内存模式下的读取优化
      * 3. 实现读取限流，避免单个连接占用过多资源
      * 4. 处理读取完成后的回调通知
-     * 
+     *
      * @param direct 是否直接读取，true表示立即读取，false表示通过事件触发读取
      */
     public final void doRead(boolean direct) {
@@ -369,6 +369,9 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             if (directRead) {
                 readSize = channel.read(readBuffer);
                 hasRemain = readBuffer.hasRemaining();
+                if (hasRemain) {
+                    readInvoker = EnhanceAsynchronousChannelGroup.MAX_INVOKER;
+                }
             }
 
             //注册至异步线程
@@ -439,7 +442,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 2. 支持非阻塞写入操作
      * 3. 处理写入完成后的回调通知
      * 4. 管理写入事件的注册
-     * 
+     *
      * @return 是否需要继续写入，true表示需要继续写入，false表示写入完成或需要等待
      */
     public final boolean doWrite() {
