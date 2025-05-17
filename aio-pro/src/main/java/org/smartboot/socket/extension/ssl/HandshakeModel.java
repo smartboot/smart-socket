@@ -18,7 +18,7 @@ import java.nio.channels.AsynchronousSocketChannel;
  * @author 三刀
  * @version V1.0 , 2018/1/2
  */
-class HandshakeModel {
+public class HandshakeModel {
 
     private AsynchronousSocketChannel socketChannel;
     private SSLEngine sslEngine;
@@ -27,8 +27,7 @@ class HandshakeModel {
     private VirtualBuffer appReadBuffer;
 
     private VirtualBuffer netReadBuffer;
-    private HandshakeCallback handshakeCallback;
-    private Throwable exception;
+    private HandshakeCompletionHandler handshakeCompletionHandler;
     private boolean finished;
 
     public AsynchronousSocketChannel getSocketChannel() {
@@ -87,19 +86,11 @@ class HandshakeModel {
         this.finished = finished;
     }
 
-    public HandshakeCallback getHandshakeCallback() {
-        return handshakeCallback;
+    public HandshakeCompletionHandler getHandshakeCompletionHandler() {
+        return handshakeCompletionHandler;
     }
 
-    public void setHandshakeCallback(HandshakeCallback handshakeCallback) {
-        this.handshakeCallback = handshakeCallback;
-    }
-
-    public Throwable getException() {
-        return exception;
-    }
-
-    public void setException(Throwable exception) {
-        this.exception = exception;
+    public void setHandshakeCompletionHandler(HandshakeCompletionHandler handshakeCompletionHandler) {
+        this.handshakeCompletionHandler = handshakeCompletionHandler;
     }
 }

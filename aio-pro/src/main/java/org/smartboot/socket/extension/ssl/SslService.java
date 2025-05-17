@@ -36,7 +36,8 @@ public final class SslService {
     private final SSLContext sslContext;
 
     private final Consumer<SSLEngine> consumer;
-    private final CompletionHandler<Integer, HandshakeModel> handshakeCompletionHandler = new CompletionHandler<Integer, HandshakeModel>() {
+
+    private final CompletionHandler<Integer, HandshakeModel> completionHandler = new CompletionHandler<Integer, HandshakeModel>() {
         @Override
         public void completed(Integer result, HandshakeModel attachment) {
             if (result == -1) {
@@ -44,16 +45,13 @@ public final class SslService {
                 return;
             }
             if (result != EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL) {
-                synchronized (attachment) {
-                    doHandshake(attachment);
-                }
+                doHandshake(attachment);
             }
         }
 
         @Override
-        public void failed(Throwable exc, HandshakeModel attachment) {
-            attachment.setException(exc);
-            attachment.getHandshakeCallback().callback();
+        public void failed(Throwable exc, HandshakeModel model) {
+            model.getHandshakeCompletionHandler().failed(exc, model);
         }
     };
 
@@ -91,8 +89,6 @@ public final class SslService {
      * 纯异步实现的SSL握手,
      * 在执行doHandshake期间必须保证当前通道无数据读写正在执行。
      * 若触发了数据读写，也应立马终止doHandshake方法
-     *
-     * @param handshakeModel
      */
     public void doHandshake(HandshakeModel handshakeModel) {
         SSLEngineResult result = null;
@@ -104,14 +100,6 @@ public final class SslService {
             ByteBuffer appWriteBuffer = handshakeModel.getAppWriteBuffer().buffer();
             SSLEngine engine = handshakeModel.getSslEngine();
 
-            //握手阶段网络断链
-            if (handshakeModel.getException() != null) {
-                if (debug) {
-                    System.out.println("the ssl handshake is terminated");
-                }
-                handshakeModel.getHandshakeCallback().callback();
-                return;
-            }
             while (!handshakeModel.isFinished()) {
                 handshakeStatus = engine.getHandshakeStatus();
                 if (debug) {
@@ -126,7 +114,7 @@ public final class SslService {
                             netReadBuffer.compact();
                         } else {
                             netReadBuffer.clear();
-                            handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletionHandler);
+                            handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, completionHandler);
                             return;
                         }
 
@@ -142,7 +130,7 @@ public final class SslService {
                             //两种情况会触发BUFFER_UNDERFLOW,1:读到的数据不够,2:netReadBuffer空间太小
                             case BUFFER_UNDERFLOW:
                                 if (netReadBuffer.position() > 0) {
-                                    handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, handshakeCompletionHandler);
+                                    handshakeModel.getSocketChannel().read(netReadBuffer, handshakeModel, completionHandler);
                                 } else {
                                     System.out.println("doHandshake BUFFER_UNDERFLOW");
                                 }
@@ -156,7 +144,7 @@ public final class SslService {
                             if (debug) {
                                 System.out.println("数据未输出完毕...");
                             }
-                            handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletionHandler);
+                            handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, completionHandler);
                             return;
                         }
                         netWriteBuffer.clear();
@@ -168,7 +156,7 @@ public final class SslService {
                                 if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
                                     handshakeModel.setFinished(true);
                                 }
-                                handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, handshakeCompletionHandler);
+                                handshakeModel.getSocketChannel().write(netWriteBuffer, handshakeModel, completionHandler);
                                 return;
                             case BUFFER_OVERFLOW:
                                 if (debug) {
@@ -217,13 +205,12 @@ public final class SslService {
             if (debug) {
                 System.out.println("握手完毕");
             }
-            handshakeModel.getHandshakeCallback().callback();
-
+            handshakeModel.getHandshakeCompletionHandler().completed(handshakeModel);
         } catch (Exception e) {
             if (debug) {
                 System.out.println("ignore doHandshake exception:" + e.getMessage());
             }
-            handshakeCompletionHandler.failed(e, handshakeModel);
+            completionHandler.failed(e, handshakeModel);
         }
     }
 
