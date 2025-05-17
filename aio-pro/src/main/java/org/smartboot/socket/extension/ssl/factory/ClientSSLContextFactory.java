@@ -21,16 +21,13 @@ public class ClientSSLContextFactory implements SSLContextFactory {
         // Default constructor for non-mutual authentication
     }
 
-    public ClientSSLContextFactory(InputStream trustInputStream, String trustPassword) {
-        this(trustInputStream, trustPassword, null, null);
-    }
 
     public ClientSSLContextFactory(InputStream trustInputStream, String trustPassword, InputStream keyInputStream, String keyPassword) {
         this.trustInputStream = trustInputStream;
         this.trustPassword = trustPassword;
         this.keyInputStream = keyInputStream;
         this.keyPassword = keyPassword;
-        
+
         if (keyInputStream != null && trustInputStream == null) {
             throw new IllegalArgumentException("When keyInputStream is provided, trustInputStream must also be provided for mutual authentication");
         }
@@ -40,7 +37,7 @@ public class ClientSSLContextFactory implements SSLContextFactory {
     public SSLContext create() throws Exception {
         TrustManager[] trustManagers;
         KeyManager[] keyManagers = null;
-        
+
         // Initialize TrustManagers
         if (trustInputStream != null) {
             KeyStore ts = KeyStore.getInstance("JKS");
@@ -64,7 +61,7 @@ public class ClientSSLContextFactory implements SSLContextFactory {
                 }
             }};
         }
-        
+
         // Initialize KeyManagers for client authentication
         if (keyInputStream != null) {
             KeyStore ks = KeyStore.getInstance("JKS");
@@ -73,7 +70,7 @@ public class ClientSSLContextFactory implements SSLContextFactory {
             kmf.init(ks, keyPassword.toCharArray());
             keyManagers = kmf.getKeyManagers();
         }
-        
+
         SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
         sslContext.init(keyManagers, trustManagers, new SecureRandom());
         return sslContext;
