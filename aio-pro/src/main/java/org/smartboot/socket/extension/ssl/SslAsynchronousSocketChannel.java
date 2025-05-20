@@ -283,6 +283,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                 if (netWriteBuffer.buffer().hasRemaining()) {
                     asynchronousSocketChannel.write(netWriteBuffer.buffer(), timeout, unit, attachment, this);
                 } else {
+                    netWriteBuffer.buffer().clear();
                     handler.completed(src.position() - pos, attachment);
                 }
             }
