@@ -369,6 +369,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             if (directRead) {
                 readSize = channel.read(readBuffer);
                 hasRemain = readBuffer.hasRemaining();
+                //当readBuffer未填充满，我们推测当前管道中大概率没有可读数据，下一次直接进入读监听状态
                 if (hasRemain) {
                     readInvoker = EnhanceAsynchronousChannelGroup.MAX_INVOKER;
                 }
