@@ -80,8 +80,9 @@ public class SslDemo {
         SslPlugin<Integer> sslPlugin = new SslPlugin<>(clientFactory);
         clientProcessor.addPlugin(sslPlugin);
         AioSession aioSession = sslQuickClient.start();
-        aioSession.writeBuffer().writeInt(1);
-        aioSession.writeBuffer().flush();
-
+        while (true) {
+            aioSession.writeBuffer().writeInt(1);
+            aioSession.writeBuffer().flush();
+        }
     }
 }

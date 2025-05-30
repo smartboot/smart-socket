@@ -114,7 +114,11 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         ByteBuffer netBuffer = netReadBuffer.buffer();
         if (netBuffer.hasRemaining()) {
             appBuffer.compact();
-            doUnWrap(netBuffer, appBuffer);
+            try {
+                doUnWrap(netBuffer, appBuffer);
+            } catch (SSLException e) {
+                handler.failed(e, attachment);
+            }
             appBuffer.flip();
         }
         //appBuffer还有残留数据，先腾空
@@ -148,29 +152,22 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
                 appBuffer.clear();
                 ByteBuffer netBuffer = netReadBuffer.buffer();
                 netBuffer.flip();
-                SSLEngineResult.Status status = doUnWrap(netBuffer, appBuffer);
+                try {
+                    doUnWrap(netBuffer, appBuffer);
+                } catch (SSLException e) {
+                    handler.failed(e, attachment);
+                }
                 appBuffer.flip();
 
                 ////存在doUnWrap为ok，但appBuffer无数据的情况
                 if (appBuffer.hasRemaining()) {
-                    if (status != SSLEngineResult.Status.OK) {
-                        throw new IllegalStateException();
-                    }
                     index = 0;
                     handleAppBuffer(dst, attachment, handler, appBuffer);
-                    return;
-                }
-                if (index >= 16) {
-                    System.err.println("maybe trigger bug here...");
-                }
-                if (status == SSLEngineResult.Status.OK && index < 16 && netBuffer.hasRemaining()) {
-                    System.err.println("Possible exception on appBuffer.");
-                    index++;
-                    completed(result, attachment);
                 } else {
                     netBuffer.compact();
                     asynchronousSocketChannel.read(netBuffer, timeout, unit, attachment, this);
                 }
+
             }
 
             @Override
@@ -195,46 +192,39 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
     }
 
 
-    private SSLEngineResult.Status doUnWrap(ByteBuffer netBuffer, ByteBuffer appBuffer) {
-        try {
-            SSLEngineResult result = sslEngine.unwrap(netBuffer, appBuffer);
-            boolean closed = false;
-            while (!closed && result.getStatus() != SSLEngineResult.Status.OK) {
-                switch (result.getStatus()) {
-                    case BUFFER_OVERFLOW:
-                        if (sslService.isDebug()) {
-                            System.out.println("BUFFER_OVERFLOW error,net:" + netBuffer + " app:" + appBuffer);
-                        }
-                        break;
-                    case BUFFER_UNDERFLOW:
-                        if (netBuffer.limit() == netBuffer.capacity() && !netBuffer.hasRemaining()) {
-                            if (sslService.isDebug()) {
-                                System.err.println("BUFFER_UNDERFLOW error");
-                            }
-                        } else {
-                            if (sslService.isDebug()) {
-                                System.out.println("BUFFER_UNDERFLOW,continue read:" + netBuffer);
-                            }
-                        }
-//                        logger.error("doUnWrap return, " + netBuffer);
-                        return result.getStatus();
-                    case CLOSED:
-                        if (sslService.isDebug()) {
-                            System.out.println("doUnWrap Result:" + result.getStatus());
-                        }
-                        closed = true;
-                        break;
-                    default:
-                        if (sslService.isDebug()) {
-                            System.out.println("doUnWrap Result:" + result.getStatus());
-                        }
-                }
-                result = sslEngine.unwrap(netBuffer, appBuffer);
-            }
-            return result.getStatus();
-        } catch (SSLException e) {
-            throw new RuntimeException(e);
-        }
+    private void doUnWrap(ByteBuffer netBuffer, ByteBuffer appBuffer) throws SSLException {
+        SSLEngineResult result;
+        do {
+            result = sslEngine.unwrap(netBuffer, appBuffer);
+        } while (result.getStatus() == SSLEngineResult.Status.OK && netBuffer.hasRemaining() && appBuffer.hasRemaining());
+
+//        switch (result.getStatus()) {
+//            case BUFFER_OVERFLOW:
+//                if (sslService.isDebug()) {
+//                    System.out.println("BUFFER_OVERFLOW error,net:" + netBuffer + " app:" + appBuffer);
+//                }
+//                break;
+//            case BUFFER_UNDERFLOW:
+//                if (netBuffer.limit() == netBuffer.capacity() && !netBuffer.hasRemaining()) {
+//                    if (sslService.isDebug()) {
+//                        System.err.println("BUFFER_UNDERFLOW error");
+//                    }
+//                } else {
+//                    if (sslService.isDebug()) {
+//                        System.out.println("BUFFER_UNDERFLOW,continue read:" + netBuffer);
+//                    }
+//                }
+//                break;
+//            case CLOSED:
+//                if (sslService.isDebug()) {
+//                    System.out.println("doUnWrap Result:" + result.getStatus());
+//                }
+//                break;
+//            default:
+//                if (sslService.isDebug()) {
+//                    System.out.println("doUnWrap Result:" + result.getStatus());
+//                }
+//        }
     }
 
     @Override
@@ -314,7 +304,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         }
     }
 
-    private void doWrap(ByteBuffer writeBuffer) throws SSLException {
+    private synchronized void doWrap(ByteBuffer writeBuffer) throws SSLException {
         ByteBuffer netBuffer = netWriteBuffer.buffer();
         if (netBuffer.position() > 0) {
             throw new IllegalStateException("netBuffer.position() > 0");
