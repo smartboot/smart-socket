@@ -91,9 +91,8 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             asynchronousSocketChannel.doRead(true);
         }
         if ((interestOps & SelectionKey.OP_WRITE) > 0) {
-            //仅同步read会用到此线程资源
             EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
-            removeOps(selectionKey, SelectionKey.OP_READ);
+            removeOps(selectionKey, SelectionKey.OP_WRITE);
             asynchronousSocketChannel.doWrite();
         }
     };
