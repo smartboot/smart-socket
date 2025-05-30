@@ -129,7 +129,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
         netBuffer.compact();
         asynchronousSocketChannel.read(netBuffer, timeout, unit, attachment, new CompletionHandler<Integer, A>() {
-            int index = 0;
 
             @Override
             public void completed(Integer result, A attachment) {
@@ -161,7 +160,6 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
                 ////存在doUnWrap为ok，但appBuffer无数据的情况
                 if (appBuffer.hasRemaining()) {
-                    index = 0;
                     handleAppBuffer(dst, attachment, handler, appBuffer);
                 } else {
                     netBuffer.compact();
@@ -304,7 +302,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
         }
     }
 
-    private synchronized void doWrap(ByteBuffer writeBuffer) throws SSLException {
+    private void doWrap(ByteBuffer writeBuffer) throws SSLException {
         ByteBuffer netBuffer = netWriteBuffer.buffer();
         if (netBuffer.position() > 0) {
             throw new IllegalStateException("netBuffer.position() > 0");
