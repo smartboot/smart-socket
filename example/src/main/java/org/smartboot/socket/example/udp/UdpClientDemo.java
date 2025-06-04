@@ -43,7 +43,7 @@ public class UdpClientDemo {
         };
         processor.addPlugin(new MonitorPlugin<>(5, true));
 
-        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors(), true);
+        BufferPagePool bufferPagePool = new BufferPagePool(Runtime.getRuntime().availableProcessors(), true);
 
         Worker worker = new Worker(bufferPagePool, Runtime.getRuntime().availableProcessors());
 

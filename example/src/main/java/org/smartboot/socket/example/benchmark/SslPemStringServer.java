@@ -56,7 +56,7 @@ public class SslPemStringServer {
         AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
         server.setReadBufferSize(1024 * 1024)
                 .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
-                .setBufferPagePool(new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors() + 1, true))
+                .setBufferPagePool(new BufferPagePool(Runtime.getRuntime().availableProcessors() + 1, true))
                 .setWriteBuffer(4096, 512);
         processor.addPlugin(new BufferPageMonitorPlugin<>(server, 6));
         processor.addPlugin(new MonitorPlugin<>(5));

@@ -45,7 +45,7 @@ public class Clients {
             }
         };
         processor.addPlugin(new MonitorPlugin<>(5));
-        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024, Runtime.getRuntime().availableProcessors() + 1, true);
+        BufferPagePool bufferPagePool = new BufferPagePool(Runtime.getRuntime().availableProcessors() + 1, true);
         for (int i = 0; i < count; i++) {
             AioQuickClient client = new AioQuickClient(host, port, new StringProtocol(), processor);
             client.setReadBufferSize(1024).setBufferPagePool(bufferPagePool);

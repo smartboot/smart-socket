@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutionException;
 public class StringClient {
 
     public static void main(String[] args) throws IOException {
-        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 32, 10, true);
+        BufferPagePool bufferPagePool = new BufferPagePool(10, true);
         AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
             @Override
             public void process0(AioSession session, String msg) {

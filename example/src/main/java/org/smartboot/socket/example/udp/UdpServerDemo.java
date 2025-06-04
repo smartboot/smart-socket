@@ -53,7 +53,7 @@ public class UdpServerDemo {
         processor.addPlugin(new MonitorPlugin<>(5, true));
         UdpBootstrap bootstrap = new UdpBootstrap(new StringProtocol(), processor);
         bootstrap.setThreadNum(Runtime.getRuntime().availableProcessors())
-                .setBufferPagePool(new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors(), true))
+                .setBufferPagePool(new BufferPagePool(Runtime.getRuntime().availableProcessors(), true))
                 .setReadBufferSize(1024).open(8888);
     }
 }

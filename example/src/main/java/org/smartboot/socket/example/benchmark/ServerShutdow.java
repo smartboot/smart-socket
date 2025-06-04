@@ -43,7 +43,7 @@ public class ServerShutdow {
             }
         };
 
-        BufferPagePool bufferPagePool = new BufferPagePool(1024 * 1024 * 16, Runtime.getRuntime().availableProcessors() + 1, true);
+        BufferPagePool bufferPagePool = new BufferPagePool(Runtime.getRuntime().availableProcessors() + 1, true);
         AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
         server.setReadBufferSize(1024 * 1024)
                 .setThreadNum(2)

@@ -29,7 +29,7 @@ public final class BufferPagePool {
         thread.setDaemon(true);
         return thread;
     });
-    public static final BufferPagePool DEFAULT_BUFFER_PAGE_POOL = new BufferPagePool(0, 1, false);
+    public static final BufferPagePool DEFAULT_BUFFER_PAGE_POOL = new BufferPagePool(1, false);
     /**
      * 内存页游标
      */
@@ -55,22 +55,17 @@ public final class BufferPagePool {
         }
     }
 
-    public BufferPagePool(int pageNum, boolean direct) {
-        this(0, pageNum, direct);
-    }
-
     /**
-     * @param pageSize 内存页大小
      * @param pageNum  内存页个数
      * @param isDirect 是否使用直接缓冲区
      */
-    public BufferPagePool(final int pageSize, final int pageNum, final boolean isDirect) {
+    public BufferPagePool(final int pageNum, final boolean isDirect) {
         if (isDirect && !directSupported) {
             throw new IllegalStateException("当前版本的 smart-socket 申请 Direct ByteBuffer 要求 JDK 版本必须 <= 1.8，或者升级 smart-socket 至 1.6.x 版本");
         }
         bufferPages = new AbstractBufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
-            bufferPages[i] = pageSize == 0 ? new ElasticBufferPage(isDirect) : new StaticBufferPage(pageSize, isDirect);
+            bufferPages[i] = new ElasticBufferPage(isDirect);
         }
         if (pageNum > 0) {
             future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
