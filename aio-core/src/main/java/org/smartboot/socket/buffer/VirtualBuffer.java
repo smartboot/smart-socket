@@ -33,59 +33,18 @@ public final class VirtualBuffer {
      *
      * @see ByteBuffer#slice()
      */
-    private ByteBuffer buffer;
-    /**
-     * 当前虚拟buffer映射的实际buffer.position
-     */
-    private int parentPosition;
+    private final ByteBuffer buffer;
 
-    /**
-     * 当前虚拟buffer映射的实际buffer.limit
-     */
-    private int parentLimit;
 
-    /**
-     * 缓冲区容量
-     */
-    private int capacity;
-
-    VirtualBuffer(AbstractBufferPage bufferPage, ByteBuffer buffer, int parentPosition, int parentLimit) {
+    VirtualBuffer(AbstractBufferPage bufferPage, ByteBuffer buffer) {
         this.bufferPage = bufferPage;
         this.buffer = buffer;
-        this.parentPosition = parentPosition;
-        this.parentLimit = parentLimit;
-        updateCapacity();
     }
 
     public static VirtualBuffer wrap(ByteBuffer buffer) {
-        return new VirtualBuffer(null, buffer, 0, 0);
+        return new VirtualBuffer(null, buffer);
     }
 
-    int getParentPosition() {
-        return parentPosition;
-    }
-
-    void setParentPosition(int parentPosition) {
-        this.parentPosition = parentPosition;
-        updateCapacity();
-    }
-
-    int getParentLimit() {
-        return parentLimit;
-    }
-
-    void setParentLimit(int parentLimit) {
-        this.parentLimit = parentLimit;
-        updateCapacity();
-    }
-
-    private void updateCapacity() {
-        capacity = this.parentLimit - this.parentPosition;
-    }
-
-    public int getCapacity() {
-        return capacity;
-    }
 
     /**
      * 获取真实缓冲区
@@ -98,11 +57,9 @@ public final class VirtualBuffer {
 
     /**
      * 设置真实缓冲区
-     *
-     * @param buffer 真实缓冲区
      */
-    void buffer(ByteBuffer buffer) {
-        this.buffer = buffer;
+    void reset() {
+        this.buffer.clear();
         clean.release();
     }
 
@@ -121,6 +78,6 @@ public final class VirtualBuffer {
 
     @Override
     public String toString() {
-        return "VirtualBuffer{parentPosition=" + parentPosition + ", parentLimit=" + parentLimit + '}';
+        return buffer.toString();
     }
 }
