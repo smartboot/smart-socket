@@ -23,7 +23,7 @@ public final class VirtualBuffer {
     /**
      * 当前虚拟buffer的归属内存页
      */
-    private final AbstractBufferPage bufferPage;
+    private final BufferPage bufferPage;
     /**
      * 是否已回收
      */
@@ -36,7 +36,7 @@ public final class VirtualBuffer {
     private final ByteBuffer buffer;
 
 
-    VirtualBuffer(AbstractBufferPage bufferPage, ByteBuffer buffer) {
+    VirtualBuffer(BufferPage bufferPage, ByteBuffer buffer) {
         this.bufferPage = bufferPage;
         this.buffer = buffer;
     }

@@ -37,7 +37,7 @@ public final class BufferPagePool {
     /**
      * 内存页组
      */
-    private AbstractBufferPage[] bufferPages;
+    private BufferPage[] bufferPages;
     private boolean enabled = true;
     /**
      * 内存回收任务
@@ -63,21 +63,21 @@ public final class BufferPagePool {
         if (isDirect && !directSupported) {
             throw new IllegalStateException("当前版本的 smart-socket 申请 Direct ByteBuffer 要求 JDK 版本必须 <= 1.8，或者升级 smart-socket 至 1.6.x 版本");
         }
-        bufferPages = new AbstractBufferPage[pageNum];
+        bufferPages = new BufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
-            bufferPages[i] = new ElasticBufferPage(isDirect);
+            bufferPages[i] = new BufferPage(isDirect);
         }
         if (pageNum > 0) {
             future = BUFFER_POOL_CLEAN.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
                     if (enabled) {
-                        for (AbstractBufferPage bufferPage : bufferPages) {
+                        for (BufferPage bufferPage : bufferPages) {
                             bufferPage.tryClean();
                         }
                     } else {
                         if (bufferPages != null) {
-                            for (AbstractBufferPage page : bufferPages) {
+                            for (BufferPage page : bufferPages) {
                                 page.release();
                             }
                             bufferPages = null;
