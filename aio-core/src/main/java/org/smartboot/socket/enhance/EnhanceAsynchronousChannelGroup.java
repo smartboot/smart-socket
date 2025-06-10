@@ -130,6 +130,9 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                 if (selectionKey.isValid()) {
                     selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
                 }
+            } catch (Throwable e) {
+                System.err.println("remove write ops error");
+                e.printStackTrace();
             } finally {
                 while (asynchronousSocketChannel.doWrite()) ;
             }
@@ -332,7 +335,10 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                         throwable.printStackTrace();
                     }
                 });
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                if (running) {
+                    System.err.println("worker thread error");
+                }
                 e.printStackTrace();
             } finally {
                 try {
