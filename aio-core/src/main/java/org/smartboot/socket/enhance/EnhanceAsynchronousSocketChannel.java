@@ -405,9 +405,13 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             } else if (readSelectionKey == null) {
                 readWorker.addRegister(selector -> {
                     try {
-                        readSelectionKey = channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
+                        if (channel.isOpen()) {
+                            readSelectionKey = channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
+                        }
                     } catch (ClosedChannelException e) {
-                        readCompletionHandler.failed(e, readAttachment);
+                        if (readCompletionHandler != null) {
+                            readCompletionHandler.failed(e, readAttachment);
+                        }
                     }
                 });
             } else {
@@ -475,9 +479,13 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     // 首次注册写事件
                     group().writeWorker.addRegister(selector -> {
                         try {
-                            channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
+                            if (channel.isOpen()) {
+                                channel.register(selector, SelectionKey.OP_WRITE, EnhanceAsynchronousSocketChannel.this);
+                            }
                         } catch (ClosedChannelException e) {
-                            writeCompletionHandler.failed(e, writeAttachment);
+                            if (writeCompletionHandler != null) {
+                                writeCompletionHandler.failed(e, writeAttachment);
+                            }
                         }
                     });
                 } else {
