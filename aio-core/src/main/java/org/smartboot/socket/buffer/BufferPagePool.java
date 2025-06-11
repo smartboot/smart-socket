@@ -72,7 +72,7 @@ public final class BufferPagePool {
      * 如果主版本号大于8（即JDK 9及以上），则将directSupported设置为false。
      */
     static {
-        String version = System.getProperty("java.version");
+        String version = System.getProperty("java.specification.version");
         // 处理类似"1.8.0_301"和"9+"两种版本格式
         int majorVersion = version.startsWith("1.") ? Integer.parseInt(version.split("\\.")[1]) : Integer.parseInt(version.split("\\.")[0]);
 
