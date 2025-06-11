@@ -88,10 +88,12 @@ public final class BufferPagePool {
      * @param isDirect 是否使用直接缓冲区。当值为true时，使用堆外内存；当值为false时，使用堆内存
      * @throws IllegalStateException 当在不支持直接缓冲区的JDK版本中尝试使用直接缓冲区时抛出异常
      */
-    public BufferPagePool(final int pageNum, final boolean isDirect) {
+    public BufferPagePool(final int pageNum, boolean isDirect) {
         // 检查JDK版本对直接缓冲区的支持情况
         if (isDirect && !directSupported) {
-            throw new IllegalStateException("当前版本的 smart-socket 申请 Direct ByteBuffer 要求 JDK 版本必须 <= 1.8，或者升级 smart-socket 至 1.6.x 版本");
+            isDirect = false;
+            System.err.println("The current version of JDK does not support applying for Direct ByteBuffer. Please switch the JDK to 1.8 or upgrade smart-socket to the 1.6.x version.");
+            System.err.println("Automatically downgraded to Heap ByteBuffer...");
         }
         // 创建指定数量的内存页
         bufferPages = new BufferPage[pageNum];
