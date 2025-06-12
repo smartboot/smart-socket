@@ -198,33 +198,35 @@ final class TcpAioSession extends AioSession {
      *
      * @param immediate true:立即关闭,false:响应消息发送完后关闭
      */
-    public synchronized void close(boolean immediate) {
-        //status == SESSION_STATUS_CLOSED说明close方法被重复调用
-        if (status == SESSION_STATUS_CLOSED) {
+    public void close(boolean immediate) {
+        synchronized (byteBuf) {
+            //status == SESSION_STATUS_CLOSED说明close方法被重复调用
+            if (status == SESSION_STATUS_CLOSED) {
 //            System.out.println("ignore, session:" + getSessionID() + " is closed:");
-            return;
-        }
-        status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
-        if (immediate) {
-            try {
-                byteBuf.close();
-                if (readBuffer != null) {
-                    readBuffer.clean();
-                    readBuffer = null;
-                }
-                if (writeBuffer != null) {
-                    writeBuffer.clean();
-                    writeBuffer = null;
-                }
-            } finally {
-                IOUtil.close(channel);
-                config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
+                return;
             }
-        } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && byteBuf.isEmpty()) {
-            close(true);
-        } else {
-            config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
-            byteBuf.flush();
+            status = immediate ? SESSION_STATUS_CLOSED : SESSION_STATUS_CLOSING;
+            if (immediate) {
+                try {
+                    byteBuf.close();
+                    if (readBuffer != null) {
+                        readBuffer.clean();
+                        readBuffer = null;
+                    }
+                    if (writeBuffer != null) {
+                        writeBuffer.clean();
+                        writeBuffer = null;
+                    }
+                } finally {
+                    IOUtil.close(channel);
+                    config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSED, null);
+                }
+            } else if ((writeBuffer == null || !writeBuffer.buffer().hasRemaining()) && byteBuf.isEmpty()) {
+                close(true);
+            } else {
+                config.getProcessor().stateEvent(this, StateMachineEnum.SESSION_CLOSING, null);
+                byteBuf.flush();
+            }
         }
     }
 
