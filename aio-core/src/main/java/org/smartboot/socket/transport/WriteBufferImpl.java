@@ -332,7 +332,7 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
      *
      * @return true:有,false:无
      */
-    boolean isEmpty() {
+    synchronized boolean isEmpty() {
         return count == 0 && (writeInBuf == null || writeInBuf.buffer().position() == 0);
     }
 
