@@ -278,6 +278,10 @@ final class TcpAioSession extends AioSession {
             //处理消息
             try {
                 messageProcessor.process(this, dataEntry);
+                // eof 情况下只提供一次解析机会，避免出现死循环
+                if (eof) {
+                    break;
+                }
                 if (modCount != this.modCount) {
                     return;
                 }
