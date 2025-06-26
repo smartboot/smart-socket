@@ -282,15 +282,17 @@ public final class AioQuickClient {
      *
      * @param flag 是否立即停止
      */
-    private synchronized void shutdown0(boolean flag) {
+    private void shutdown0(boolean flag) {
         if (session != null) {
             session.close(flag);
             session = null;
         }
         //仅Client内部创建的ChannelGroup需要shutdown
-        if (asynchronousChannelGroup != null) {
-            asynchronousChannelGroup.shutdown();
-            asynchronousChannelGroup = null;
+        synchronized (this) {
+            if (asynchronousChannelGroup != null) {
+                asynchronousChannelGroup.shutdown();
+                asynchronousChannelGroup = null;
+            }
         }
     }
 
