@@ -205,10 +205,10 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
     @Override
     public void shutdown() {
         running = false;
-        commonWorker.workerThread.interrupt();
-        writeWorker.workerThread.interrupt();
+        commonWorker.interrupt();
+        writeWorker.interrupt();
         for (Worker worker : readWorkers) {
-            worker.workerThread.interrupt();
+            worker.interrupt();
         }
         readExecutorService.shutdown();
         commonExecutorService.shutdown();
@@ -297,6 +297,12 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
 
         EnhanceAsynchronousChannelGroup group() {
             return EnhanceAsynchronousChannelGroup.this;
+        }
+
+        void interrupt() {
+            if (workerThread != null) {
+                workerThread.interrupt();
+            }
         }
 
         /**
