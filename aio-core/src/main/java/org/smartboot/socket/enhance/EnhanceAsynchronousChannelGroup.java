@@ -97,6 +97,8 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         }
     };
 
+    private static final Consumer<SelectionKey> readConsumer = selectionKey -> ((EnhanceAsynchronousSocketChannel) selectionKey.attachment()).doRead(true);
+
     /**
      * 初始化异步通道组实例。
      * 该构造函数完成以下初始化工作：
@@ -115,10 +117,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         this.readExecutorService = readExecutorService;
         this.readWorkers = new Worker[threadNum];
         for (int i = 0; i < threadNum; i++) {
-            readWorkers[i] = new Worker(Selector.open(), selectionKey -> {
-                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
-                asynchronousSocketChannel.doRead(true);
-            });
+            readWorkers[i] = new Worker(Selector.open(), readConsumer);
             this.readExecutorService.execute(readWorkers[i]);
         }
 
