@@ -299,6 +299,10 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
         if (closed) {
             throw new RuntimeException("OutputStream has closed");
         }
+        //快速检测，无数据时直接返回
+        if (count == 0 && writeInBuf == null) {
+            return;
+        }
         if (semaphore.tryAcquire()) {
             VirtualBuffer virtualBuffer = poll();
             if (virtualBuffer == null) {
