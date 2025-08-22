@@ -171,7 +171,7 @@ final class TcpAioSession extends AioSession {
         //此时可能是Closing或Closed状态
         if (status != SESSION_STATUS_ENABLED) {
             close();
-        } else if (!byteBuf.isEmpty()) {
+        } else {
             byteBuf.flush();
         }
     }
@@ -305,9 +305,7 @@ final class TcpAioSession extends AioSession {
             readBuffer.compact();
             //读缓冲区已满
             if (!readBuffer.hasRemaining()) {
-                DecoderException exception = new DecoderException("readBuffer overflow. The current TCP connection " +
-                        "will be closed. Please fix your " + config.getProtocol().getClass().getSimpleName() +
-                        "#decode bug.");
+                DecoderException exception = new DecoderException("readBuffer overflow. The current TCP connection " + "will be closed. Please fix your " + config.getProtocol().getClass().getSimpleName() + "#decode bug.");
                 messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, exception);
                 throw exception;
             }

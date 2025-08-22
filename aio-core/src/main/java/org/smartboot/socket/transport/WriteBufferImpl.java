@@ -370,14 +370,12 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
             VirtualBuffer buffer = writeInBuf;
             writeInBuf = null;
             return buffer;
-        } else {
-            if (completionConsumer != null) {
-                Consumer<WriteBuffer> consumer = completionConsumer;
-                this.completionConsumer = null;
-                consumer.accept(this);
-            }
-            return null;
+        } else if (completionConsumer != null) {
+            Consumer<WriteBuffer> consumer = completionConsumer;
+            this.completionConsumer = null;
+            consumer.accept(this);
         }
+        return null;
     }
 
 }
