@@ -18,7 +18,7 @@
         <dependency>
             <groupId>io.github.smartboot.socket</groupId>
             <artifactId>aio-pro</artifactId>
-            <version>1.5.74-SNAPSHOT</version>
+            <version>1.5.74</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
