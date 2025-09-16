@@ -64,6 +64,7 @@ class DirectBufferCleaner {
      */
     private static int getJavaMajorVersion() {
         String version = System.getProperty("java.specification.version");
+        // 处理类似"1.8.0_301"和"9+"两种版本格式
         return version.startsWith("1.") ? Integer.parseInt(version.split("\\.")[1])
                 : Integer.parseInt(version.split("\\.")[0]);
     }
