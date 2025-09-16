@@ -59,27 +59,7 @@ public final class BufferPagePool {
      * 用于控制定时任务的执行和取消，在内存池释放时可以通过该对象取消定时任务。
      */
     private final ScheduledFuture<?> future;
-    /**
-     * 标识当前JDK版本是否支持直接缓冲区的清理操作。
-     * 由于JDK 9及以上版本对sun.nio.ch.DirectBuffer的访问有限制，
-     * 因此在高版本JDK中默认不支持直接缓冲区模式。
-     */
-    private static boolean directSupported = true;
 
-    /**
-     * 静态初始化块，用于检测当前JDK版本是否支持直接缓冲区。
-     * 通过解析java.version系统属性判断JDK主版本号，
-     * 如果主版本号大于8（即JDK 9及以上），则将directSupported设置为false。
-     */
-    static {
-        String version = System.getProperty("java.specification.version");
-        // 处理类似"1.8.0_301"和"9+"两种版本格式
-        int majorVersion = version.startsWith("1.") ? Integer.parseInt(version.split("\\.")[1]) : Integer.parseInt(version.split("\\.")[0]);
-
-        if (majorVersion > 8) {
-            directSupported = false;
-        }
-    }
 
     /**
      * 构造一个内存池对象。
@@ -89,12 +69,6 @@ public final class BufferPagePool {
      * @throws IllegalStateException 当在不支持直接缓冲区的JDK版本中尝试使用直接缓冲区时抛出异常
      */
     public BufferPagePool(final int pageNum, boolean isDirect) {
-        // 检查JDK版本对直接缓冲区的支持情况
-        if (isDirect && !directSupported) {
-            isDirect = false;
-            System.err.println("The current version of JDK does not support applying for Direct ByteBuffer. Please switch the JDK to 1.8 or upgrade smart-socket to the 1.6.x version.");
-            System.err.println("Automatically downgraded to Heap ByteBuffer...");
-        }
         // 创建指定数量的内存页
         bufferPages = new BufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
