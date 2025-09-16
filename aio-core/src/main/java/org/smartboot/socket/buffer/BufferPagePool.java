@@ -69,6 +69,12 @@ public final class BufferPagePool {
      * @throws IllegalStateException 当在不支持直接缓冲区的JDK版本中尝试使用直接缓冲区时抛出异常
      */
     public BufferPagePool(final int pageNum, boolean isDirect) {
+        // 检查JDK版本对直接缓冲区的支持情况
+        if (isDirect && !DirectBufferCleaner.isDirectSupported()) {
+            isDirect = false;
+            System.err.println("The current version of JDK does not support applying for Direct ByteBuffer.");
+            System.err.println("Automatically downgraded to Heap ByteBuffer...");
+        }
         // 创建指定数量的内存页
         bufferPages = new BufferPage[pageNum];
         for (int i = 0; i < pageNum; i++) {
