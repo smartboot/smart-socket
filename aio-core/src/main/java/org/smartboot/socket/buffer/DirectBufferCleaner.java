@@ -38,8 +38,8 @@ class DirectBufferCleaner {
                     }
                 };
             } catch (Throwable e) {
+                //若不支持，则降级为堆内
                 directSupported = false;
-                // 如果获取失败，则后续调用将退化为直接使用 DirectBuffer 的 cleaner
                 e.printStackTrace();
             }
         }
