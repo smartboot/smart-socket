@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
-@SuppressWarnings("restriction")
 class DirectBufferCleaner {
 
     // Java 8及以下：使用 DirectBuffer 的 cleaner() 方法
