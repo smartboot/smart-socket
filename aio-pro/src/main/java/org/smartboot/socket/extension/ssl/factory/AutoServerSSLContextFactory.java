@@ -10,6 +10,11 @@ import sun.security.x509.CertificateX509Key;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CertInfo;
+import sun.security.x509.SubjectAlternativeNameExtension;
+import sun.security.x509.GeneralNames;
+import sun.security.x509.GeneralName;
+import sun.security.x509.BasicConstraintsExtension;
+import sun.security.x509.KeyUsageExtension;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -120,15 +125,32 @@ public final class AutoServerSSLContextFactory implements SSLContextFactory {
 
         // 设置主体和颁发者
         String dn = "CN=" + commonName + ", O=" + organization + ", OU=" + organizationalUnit;
-        certInfo.set(X509CertInfo.SUBJECT, new X500Name(dn));
-        certInfo.set(X509CertInfo.ISSUER, new X500Name(dn));
+        X500Name owner = new X500Name(dn);
+        certInfo.set(X509CertInfo.SUBJECT, owner);
+        certInfo.set(X509CertInfo.ISSUER, owner);
 
         // 设置公钥
         certInfo.set(X509CertInfo.KEY, new CertificateX509Key(keyPair.getPublic()));
 
-        // 设置扩展信息（可选）
+        // 设置扩展信息
         CertificateExtensions extensions = new CertificateExtensions();
-        // 可以添加更多扩展信息
+        
+        // 添加基本约束扩展（表明这是CA证书）
+        extensions.set(BasicConstraintsExtension.NAME, new BasicConstraintsExtension(true, -1));
+        
+        // 添加密钥用法扩展
+        boolean[] keyUsage = new boolean[9];
+        keyUsage[0] = true; // digitalSignature
+        keyUsage[2] = true; // keyEncipherment
+        keyUsage[5] = true; // keyCertSign
+        extensions.set(KeyUsageExtension.NAME, new KeyUsageExtension(keyUsage));
+        
+        // 添加主题替代名称扩展
+        GeneralNames generalNames = new GeneralNames();
+        generalNames.add(new GeneralName(new sun.security.x509.DNSName(commonName)));
+        extensions.set(SubjectAlternativeNameExtension.NAME,
+                      new SubjectAlternativeNameExtension(generalNames));
+        
         certInfo.set(X509CertInfo.EXTENSIONS, extensions);
 
         // 创建并签名证书
@@ -136,6 +158,5 @@ public final class AutoServerSSLContextFactory implements SSLContextFactory {
         cert.sign(keyPair.getPrivate(), "SHA256withRSA");
 
         return cert;
-
     }
 }
