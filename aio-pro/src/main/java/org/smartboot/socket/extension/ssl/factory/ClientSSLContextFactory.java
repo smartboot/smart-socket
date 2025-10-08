@@ -3,6 +3,7 @@ package org.smartboot.socket.extension.ssl.factory;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
@@ -11,7 +12,7 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
-public class ClientSSLContextFactory implements SSLContextFactory {
+public final class ClientSSLContextFactory implements SSLContextFactory {
     private InputStream trustInputStream;
     private String trustPassword;
     private InputStream keyInputStream;
@@ -74,5 +75,10 @@ public class ClientSSLContextFactory implements SSLContextFactory {
         SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
         sslContext.init(keyManagers, trustManagers, new SecureRandom());
         return sslContext;
+    }
+
+    @Override
+    public void initSSLEngine(SSLEngine sslEngine) {
+        sslEngine.setUseClientMode(true);
     }
 }

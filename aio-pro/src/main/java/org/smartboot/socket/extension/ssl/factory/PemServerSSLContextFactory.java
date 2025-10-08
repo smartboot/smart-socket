@@ -2,6 +2,7 @@ package org.smartboot.socket.extension.ssl.factory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -17,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-public class PemServerSSLContextFactory implements SSLContextFactory {
+public final class PemServerSSLContextFactory implements SSLContextFactory {
     private List<byte[]> certificates = new ArrayList<>();
     private byte[] keyBytes;
 
@@ -58,6 +59,11 @@ public class PemServerSSLContextFactory implements SSLContextFactory {
         certificates = null;
         keyBytes = null;
         return sslContext;
+    }
+
+    @Override
+    public void initSSLEngine(SSLEngine sslEngine) {
+        sslEngine.setUseClientMode(false);
     }
 
     private void readPem(InputStream inputStream) throws IOException {

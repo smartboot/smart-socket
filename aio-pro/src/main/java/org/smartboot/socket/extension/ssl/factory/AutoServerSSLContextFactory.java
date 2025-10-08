@@ -13,6 +13,7 @@ import sun.security.x509.X509CertInfo;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -29,7 +30,7 @@ import java.util.Date;
  * @author 三刀（zhengjunweimail@163.com）
  * @version V1.0 , 2025/10/08
  */
-public class AutoServerSSLContextFactory implements SSLContextFactory {
+public final class AutoServerSSLContextFactory implements SSLContextFactory {
     private final String commonName;
     private final String organization;
     private final String organizationalUnit;
@@ -89,6 +90,11 @@ public class AutoServerSSLContextFactory implements SSLContextFactory {
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(keyManagerFactory.getKeyManagers(), null, new SecureRandom());
         return sslContext;
+    }
+
+    @Override
+    public void initSSLEngine(SSLEngine sslEngine) {
+        sslEngine.setUseClientMode(false);
     }
 
     private X509Certificate generateSelfSignedCertificate(KeyPair keyPair) throws Exception {

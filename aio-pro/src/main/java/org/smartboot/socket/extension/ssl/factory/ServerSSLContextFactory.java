@@ -3,13 +3,14 @@ package org.smartboot.socket.extension.ssl.factory;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 
-public class ServerSSLContextFactory implements SSLContextFactory {
+public final class ServerSSLContextFactory implements SSLContextFactory {
     private final InputStream keyStoreInputStream;
     private final String keyStorePassword;
     private final String keyPassword;
@@ -20,8 +21,8 @@ public class ServerSSLContextFactory implements SSLContextFactory {
         this(keyStoreInputStream, keyStorePassword, keyPassword, null, null);
     }
 
-    public ServerSSLContextFactory(InputStream keyStoreInputStream, String keyStorePassword, String keyPassword, 
-                                 InputStream trustInputStream, String trustPassword) {
+    public ServerSSLContextFactory(InputStream keyStoreInputStream, String keyStorePassword, String keyPassword,
+                                   InputStream trustInputStream, String trustPassword) {
         this.keyStoreInputStream = keyStoreInputStream;
         this.keyStorePassword = keyStorePassword;
         this.keyPassword = keyPassword;
@@ -37,12 +38,12 @@ public class ServerSSLContextFactory implements SSLContextFactory {
             throw new IllegalArgumentException("keyStoreInputStream is null");
         }
         ks.load(keyStoreInputStream, keyStorePassword.toCharArray());
-        
+
         // 确保证书链完整
         if (ks.size() == 0) {
             throw new IllegalStateException("Empty server certificate chain");
         }
-        
+
         kmf.init(ks, keyPassword.toCharArray());
         KeyManager[] keyManagers = kmf.getKeyManagers();
 
@@ -59,5 +60,10 @@ public class ServerSSLContextFactory implements SSLContextFactory {
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(keyManagers, trustManagers, new SecureRandom());
         return sslContext;
+    }
+
+    @Override
+    public void initSSLEngine(SSLEngine sslEngine) {
+        sslEngine.setUseClientMode(false);
     }
 }

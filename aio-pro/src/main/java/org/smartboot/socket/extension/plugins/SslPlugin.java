@@ -38,12 +38,17 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
     }
 
     public SslPlugin(SSLContextFactory factory) throws Exception {
-        this(factory, sslEngine -> sslEngine.setUseClientMode(false), BufferPagePool.DEFAULT_BUFFER_PAGE_POOL);
+        this(factory, null);
     }
 
     public SslPlugin(SSLContextFactory factory, Consumer<SSLEngine> consumer, BufferPagePool pool) throws Exception {
         this.pool = pool;
-        sslService = new SslService(factory.create(), consumer);
+        sslService = new SslService(factory.create(), sslEngine -> {
+            factory.initSSLEngine(sslEngine);
+            if (consumer != null) {
+                consumer.accept(sslEngine);
+            }
+        });
     }
 
     public SslPlugin(ClientSSLContextFactory factory) throws Exception {
@@ -51,7 +56,7 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
     }
 
     public SslPlugin(ClientSSLContextFactory factory, BufferPagePool pool) throws Exception {
-        this(factory, sslEngine -> sslEngine.setUseClientMode(true), pool);
+        this(factory, null, pool);
     }
 
     public SslPlugin(ServerSSLContextFactory factory, ClientAuth clientAuth) throws Exception {
@@ -60,7 +65,6 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
 
     public SslPlugin(ServerSSLContextFactory factory, ClientAuth clientAuth, BufferPagePool pool) throws Exception {
         this(factory, sslEngine -> {
-            sslEngine.setUseClientMode(false);
             switch (clientAuth) {
                 case OPTIONAL:
                     sslEngine.setWantClientAuth(true);
