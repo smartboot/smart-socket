@@ -28,7 +28,7 @@ smart-socket 是一款增强了原生 JDK 实现的 AIO 通信框架。
 5. 支持自定义插件，并已提供了丰富的插件，包括：SSL/TLS通信插件、心跳插件、断链重连插件、服务指标统计插件、黑名单插件、内存池监测插件。
 
 ### 🍒生态项目
-- [smart-http](https://gitee.com/smartboot/smart-http)
+- [feat](https://gitee.com/smartboot/feat)
 - [smart-servlet](https://gitee.com/smartboot/smart-servlet)
 - [smart-mqtt](https://gitee.com/smartboot/smart-mqtt)
 
