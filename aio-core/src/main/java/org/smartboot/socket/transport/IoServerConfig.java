@@ -47,11 +47,11 @@ final class IoServerConfig {
     /**
      * 内存块大小限制
      */
-    private int writeBufferSize = 128;
+    private int writeChunkSize = 128;
     /**
      * Write缓存区容量
      */
-    private int writeBufferCapacity = 16;
+    private int writeChunkCount = 16;
     /**
      * 远程服务器IP
      */
@@ -98,15 +98,15 @@ final class IoServerConfig {
      *
      * @return 内存块大小
      */
-    public int getWriteBufferSize() {
-        return writeBufferSize;
+    public int getWriteChunkSize() {
+        return writeChunkSize;
     }
 
     /**
-     * @param writeBufferSize 内存块大小
+     * @param writeChunkSize 内存块大小
      */
-    public void setWriteBufferSize(int writeBufferSize) {
-        this.writeBufferSize = writeBufferSize;
+    public void setWriteChunkSize(int writeChunkSize) {
+        this.writeChunkSize = writeChunkSize;
     }
 
     /**
@@ -195,12 +195,12 @@ final class IoServerConfig {
         socketOptions.put(socketOption, f);
     }
 
-    public int getWriteBufferCapacity() {
-        return writeBufferCapacity;
+    public int getWriteChunkCount() {
+        return writeChunkCount;
     }
 
-    public void setWriteBufferCapacity(int writeBufferCapacity) {
-        this.writeBufferCapacity = writeBufferCapacity;
+    public void setWriteChunkCount(int writeChunkCount) {
+        this.writeChunkCount = writeChunkCount;
     }
 
     public int getThreadNum() {
@@ -223,8 +223,8 @@ final class IoServerConfig {
     public String toString() {
         return "IoServerConfig{" +
                 "readBufferSize=" + readBufferSize +
-                ", writeBufferSize=" + writeBufferSize +
-                ", writeBufferCapacity=" + writeBufferCapacity +
+                ", writeChunkSize=" + writeChunkSize +
+                ", writeChunkCount=" + writeChunkCount +
                 ", host='" + host + '\'' +
                 ", monitor=" + monitor +
                 ", port=" + port +

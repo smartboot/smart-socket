@@ -133,7 +133,7 @@ final class TcpAioSession extends AioSession {
         this.channel = channel;
         this.config = config;
         this.readBufferSupplier = readBufferSupplier;
-        byteBuf = new WriteBufferImpl(writeBufferPage, this::continueWrite, config.getWriteBufferSize(), config.getWriteBufferCapacity());
+        byteBuf = new WriteBufferImpl(writeBufferPage, this::continueWrite, config.getWriteChunkSize(), config.getWriteChunkCount());
         //触发状态机
         config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
         doRead();

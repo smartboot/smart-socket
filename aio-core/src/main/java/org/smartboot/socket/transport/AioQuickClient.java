@@ -362,13 +362,13 @@ public final class AioQuickClient {
     /**
      * 设置输出缓冲区容量
      *
-     * @param bufferSize     单个内存块大小
-     * @param bufferCapacity 内存块数量上限
+     * @param chunkSize  单个内存块大小
+     * @param chunkCount 内存块数量上限
      * @return 当前客户端实例
      */
-    public AioQuickClient setWriteBuffer(int bufferSize, int bufferCapacity) {
-        config.setWriteBufferSize(bufferSize);
-        config.setWriteBufferCapacity(bufferCapacity);
+    public AioQuickClient setWriteBuffer(int chunkSize, int chunkCount) {
+        config.setWriteChunkSize(chunkSize);
+        config.setWriteChunkCount(chunkCount);
         return this;
     }
 
