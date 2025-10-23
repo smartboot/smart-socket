@@ -104,7 +104,7 @@ public abstract class MultiplexClient<T> {
         resuingClients.offer(client);
         startConnectionMonitor();
         onNewClient(client);
-        return client;
+        return acquireClient();
     }
 
     /**
