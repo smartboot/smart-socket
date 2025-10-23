@@ -4,7 +4,6 @@ import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.plugins.IdleStatePlugin;
 import org.smartboot.socket.extension.plugins.Plugin;
 import org.smartboot.socket.extension.plugins.SslPlugin;
-import org.smartboot.socket.extension.plugins.StreamMonitorPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.extension.ssl.factory.ClientSSLContextFactory;
 import org.smartboot.socket.timer.HashedWheelTimer;
@@ -62,7 +61,7 @@ public abstract class MultiplexClient<T> {
                 break;
             }
             AioSession session = client.getSession();
-            if (session.isInvalid()) {
+            if (session == null || session.isInvalid()) {
                 releaseClient(client);
                 continue;
             }
@@ -70,23 +69,24 @@ public abstract class MultiplexClient<T> {
             return client;
         }
 
-        if (firstConnected) {
-            boolean noneSslPlugin = true;
-            for (Plugin<T> responsePlugin : multiplexOptions.getPlugins()) {
-                multiplexOptions.processor.addPlugin(responsePlugin);
-                if (responsePlugin instanceof SslPlugin) {
-                    noneSslPlugin = false;
+        synchronized (this) {
+            if (firstConnected) {
+                boolean noneSslPlugin = true;
+                for (Plugin<T> responsePlugin : multiplexOptions.getPlugins()) {
+                    multiplexOptions.processor.addPlugin(responsePlugin);
+                    if (responsePlugin instanceof SslPlugin) {
+                        noneSslPlugin = false;
+                    }
                 }
-            }
-            if (noneSslPlugin && multiplexOptions.isSsl()) {
-                multiplexOptions.processor.addPlugin(new SslPlugin<>(new ClientSSLContextFactory()));
-            }
-            multiplexOptions.processor.addPlugin(new StreamMonitorPlugin<>());
-            if (multiplexOptions.idleTimeout() > 0) {
-                multiplexOptions.processor.addPlugin(new IdleStatePlugin<>(multiplexOptions.idleTimeout()));
-            }
+                if (noneSslPlugin && multiplexOptions.isSsl()) {
+                    multiplexOptions.processor.addPlugin(new SslPlugin<>(new ClientSSLContextFactory()));
+                }
+                if (multiplexOptions.idleTimeout() > 0) {
+                    multiplexOptions.processor.addPlugin(new IdleStatePlugin<>(multiplexOptions.idleTimeout()));
+                }
 
-            firstConnected = false;
+                firstConnected = false;
+            }
         }
 
         client = new AioQuickClient(multiplexOptions.getHost(), multiplexOptions.getPort(), multiplexOptions.protocol, multiplexOptions.processor);
@@ -100,12 +100,10 @@ public abstract class MultiplexClient<T> {
             client.start(multiplexOptions.group());
         }
 
-        onNewClient(client);
-
         clients.put(client, client);
         resuingClients.offer(client);
-
         startConnectionMonitor();
+        onNewClient(client);
         return client;
     }
 
