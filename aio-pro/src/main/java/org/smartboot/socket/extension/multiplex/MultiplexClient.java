@@ -146,9 +146,16 @@ public class MultiplexClient<T> {
         }
 
         // 创建新的连接
+        boolean wait = true;
         if (clients.size() < multiplexOptions.getMaxConnections()) {
-            createNewClient();
-        } else {
+            synchronized (this) {
+                if (clients.size() < multiplexOptions.getMaxConnections()) {
+                    wait = false;
+                    createNewClient();
+                }
+            }
+        }
+        if (wait) {
             synchronized (lock) {
                 lock.wait();
             }
