@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -49,9 +50,26 @@ public abstract class MultiplexClient<T> {
      */
     private long latestTime = System.currentTimeMillis();
 
+    /**
+     * 控制最大连接数的信号量，默认允许最多128个连接
+     */
+    private volatile Semaphore connectionSemaphore;
+
     protected final AioQuickClient acquireClient() throws Throwable {
         if (closed) {
             throw new IllegalStateException("client closed");
+        }
+        if (connectionSemaphore == null) {
+            synchronized (this) {
+                if (connectionSemaphore == null) {
+                    connectionSemaphore = new Semaphore(multiplexOptions.getMaxConnections());
+                }
+            }
+        }
+        // 尝试获取创建新连接的许可
+        if (!connectionSemaphore.tryAcquire()) {
+            // 如果无法获取许可，等待可用连接被释放
+            connectionSemaphore.acquire();
         }
         latestTime = System.currentTimeMillis();
         AioQuickClient client;
@@ -69,41 +87,47 @@ public abstract class MultiplexClient<T> {
             return client;
         }
 
-        synchronized (this) {
-            if (firstConnected) {
-                boolean noneSslPlugin = true;
-                for (Plugin<T> responsePlugin : multiplexOptions.getPlugins()) {
-                    multiplexOptions.processor.addPlugin(responsePlugin);
-                    if (responsePlugin instanceof SslPlugin) {
-                        noneSslPlugin = false;
+        try {
+            synchronized (this) {
+                if (firstConnected) {
+                    boolean noneSslPlugin = true;
+                    for (Plugin<T> responsePlugin : multiplexOptions.getPlugins()) {
+                        multiplexOptions.processor.addPlugin(responsePlugin);
+                        if (responsePlugin instanceof SslPlugin) {
+                            noneSslPlugin = false;
+                        }
                     }
-                }
-                if (noneSslPlugin && multiplexOptions.isSsl()) {
-                    multiplexOptions.processor.addPlugin(new SslPlugin<>(new ClientSSLContextFactory()));
-                }
-                if (multiplexOptions.idleTimeout() > 0) {
-                    multiplexOptions.processor.addPlugin(new IdleStatePlugin<>(multiplexOptions.idleTimeout()));
-                }
+                    if (noneSslPlugin && multiplexOptions.isSsl()) {
+                        multiplexOptions.processor.addPlugin(new SslPlugin<>(new ClientSSLContextFactory()));
+                    }
+                    if (multiplexOptions.idleTimeout() > 0) {
+                        multiplexOptions.processor.addPlugin(new IdleStatePlugin<>(multiplexOptions.idleTimeout()));
+                    }
 
-                firstConnected = false;
+                    firstConnected = false;
+                }
             }
-        }
 
-        client = new AioQuickClient(multiplexOptions.getHost(), multiplexOptions.getPort(), multiplexOptions.protocol, multiplexOptions.processor);
-        client.setReadBufferSize(multiplexOptions.readBufferSize).setWriteBuffer(multiplexOptions.writeChunkSize, multiplexOptions.writeChunkCount);
-        if (multiplexOptions.getConnectTimeout() > 0) {
-            client.connectTimeout(multiplexOptions.getConnectTimeout());
-        }
-        if (multiplexOptions.group() == null) {
-            client.start();
-        } else {
-            client.start(multiplexOptions.group());
-        }
+            client = new AioQuickClient(multiplexOptions.getHost(), multiplexOptions.getPort(), multiplexOptions.protocol, multiplexOptions.processor);
+            client.setReadBufferSize(multiplexOptions.readBufferSize).setWriteBuffer(multiplexOptions.writeChunkSize, multiplexOptions.writeChunkCount);
+            if (multiplexOptions.getConnectTimeout() > 0) {
+                client.connectTimeout(multiplexOptions.getConnectTimeout());
+            }
+            if (multiplexOptions.group() == null) {
+                client.start();
+            } else {
+                client.start(multiplexOptions.group());
+            }
 
-        clients.put(client, client);
-        resuingClients.offer(client);
-        startConnectionMonitor();
-        onNewClient(client);
+            clients.put(client, client);
+            resuingClients.offer(client);
+            startConnectionMonitor();
+            onNewClient(client);
+        } catch (Throwable throwable) {
+            // 如果创建连接失败，释放信号量许可
+            connectionSemaphore.release();
+            throw throwable;
+        }
         return acquireClient();
     }
 
@@ -196,6 +220,7 @@ public abstract class MultiplexClient<T> {
      */
     protected final void reuseClient(AioQuickClient client) {
         resuingClients.offer(client);
+        releaseSemaphore();
     }
 
     /**
@@ -206,6 +231,14 @@ public abstract class MultiplexClient<T> {
     protected final void releaseClient(AioQuickClient client) {
         client.shutdownNow();
         clients.remove(client);
+        releaseSemaphore();
+    }
+
+    private void releaseSemaphore() {
+        // 释放信号量许可，允许创建新连接
+        if (connectionSemaphore != null) {
+            connectionSemaphore.release();
+        }
     }
 
     public void close() {
@@ -247,6 +280,10 @@ public abstract class MultiplexClient<T> {
         private String host;
         private int port;
         private boolean ssl;
+        /**
+         * 最大连接数限制
+         */
+        private int maxConnections = 128;
         /**
          * smart-socket 插件
          */
@@ -316,6 +353,15 @@ public abstract class MultiplexClient<T> {
 
         public Options idleTimeout(int idleTimeout) {
             this.idleTimeout = idleTimeout;
+            return this;
+        }
+
+        public int getMaxConnections() {
+            return maxConnections;
+        }
+
+        public Options maxConnections(int maxConnections) {
+            this.maxConnections = maxConnections;
             return this;
         }
 
