@@ -88,47 +88,50 @@ public abstract class MultiplexClient<T> {
         }
 
         try {
-            synchronized (this) {
-                if (firstConnected) {
-                    boolean noneSslPlugin = true;
-                    for (Plugin<T> responsePlugin : multiplexOptions.getPlugins()) {
-                        multiplexOptions.processor.addPlugin(responsePlugin);
-                        if (responsePlugin instanceof SslPlugin) {
-                            noneSslPlugin = false;
-                        }
-                    }
-                    if (noneSslPlugin && multiplexOptions.isSsl()) {
-                        multiplexOptions.processor.addPlugin(new SslPlugin<>(new ClientSSLContextFactory()));
-                    }
-                    if (multiplexOptions.idleTimeout() > 0) {
-                        multiplexOptions.processor.addPlugin(new IdleStatePlugin<>(multiplexOptions.idleTimeout()));
-                    }
-
-                    firstConnected = false;
-                }
-            }
-
-            client = new AioQuickClient(multiplexOptions.getHost(), multiplexOptions.getPort(), multiplexOptions.protocol, multiplexOptions.processor);
-            client.setReadBufferSize(multiplexOptions.readBufferSize).setWriteBuffer(multiplexOptions.writeChunkSize, multiplexOptions.writeChunkCount);
-            if (multiplexOptions.getConnectTimeout() > 0) {
-                client.connectTimeout(multiplexOptions.getConnectTimeout());
-            }
-            if (multiplexOptions.group() == null) {
-                client.start();
-            } else {
-                client.start(multiplexOptions.group());
-            }
-
-            clients.put(client, client);
-            resuingClients.offer(client);
-            startConnectionMonitor();
-            onNewClient(client);
-        } catch (Throwable throwable) {
-            // 如果创建连接失败，释放信号量许可
+            createNewClient();
+        } finally {
+            //创建新的client，重新获取
             connectionSemaphore.release();
-            throw throwable;
         }
         return acquireClient();
+    }
+
+    private void createNewClient() throws Exception {
+        synchronized (this) {
+            if (firstConnected) {
+                boolean noneSslPlugin = true;
+                for (Plugin<T> responsePlugin : multiplexOptions.getPlugins()) {
+                    multiplexOptions.processor.addPlugin(responsePlugin);
+                    if (responsePlugin instanceof SslPlugin) {
+                        noneSslPlugin = false;
+                    }
+                }
+                if (noneSslPlugin && multiplexOptions.isSsl()) {
+                    multiplexOptions.processor.addPlugin(new SslPlugin<>(new ClientSSLContextFactory()));
+                }
+                if (multiplexOptions.idleTimeout() > 0) {
+                    multiplexOptions.processor.addPlugin(new IdleStatePlugin<>(multiplexOptions.idleTimeout()));
+                }
+
+                firstConnected = false;
+            }
+        }
+
+        AioQuickClient client = new AioQuickClient(multiplexOptions.getHost(), multiplexOptions.getPort(), multiplexOptions.protocol, multiplexOptions.processor);
+        client.setReadBufferSize(multiplexOptions.readBufferSize).setWriteBuffer(multiplexOptions.writeChunkSize, multiplexOptions.writeChunkCount);
+        if (multiplexOptions.getConnectTimeout() > 0) {
+            client.connectTimeout(multiplexOptions.getConnectTimeout());
+        }
+        if (multiplexOptions.group() == null) {
+            client.start();
+        } else {
+            client.start(multiplexOptions.group());
+        }
+
+        clients.put(client, client);
+        resuingClients.offer(client);
+        startConnectionMonitor();
+        onNewClient(client);
     }
 
     /**
@@ -229,9 +232,12 @@ public abstract class MultiplexClient<T> {
      * @param client 需要释放的客户端连接
      */
     protected final void releaseClient(AioQuickClient client) {
-        client.shutdownNow();
-        clients.remove(client);
-        releaseSemaphore();
+        try {
+            client.shutdownNow();
+            clients.remove(client);
+        } finally {
+            releaseSemaphore();
+        }
     }
 
     private void releaseSemaphore() {
