@@ -20,54 +20,77 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * 该类实现了连接的复用机制，可以有效减少频繁创建和销毁连接的开销。
  * 通过连接池管理和复用策略，提高系统性能和资源利用率。
+ * </p>
+ * <p>
+ * 主要功能包括：
+ * <ul>
+ *   <li>连接池管理：维护可用连接队列和所有活跃连接映射</li>
+ *   <li>连接复用：优先从连接池中获取可用连接，避免重复创建</li>
+ *   <li>连接监控：定期清理空闲连接，保持连接池健康</li>
+ *   <li>资源配置：支持SSL、插件、缓冲区等参数配置</li>
+ * </ul>
+ * </p>
  *
  * @param <T> 泛型参数，表示传输的消息类型
  * @author 三刀
- * @version v1.0 10/22/25
  */
 public class MultiplexClient<T> {
     /**
      * 多路复用客户端配置选项
      * <p>
      * 包含客户端的各种配置参数，如连接参数、缓冲区配置、超时设置等
+     * </p>
      */
     protected final MultiplexOptions<T> multiplexOptions = new MultiplexOptions<>();
+    
     /**
      * 消息处理器
      * <p>
      * 用于处理接收到的消息，实现业务逻辑
+     * </p>
      */
     private final AbstractMessageProcessor<T> processor;
+    
     /**
      * 协议编解码器
      * <p>
      * 用于对传输的数据进行编码和解码操作
+     * </p>
      */
     private final Protocol<T> protocol;
+    
     /**
      * 客户端关闭状态标识
      * <p>
      * true表示客户端已关闭，不再接受新的连接请求
+     * </p>
      */
     private boolean closed;
+    
     /**
      * 首次连接标识
      * <p>
      * true表示尚未建立过连接，用于初始化插件等操作
+     * </p>
      */
     private boolean firstConnected = true;
+    
     /**
      * 可链路复用的连接队列
      * <p>
      * 存储可以复用的空闲连接，采用先进先出策略
+     * </p>
      */
     private final ConcurrentLinkedQueue<AioQuickClient> resuingClients = new ConcurrentLinkedQueue<>();
+    
     /**
      * 所有活跃连接映射表
      * <p>
      * 存储所有当前活跃的连接，用于连接管理和资源释放
+     * </p>
      */
     private final ConcurrentHashMap<AioQuickClient, AioQuickClient> clients = new ConcurrentHashMap<>();
+    
     /**
      * 连接监控定时任务
      * <p>
@@ -76,11 +99,12 @@ public class MultiplexClient<T> {
      * </p>
      */
     private volatile TimerTask timerTask;
+    
     /**
      * 记录最后一次使用连接的时间戳，用于连接空闲超时检测
      * <p>
-     * 当创建新的HTTP请求时会更新此时间戳，监控任务会定期检查此值
-     * 以判断连接是否已空闲超过指定时间（默认30秒）
+     * 当创建新的连接请求时会更新此时间戳，监控任务会定期检查此值
+     * 以判断连接是否已空闲超过指定时间（默认60秒）
      * </p>
      */
     private long latestTime = System.currentTimeMillis();
@@ -112,6 +136,7 @@ public class MultiplexClient<T> {
      * <p>
      * 该方法首先尝试从可复用连接队列中获取空闲连接，
      * 如果没有可用的空闲连接，则创建新的连接。
+     * </p>
      *
      * @return 可用的AioQuickClient实例
      * @throws Throwable 如果获取连接过程中发生异常
@@ -169,6 +194,7 @@ public class MultiplexClient<T> {
      * <p>
      * 该方法负责创建新的连接，并进行初始化配置，
      * 包括插件配置、缓冲区设置等。
+     * </p>
      *
      * @throws Exception 如果创建连接过程中发生异常
      */
@@ -238,9 +264,9 @@ public class MultiplexClient<T> {
      *   <li>发送握手消息</li>
      *   <li>设置会话监听器</li>
      * </ul>
+     * </p>
      *
      * @param client 新创建的AIO会话实例
-     * @since 1.0
      */
     protected void onNewClient(AioQuickClient client) {
         // 子类可以重写此方法来处理新建立的连接
@@ -256,9 +282,9 @@ public class MultiplexClient<T> {
      *   <li>记录复用日志</li>
      *   <li>执行预处理逻辑</li>
      * </ul>
+     * </p>
      *
      * @param client 被复用的AIO会话实例
-     * @since 1.0
      */
     protected void onReuseClient(AioQuickClient client) {
         // 子类可以重写此方法来处理连接复用场景
@@ -269,10 +295,11 @@ public class MultiplexClient<T> {
      *
      * <p>该方法会启动一个定时任务，每隔1分钟执行一次检查：
      * <ul>
-     *   <li>如果连接超过30秒没有被使用，则将其关闭</li>
+     *   <li>如果连接超过60秒没有被使用，则将其关闭</li>
      *   <li>如果所有连接都已关闭，则取消监控任务</li>
      *   <li>如果任务取消后又有新连接创建，则重新启动监控任务</li>
      * </ul>
+     * </p>
      *
      * @see #releaseClient(AioQuickClient)
      * @see #acquireClient()
@@ -290,8 +317,8 @@ public class MultiplexClient<T> {
             // 启动定时任务，每隔1分钟执行一次连接检查
             timerTask = HashedWheelTimer.DEFAULT_TIMER.scheduleWithFixedDelay(() -> {
                 long time = latestTime;
-                // 如果超过30秒没有使用连接，则清理可复用连接队列中的连接
-                if (System.currentTimeMillis() - time > 30 * 1000) {
+                // 如果超过60秒没有使用连接，则清理可复用连接队列中的连接
+                if (System.currentTimeMillis() - time > 60 * 1000) {
                     AioQuickClient c;
                     // 当latestTime没有更新且队列中还有连接时，持续清理
                     while (time == latestTime && (c = resuingClients.poll()) != null) {
@@ -319,6 +346,7 @@ public class MultiplexClient<T> {
      * 回收连接用于后续复用
      * <p>
      * 将使用完毕的连接放回可复用连接队列中，以便后续请求可以复用该连接。
+     * </p>
      *
      * @param client 需要回收的客户端连接
      * @throws IllegalArgumentException 如果连接不属于当前多路复用客户端
@@ -341,6 +369,7 @@ public class MultiplexClient<T> {
      * <p>
      * 该方法会立即关闭连接并从连接管理器中移除该连接，
      * 同时释放相应的资源。
+     * </p>
      *
      * @param client 需要释放的客户端连接
      * @throws IllegalArgumentException 如果连接不属于当前多路复用客户端
@@ -367,6 +396,7 @@ public class MultiplexClient<T> {
      * 释放信号量许可
      * <p>
      * 释放一个信号量许可，允许创建新的连接。
+     * </p>
      */
     private void releaseSemaphore() {
         synchronized (lock) {
@@ -378,6 +408,7 @@ public class MultiplexClient<T> {
      * 关闭多路复用客户端
      * <p>
      * 该方法会关闭所有活跃的连接，并设置关闭状态标识。
+     * </p>
      */
     public void close() {
         closed = true;
