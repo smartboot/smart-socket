@@ -141,7 +141,7 @@ public class MultiplexClient<T> {
      * @return 可用的AioQuickClient实例
      * @throws Throwable 如果获取连接过程中发生异常
      */
-    public final AioQuickClient acquireClient() throws Throwable {
+    public final AioQuickClient acquire() throws Throwable {
         // 检查客户端是否已关闭
         if (closed) {
             throw new IllegalStateException("client closed");
@@ -161,12 +161,12 @@ public class MultiplexClient<T> {
             AioSession session = client.getSession();
             // 检查连接是否有效
             if (session == null || session.isInvalid()) {
-                releaseClient(client);
+                release(client);
                 continue;
             }
 
             // 触发连接复用回调
-            onReuseClient(client);
+            onReuse(client);
             return client;
         }
 
@@ -186,7 +186,7 @@ public class MultiplexClient<T> {
             }
         }
         // 递归调用，直到获取到有效的连接
-        return acquireClient();
+        return acquire();
     }
 
     /**
@@ -251,7 +251,7 @@ public class MultiplexClient<T> {
         startConnectionMonitor();
 
         // 触发新连接创建回调
-        onNewClient(client);
+        onNew(client);
     }
 
     /**
@@ -268,7 +268,7 @@ public class MultiplexClient<T> {
      *
      * @param client 新创建的AIO会话实例
      */
-    protected void onNewClient(AioQuickClient client) {
+    protected void onNew(AioQuickClient client) {
         // 子类可以重写此方法来处理新建立的连接
     }
 
@@ -286,7 +286,7 @@ public class MultiplexClient<T> {
      *
      * @param client 被复用的AIO会话实例
      */
-    protected void onReuseClient(AioQuickClient client) {
+    protected void onReuse(AioQuickClient client) {
         // 子类可以重写此方法来处理连接复用场景
     }
 
@@ -301,8 +301,8 @@ public class MultiplexClient<T> {
      * </ul>
      * </p>
      *
-     * @see #releaseClient(AioQuickClient)
-     * @see #acquireClient()
+     * @see #release(AioQuickClient)
+     * @see #acquire()
      */
     private void startConnectionMonitor() {
         // 使用双重检查锁定确保只有一个监控任务在运行
@@ -323,7 +323,7 @@ public class MultiplexClient<T> {
                     // 当latestTime没有更新且队列中还有连接时，持续清理
                     while (time == latestTime && (c = resuingClients.poll()) != null) {
 //                        System.out.println("release...");
-                        releaseClient(c);
+                        release(c);
                     }
                 }
 
@@ -351,7 +351,7 @@ public class MultiplexClient<T> {
      * @param client 需要回收的客户端连接
      * @throws IllegalArgumentException 如果连接不属于当前多路复用客户端
      */
-    public final void reuseClient(AioQuickClient client) {
+    public final void reuse(AioQuickClient client) {
         // 检查连接是否属于当前多路复用客户端
         if (!clients.containsKey(client)) {
             throw new IllegalArgumentException("client is not belong to this multiplex client");
@@ -374,7 +374,7 @@ public class MultiplexClient<T> {
      * @param client 需要释放的客户端连接
      * @throws IllegalArgumentException 如果连接不属于当前多路复用客户端
      */
-    public final void releaseClient(AioQuickClient client) {
+    public final void release(AioQuickClient client) {
         // 检查连接是否属于当前多路复用客户端
         if (!clients.containsKey(client)) {
             throw new IllegalArgumentException("client is not belong to this multiplex client");
@@ -412,7 +412,7 @@ public class MultiplexClient<T> {
      */
     public void close() {
         closed = true;
-        clients.forEach((client, aioQuickClient) -> releaseClient(client));
+        clients.forEach((client, aioQuickClient) -> release(client));
     }
 
 }
