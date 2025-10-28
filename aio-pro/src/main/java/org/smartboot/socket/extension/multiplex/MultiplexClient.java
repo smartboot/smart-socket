@@ -14,6 +14,9 @@ import org.smartboot.socket.transport.AioSession;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 多路复用客户端实现类
@@ -42,7 +45,7 @@ public class MultiplexClient<T> {
      * </p>
      */
     protected final MultiplexOptions<T> multiplexOptions = new MultiplexOptions<>();
-    
+
     /**
      * 消息处理器
      * <p>
@@ -50,7 +53,7 @@ public class MultiplexClient<T> {
      * </p>
      */
     private final AbstractMessageProcessor<T> processor;
-    
+
     /**
      * 协议编解码器
      * <p>
@@ -58,7 +61,7 @@ public class MultiplexClient<T> {
      * </p>
      */
     private final Protocol<T> protocol;
-    
+
     /**
      * 客户端关闭状态标识
      * <p>
@@ -66,7 +69,7 @@ public class MultiplexClient<T> {
      * </p>
      */
     private boolean closed;
-    
+
     /**
      * 首次连接标识
      * <p>
@@ -74,7 +77,7 @@ public class MultiplexClient<T> {
      * </p>
      */
     private boolean firstConnected = true;
-    
+
     /**
      * 可链路复用的连接队列
      * <p>
@@ -82,7 +85,7 @@ public class MultiplexClient<T> {
      * </p>
      */
     private final ConcurrentLinkedQueue<AioQuickClient> resuingClients = new ConcurrentLinkedQueue<>();
-    
+
     /**
      * 所有活跃连接映射表
      * <p>
@@ -90,7 +93,7 @@ public class MultiplexClient<T> {
      * </p>
      */
     private final ConcurrentHashMap<AioQuickClient, AioQuickClient> clients = new ConcurrentHashMap<>();
-    
+
     /**
      * 连接监控定时任务
      * <p>
@@ -99,7 +102,7 @@ public class MultiplexClient<T> {
      * </p>
      */
     private volatile TimerTask timerTask;
-    
+
     /**
      * 记录最后一次使用连接的时间戳，用于连接空闲超时检测
      * <p>
@@ -109,7 +112,8 @@ public class MultiplexClient<T> {
      */
     private long latestTime = System.currentTimeMillis();
 
-    private final Object lock = new Object();
+    private final Lock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
 
     /**
      * 构造函数
@@ -181,8 +185,11 @@ public class MultiplexClient<T> {
             }
         }
         if (wait) {
-            synchronized (lock) {
-                lock.wait();
+            lock.lock();
+            try {
+                condition.await();
+            } finally {
+                lock.unlock();
             }
         }
         // 递归调用，直到获取到有效的连接
@@ -200,28 +207,30 @@ public class MultiplexClient<T> {
      */
     private void createNewClient() throws Exception {
         // 首次连接时进行插件初始化
-        synchronized (this) {
-            if (firstConnected) {
-                boolean noneSslPlugin = true;
-                // 添加配置的插件
-                for (Plugin<T> responsePlugin : multiplexOptions.getPlugins()) {
-                    processor.addPlugin(responsePlugin);
-                    if (responsePlugin instanceof SslPlugin) {
-                        noneSslPlugin = false;
+        if (firstConnected) {
+            synchronized (this) {
+                if (firstConnected) {
+                    boolean noneSslPlugin = true;
+                    // 添加配置的插件
+                    for (Plugin<T> responsePlugin : multiplexOptions.getPlugins()) {
+                        processor.addPlugin(responsePlugin);
+                        if (responsePlugin instanceof SslPlugin) {
+                            noneSslPlugin = false;
+                        }
                     }
-                }
 
-                // 如果启用了SSL但没有配置SSL插件，则自动添加默认SSL插件
-                if (noneSslPlugin && multiplexOptions.isSsl()) {
-                    processor.addPlugin(new SslPlugin<>(new ClientSSLContextFactory()));
-                }
+                    // 如果启用了SSL但没有配置SSL插件，则自动添加默认SSL插件
+                    if (noneSslPlugin && multiplexOptions.isSsl()) {
+                        processor.addPlugin(new SslPlugin<>(new ClientSSLContextFactory()));
+                    }
 
-                // 如果配置了空闲超时时间，则添加空闲状态插件
-                if (multiplexOptions.idleTimeout() > 0) {
-                    processor.addPlugin(new IdleStatePlugin<>(multiplexOptions.idleTimeout()));
-                }
+                    // 如果配置了空闲超时时间，则添加空闲状态插件
+                    if (multiplexOptions.idleTimeout() > 0) {
+                        processor.addPlugin(new IdleStatePlugin<>(multiplexOptions.idleTimeout()));
+                    }
 
-                firstConnected = false;
+                    firstConnected = false;
+                }
             }
         }
 
@@ -230,6 +239,10 @@ public class MultiplexClient<T> {
 
         // 配置缓冲区大小
         client.setReadBufferSize(multiplexOptions.getReadBufferSize()).setWriteBuffer(multiplexOptions.getWriteChunkSize(), multiplexOptions.getWriteChunkCount());
+
+        // 配置内存池
+        client.setBufferPagePool(multiplexOptions.getReadBufferPool(), multiplexOptions.getWriteBufferPool());
+
 
         // 配置连接超时时间
         if (multiplexOptions.getConnectTimeout() > 0) {
@@ -320,8 +333,7 @@ public class MultiplexClient<T> {
                 // 如果超过60秒没有使用连接，则清理可复用连接队列中的连接
                 if (System.currentTimeMillis() - time > 60 * 1000) {
                     AioQuickClient c;
-                    // 当latestTime没有更新且队列中还有连接时，持续清理
-                    while (time == latestTime && (c = resuingClients.poll()) != null) {
+                    while (time == latestTime && clients.size() > multiplexOptions.getMinConnections() && (c = resuingClients.poll()) != null) {
 //                        System.out.println("release...");
                         release(c);
                     }
@@ -338,7 +350,32 @@ public class MultiplexClient<T> {
                         startConnectionMonitor();
                     }
                 }
+
+                // 确保维持最小连接数
+                maintainMinConnections();
             }, 1, TimeUnit.MINUTES);
+            // 确保维持最小连接数
+            maintainMinConnections();
+        }
+    }
+
+    /**
+     * 维持最小连接数
+     *
+     * <p>该方法确保连接池中至少维持指定数量的连接，
+     * 即使在空闲状态下也不会低于该数量。</p>
+     */
+    private void maintainMinConnections() {
+
+        // 如果当前连接数小于最小连接数，则创建新的连接
+        while (clients.size() < multiplexOptions.getMinConnections()) {
+            try {
+                createNewClient();
+            } catch (Exception e) {
+                // 创建连接失败，记录日志但不中断操作
+                e.printStackTrace();
+                break;
+            }
         }
     }
 
@@ -399,8 +436,11 @@ public class MultiplexClient<T> {
      * </p>
      */
     private void releaseSemaphore() {
-        synchronized (lock) {
-            lock.notifyAll();
+        lock.lock();
+        try {
+            condition.signal();
+        } finally {
+            lock.unlock();
         }
     }
 
