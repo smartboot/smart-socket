@@ -436,9 +436,10 @@ public class MultiplexClient<T> {
      * </p>
      */
     private void releaseSemaphore() {
-        lock.lock();
         try {
-            condition.signal();
+            if (lock.tryLock()) {
+                condition.signal();
+            }
         } finally {
             lock.unlock();
         }
