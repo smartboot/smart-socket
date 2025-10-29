@@ -12,7 +12,7 @@ import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -84,7 +84,7 @@ public class MultiplexClient<T> {
      * 存储可以复用的空闲连接，采用先进先出策略
      * </p>
      */
-    private final ConcurrentLinkedQueue<AioQuickClient> resuingClients = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedDeque<AioQuickClient> resuingClients = new ConcurrentLinkedDeque<>();
 
     /**
      * 所有活跃连接映射表
@@ -157,7 +157,7 @@ public class MultiplexClient<T> {
         AioQuickClient client;
         // 循环尝试从可复用连接队列中获取连接
         while (true) {
-            client = resuingClients.poll();
+            client = resuingClients.pollFirst();
             if (client == null) {
                 break;
             }
@@ -258,7 +258,7 @@ public class MultiplexClient<T> {
 
         // 将新创建的连接添加到连接管理器中
         clients.put(client, client);
-        resuingClients.offer(client);
+        resuingClients.offerLast(client);
 
         // 启动连接监控任务
         startConnectionMonitor();
@@ -389,13 +389,8 @@ public class MultiplexClient<T> {
      * @throws IllegalArgumentException 如果连接不属于当前多路复用客户端
      */
     public final void reuse(AioQuickClient client) {
-        // 检查连接是否属于当前多路复用客户端
-        if (!clients.containsKey(client)) {
-            throw new IllegalArgumentException("client is not belong to this multiplex client");
-        }
-
         // 将连接放回可复用连接队列
-        resuingClients.offer(client);
+        resuingClients.addFirst(client);
 
         // 释放信号量
         releaseSemaphore();
@@ -413,16 +408,13 @@ public class MultiplexClient<T> {
      */
     public final void release(AioQuickClient client) {
         // 检查连接是否属于当前多路复用客户端
-        if (!clients.containsKey(client)) {
+        if (clients.remove(client) == null) {
             throw new IllegalArgumentException("client is not belong to this multiplex client");
         }
 
         try {
             // 立即关闭连接
             client.shutdownNow();
-
-            // 从连接管理器中移除连接
-            clients.remove(client);
         } finally {
             // 释放信号量，允许创建新连接
             releaseSemaphore();
