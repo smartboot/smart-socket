@@ -438,7 +438,7 @@ public class MultiplexClient<T> {
     private void releaseSemaphore() {
         if (lock.tryLock()) {
             try {
-                condition.signal();
+                condition.signalAll();
             } finally {
                 lock.unlock();
             }
