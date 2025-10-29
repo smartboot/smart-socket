@@ -184,7 +184,7 @@ public class MultiplexClient<T> {
                 }
             }
         }
-        if (wait) {
+        if (wait && resuingClients.isEmpty()) {
             lock.lock();
             try {
                 condition.await();
