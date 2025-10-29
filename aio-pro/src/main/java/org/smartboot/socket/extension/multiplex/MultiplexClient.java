@@ -13,10 +13,8 @@ import org.smartboot.socket.transport.AioSession;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 多路复用客户端实现类
@@ -112,8 +110,7 @@ public class MultiplexClient<T> {
      */
     private long latestTime = System.currentTimeMillis();
 
-    private final Lock lock = new ReentrantLock();
-    private final Condition condition = lock.newCondition();
+    private volatile Semaphore semaphore;
 
     /**
      * 构造函数
@@ -153,7 +150,14 @@ public class MultiplexClient<T> {
 
         // 更新最后使用时间
         latestTime = System.currentTimeMillis();
-
+        if (semaphore == null) {
+            synchronized (this) {
+                if (semaphore == null) {
+                    semaphore = new Semaphore(multiplexOptions.getMaxConnections());
+                }
+            }
+        }
+        semaphore.acquire();
         AioQuickClient client;
         // 循环尝试从可复用连接队列中获取连接
         while (true) {
@@ -175,23 +179,7 @@ public class MultiplexClient<T> {
         }
 
         // 创建新的连接
-        boolean wait = true;
-        if (clients.size() < multiplexOptions.getMaxConnections()) {
-            synchronized (this) {
-                if (clients.size() < multiplexOptions.getMaxConnections()) {
-                    wait = false;
-                    createNewClient();
-                }
-            }
-        }
-        if (wait && resuingClients.isEmpty()) {
-            lock.lock();
-            try {
-                condition.await();
-            } finally {
-                lock.unlock();
-            }
-        }
+        createNewClient();
         // 递归调用，直到获取到有效的连接
         return acquire();
     }
@@ -428,13 +416,7 @@ public class MultiplexClient<T> {
      * </p>
      */
     private void releaseSemaphore() {
-        if (lock.tryLock()) {
-            try {
-                condition.signalAll();
-            } finally {
-                lock.unlock();
-            }
-        }
+        semaphore.release();
     }
 
     /**
