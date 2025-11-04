@@ -12,7 +12,6 @@ package com.smartboot.socket.decoder;
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
 import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.util.StringUtils;
 
 import java.nio.ByteBuffer;
 
@@ -45,12 +44,5 @@ public class DelimiterProtocol implements Protocol<String> {
         byteBuffer.get(bytes);
         session.setAttachment(null);//释放临时缓冲区
         return new String(bytes);
-    }
-
-    public static void main(String[] args) {
-        ByteBuffer b = ByteBuffer.allocate(4);
-        b.putInt(104857600);
-
-        System.out.println(StringUtils.toHexString(b.array()));
     }
 }
