@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -327,17 +328,34 @@ final class TcpAioSession extends AioSession {
     public int read(long timeout, TimeUnit unit) throws IOException {
         ByteBuffer buffer = readBuffer.buffer();
         buffer.compact();
-        int readSize;
-        try {
-            if (timeout <= 0) {
-                readSize = channel.read(buffer).get();
-            } else {
-                readSize = channel.read(buffer).get(timeout, unit);
+        CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
+
+        channel.read(buffer, timeout, TimeUnit.MILLISECONDS, completableFuture, new CompletionHandler<Integer, CompletableFuture<Integer>>() {
+            @Override
+            public void completed(Integer result, CompletableFuture<Integer> attachment) {
+                buffer.flip();
+                attachment.complete(result);
             }
-            buffer.flip();
-            return readSize;
-        } catch (Exception e) {
-            throw new IOException(e);
+
+            @Override
+            public void failed(Throwable exc, CompletableFuture<Integer> attachment) {
+                try {
+                    config.getProcessor().stateEvent(TcpAioSession.this, StateMachineEnum.INPUT_EXCEPTION, exc);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    close(false);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                attachment.completeExceptionally(exc);
+            }
+        });
+        try {
+            return completableFuture.get(timeout, unit);
+        } catch (Throwable e) {
+            throw new IOException(e.getCause());
         }
     }
 

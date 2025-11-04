@@ -13,7 +13,6 @@ import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
-import org.smartboot.socket.enhance.FutureCompletionHandler;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -227,9 +226,7 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
     @Override
     public Future<Integer> read(ByteBuffer dst) {
-        FutureCompletionHandler<Integer, Object> readFuture = new FutureCompletionHandler<>();
-        read(dst, 0, TimeUnit.MILLISECONDS, null, readFuture);
-        return readFuture;
+        return super.read(dst);
     }
 
     @Override
