@@ -201,9 +201,9 @@ public class MultiplexClient<T> {
                     boolean noneSslPlugin = true;
                     // 添加配置的插件
                     for (Plugin<T> responsePlugin : multiplexOptions.getPlugins()) {
-                        processor.addPlugin(responsePlugin);
                         if (responsePlugin instanceof SslPlugin) {
                             noneSslPlugin = false;
+                            break;
                         }
                     }
 
@@ -216,7 +216,10 @@ public class MultiplexClient<T> {
                     if (multiplexOptions.idleTimeout() > 0) {
                         processor.addPlugin(new IdleStatePlugin<>(multiplexOptions.idleTimeout()));
                     }
-
+                    // 添加配置的插件
+                    for (Plugin<T> responsePlugin : multiplexOptions.getPlugins()) {
+                        processor.addPlugin(responsePlugin);
+                    }
                     firstConnected = false;
                 }
             }

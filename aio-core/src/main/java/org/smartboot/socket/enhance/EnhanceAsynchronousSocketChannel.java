@@ -152,7 +152,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             exception = e;
         }
         if (readCompletionHandler != null) {
-            doRead(true);
+            doRead(true, false);
         }
         if (readSelectionKey != null) {
             readSelectionKey.cancel();
@@ -283,14 +283,20 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         this.readBuffer = readBuffer;
         this.readAttachment = attachment;
         this.readCompletionHandler = (CompletionHandler<Number, Object>) handler;
-        doRead(EnhanceAsynchronousChannelProvider.SYNC_READ_HANDLER.equals(readCompletionHandler));
+        boolean syncRead = EnhanceAsynchronousChannelProvider.SYNC_READ_FLAG.get();
+        doRead(syncRead, syncRead);
     }
 
 
     @Override
     public final Future<Integer> read(ByteBuffer readBuffer) {
         CompletableFuture<Integer> readFuture = new CompletableFuture<>();
-        read(readBuffer, 0, TimeUnit.MILLISECONDS, readFuture, EnhanceAsynchronousChannelProvider.SYNC_READ_HANDLER);
+        EnhanceAsynchronousChannelProvider.SYNC_READ_FLAG.set(true);
+        try {
+            read(readBuffer, 0, TimeUnit.MILLISECONDS, readFuture, EnhanceAsynchronousChannelProvider.SYNC_READ_HANDLER);
+        } finally {
+            EnhanceAsynchronousChannelProvider.SYNC_READ_FLAG.set(false);
+        }
         return readFuture;
     }
 
@@ -342,7 +348,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      *
      * @param direct 是否直接读取，true表示立即读取，false表示通过事件触发读取
      */
-    public final void doRead(boolean direct) {
+    public final void doRead(boolean direct, boolean switchThread) {
         try {
             if (readCompletionHandler == null) {
                 return;
@@ -377,13 +383,13 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
             //注册至异步线程
             if (readSize == 0) {
-                if (EnhanceAsynchronousChannelProvider.SYNC_READ_HANDLER.equals(readCompletionHandler)) {
+                if (switchThread) {
                     EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
                     group().commonWorker.addRegister(selector -> {
                         try {
                             channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
                         } catch (ClosedChannelException e) {
-                            doRead(true);
+                            doRead(true, false);
                         }
                     });
                     return;

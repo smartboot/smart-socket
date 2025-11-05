@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * @version V1.0 , 2020/5/25
  */
 public final class EnhanceAsynchronousChannelProvider extends AsynchronousChannelProvider {
-
+    public static final ThreadLocal<Boolean> SYNC_READ_FLAG = ThreadLocal.withInitial(() -> false);
     public static final CompletionHandler<Integer, CompletableFuture<Integer>> SYNC_READ_HANDLER = new CompletionHandler<Integer, CompletableFuture<Integer>>() {
         @Override
         public void completed(Integer result, CompletableFuture<Integer> attachment) {

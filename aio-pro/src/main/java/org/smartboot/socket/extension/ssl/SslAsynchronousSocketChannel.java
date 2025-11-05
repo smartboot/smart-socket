@@ -228,7 +228,12 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
     @Override
     public Future<Integer> read(ByteBuffer dst) {
         CompletableFuture<Integer> readFuture = new CompletableFuture<>();
-        read(dst, 0, TimeUnit.MILLISECONDS, readFuture, EnhanceAsynchronousChannelProvider.SYNC_READ_HANDLER);
+        EnhanceAsynchronousChannelProvider.SYNC_READ_FLAG.set(true);
+        try {
+            read(dst, 0, TimeUnit.MILLISECONDS, readFuture, EnhanceAsynchronousChannelProvider.SYNC_READ_HANDLER);
+        } finally {
+            EnhanceAsynchronousChannelProvider.SYNC_READ_FLAG.set(false);
+        }
         return readFuture;
     }
 
