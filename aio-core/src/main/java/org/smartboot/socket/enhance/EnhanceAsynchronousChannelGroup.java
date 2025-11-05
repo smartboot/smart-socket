@@ -88,7 +88,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             //仅同步read会用到此线程资源
             EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
             removeOps(selectionKey, SelectionKey.OP_READ);
-            asynchronousSocketChannel.doRead(true);
+            asynchronousSocketChannel.doRead(true, false);
         }
         if ((interestOps & SelectionKey.OP_WRITE) > 0) {
             EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
@@ -97,7 +97,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
         }
     };
 
-    private static final Consumer<SelectionKey> readConsumer = selectionKey -> ((EnhanceAsynchronousSocketChannel) selectionKey.attachment()).doRead(true);
+    private static final Consumer<SelectionKey> readConsumer = selectionKey -> ((EnhanceAsynchronousSocketChannel) selectionKey.attachment()).doRead(true, false);
 
     /**
      * 初始化异步通道组实例。
@@ -147,7 +147,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
                 //仅同步read会用到此线程资源
                 EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
                 removeOps(selectionKey, SelectionKey.OP_READ);
-                asynchronousSocketChannel.doRead(true);
+                asynchronousSocketChannel.doRead(true, false);
             } else {
                 throw new IllegalStateException("unexpect callback,key valid:" + selectionKey.isValid() + " ,interestOps:" + selectionKey.interestOps());
             }

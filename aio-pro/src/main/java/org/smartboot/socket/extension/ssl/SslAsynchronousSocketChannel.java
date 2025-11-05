@@ -13,7 +13,6 @@ import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
-import org.smartboot.socket.enhance.FutureCompletionHandler;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -227,8 +227,13 @@ public class SslAsynchronousSocketChannel extends AsynchronousSocketChannelProxy
 
     @Override
     public Future<Integer> read(ByteBuffer dst) {
-        FutureCompletionHandler<Integer, Object> readFuture = new FutureCompletionHandler<>();
-        read(dst, 0, TimeUnit.MILLISECONDS, null, readFuture);
+        CompletableFuture<Integer> readFuture = new CompletableFuture<>();
+        EnhanceAsynchronousChannelProvider.SYNC_READ_FLAG.set(true);
+        try {
+            read(dst, 0, TimeUnit.MILLISECONDS, readFuture, EnhanceAsynchronousChannelProvider.SYNC_READ_HANDLER);
+        } finally {
+            EnhanceAsynchronousChannelProvider.SYNC_READ_FLAG.set(false);
+        }
         return readFuture;
     }
 
