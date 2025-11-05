@@ -24,6 +24,7 @@ import java.nio.channels.ShutdownChannelGroupException;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritePendingException;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -237,9 +238,9 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private <A> void doConnect(SocketAddress remote, A attachment, CompletionHandler<Void, ? super A> completionHandler) {
         try {
             //此前通过Future调用,且触发了cancel
-            if (completionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) completionHandler).isDone()) {
-                return;
-            }
+//            if (completionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) completionHandler).isDone()) {
+//                return;
+//            }
             boolean connected = channel.isConnectionPending();
             if (connected || channel.connect(remote)) {
                 connected = channel.finishConnect();
@@ -264,9 +265,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     @Override
     public Future<Void> connect(SocketAddress remote) {
-        FutureCompletionHandler<Void, Void> connectFuture = new FutureCompletionHandler<>();
-        connect(remote, null, connectFuture);
-        return connectFuture;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -284,13 +283,14 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         this.readBuffer = readBuffer;
         this.readAttachment = attachment;
         this.readCompletionHandler = (CompletionHandler<Number, Object>) handler;
-        doRead(handler instanceof FutureCompletionHandler);
+        doRead(EnhanceAsynchronousChannelProvider.SYNC_READ_HANDLER.equals(readCompletionHandler));
     }
+
 
     @Override
     public final Future<Integer> read(ByteBuffer readBuffer) {
-        FutureCompletionHandler<Integer, Object> readFuture = new FutureCompletionHandler<>();
-        read(readBuffer, 0, TimeUnit.MILLISECONDS, null, readFuture);
+        CompletableFuture<Integer> readFuture = new CompletableFuture<>();
+        read(readBuffer, 0, TimeUnit.MILLISECONDS, readFuture, EnhanceAsynchronousChannelProvider.SYNC_READ_HANDLER);
         return readFuture;
     }
 
@@ -348,11 +348,11 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 return;
             }
             // 处理Future调用被取消的情况
-            if (readCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) readCompletionHandler).isDone()) {
-                EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
-                resetRead();
-                return;
-            }
+//            if (readCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) readCompletionHandler).isDone()) {
+//                EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
+//                resetRead();
+//                return;
+//            }
             // 低内存模式下的特殊处理：当没有缓冲区时，直接返回可读信号
             if (lowMemory && direct && readBuffer == null) {
                 CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
@@ -376,22 +376,25 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             }
 
             //注册至异步线程
-            if (readSize == 0 && readCompletionHandler instanceof FutureCompletionHandler) {
-                EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
-                group().commonWorker.addRegister(selector -> {
-                    try {
-                        channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
-                    } catch (ClosedChannelException e) {
-                        doRead(true);
-                    }
-                });
-                return;
+            if (readSize == 0) {
+                if (EnhanceAsynchronousChannelProvider.SYNC_READ_HANDLER.equals(readCompletionHandler)) {
+                    EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
+                    group().commonWorker.addRegister(selector -> {
+                        try {
+                            channel.register(selector, SelectionKey.OP_READ, EnhanceAsynchronousSocketChannel.this);
+                        } catch (ClosedChannelException e) {
+                            doRead(true);
+                        }
+                    });
+                    return;
+                }
+                //释放内存
+                if (lowMemory && readBuffer.position() == 0) {
+                    readBuffer = null;
+                    readCompletionHandler.completed(EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL, readAttachment);
+                }
             }
-            //释放内存
-            if (lowMemory && readSize == 0 && readBuffer.position() == 0) {
-                readBuffer = null;
-                readCompletionHandler.completed(EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL, readAttachment);
-            }
+
 
             if (readSize != 0 || !hasRemain) {
                 CompletionHandler<Number, Object> completionHandler = readCompletionHandler;

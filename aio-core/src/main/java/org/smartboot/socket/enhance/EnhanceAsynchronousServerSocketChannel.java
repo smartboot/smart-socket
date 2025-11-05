@@ -30,13 +30,13 @@ import java.util.concurrent.Future;
  * 2. 支持异步接受连接操作
  * 3. 管理服务器Socket的生命周期
  * 4. 提供回调机制处理连接事件
- * 
+ * <p>
  * 该类是服务器端网络编程的核心组件，通过非阻塞IO和事件通知机制，实现了高效的连接处理：
  * - 支持Future和CompletionHandler两种异步编程模式
  * - 实现了连接请求的排队和限流处理，避免服务器资源耗尽
  * - 提供了优雅的异常处理和资源管理机制
  * - 在低内存模式下采用特殊的资源管理策略
- * 
+ *
  * @author 三刀
  * @version V1.0 , 2020/5/25
  */
@@ -45,37 +45,32 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
      * 底层的服务器Socket通道，用于实际的网络IO操作
      */
     private final ServerSocketChannel serverSocketChannel;
-    
+
     /**
      * 异步通道组，用于管理通道的线程资源和事件分发
      */
     private final EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup;
-    
+
     /**
      * 接受连接的回调处理器，用于处理新连接建立后的回调逻辑
      */
     private CompletionHandler<AsynchronousSocketChannel, Object> acceptCompletionHandler;
-    
-    /**
-     * 用于Future方式调用时的回调处理器
-     */
-    private FutureCompletionHandler<AsynchronousSocketChannel, Void> acceptFuture;
-    
+
     /**
      * 接受连接操作的附加对象，可在回调时传递额外的上下文信息
      */
     private Object attachment;
-    
+
     /**
      * 用于接受连接操作的选择键，管理通道的接受事件注册
      */
     private SelectionKey selectionKey;
-    
+
     /**
      * 标识是否有待处理的接受连接操作
      */
     private boolean acceptPending;
-    
+
     /**
      * 是否启用低内存模式
      * 在低内存模式下，会采用特殊的内存管理策略以减少内存占用
@@ -91,9 +86,9 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     /**
      * 构造函数
      * 创建一个新的增强型异步服务器Socket通道实例
-     * 
+     *
      * @param enhanceAsynchronousChannelGroup 关联的异步通道组，用于管理该通道的资源
-     * @param lowMemory 是否启用低内存模式
+     * @param lowMemory                       是否启用低内存模式
      * @throws IOException 如果创建底层通道时发生IO错误
      */
     EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup, boolean lowMemory) throws IOException {
@@ -106,8 +101,8 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
 
     /**
      * 将服务器Socket绑定到指定的本地地址
-     * 
-     * @param local 要绑定的本地地址
+     *
+     * @param local   要绑定的本地地址
      * @param backlog 连接请求队列的最大长度
      * @return 返回当前服务器Socket通道实例
      * @throws IOException 如果绑定操作失败
@@ -120,8 +115,8 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
 
     /**
      * 设置服务器Socket的选项
-     * 
-     * @param name 选项名称
+     *
+     * @param name  选项名称
      * @param value 选项值
      * @return 返回当前服务器Socket通道实例
      * @throws IOException 如果设置选项时发生错误
@@ -134,7 +129,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
 
     /**
      * 获取服务器Socket的选项值
-     * 
+     *
      * @param name 选项名称
      * @return 返回指定选项的当前值
      * @throws IOException 如果获取选项值时发生错误
@@ -146,7 +141,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
 
     /**
      * 获取服务器Socket支持的所有选项
-     * 
+     *
      * @return 返回支持的选项集合
      */
     @Override
@@ -157,9 +152,9 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     /**
      * 异步接受客户端连接请求
      * 该方法实现了异步接受连接的功能，通过回调机制通知连接建立的结果
-     * 
+     *
      * @param attachment 附加对象，可在回调时获取
-     * @param handler 连接完成的回调处理器
+     * @param handler    连接完成的回调处理器
      * @throws AcceptPendingException 如果已有一个待处理的接受连接操作
      */
     @Override
@@ -183,12 +178,6 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
      */
     public void doAccept() {
         try {
-            //此前通过Future调用,且触发了cancel
-            if (acceptFuture != null && acceptFuture.isDone()) {
-                resetAccept();
-                EnhanceAsynchronousChannelGroup.removeOps(selectionKey, SelectionKey.OP_ACCEPT);
-                return;
-            }
             SocketChannel socketChannel = null;
             if (acceptInvoker++ < EnhanceAsynchronousChannelGroup.MAX_INVOKER) {
                 socketChannel = serverSocketChannel.accept();
@@ -232,7 +221,6 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
      */
     private void resetAccept() {
         acceptPending = false;
-        acceptFuture = null;
         acceptCompletionHandler = null;
         attachment = null;
     }
@@ -240,20 +228,17 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     /**
      * 以Future方式接受连接
      * 提供基于Future的异步接受连接方式，允许调用者通过Future对象获取连接结果
-     * 
+     *
      * @return 返回Future对象，可用于获取连接结果
      */
     @Override
     public Future<AsynchronousSocketChannel> accept() {
-        FutureCompletionHandler<AsynchronousSocketChannel, Void> acceptFuture = new FutureCompletionHandler<>();
-        accept(null, acceptFuture);
-        this.acceptFuture = acceptFuture;
-        return acceptFuture;
+        throw new UnsupportedOperationException();
     }
 
     /**
      * 获取服务器Socket的本地地址
-     * 
+     *
      * @return 返回服务器Socket绑定的本地地址
      * @throws IOException 如果获取地址时发生IO错误
      */
@@ -264,7 +249,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
 
     /**
      * 检查服务器Socket通道是否打开
-     * 
+     *
      * @return 如果通道处于打开状态返回true，否则返回false
      */
     @Override
@@ -275,7 +260,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     /**
      * 关闭服务器Socket通道
      * 关闭底层的服务器Socket通道，释放相关资源
-     * 
+     *
      * @throws IOException 如果关闭时发生IO错误
      */
     @Override
