@@ -238,7 +238,7 @@ public final class AioQuickClient {
         }
     }
 
-    public TcpAioSession getSession() {
+    public AioSession getSession() {
         return session;
     }
 
