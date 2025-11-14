@@ -29,9 +29,16 @@ smart-socket 是一款增强了原生 JDK 实现的 AIO 通信框架。
 5. 支持自定义插件，并已提供了丰富的插件，包括：SSL/TLS通信插件、心跳插件、断链重连插件、服务指标统计插件、黑名单插件、内存池监测插件。
 
 ### 🍒生态项目
-- [feat](https://gitee.com/smartboot/feat)
-- [smart-servlet](https://gitee.com/smartboot/smart-servlet)
-- [smart-mqtt](https://gitee.com/smartboot/smart-mqtt)
+
+基于 smart-socket 构建的高性能技术生态体系：
+
+- [**Feat**](https://gitee.com/smartboot/feat)：高性能 Java Web 服务框架，开发体验类似 SpringBoot，运行性能超越 Vert.x，能够轻松应对万级并发连接。
+
+- [**Redisun**](https://gitee.com/smartboot/redisun)：专注于 Redis 相关技术的开源项目，提供高效的数据结构存储和处理解决方案，支持多种应用场景。
+
+- [**smart-servlet**](https://gitee.com/smartboot/smart-servlet)：实现了 Servlet 6.1 规范的 Web 容器，支持多应用隔离部署，可替代 Tomcat、Undertow、Jetty 等传统容器。
+
+- [**smart-mqtt**](https://gitee.com/smartboot/smart-mqtt)：云原生分布式 MQTT Broker 服务器，支持海量物联网设备互联互通，资源消耗低，符合 MQTT 3.1.1/5.0 协议标准。
 
 ### 🍭推荐
 - 《[smart-socket 单机百万长连接实战教程](https://mp.weixin.qq.com/s/l_IBSBI6SAY4FmomwLFa-Q)》
