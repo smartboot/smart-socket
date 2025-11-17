@@ -20,6 +20,7 @@ import java.nio.channels.AsynchronousChannelGroup;
  *
  * @author 三刀
  * @version V1.0 , 2018/8/19
+ * @deprecated 很多场景对待重连有特殊的处理逻辑，该插件较为局限，
  */
 class ReconnectPlugin extends AbstractPlugin {
 

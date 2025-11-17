@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *
  * @author 三刀
  * @version V1.0 , 2019/3/27
+ * @deprecated 该插件不太常用，且自行实现的难度也不大。
  */
 public final class BlackListPlugin<T> extends AbstractPlugin<T> {
     private ConcurrentLinkedQueue<BlackListRule> ipBlackList = new ConcurrentLinkedQueue<>();

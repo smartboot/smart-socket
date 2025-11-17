@@ -21,6 +21,7 @@ import java.util.Map;
  *
  * @author 三刀
  * @version V1.0 , 2019/10/25
+ * @deprecated 多数场景下不需要用户设定Socket Option
  */
 public class SocketOptionPlugin<T> extends AbstractPlugin<T> {
 

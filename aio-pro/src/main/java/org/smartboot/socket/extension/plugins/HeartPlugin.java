@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author 三刀
  * @version V1.0 , 2018/8/19
+ * @deprecated 该插件比较局限，建议开发者自行处理心跳逻辑。
  */
 public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
     /**
@@ -134,7 +135,7 @@ public abstract class HeartPlugin<T> extends AbstractPlugin<T> {
     /**
      * 注册心跳任务
      *
-     * @param session 当前会话
+     * @param session   当前会话
      * @param heartRate 心跳频率
      */
     private void registerHeart(final AioSession session, final long heartRate) {
