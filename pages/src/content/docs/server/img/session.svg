@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        @keyframes rotateWheel {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+
+        @keyframes borderPulse {
+        0% {
+        stroke: #FFC107;
+        stroke-width: 1;
+        stroke-opacity: 0;  // 新增淡出
+        }
+        50% {
+        stroke: #FF9800;
+        stroke-width: 2;
+        stroke-opacity: 1;  // 新增淡入
+        }
+        100% {
+        stroke: #FFC107;
+        stroke-width: 1;
+        stroke-opacity: 0;  // 新增淡出
+        }
+        }
+
+
+        .wheel-pointer {
+            transform-origin: 450px 300px;
+            animation: rotateWheel 20s linear infinite;
+        }
+        
+        .session-create {
+
+        }
+        
+        .session-update {
+            animation:
+                borderPulse 1.5s ease-in-out infinite;  <!-- 新增边框动画 -->
+            animation-delay: 3s;
+            stroke-linecap: round;
+            fill: #FFC107;
+        }
+
+    </style>
+    
+    <!-- 标题 -->
+    <text x="400" y="30" text-anchor="middle" font-size="24" font-weight="bold" fill="#333">Feat Router Session 管理机制</text>
+    
+    <!-- ConcurrentHashMap 存储结构 -->
+    <rect x="50" y="70" width="200" height="400" rx="10" fill="#E8F5E9" stroke="#4CAF50" stroke-width="2"/>
+    <text x="150" y="95" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">Session Pool</text>
+    
+    <!-- Session 存储桶 -->
+    <rect x="70" y="110" width="160" height="140" rx="5" fill="white" stroke="#4CAF50" stroke-width="1"/>
+    
+    <!-- Session 条目 -->
+    <g class="session-create">
+        <rect x="80" y="120" width="140" height="30" rx="5" fill="#4CAF50" stroke="#333" stroke-width="1"/>
+        <text x="150" y="140" text-anchor="middle" font-size="12" fill="white">ID: abc123</text>
+    </g>
+
+    <g>
+        <rect class="session-update" x="80" y="160" width="140" height="30" rx="5" fill="#4CAF50" stroke-width="1"/>
+        <text x="150" y="180" text-anchor="middle" font-size="12" fill="white">ID: xyz789</text>
+    </g>
+    
+    <g class="session-expire">
+        <rect x="80" y="200" width="140" height="30" rx="5" fill="#F44336" stroke="#333" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="150" y="220" text-anchor="middle" font-size="12" fill="white">ID: def456</text>
+    </g>
+    
+    <!-- HashedWheelTimer 时间轮 -->
+    <circle cx="450" cy="300" r="150" fill="none" stroke="#2196F3" stroke-width="2"/>
+    <circle cx="450" cy="300" r="145" fill="none" stroke="#2196F3" stroke-width="1"/>
+    
+    <!-- 时间轮刻度 -->
+    <line x1="450" y1="150" x2="450" y2="170" stroke="#2196F3" stroke-width="2"/>
+    <line x1="600" y1="300" x2="580" y2="300" stroke="#2196F3" stroke-width="2"/>
+    <line x1="450" y1="450" x2="450" y2="430" stroke="#2196F3" stroke-width="2"/>
+    <line x1="300" y1="300" x2="320" y2="300" stroke="#2196F3" stroke-width="2"/>
+    
+    <line x1="525" y1="175" x2="510" y2="190" stroke="#2196F3" stroke-width="2"/>
+    <line x1="575" y1="225" x2="560" y2="240" stroke="#2196F3" stroke-width="2"/>
+    <line x1="575" y1="375" x2="560" y2="360" stroke="#2196F3" stroke-width="2"/>
+    <line x1="525" y1="425" x2="510" y2="410" stroke="#2196F3" stroke-width="2"/>
+    <line x1="375" y1="425" x2="390" y2="410" stroke="#2196F3" stroke-width="2"/>
+    <line x1="325" y1="375" x2="340" y2="360" stroke="#2196F3" stroke-width="2"/>
+    <line x1="325" y1="225" x2="340" y2="240" stroke="#2196F3" stroke-width="2"/>
+    <line x1="375" y1="175" x2="390" y2="190" stroke="#2196F3" stroke-width="2"/>
+    
+    <!-- 时间轮指针 -->
+    <line x1="450" y1="300" x2="450" y2="170" stroke="#FF5722" stroke-width="3" class="wheel-pointer"/>
+    <circle cx="450" cy="300" r="10" fill="#FF5722"/>
+
+    <!-- Session 任务 -->
+    <circle cx="450" cy="170" r="15" fill="#4CAF50" class="session-create"/>
+    <text x="450" y="175" text-anchor="middle" font-size="12" fill="#fff" class="session-create">ID_1</text>
+    
+    <circle cx="575" cy="300" r="15" fill="#FFC107" class="session-update"/>
+    <text x="575" y="305" text-anchor="middle" font-size="12" fill="#fff">ID_2</text>
+    
+    <circle cx="375" cy="425" r="15" fill="#F44336" class="session-expire"/>
+    <text x="375" y="430" text-anchor="middle" font-size="12" fill="#fff" class="session-expire">ID_3</text>
+    
+    <!-- Session 生命周期 -->
+    <rect x="50" y="480" width="700" height="100" rx="10" fill="#E3F2FD" stroke="#2196F3" stroke-width="2"/>
+    <text x="400" y="500" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">Session 生命周期</text>
+    
+    <!-- 生命周期阶段 -->
+    <circle cx="100" cy="530" r="10" fill="#4CAF50"/>
+    <text x="100" y="550" text-anchor="middle" font-size="12" fill="#333">创建</text>
+    
+    <line x1="120" y1="530" x2="220" y2="530" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/>
+    
+    <circle cx="240" cy="530" r="10" fill="#FFC107"/>
+    <text x="240" y="550" text-anchor="middle" font-size="12" fill="#333">访问/更新</text>
+    
+    <line x1="260" y1="530" x2="360" y2="530" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/>
+    
+    <circle cx="380" cy="530" r="10" fill="#FFC107"/>
+    <text x="380" y="550" text-anchor="middle" font-size="12" fill="#333">重置超时</text>
+    
+    <line x1="400" y1="530" x2="500" y2="530" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/>
+    
+    <circle cx="520" cy="530" r="10" fill="#FF5722"/>
+    <text x="520" y="550" text-anchor="middle" font-size="12" fill="#333">超时</text>
+    
+    <line x1="540" y1="530" x2="640" y2="530" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/>
+    
+    <circle cx="660" cy="530" r="10" fill="#F44336"/>
+    <text x="660" y="550" text-anchor="middle" font-size="12" fill="#333">销毁</text>
+    
+
+    <!-- 图例 -->
+    <rect x="600" y="70" width="150" height="120" rx="5" fill="#f5f5f5" stroke="#ccc"/>
+    <text x="675" y="90" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">图例</text>
+    
+    <rect x="610" y="100" width="20" height="20" fill="#E8F5E9" stroke="#4CAF50"/>
+    <text x="640" y="115" text-anchor="start" font-size="12" fill="#333">Session存储</text>
+    
+    <circle cx="620" cy="140" r="10" fill="none" stroke="#2196F3" stroke-width="2"/>
+    <text x="640" y="145" text-anchor="start" font-size="12" fill="#333">时间轮</text>
+    
+    <circle cx="620" cy="170" r="10" fill="#FFC107"/>
+    <text x="640" y="175" text-anchor="start" font-size="12" fill="#333">定时任务</text>
+
+
+</svg>

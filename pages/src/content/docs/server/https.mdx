@@ -1,0 +1,115 @@
+---
+title: Https 安全服务
+description: Feat Https
+sidebar:
+    order: 5
+---
+import https_1 from './img/https_1.png';
+import CheckAuthorize from '../../../components/CheckAuthorize.astro'
+
+<CheckAuthorize/>
+
+在网络环境日益复杂的今天，安全性已经成为Web应用不可忽视的重要方面。出于安全服务需要，生产环境通常使用 Https 协议，Feat 也提供了相应的能力来保障你的应用安全。
+
+下文演示所使用的证书是通过 [mkcert](https://github.com/FiloSottile/mkcert) 生成的自签名证书。
+
+## 生成 PEM 证书
+
+执行以下命令生成证书：
+```shell
+mkcert example.com "*.example.com" example.test localhost 127.0.0.1 ::1
+```
+
+如果控制台出现以下提示信息，则表示证书生成成功。
+```shell
+Created a new certificate valid for the following names 📜
+ - "example.com"
+ - "*.example.com"
+ - "example.test"
+ - "localhost"
+ - "127.0.0.1"
+ - "::1"
+
+Reminder: X.509 wildcards only go one level deep, so this won't match a.b.example.com ℹ️
+
+The certificate is at "./example.com+5.pem" and the key at "./example.com+5-key.pem" ✅
+
+It will expire on 30 April 2027
+```
+
+## 启动Https服务
+
+将证书文件 `example.com+5.pem` 和 `example.com+5-key.pem` 拷贝到项目的 `src/main/resources` 目录下。
+
+使用 smart-socket 提供的 SslPlugin 插件启动 Https 服务。
+```java title="HttpsPemDemo.java" "new SslPlugin(new PemServerSSLContextFactory(certPem, keyPem))"
+public class HttpsPemDemo {
+    public static void main(String[] args) throws Exception {
+        InputStream certPem = HttpsPemDemo.class.getClassLoader().getResourceAsStream("example.org.pem");
+        InputStream keyPem = HttpsPemDemo.class.getClassLoader().getResourceAsStream("example.org-key.pem");
+        SslPlugin sslPlugin = new SslPlugin(new PemServerSSLContextFactory(certPem, keyPem));
+        Feat.httpServer(opt -> opt.addPlugin(sslPlugin)).httpHandler(req -> {
+            req.getResponse().write("Hello Feat Https");
+        }).listen();
+    }
+}
+```
+
+打开浏览器，访问：https://localhost:8080 ，若页面展示如下，说明 Https 服务启动成功。
+<img src={https_1.src} alt="hello world" width="60%" className="shadow"/>
+
+有关完整示例，请参见 [HttpsPemDemo.java](https://gitee.com/smartboot/feat/blob/master/feat-test/src/main/java/tech/smartboot/feat/demo/HttpsPemDemo.java)
+
+## SSLEngine 传递
+
+HttpRequest 中提供了 `getSslEngine()` 方法，用于获取 SSLEngine。
+
+但是，SSLEngine 是在底层的网络通信层创建的，应用层无法感知底层是否使用了 SSL 协议。
+所以，默认情况下调用 `getSslEngine()` 方法获取到的 SSLEngine 为 null。
+
+若需要获取 SSLEngine，必须在 SslPlugin 中配置： **Consumer\<SSLEngine\>**，
+将 `SSLEngine` 注入到 ThreadLocal 中以供应用层获取。
+```java title=HttpsSSLEngineDemo.java {6,7}
+public class HttpsSSLEngineDemo {
+    public static void main(String[] args) throws Exception {
+        InputStream certPem = HttpsSSLEngineDemo.class.getClassLoader().getResourceAsStream("example.com+5.pem");
+        InputStream keyPem = HttpsSSLEngineDemo.class.getClassLoader().getResourceAsStream("example.com+5-key.pem");
+        SslPlugin sslPlugin = new SslPlugin(new PemServerSSLContextFactory(certPem, keyPem), (Consumer<SSLEngine>) sslEngine -> {
+            sslEngine.setUseClientMode(false);
+            HttpRequest.SSL_ENGINE_THREAD_LOCAL.set(sslEngine);
+        });
+        Feat.httpServer(opt -> opt.addPlugin(sslPlugin)).httpHandler(req -> {
+            SSLEngine engine = req.getSslEngine();
+            if (engine == null) {
+                req.getResponse().write("engine is null");
+            } else {
+                req.getResponse().write("engine=" + engine);
+            }
+        }).listen();
+    }
+}
+```
+
+TCP 连接建立成功后，应用层`Endpoint.java`会在第一时间获取 `SSLEngine`。
+```java title=Endpoint.java {4-6}
+protected Endpoint(AioSession aioSession, ServerOptions options) {
+    this.aioSession = aioSession;
+    this.options = options;
+    this.sslEngine = HttpRequest.SSL_ENGINE_THREAD_LOCAL.get();
+    if (sslEngine != null) {
+        HttpRequest.SSL_ENGINE_THREAD_LOCAL.remove();
+    }
+}
+```
+
+## 安全建议
+
+在生产环境中使用 HTTPS 时，请注意以下几点：
+
+1. **使用受信任的证书颁发机构**：自签名证书适用于开发和测试环境，但在生产环境中应使用受信任的CA签发的证书
+2. **定期更新证书**：确保证书在有效期内，避免因证书过期导致服务中断
+3. **配置强加密算法**：选择安全强度高的加密算法和协议版本
+4. **启用HTTP Strict Transport Security (HSTS)**：强制浏览器使用HTTPS连接
+5. **重定向HTTP到HTTPS**：将所有HTTP请求自动重定向到HTTPS
+
+通过合理配置HTTPS，可以大大提升Web应用的安全性，保护用户数据不被窃取或篡改。

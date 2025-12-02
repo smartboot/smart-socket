@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="900" height="700" xmlns="http://www.w3.org/2000/svg">
+    <!-- 背景和标题 -->
+    <rect width="900" height="700" fill="#f8f9fa" />
+    <text x="450" y="40" font-family="Arial" font-size="24" text-anchor="middle" font-weight="bold" fill="#333">Feat HTTP/2 架构图</text>
+    
+    <!-- 协议升级部分 -->
+    <rect x="50" y="80" width="800" height="120" rx="10" fill="#e6f7ff" stroke="#1890ff" stroke-width="2" />
+    <text x="450" y="105" font-family="Arial" font-size="18" text-anchor="middle" font-weight="bold" fill="#333">协议升级 (Http2Upgrade)</text>
+    
+    <rect x="100" y="125" width="160" height="50" rx="5" fill="#fff" stroke="#1890ff" stroke-width="1" />
+    <text x="180" y="155" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">HTTP/1.1 升级</text>
+    
+    <rect x="300" y="125" width="160" height="50" rx="5" fill="#fff" stroke="#1890ff" stroke-width="1" />
+    <text x="380" y="155" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">直接 HTTP/2</text>
+    
+    <rect x="500" y="125" width="160" height="50" rx="5" fill="#fff" stroke="#1890ff" stroke-width="1" />
+    <text x="580" y="155" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">SETTINGS 帧处理</text>
+    
+    <rect x="680" y="125" width="120" height="50" rx="5" fill="#fff" stroke="#1890ff" stroke-width="1" />
+    <text x="740" y="155" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">前言验证</text>
+    
+    <!-- 会话管理部分 -->
+    <rect x="50" y="220" width="800" height="180" rx="10" fill="#f6ffed" stroke="#52c41a" stroke-width="2" />
+    <text x="450" y="245" font-family="Arial" font-size="18" text-anchor="middle" font-weight="bold" fill="#333">会话管理 (Http2Session)</text>
+    
+    <rect x="100" y="270" width="160" height="50" rx="5" fill="#fff" stroke="#52c41a" stroke-width="1" />
+    <text x="180" y="300" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">流状态管理</text>
+    
+    <rect x="300" y="270" width="160" height="50" rx="5" fill="#fff" stroke="#52c41a" stroke-width="1" />
+    <text x="380" y="300" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">SETTINGS 更新</text>
+    
+    <rect x="500" y="270" width="160" height="50" rx="5" fill="#fff" stroke="#52c41a" stroke-width="1" />
+    <text x="580" y="300" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">HPACK 头部压缩</text>
+    
+    <rect x="680" y="270" width="120" height="50" rx="5" fill="#fff" stroke="#52c41a" stroke-width="1" />
+    <text x="740" y="300" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">流量控制</text>
+    
+    <rect x="100" y="330" width="160" height="50" rx="5" fill="#fff" stroke="#52c41a" stroke-width="1" />
+    <text x="180" y="360" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">多路复用</text>
+    
+    <rect x="300" y="330" width="160" height="50" rx="5" fill="#fff" stroke="#52c41a" stroke-width="1" />
+    <text x="380" y="360" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">服务端推送</text>
+    
+    <rect x="500" y="330" width="160" height="50" rx="5" fill="#fff" stroke="#52c41a" stroke-width="1" />
+    <text x="580" y="360" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">空闲超时管理</text>
+    
+    <!-- 帧处理部分 -->
+    <rect x="50" y="420" width="800" height="250" rx="10" fill="#fff0f6" stroke="#eb2f96" stroke-width="2" />
+    <text x="450" y="445" font-family="Arial" font-size="18" text-anchor="middle" font-weight="bold" fill="#333">帧处理 (Http2Frame)</text>
+    
+    <!-- 帧类型 -->
+    <rect x="80" y="470" width="140" height="180" rx="5" fill="#fff" stroke="#eb2f96" stroke-width="1" />
+    <text x="150" y="490" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold" fill="#333">帧类型</text>
+    <text x="150" y="515" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">HEADERS (0x1)</text>
+    <text x="150" y="540" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">SETTINGS (0x4)</text>
+    <text x="150" y="565" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">DATA (0x0)</text>
+    <text x="150" y="590" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">WINDOW_UPDATE (0x8)</text>
+    <text x="150" y="615" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">GOAWAY (0x7)</text>
+    <text x="150" y="640" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">RST_STREAM (0x3)</text>
+    
+    <!-- 帧解析流程 -->
+    <rect x="240" y="470" width="580" height="180" rx="5" fill="#fff" stroke="#eb2f96" stroke-width="1" />
+    <text x="530" y="490" font-family="Arial" font-size="14" text-anchor="middle" font-weight="bold" fill="#333">帧处理流程</text>
+    
+    <!-- 流程图 -->
+    <rect x="260" y="505" width="120" height="40" rx="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+    <text x="320" y="530" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">解析帧头部</text>
+    
+    <rect x="420" y="505" width="120" height="40" rx="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+    <text x="480" y="530" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">解析帧负载</text>
+    
+    <rect x="580" y="505" width="120" height="40" rx="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+    <text x="640" y="530" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">处理帧内容</text>
+    
+    <!-- 箭头 -->
+    <line x1="380" y1="525" x2="420" y2="525" stroke="#eb2f96" stroke-width="2" marker-end="url(#arrow)" />
+    <line x1="540" y1="525" x2="580" y2="525" stroke="#eb2f96" stroke-width="2" marker-end="url(#arrow)" />
+    
+    <!-- HEADERS帧处理 -->
+    <rect x="260" y="555" width="160" height="40" rx="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+    <text x="340" y="580" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">HEADERS帧: 解析请求头</text>
+    
+    <!-- DATA帧处理 -->
+    <rect x="260" y="605" width="160" height="40" rx="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+    <text x="340" y="630" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">DATA帧: 处理请求体</text>
+    
+    <!-- SETTINGS帧处理 -->
+    <rect x="440" y="555" width="160" height="40" rx="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+    <text x="520" y="580" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">SETTINGS帧: 更新配置</text>
+    
+    <!-- WINDOW_UPDATE帧处理 -->
+    <rect x="440" y="605" width="160" height="40" rx="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+    <text x="520" y="630" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">WINDOW_UPDATE: 流量控制</text>
+    
+    <!-- GOAWAY帧处理 -->
+    <rect x="620" y="555" width="160" height="40" rx="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+    <text x="700" y="580" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">GOAWAY: 关闭连接</text>
+    
+    <!-- RST_STREAM帧处理 -->
+    <rect x="620" y="605" width="160" height="40" rx="5" fill="#fff0f6" stroke="#eb2f96" stroke-width="1" />
+    <text x="700" y="630" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">RST_STREAM: 重置流</text>
+    
+    <!-- 箭头定义 -->
+    <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+        </marker>
+    </defs>
+    
+    <!-- 连接线 -->
+    <line x1="180" y1="175" x2="180" y2="220" stroke="#333" stroke-width="2" stroke-dasharray="5,5" />
+    <line x1="380" y1="175" x2="380" y2="220" stroke="#333" stroke-width="2" stroke-dasharray="5,5" />
+    <line x1="580" y1="175" x2="580" y2="220" stroke="#333" stroke-width="2" stroke-dasharray="5,5" />
+    <line x1="450" y1="400" x2="450" y2="420" stroke="#333" stroke-width="2" stroke-dasharray="5,5" />
+</svg>

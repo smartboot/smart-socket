@@ -1,0 +1,156 @@
+---
+title: 静态转码原理
+description: 图文并茂地解释Feat Cloud如何通过编译期代码生成技术提升性能，避免反射带来的开销
+---
+
+import static_transcoding_diagram from './img/static_transcoding_diagram.svg'
+import translator_comparison from './img/translator_comparison.svg'
+import restaurant_comparison from './img/restaurant_comparison.svg'
+import code_generation_process from './img/code_generation_process.svg'
+
+## 什么是静态转码？一个简单的类比
+
+想象你是一位翻译员，有两种工作方式：
+
+1. **传统方式（反射）**：每次有人说话，你都需要查词典，理解语法，然后翻译 - 这个过程很灵活但很慢
+2. **提前准备（静态转码）**：提前知道可能的对话内容，预先准备好翻译稿 - 翻译时直接读出来，又快又准
+
+<div style="text-align: center; margin: 20px 0;">
+  <img src={translator_comparison.src} alt="翻译员工作方式对比图" style="max-width: 100%; height: auto;" />
+</div>
+
+Java框架中，依赖注入(DI)和面向切面编程(AOP)就像这种翻译工作。传统框架如Spring使用"查词典"的方式（反射），而Feat Cloud采用"提前准备翻译稿"的方式（静态转码）。
+
+## 为什么要关注这个问题？
+
+在Java应用开发中，我们经常使用Spring等框架来简化开发。这些框架让我们可以通过简单的注解（如`@Autowired`）来自动连接各个组件，非常方便。但这种便利是有代价的 - 反射机制会带来性能损耗。
+
+Feat Cloud通过创新的静态转码技术，让你既能享受类似Spring的开发便利，又能获得更好的性能。
+
+<div style="text-align: center; margin: 20px 0;">
+  <img src={static_transcoding_diagram.src} alt="Feat Cloud静态转码与传统反射对比图" style="max-width: 100%; height: auto;" />
+</div>
+
+## 传统方式与静态转码的区别 - 餐厅点餐的例子
+
+### 传统反射方式（临时翻译菜单）
+
+想象一家餐厅，每位顾客点餐时：
+1. 服务员需要查看菜单（**解析注解**）
+2. 厨师需要临时查看食谱（**动态代理**）
+3. 每道菜都需要现场确认原料（**反射调用**）
+
+这种方式的问题：
+- 点餐和准备过程慢（**性能开销大**）
+- 开业准备时间长（**启动时间长**）
+- 不适合提前准备食材（**不利于AOT编译**）
+
+### Feat Cloud静态转码方式（提前准备好的流程）
+
+而Feat Cloud的餐厅是这样的：
+1. 在开业前就准备好所有可能的菜单和食谱（**编译期处理**）
+2. 顾客点餐时，直接按照预设流程操作（**零反射**）
+3. 所有食材和工具都提前分类摆放好（**类型安全**）
+
+<div style="text-align: center; margin: 20px 0;">
+  <img src={restaurant_comparison.src} alt="餐厅点餐流程对比图" style="max-width: 100%; height: auto;" />
+</div>
+
+## 静态转码是如何工作的？
+
+### 简单来说
+
+Feat Cloud使用一个特殊的工具（注解处理器），在你编写代码的时候就帮你把所有"翻译工作"提前做好。当程序运行时，就不需要再去"查词典"了。
+
+### 技术原理
+
+Feat Cloud使用Java的注解处理器（APT）技术，在编译阶段：
+
+1. **识别特殊标记**：找出代码中的`@Bean`、`@Autowired`等注解
+2. **生成辅助代码**：为每个标记的类生成一个"加载器"类
+3. **建立直接连接**：在生成的代码中，直接写明各个组件之间如何连接
+
+这样，当程序运行时，就可以直接使用这些提前建立好的连接，而不需要通过反射去动态查找和连接组件。
+
+<div style="text-align: center; margin: 20px 0;">
+  <img src={code_generation_process.src} alt="静态转码代码生成过程" style="max-width: 100%; height: auto;" />
+</div>
+
+## 一个简化的例子
+
+假设我们有一个简单的控制器类：
+
+```java
+@Controller("/user")
+public class UserController {
+    @Autowired
+    private UserService userService;
+    
+    @RequestMapping("/get")
+    public User getUser(String id) {
+        return userService.getById(id);
+    }
+}
+```
+
+### 传统框架如何处理
+
+传统框架在运行时会：
+1. 扫描类找到`@Controller`注解
+2. 通过反射创建`UserController`实例
+3. 找到`@Autowired`字段，通过反射注入`UserService`
+4. 找到`@RequestMapping`方法，注册路由
+5. 请求到来时，通过反射调用`getUser`方法
+
+### Feat Cloud如何处理
+
+Feat Cloud在编译时会生成一个加载器类：
+
+```java
+public class UserControllerBeanAptLoader extends AbstractServiceLoader {
+    private UserController bean;
+    
+    public void loadBean(ApplicationContext applicationContext) {
+        // 直接创建实例，不用反射
+        bean = new UserController();
+    }
+    
+    public void autowired(ApplicationContext applicationContext) {
+        // 直接调用setter方法，不用反射
+        bean.setUserService(applicationContext.getBean("userService"));
+    }
+    
+    public void router(Router router) {
+        // 直接注册路由，不用反射
+        router.route("/user/get", ctx -> {
+            String id = ctx.getParam("id");
+            User result = bean.getUser(id);
+            ctx.json(result);
+        });
+    }
+}
+```
+
+## 静态转码的优势
+
+1. **更高性能**：没有反射开销，方法调用更快
+2. **更快启动**：不需要运行时扫描和解析注解
+3. **更小内存**：不需要保存反射相关的元数据
+4. **更好兼容性**：适合GraalVM原生镜像和Android等平台
+5. **编译期检查**：类型错误在编译时就能发现，而不是运行时
+
+## 实际应用场景
+
+静态转码技术特别适合以下场景：
+
+1. **微服务**：需要快速启动和低资源消耗
+2. **高并发系统**：需要最大化性能
+3. **边缘计算**：资源受限的环境
+4. **原生镜像部署**：使用GraalVM编译为原生镜像
+5. **移动应用**：Android应用开发
+
+## 总结
+
+Feat Cloud的静态转码技术通过在编译期间生成代码，避免了运行时反射带来的性能损耗，同时保持了类似Spring的开发体验。这就像是一位翻译员，不是在现场临时查词典翻译，而是提前准备好所有可能的翻译内容，使得工作更加高效。
+
+如果你的应用需要更高的性能和更快的启动速度，同时又不想放弃框架带来的便利性，Feat Cloud的静态转码技术是一个值得考虑的选择。

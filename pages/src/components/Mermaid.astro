@@ -1,0 +1,52 @@
+---
+// Mermaid.astro
+const { code } = Astro.props;
+let content = await Astro.slots.render('default');
+if (!content) {
+    content=""
+}
+
+// 处理HTML转义字符
+let processedCode = code;
+if (processedCode) {
+    processedCode = processedCode
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&quot;', '"')
+        .replaceAll("&#39;", "'")
+        .replaceAll('&#43;', '+')    // 处理转义的加号
+        .replaceAll('&#45;', '-')    // 处理转义的减号
+        .replaceAll('&#123;', '{')   // 处理转义的左大括号
+        .replaceAll('&#125;', '}')   // 处理转义的右大括号
+        .replaceAll('--\\>', '-->')  // 处理转义的箭头符号
+        .replaceAll('\\<', '<')     // 处理转义的小于号
+        .replaceAll('\\>', '>')     // 处理转义的大于号
+        .replaceAll('\\+', '+')     // 处理反斜杠转义的加号
+        .replaceAll('\\-', '-')     // 处理反斜杠转义的减号
+        .replaceAll('\\{', '{')     // 处理反斜杠转义的左大括号
+        .replaceAll('\\}', '}');    // 处理反斜杠转义的右大括号
+}
+
+console.log('Original code:', code);
+console.log('Processed code:', processedCode);
+
+---
+<div class="mermaid" set:html={processedCode}>
+</div>
+
+<script>
+  import mermaid from 'mermaid';
+  
+  // 配置Mermaid
+  mermaid.initialize({ 
+    startOnLoad: true,
+    theme: 'default',
+    securityLevel: 'loose'
+  });
+  
+  // 渲染图表
+  document.addEventListener('DOMContentLoaded', function() {
+    mermaid.run();
+  });
+</script>

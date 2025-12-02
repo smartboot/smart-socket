@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000" height="500" xmlns="http://www.w3.org/2000/svg">
+  <!-- 定义样式 -->
+  <style>
+    .title { font: bold 24px Arial; fill: #333; }
+    .subtitle { font: bold 18px Arial; fill: #555; }
+    .box { stroke-width: 2px; rx: 10; ry: 10; }
+    .arrow { stroke-width: 2px; fill: none; marker-end: url(#arrowhead); }
+    .text { font: 14px Arial; fill: #333; text-anchor: middle; }
+    .note { font: italic 12px Arial; fill: #666; text-anchor: middle; }
+  </style>
+  
+  <!-- 定义箭头 -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+    </marker>
+  </defs>
+  
+  <!-- 标题 -->
+  <text x="430" y="40" class="title" text-anchor="middle">Feat 框架授权使用流程</text>
+  
+  <!-- 起始节点 -->
+  <rect x="340" y="80" width="200" height="50" fill="#e6f7ff" class="box" stroke="#91d5ff" />
+  <text x="440" y="110" class="text">开始使用 Feat</text>
+  
+  <!-- 决策节点：使用场景 -->
+  <rect x="340" y="170" width="200" height="50" fill="#fff7e6" class="box" stroke="#ffd591" />
+  <text x="440" y="200" class="text">确定使用场景</text>
+  
+  <!-- 连接线 -->
+  <path d="M 440 130 L 440 170" class="arrow" stroke="#333" />
+  
+  <!-- 个人学习场景 -->
+  <rect x="50" y="280" width="180" height="60" fill="#f6ffed" class="box" stroke="#b7eb8f" />
+  <text x="140" y="310" class="text">个人学习用途</text>
+  <text x="140" y="330" class="note">无需商业授权</text>
+  
+  <!-- 企业遵循AGPL场景 -->
+  <rect x="250" y="280" width="180" height="60" fill="#f6ffed" class="box" stroke="#b7eb8f" />
+  <text x="340" y="310" class="text">企业遵循AGPL协议</text>
+  <text x="340" y="330" class="note">开源代码</text>
+  
+  <!-- 企业付费授权场景 -->
+  <rect x="450" y="280" width="180" height="60" fill="#fff2f0" class="box" stroke="#ffccc7" />
+  <text x="540" y="310" class="text">企业付费授权</text>
+  <text x="540" y="330" class="note">商业闭源使用</text>
+  
+  <!-- 企业扶持计划场景 -->
+  <rect x="650" y="280" width="180" height="60" fill="#f9f0ff" class="box" stroke="#d3adf7" />
+  <text x="740" y="310" class="text">符合企业扶持计划条件</text>
+  <text x="740" y="330" class="note">免费商业闭源使用</text>
+  
+  <!-- 连接线 -->
+  <path d="M 440 220 L 440 240 L 140 240 L 140 280" class="arrow" stroke="#333" />
+  <path d="M 440 220 L 440 240 L 340 240 L 340 280" class="arrow" stroke="#333" />
+  <path d="M 440 220 L 440 240 L 540 240 L 540 280" class="arrow" stroke="#333" />
+  <path d="M 440 220 L 440 240 L 740 240 L 740 280" class="arrow" stroke="#333" />
+  
+  <!-- 结果节点：自由使用 -->
+  <rect x="50" y="400" width="380" height="50" fill="#e6f7ff" class="box" stroke="#91d5ff" />
+  <text x="240" y="430" class="text">自由使用 Feat 框架</text>
+  
+  <!-- 结果节点：获得商业授权 -->
+  <rect x="450" y="400" width="380" height="50" fill="#e6f7ff" class="box" stroke="#91d5ff" />
+  <text x="640" y="430" class="text">获得商业授权后使用 Feat 框架</text>
+  
+  <!-- 连接线 -->
+  <path d="M 140 340 L 140 360 L 240 360 L 240 400" class="arrow" stroke="#333" />
+  <path d="M 340 340 L 340 360 L 240 360 L 240 400" class="arrow" stroke="#333" />
+  <path d="M 540 340 L 540 360 L 640 360 L 640 400" class="arrow" stroke="#333" />
+  <path d="M 740 340 L 740 360 L 640 360 L 640 400" class="arrow" stroke="#333" />
+  
+  <!-- 注释说明 -->
+  <text x="440" y="480" class="subtitle" text-anchor="middle">根据您的使用场景选择合适的授权方式</text>
+</svg>

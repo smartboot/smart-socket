@@ -1,0 +1,178 @@
+---
+title: 数据库开发实践
+description: Feat Cloud 集成 MyBatis 数据库开发教程
+sidebar:
+    order: 5
+---
+import {TabItem, Tabs,Aside} from "@astrojs/starlight/components";
+import CheckAuthorize from '../../../components/CheckAuthorize.astro'
+
+<CheckAuthorize/>
+
+Feat Cloud 与 MyBatis 已完成深度集成，您可以直接使用 MyBatis 的 Mapper 接口进行数据库操作。此章将通过实际示例介绍如何在 Feat Cloud 中使用 MyBatis。
+
+## 配置 mybatis-config.xml
+在 `src/main/resources` 目录下创建 `mybatis-config.xml`， 文件内容如下：
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <!-- 可选：配置MyBatis的全局行为 -->
+    <settings>
+        <!-- 开启驼峰命名自动映射 -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!-- 开启二级缓存 -->
+        <setting name="cacheEnabled" value="true"/>
+    </settings>
+    
+    <!-- 可选：类型别名配置 -->
+    <typeAliases>
+        <package name="org.smartboot.feat.demo.model"/>
+    </typeAliases>
+    
+    <!-- 可选：插件配置 -->
+    <plugins>
+        <!-- 分页插件示例 -->
+        <plugin interceptor="com.github.pagehelper.PageInterceptor">
+            <property name="helperDialect" value="mysql"/>
+        </plugin>
+    </plugins>
+    
+    <!-- 必选：环境配置 -->
+    <environments default="mysql">
+        <environment id="mysql">
+            <!-- 使用JDBC事务管理器 -->
+            <transactionManager type="JDBC"/>
+            <!-- 数据源配置 -->
+            <dataSource type="POOLED">
+                <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
+                <property name="url" value="jdbc:mysql://localhost:3306/test?characterEncoding=utf-8"/>
+                <property name="username" value="root"/>
+                <property name="password" value="root"/>
+            </dataSource>
+        </environment>
+    </environments>
+    
+    <!-- 必选：Mapper接口扫描配置 -->
+    <mappers>
+        <package name="org.smartboot.feat.demo.dao.mapper"/>
+    </mappers>
+</configuration>
+```
+
+<Aside type="tip">
+配置文件可以放置在任意子目录下，例如 `src/main/resources/mybatis/mybatis-config.xml`。建议将配置文件放在专门的目录中以便管理。
+</Aside>
+
+## 实例化 SessionFactory Bean
+Feat Cloud 提供了两种方式来实例化 SqlSessionFactory：
+
+<Tabs>
+    <TabItem label="独立的Bean类（推荐）">
+    ```java
+    @Bean
+    public class MybatisSessionFactory {
+        @Bean("sessionFactory")
+        public SqlSessionFactory sessionFactory() throws IOException {
+            return new SqlSessionFactoryBuilder().build(
+                Resources.getResourceAsStream("mybatis/mybatis-config.xml")
+            );
+        }
+    }
+    ```
+    </TabItem>
+
+    <TabItem label="Controller中定义">
+    ```java
+    @Controller
+    public class ControllerDemo {
+        @Bean("sessionFactory")
+        public SqlSessionFactory sessionFactory() throws IOException {
+            return new SqlSessionFactoryBuilder().build(
+                Resources.getResourceAsStream("mybatis/mybatis-config.xml")
+            );
+        }
+    }
+    ```
+    </TabItem>
+</Tabs>
+
+<Aside type="caution">
+   生成的 SqlSessionFactory 对象 bean 名称必须为 **sessionFactory**。这是 Feat Cloud 约定的固定名称。
+</Aside>
+
+## 定义@Mapper接口
+@Mapper 接口的定义方式与 Spring 基本一致。以下是一个完整的示例，展示了常用的 SQL 操作和动态 SQL 的使用：
+
+```java title="UserMapper.java"
+@Mapper
+public interface UserMapper {
+    // 动态SQL查询示例
+    @Select({"<script>",
+            "SELECT * FROM user_info",
+            "<where>",
+            "    <if test='username != null'>AND username LIKE CONCAT('%', #{username}, '%')</if>",
+            "    <if test='role != null'>AND role = #{role}</if>",
+            "</where>",
+            "ORDER BY username",
+            "</script>"})
+    @ResultType(UserDO.class)
+    List<UserDO> getUserList(UserQuery query);
+
+    // 基本查询示例
+    @Select("SELECT * FROM user_info WHERE username=#{username} AND password=#{password}")
+    @ResultType(UserDO.class)
+    UserDO getUser(@Param("username") String username, @Param("password") String password);
+
+    // 插入示例
+    @Insert("INSERT INTO user_info(username,password,role,`desc`) "
+         + "VALUES(#{username},#{password},#{role},#{desc})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    void insert(UserDO userDO);
+
+    // 批量删除示例
+    @Delete("<script>"
+         + "DELETE FROM user_info WHERE username IN"
+         + "<foreach collection='users' item='username' open='(' close=')' separator=','>" 
+         + "    #{username}"
+         + "</foreach>"
+         + "</script>")
+    int deleteUsers(@Param("users") List<String> usernames);
+
+    // 更新示例
+    @Update("UPDATE user_info SET password=#{password}, role=#{role} "
+         + "WHERE username=#{username}")
+    int updateUser(UserDO user);
+}
+```
+
+## 使用@Mapper
+Mapper 接口可以通过 `@Autowired` 注解注入到其他 Bean 中使用。
+
+```java title="UserService.java"
+@Service
+public class UserService {
+    @Autowired
+    private UserMapper userMapper;
+
+    // 使用事务注解
+    public void createUser(UserDO user) {
+        // 检查用户是否存在
+        UserDO existingUser = userMapper.getUser(user.getUsername(), null);
+        if (existingUser != null) {
+            throw new RuntimeException("用户已存在");
+        }
+        // 创建新用户
+        userMapper.insert(user);
+    }
+
+    // 批量操作示例
+    public void batchUpdateUsers(List<UserDO> users) {
+        for (UserDO user : users) {
+            userMapper.updateUser(user);
+        }
+    }
+}
+```

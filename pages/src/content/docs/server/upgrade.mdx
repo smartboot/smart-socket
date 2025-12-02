@@ -1,0 +1,113 @@
+---
+title: 协议升级
+description: Feat upgrade
+sidebar:
+    order: 6
+---
+
+import Mermaid from '../../../components/Mermaid.astro';
+import CheckAuthorize from '../../../components/CheckAuthorize.astro'
+
+<CheckAuthorize/>
+
+HTTP 协议升级是现代 Web 应用的重要特性之一。通过协议升级，我们可以在同一个端口上支持多种协议，如 WebSocket、HTTP/2 和 SSE 等。这不仅节省了端口资源，还能提供更丰富的交互方式。
+
+Feat 框架对协议升级提供了完善的支持，让我们可以轻松实现各种协议的升级。
+
+## WebSocket 升级
+
+WebSocket 提供了浏览器与服务器全双工通信的能力，非常适合实时通信场景，如聊天应用、实时游戏等。
+
+Feat 框架支持通过 `request.upgrade(new WebSocketUpgrade())` 实现 HTTP 到 WebSocket 的协议升级。以下为服务端升级实现示例：
+
+```java
+// WebSocketDemo.java
+public class WebSocketDemo {
+    public static void main(String[] args) {
+        Feat.httpServer().httpHandler(request -> {
+            request.upgrade(new WebSocketUpgrade() {
+                @Override
+                public void handleTextMessage(WebSocketRequest request, WebSocketResponse response, String message) {
+                    response.sendTextMessage("接受到客户端消息：" + message);
+                }
+            });
+        }).listen();
+    }
+}
+```
+
+有关完整示例，请参见 [WebSocketDemo.java](https://gitee.com/smartboot/feat/blob/master/feat-test/src/main/java/tech/smartboot/feat/demo/WebSocketDemo.java)
+
+## HTTP/2 升级
+
+HTTP/2 是 HTTP/1.x 的重大升级，带来了多路复用、头部压缩、服务器推送等多项优化，能显著提升 Web 性能。
+
+好消息是，Feat 框架原生支持 HTTP/1.0、HTTP/1.1 和 HTTP/2.0，无需手动升级，框架会自动协商协议。若需自定义 HTTP/2 行为，可参考如下示例：
+
+```java title=Http2Demo.java
+public class Http2Demo {
+    public static void main(String[] args) {
+        Feat.httpServer().httpHandler(request -> {
+            request.upgrade(new Http2Upgrade() {
+                @Override
+                public void handle(HttpRequest http2Request) {
+                    HttpResponse response = http2Request.response();
+                    response.setStatus(200);
+                    response.send("HTTP/2响应");
+                }
+            });
+        }).listen();
+    }
+}
+```
+
+## SSE 升级
+
+Server-Sent Events (SSE) 是一种服务器向浏览器推送事件的技术。相比 WebSocket，SSE 更轻量级，适用于服务器向客户端单向推送数据的场景，如实时通知、股票价格更新等。
+
+Feat 框架通过 `request.upgrade(new SSEUpgrade())` 实现 SSE 协议升级，支持服务端主动推送事件流。以下为服务端实现示例：
+
+```java
+public class SSEDemo {
+    public static void main(String[] args) throws Exception {
+        Feat.httpServer(serverOptions -> serverOptions.debug(true)).httpHandler(req -> {
+            req.upgrade(new SSEUpgrade() {
+                public void onOpen(SseEmitter sseEmitter) {
+                    // 创建定时任务，每秒发送一条消息
+                    Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
+                        try {
+                            sseEmitter.send(SseEmitter.event()
+                                .name("update")  // 设置事件名称
+                                .id(String.valueOf(i++))  // 设置事件ID
+                                .data("hello world"));  // 设置事件数据
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, 1, 1, TimeUnit.SECONDS);
+                }
+            });
+        }).listen(8080);
+    }
+}
+```
+
+SSE 工作原理示意图：
+
+<Mermaid code={`
+graph LR
+    A[浏览器客户端] -->|HTTP GET /events| B[服务器]
+    B -->|Server-Sent Events| A
+    
+    style A fill:#4CAF50
+    style B fill:#2196F3
+`} />
+
+## 协议选择建议
+
+面对多种协议升级选项，我们应该如何选择呢？
+
+1. **WebSocket**：适用于需要双向实时通信的场景，如聊天室、多人协作编辑、在线游戏等
+2. **HTTP/2**：默认支持，提供更好的性能，无需特殊处理
+3. **SSE**：适用于服务器向客户端单向推送数据的场景，如实时通知、数据更新等
+
+选择合适的协议升级方案，可以让我们的应用更加高效和灵活。

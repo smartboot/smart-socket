@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+    <!-- 背景 -->
+    <rect width="800" height="500" fill="#f8f9fa"/>
+    
+    <!-- 标题 -->
+    <text x="400" y="40" text-anchor="middle" font-size="24" font-weight="bold" fill="#333">Feat 拦截器执行流程</text>
+    
+    <!-- HTTP请求 -->
+    <rect x="50" y="100" width="120" height="60" rx="10" fill="#4CAF50" opacity="0.8"/>
+    <text x="110" y="135" text-anchor="middle" fill="white" font-weight="bold">HTTP请求</text>
+    
+    <!-- 拦截器1 -->
+    <rect x="250" y="100" width="120" height="60" rx="10" fill="#2196F3" opacity="0.8"/>
+    <text x="310" y="135" text-anchor="middle" fill="white" font-weight="bold">拦截器 1</text>
+    
+    <!-- 拦截器2 -->
+    <rect x="450" y="100" width="120" height="60" rx="10" fill="#2196F3" opacity="0.8"/>
+    <text x="510" y="135" text-anchor="middle" fill="white" font-weight="bold">拦截器 2</text>
+    
+    <!-- 处理程序 -->
+    <rect x="650" y="100" width="120" height="60" rx="10" fill="#FF5722" opacity="0.8"/>
+    <text x="710" y="135" text-anchor="middle" fill="white" font-weight="bold">处理程序</text>
+    
+    <!-- 前置处理流程 -->
+    <path d="M170 120 H250" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M370 120 H450" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <path d="M570 120 H650" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+    
+    <!-- 后置处理流程 -->
+    <path d="M650 140 H570" stroke="#666" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+    <path d="M450 140 H370" stroke="#666" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+    <path d="M250 140 H170" stroke="#666" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+    
+    <!-- 中断流程示意 -->
+    <path d="M310 160 V250" stroke="#dc3545" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
+    <rect x="250" y="250" width="120" height="40" rx="5" fill="#dc3545" opacity="0.8"/>
+    <text x="310" y="275" text-anchor="middle" fill="white" font-size="14">中断处理</text>
+    
+    <!-- 箭头定义 -->
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+        </marker>
+    </defs>
+    
+    <!-- 说明文本 -->
+    <text x="400" y="350" text-anchor="middle" font-size="14" fill="#666">前置处理: 实线箭头 → | 后置处理: 虚线箭头 --></text>
+    <text x="400" y="380" text-anchor="middle" font-size="14" fill="#666">拦截器可以在任意位置中断请求处理流程</text>
+    
+    <!-- 图例 -->
+    <rect x="50" y="420" width="20" height="20" fill="#4CAF50" opacity="0.8"/>
+    <text x="80" y="435" font-size="14" fill="#333">请求</text>
+    
+    <rect x="150" y="420" width="20" height="20" fill="#2196F3" opacity="0.8"/>
+    <text x="180" y="435" font-size="14" fill="#333">拦截器</text>
+    
+    <rect x="250" y="420" width="20" height="20" fill="#FF5722" opacity="0.8"/>
+    <text x="280" y="435" font-size="14" fill="#333">处理程序</text>
+    
+    <rect x="350" y="420" width="20" height="20" fill="#dc3545" opacity="0.8"/>
+    <text x="380" y="435" font-size="14" fill="#333">中断流程</text>
+</svg>

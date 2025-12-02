@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="800" height="600" fill="#f8f9fa" />
+  <text x="400" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#333">餐厅点餐流程对比</text>
+  
+  <!-- 左侧：传统反射方式 -->
+  <rect x="50" y="80" width="300" height="50" rx="5" fill="#e74c3c" />
+  <text x="200" y="110" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">传统反射方式（临时翻译菜单）</text>
+  
+  <!-- 右侧：静态转码方式 -->
+  <rect x="450" y="80" width="300" height="50" rx="5" fill="#2ecc71" />
+  <text x="600" y="110" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">静态转码方式（提前准备好的流程）</text>
+  
+  <!-- 左侧：传统反射流程 -->
+  <!-- 步骤1 -->
+  <rect x="50" y="160" width="300" height="70" rx="5" fill="#f5b7b1" stroke="#e74c3c" stroke-width="2" />
+  <text x="200" y="185" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">1. 服务员查看菜单</text>
+  <text x="200" y="210" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">（解析注解）</text>
+  
+  <!-- 步骤2 -->
+  <rect x="50" y="250" width="300" height="70" rx="5" fill="#f5b7b1" stroke="#e74c3c" stroke-width="2" />
+  <text x="200" y="275" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">2. 厨师临时查看食谱</text>
+  <text x="200" y="300" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">（动态代理）</text>
+  
+  <!-- 步骤3 -->
+  <rect x="50" y="340" width="300" height="70" rx="5" fill="#f5b7b1" stroke="#e74c3c" stroke-width="2" />
+  <text x="200" y="365" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">3. 每道菜现场确认原料</text>
+  <text x="200" y="390" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">（反射调用）</text>
+  
+  <!-- 问题点 -->
+  <rect x="50" y="430" width="300" height="120" rx="5" fill="#fadbd8" stroke="#e74c3c" stroke-width="2" />
+  <text x="200" y="450" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">存在的问题：</text>
+  <text x="200" y="475" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">- 点餐和准备过程慢（性能开销大）</text>
+  <text x="200" y="500" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">- 开业准备时间长（启动时间长）</text>
+  <text x="200" y="525" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">- 不适合提前准备食材（不利于AOT编译）</text>
+  
+  <!-- 右侧：静态转码流程 -->
+  <!-- 步骤1 -->
+  <rect x="450" y="160" width="300" height="70" rx="5" fill="#abebc6" stroke="#2ecc71" stroke-width="2" />
+  <text x="600" y="185" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">1. 开业前准备好菜单和食谱</text>
+  <text x="600" y="210" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">（编译期处理）</text>
+  
+  <!-- 步骤2 -->
+  <rect x="450" y="250" width="300" height="70" rx="5" fill="#abebc6" stroke="#2ecc71" stroke-width="2" />
+  <text x="600" y="275" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">2. 顾客点餐时按预设流程操作</text>
+  <text x="600" y="300" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">（零反射）</text>
+  
+  <!-- 步骤3 -->
+  <rect x="450" y="340" width="300" height="70" rx="5" fill="#abebc6" stroke="#2ecc71" stroke-width="2" />
+  <text x="600" y="365" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">3. 所有食材和工具提前分类摆放好</text>
+  <text x="600" y="390" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">（类型安全）</text>
+  
+  <!-- 优势点 -->
+  <rect x="450" y="430" width="300" height="120" rx="5" fill="#d5f5e3" stroke="#2ecc71" stroke-width="2" />
+  <text x="600" y="450" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">带来的优势：</text>
+  <text x="600" y="475" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">- 点餐和准备过程快（高性能）</text>
+  <text x="600" y="500" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">- 开业准备时间短（快速启动）</text>
+  <text x="600" y="525" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">- 适合提前准备（兼容AOT编译）</text>
+  
+  <!-- 连接箭头 - 左侧 -->
+  <line x1="200" y1="130" x2="200" y2="160" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="200" y1="230" x2="200" y2="250" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="200" y1="320" x2="200" y2="340" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="200" y1="410" x2="200" y2="430" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 连接箭头 - 右侧 -->
+  <line x1="600" y1="130" x2="600" y2="160" stroke="#2ecc71" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="600" y1="230" x2="600" y2="250" stroke="#2ecc71" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="600" y1="320" x2="600" y2="340" stroke="#2ecc71" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="600" y1="410" x2="600" y2="430" stroke="#2ecc71" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 箭头定义 -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" />
+    </marker>
+  </defs>
+</svg>

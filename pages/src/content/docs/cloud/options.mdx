@@ -1,0 +1,76 @@
+---
+title: CloudOptions 配置指南
+description: Feat Cloud 服务配置参数详细说明
+sidebar:
+    order: 3
+---
+
+import CheckAuthorize from '../../../components/CheckAuthorize.astro'
+import {Aside, TabItem, Tabs} from "@astrojs/starlight/components";
+
+<CheckAuthorize/>
+
+# CloudOptions 配置指南
+
+CloudOptions 定义了 Feat Cloud 服务的核心配置信息。它继承自 [ServerOptions](/feat/server/serveroptions/)，因此除了自身特有的配置项外，还可以使用 ServerOptions 中的所有配置项。
+
+## CloudOptions 特有配置项
+
+### packages
+**类型**: `String[]`
+
+**默认值**: `null`
+
+用于指定 Feat Cloud 启动时扫描的包路径，限制组件扫描范围以提升启动性能。
+
+**使用示例**:
+```java
+// 在创建服务时指定扫描包
+FeatCloud.cloudServer(options -> {
+    options.setPackages("com.example.controller", "com.example.service");
+}).listen();
+
+// 或者使用配置对象
+CloudOptions options = new CloudOptions();
+options.setPackages("com.example.controller", "com.example.service");
+ApplicationContext context = new ApplicationContext(options);
+```
+
+**性能优化建议**:
+- 明确指定包路径可以显著提高应用启动速度
+- 在大型项目中，建议按功能模块划分包，并只加载需要的包
+- 避免扫描过大的包范围（如直接扫描根包）
+
+### registerBean
+**类型**: `Map<String, Object>`
+
+**默认值**: `空Map`
+
+定义了 Feat Cloud 启动时加载的外部 Bean 配置，可以通过 `registerBean` 方法添加外部 Bean。
+
+**使用示例**:
+```java
+// 注册外部 Bean
+FeatCloud.cloudServer(options -> {
+    options.registerBean("dataSource", createDataSource());
+    options.registerBean("redisTemplate", createRedisTemplate());
+    options.registerBean("mqProducer", createMQProducer());
+}).listen();
+
+// 在 Controller 中使用注册的 Bean
+@Controller
+public class UserController {
+    @Autowired
+    private DataSource dataSource;
+    
+    @Autowired  
+    private RedisTemplate redisTemplate;
+    
+    // 使用注册的 Bean
+}
+```
+
+**最佳实践**:
+- 使用有意义的键名，便于在应用中引用
+- 注意避免 Bean 名称冲突，否则会抛出异常
+- 对于复杂的 Bean 初始化，建议在单独的配置类中进行

@@ -1,0 +1,355 @@
+---
+title: SSE客户端详解
+description: Feat SSE Client
+sidebar:
+    order: 3
+---
+import CheckAuthorize from '../../../components/CheckAuthorize.astro'
+
+<CheckAuthorize/>
+
+Server-Sent Events (SSE) 是一种服务器向浏览器推送实时更新的技术。与 WebSocket 不同，SSE 是单向通信，只能服务器向客户端推送数据，但使用更简单，因为它是基于 HTTP 协议的。
+
+Feat SSEClient 是 Feat 框架中的一款高性能 SSE 客户端实现，旨在为开发者提供灵活、高效、易用的实时数据接收体验。无论你是要构建实时通知系统、股票行情展示，还是其他需要服务器推送数据的应用，SSE 都是一个绝佳的选择。
+
+让我们一起来探索 Feat SSEClient 的强大功能吧！
+
+---
+
+## 核心功能
+
+Feat SSEClient 提供了以下核心功能：
+
+1. **SSE 连接管理**：
+- 支持 SSE 协议
+- 支持连接建立、断开、重连等生命周期管理
+- 提供连接状态监控和事件通知
+
+2. **事件处理**：
+- 支持不同类型事件的处理
+- 支持默认数据事件处理
+- 提供错误处理和连接关闭处理
+
+3. **配置灵活**：
+- 支持设置连接超时、读写缓冲区大小等
+- 支持自定义 HTTP 头部
+- 支持断点续传（Last-Event-ID）
+
+---
+
+## 核心接口
+
+在开始使用 SSEClient 之前，让我们先了解一下它的核心接口。
+
+### HttpRest.onSSE() 方法
+
+要使用 SSE 客户端，需要通过 `HttpRest.onSSE()` 方法注册 SSE 处理器：
+
+```java
+HttpClient client = Feat.httpClient("http://localhost:8080");
+client.get("/sse").onSSE(sseClient -> {
+    // 配置 SSE 事件处理器
+});
+```
+
+### SseClient 类
+
+`SseClient` 是在 `onSSE()` 回调中提供的客户端对象，提供了以下核心方法：
+
+- **事件处理方法**：
+```java
+public SseClient onData(Consumer<SseEvent> handler)
+public SseClient onEvent(String eventType, Consumer<SseEvent> handler)
+```
+
+- **连接状态方法**：
+```java
+public SseClient onOpen(Consumer<SseClient> handler)
+```
+
+- **控制方法**：
+通过 `HttpRest` 提交请求：
+```java
+httpRest.submit()
+```
+
+### SseEvent 类
+
+`SseEvent` 封装了从服务器接收到的事件数据，包含以下属性：
+
+- **id**: 事件ID，通过 `getId()` 获取
+- **event**: 事件类型，通过 `getEvent()` 获取
+- **data**: 事件数据，通过 `getData()` 获取
+- **retry**: 重试时间，通过 `getRetry()` 获取
+
+---
+
+## 使用示例
+
+掌握了基本概念后，让我们通过一些实际的例子来看看如何使用这些功能。
+
+### 基本用法
+
+以下是一个简单的示例，展示了如何使用 Feat SSEClient 连接 SSE 服务器并处理消息：
+
+```java
+import tech.smartboot.feat.Feat;
+import tech.smartboot.feat.core.client.HttpClient;
+import tech.smartboot.feat.core.client.SseEvent;
+
+public class SSEClientDemo {
+    public static void main(String[] args) {
+        // 创建 HttpClient 实例
+        HttpClient httpClient = Feat.httpClient("http://localhost:8080");
+        
+        // 注册 SSE 处理器并提交请求
+        httpClient.get("/events")
+                .onSSE(sseClient -> sseClient
+                        // 注册默认事件处理器
+                        .onData(event -> {
+                            System.out.println("收到数据: " + event.getData());
+                        })
+                        // 注册连接成功回调
+                        .onOpen(client -> {
+                            System.out.println("SSE 连接已建立");
+                        }))
+                // 提交请求
+                .submit();
+    }
+}
+```
+
+### 处理特定事件类型
+
+SSE 支持不同的事件类型，可以通过 onEvent 方法处理特定类型的事件：
+
+```java
+import tech.smartboot.feat.Feat;
+import tech.smartboot.feat.core.client.HttpClient;
+import tech.smartboot.feat.core.client.SseEvent;
+
+public class SSEEventTypesDemo {
+    public static void main(String[] args) {
+        HttpClient httpClient = Feat.httpClient("http://localhost:8080");
+        
+        httpClient.get("/events")
+                .onSSE(sseClient -> sseClient
+                        // 处理默认消息事件
+                        .onData(event -> {
+                            System.out.println("默认消息: " + event.getData());
+                        })
+                        // 处理特定类型事件
+                        .onEvent("notification", event -> {
+                            System.out.println("通知事件: " + event.getData());
+                        })
+                        .onEvent("update", event -> {
+                            System.out.println("更新事件: " + event.getData());
+                        })
+                        .onOpen(client -> {
+                            System.out.println("SSE 连接已建立");
+                        }))
+                .submit();
+    }
+}
+```
+
+### 高级配置
+
+如果需要自定义连接参数，可以通过 HttpClient 进行配置：
+
+```java
+import tech.smartboot.feat.Feat;
+import tech.smartboot.feat.core.client.HttpClient;
+import tech.smartboot.feat.core.client.SseEvent;
+
+public class SSEAdvancedConfigDemo {
+    public static void main(String[] args) {
+        HttpClient httpClient = Feat.httpClient("http://localhost:8080", opt -> {
+                    opt.connectTimeout(5000) // 设置连接超时时间为 5 秒
+                       .readBufferSize(8192) // 设置读缓冲区大小为 8 KB
+                       .debug(true); // 开启调试模式
+                });
+        
+        httpClient.get("/events")
+                // 添加自定义请求头
+                .header(header -> {
+                    header.add("Authorization", "Bearer your-token");
+                    header.add("Last-Event-ID", "event-123");
+                })
+                .onSSE(sseClient -> sseClient
+                        .onData(event -> {
+                            System.out.println("收到数据: " + event.getData());
+                            System.out.println("事件ID: " + event.getId());
+                            System.out.println("事件类型: " + event.getEvent());
+                        })
+                        .onOpen(client -> {
+                            System.out.println("SSE 连接已建立");
+                        }))
+                .submit();
+    }
+}
+```
+
+### 手动关闭连接
+
+当不再需要 HTTP 连接时，可以手动关闭它：
+
+```java
+import tech.smartboot.feat.Feat;
+import tech.smartboot.feat.core.client.HttpClient;
+import tech.smartboot.feat.core.client.SseEvent;
+
+public class SSECloseDemo {
+    public static void main(String[] args) throws InterruptedException {
+        HttpClient httpClient = Feat.httpClient("http://localhost:8080");
+        
+        // 保存 HttpRest 引用以便后续关闭连接
+        HttpRest httpRest = httpClient.get("/events")
+                .onSSE(sseClient -> sseClient
+                        .onData(event -> {
+                            System.out.println("收到数据: " + event.getData());
+                        })
+                        .onOpen(client -> {
+                            System.out.println("SSE 连接已建立");
+                        }));
+        
+        // 提交请求
+        httpRest.submit();
+        
+        // 5秒后手动关闭连接
+        Thread.sleep(5000);
+        httpRest.close();
+        System.out.println("连接已关闭");
+    }
+}
+```
+
+---
+
+## 最佳实践
+
+在实际项目中使用 SSEClient 时，有一些最佳实践可以帮助你写出更好的代码。
+
+### 1. 错误处理和重连
+
+在生产环境中，网络问题可能导致连接断开，建议实现重连机制：
+
+```java
+import tech.smartboot.feat.Feat;
+import tech.smartboot.feat.core.client.HttpClient;
+import tech.smartboot.feat.core.client.SseEvent;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class SSEReconnectDemo {
+    private static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    
+    public static void main(String[] args) {
+        connectSSE();
+    }
+    
+    private static void connectSSE() {
+        HttpClient httpClient = Feat.httpClient("http://localhost:8080");
+        
+        httpClient.get("/events")
+                .onSSE(sseClient -> sseClient
+                        .onData(event -> {
+                            System.out.println("收到数据: " + event.getData());
+                        })
+                        .onOpen(client -> {
+                            System.out.println("SSE 连接已建立");
+                        }))
+                .onFailure(throwable -> {
+                    System.err.println("发生错误: " + throwable.getMessage());
+                    // 安排重连
+                    scheduleReconnect();
+                })
+                .onClose(() -> {
+                    System.out.println("连接已关闭");
+                    // 安排重连
+                    scheduleReconnect();
+                })
+                .submit();
+    }
+    
+    private static void scheduleReconnect() {
+        System.out.println("将在 5 秒后尝试重连...");
+        scheduler.schedule(SSEReconnectDemo::connectSSE, 5, TimeUnit.SECONDS);
+    }
+}
+```
+
+### 2. 资源管理
+
+确保在应用程序关闭时正确释放资源：
+
+```java
+import tech.smartboot.feat.Feat;
+import tech.smartboot.feat.core.client.HttpClient;
+import tech.smartboot.feat.core.client.HttpRest;
+import tech.smartboot.feat.core.client.SseEvent;
+
+public class SSEResourceManagementDemo {
+    private static HttpRest httpRest;
+    
+    public static void main(String[] args) {
+        connectSSE();
+        
+        // 添加关闭钩子以确保资源被释放
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (httpRest != null) {
+                httpRest.close();
+                System.out.println("HTTP 连接已关闭");
+            }
+        }));
+    }
+    
+    private static void connectSSE() {
+        HttpClient httpClient = Feat.httpClient("http://localhost:8080");
+        
+        httpRest = httpClient.get("/events")
+                .onSSE(sseClient -> sseClient
+                        .onData(event -> {
+                            System.out.println("收到数据: " + event.getData());
+                        })
+                        .onOpen(client -> {
+                            System.out.println("SSE 连接已建立");
+                        }))
+                .onFailure(throwable -> {
+                    System.err.println("发生错误: " + throwable.getMessage());
+                });
+        
+        httpRest.submit();
+    }
+}
+```
+
+---
+
+## 性能与扩展性
+
+### 高性能
+
+Feat SSEClient 基于 Feat 框架的高性能网络通信能力，能够支持大规模的并发连接和高频率的消息传输。
+
+### 线程安全
+
+Feat SSEClient 的设计充分考虑了线程安全问题，保证在高并发场景下的稳定性。
+
+---
+
+## 总结
+
+通过这篇文章，我们学习了 Feat SSEClient 的核心功能：
+
+1. 如何建立 SSE 连接
+2. 如何处理不同类型的事件
+3. 如何配置客户端选项
+4. 如何实现错误处理和重连机制
+
+Feat SSEClient 是一款功能丰富、性能优越的 SSE 客户端实现，能够满足大多数实时数据推送场景的需求。通过简单的 API 和灵活的配置选项，开发者可以快速构建高效的实时数据接收应用。
+
+如果你正在寻找一款高性能、易用的 SSE 客户端，Feat SSEClient 是一个值得考虑的选择。
+
+有关完整示例，请参见 [SSEClient 测试代码](https://gitee.com/smartboot/feat/blob/master/feat-core/src/main/java/tech/smartboot/feat/core/client/SseClient.java)

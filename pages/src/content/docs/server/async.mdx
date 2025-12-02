@@ -1,0 +1,114 @@
+---
+title: 异步响应
+description: Feat HTTP请求异步处理教程
+sidebar:
+    order: 4
+---
+import CheckAuthorize from '../../../components/CheckAuthorize.astro'
+
+<CheckAuthorize/>
+
+在处理HTTP请求时，有时需要执行一些耗时的操作，如数据库查询、远程API调用或复杂计算。这些操作如果在主线程中同步执行，会阻塞服务器处理其他请求，降低系统的吞吐量和响应能力。
+
+别担心！Feat框架提供了简单高效的异步处理机制，让您能够轻松实现非阻塞的HTTP请求处理，充分释放系统潜能。
+
+## 异步处理原理
+
+Feat框架的异步处理机制基于Java的`CompletableFuture`，它允许您将请求处理逻辑放在独立的线程中执行，而不会阻塞HTTP服务器的主线程。
+
+`HttpHandler`接口提供了两个`handle`方法：
+
+```java
+// 同步处理方法
+void handle(HttpRequest request) throws Throwable;
+
+// 异步处理方法
+default void handle(HttpRequest request, CompletableFuture<Object> completableFuture) throws Throwable {
+    try {
+        handle(request);
+    } finally {
+        completableFuture.complete(null);
+    }
+}
+```
+
+默认情况下，异步处理方法会调用同步处理方法，并在处理完成后自动完成`CompletableFuture`。但您可以覆盖这个默认实现，实现真正的异步处理。
+
+## 实现异步处理
+
+要实现异步处理，您需要：
+
+1. 覆盖`handle(HttpRequest request, CompletableFuture<Object> completableFuture)`方法
+2. 在单独的线程中执行耗时操作
+3. 操作完成后手动调用`completableFuture.complete(result)`
+
+### 示例代码
+
+以下是一个简单的异步处理示例：
+
+```java
+import tech.smartboot.feat.core.server.HttpHandler;
+import tech.smartboot.feat.core.server.HttpRequest;
+import tech.smartboot.feat.core.server.HttpServer;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class AsyncHttpDemo {
+    public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        HttpServer bootstrap = new HttpServer();
+        bootstrap.httpHandler(new HttpHandler() {
+
+            @Override
+            public void handle(HttpRequest request, CompletableFuture<Object> future) throws IOException {
+                // 将请求处理逻辑放在独立的线程池中执行
+                executorService.execute(() -> {
+                    try {
+                        // 模拟耗时操作
+                        Thread.sleep(1000);
+                        // 处理请求并写入响应
+                        request.getResponse().write(("<br/>" + new Date() + " currentThread:" + Thread.currentThread()).getBytes());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    // 操作完成后，手动完成CompletableFuture
+                    future.complete(this);
+                });
+            }
+
+            @Override
+            public void handle(HttpRequest request) throws Throwable {
+                // 这个方法在异步模式下不会被调用
+            }
+        });
+        bootstrap.options().debug(true);
+        bootstrap.listen(8080);
+    }
+}
+```
+
+有关完整示例，请参见 [AsyncHttpDemo.java](https://gitee.com/smartboot/feat/blob/master/feat-test/src/main/java/tech/smartboot/feat/demo/AsyncHttpDemo.java)
+
+## 异步处理的优势
+
+1. **提高吞吐量**：主线程不会被阻塞，可以继续处理其他请求
+2. **更好的资源利用**：可以根据系统资源情况调整线程池大小
+3. **更好的用户体验**：服务器可以处理更多并发请求，减少用户等待时间
+4. **灵活的异常处理**：可以在异步线程中捕获异常，并通过`completableFuture.completeExceptionally(throwable)`传递异常
+
+通过使用异步处理，我们可以构建出高性能、高并发的Web应用。特别是在处理大量I/O密集型任务时，异步处理能够显著提升系统的整体性能。
+
+## 最佳实践
+
+在使用异步处理时，有一些最佳实践值得我们关注：
+
+1. **合理设置线程池大小**：根据系统资源和业务特点设置合适的线程池大小，避免资源浪费或不足
+2. **及时释放资源**：在线程任务完成后，确保及时释放相关资源
+3. **异常处理**：妥善处理异步任务中的异常，避免因未捕获异常导致的问题
+4. **避免阻塞操作**：在异步线程中尽量避免执行阻塞操作，充分发挥异步的优势
+
+通过Feat框架的异步处理机制，您可以轻松构建高性能、高并发的Web应用，充分利用系统资源，提供更好的用户体验。

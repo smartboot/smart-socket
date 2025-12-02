@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="800" height="600" fill="#f8f9fa" />
+  <text x="400" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#333">静态转码代码生成过程</text>
+  
+  <!-- 编译期和运行期分隔线 -->
+  <line x1="0" y1="300" x2="800" y2="300" stroke="#888" stroke-width="2" stroke-dasharray="10,5" />
+  <text x="100" y="320" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333">编译期</text>
+  <text x="100" y="520" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#333">运行期</text>
+  
+  <!-- 源代码 -->
+  <rect x="50" y="80" width="200" height="180" rx="5" fill="#f5b7b1" stroke="#e74c3c" stroke-width="2" />
+  <text x="150" y="100" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">源代码</text>
+  <text x="150" y="125" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">@Controller("/user")</text>
+  <text x="150" y="145" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">public class UserController {</text>
+  <text x="150" y="165" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">    @Autowired</text>
+  <text x="150" y="185" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">    private UserService service;</text>
+  <text x="150" y="205" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">    @RequestMapping("/get")</text>
+  <text x="150" y="225" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">    public User getUser(String id) {...}</text>
+  <text x="150" y="245" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">}</text>
+  
+  <!-- 注解处理器 -->
+  <rect x="300" y="130" width="200" height="80" rx="5" fill="#abebc6" stroke="#2ecc71" stroke-width="2" />
+  <text x="400" y="170" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">注解处理器</text>
+  <text x="400" y="190" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">FeatAnnotationProcessor</text>
+  
+  <!-- 生成的代码 -->
+  <rect x="550" y="80" width="200" height="180" rx="5" fill="#abebc6" stroke="#2ecc71" stroke-width="2" />
+  <text x="650" y="100" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">生成的加载器代码</text>
+  <text x="650" y="125" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">public class UserControllerLoader {</text>
+  <text x="650" y="145" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">    public void loadBean() {</text>
+  <text x="650" y="165" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">        bean = new UserController();</text>
+  <text x="650" y="185" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">    }</text>
+  <text x="650" y="205" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">    public void autowired() {</text>
+  <text x="650" y="225" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">        bean.setService(getBean("userService"));</text>
+  <text x="650" y="245" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">    }</text>
+  
+  <!-- 传统框架运行时 -->
+  <rect x="50" y="350" width="200" height="200" rx="5" fill="#f5b7b1" stroke="#e74c3c" stroke-width="2" />
+  <text x="150" y="370" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">传统框架运行时</text>
+  <text x="150" y="395" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">1. 扫描类找到@Controller注解</text>
+  <text x="150" y="415" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">2. 通过反射创建实例</text>
+  <text x="150" y="435" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">3. 找到@Autowired字段</text>
+  <text x="150" y="455" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">4. 通过反射注入依赖</text>
+  <text x="150" y="475" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">5. 找到@RequestMapping方法</text>
+  <text x="150" y="495" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">6. 通过反射调用方法</text>
+  <text x="150" y="515" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">性能开销大</text>
+  
+  <!-- Feat Cloud运行时 -->
+  <rect x="550" y="350" width="200" height="200" rx="5" fill="#abebc6" stroke="#2ecc71" stroke-width="2" />
+  <text x="650" y="370" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">Feat Cloud运行时</text>
+  <text x="650" y="395" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">1. 直接加载生成的加载器类</text>
+  <text x="650" y="415" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">2. 直接创建实例（无反射）</text>
+  <text x="650" y="435" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">3. 直接调用setter方法注入依赖</text>
+  <text x="650" y="455" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">4. 直接注册路由处理函数</text>
+  <text x="650" y="475" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">5. 直接调用业务方法</text>
+  <text x="650" y="495" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">6. 零反射，高性能</text>
+  <text x="650" y="515" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">启动快，内存占用小</text>
+  
+  <!-- 箭头 -->
+  <line x1="250" y1="170" x2="300" y2="170" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="500" y1="170" x2="550" y2="170" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="150" y1="260" x2="150" y2="350" stroke="#e74c3c" stroke-width="2" marker-end="url(#arrowhead)" />
+  <line x1="650" y1="260" x2="650" y2="350" stroke="#2ecc71" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- 性能对比 -->
+  <rect x="300" y="400" width="200" height="100" rx="5" fill="#d6eaf8" stroke="#3498db" stroke-width="2" />
+  <text x="400" y="420" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#333">性能对比</text>
+  <text x="400" y="445" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">传统框架：每次都需要反射</text>
+  <text x="400" y="465" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">Feat Cloud：直接方法调用</text>
+  <text x="400" y="485" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#555">性能提升：3-10倍</text>
+  
+  <!-- 箭头定义 -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" />
+    </marker>
+  </defs>
+</svg>

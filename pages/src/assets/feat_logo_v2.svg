@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB">
+        <animate
+                attributeName="stop-color"
+                values="#2563EB; #1D4ED8; #2563EB"
+                dur="4s"
+                repeatCount="indefinite"
+        />
+      </stop>
+      <stop offset="100%" stop-color="#3B82F6">
+        <animate
+                attributeName="stop-color"
+                values="#3B82F6; #60A5FA; #3B82F6"
+                dur="4s"
+                repeatCount="indefinite"
+        />
+      </stop>
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- 背景圆形带脉冲动画 -->
+  <circle cx="100" cy="100" r="90" fill="url(#gradient)" filter="url(#glow)">
+    <animate
+            attributeName="r"
+            values="88;92;88"
+            dur="2s"
+            repeatCount="indefinite"
+    />
+  </circle>
+
+  <!-- F字母带渐入动画 -->
+  <path
+          d="M70 50 H140 V70 H90 V90 H130 V110 H90 V150 H70 V50Z"
+          fill="white"
+          opacity="0.9"
+          filter="url(#glow)">
+    <animate
+            attributeName="opacity"
+            values="0.8;1;0.8"
+            dur="3s"
+            repeatCount="indefinite"
+    />
+  </path>
+
+  <!-- 速度线条带动画 -->
+  <g>
+    <path d="M140 70 L160 50" stroke="white" stroke-width="6" stroke-linecap="round">
+      <animate
+              attributeName="stroke-width"
+              values="6;8;6"
+              dur="1s"
+              begin="0s"
+              repeatCount="indefinite"
+      />
+      <animate
+              attributeName="opacity"
+              values="0.5;1;0.5"
+              dur="1s"
+              begin="0s"
+              repeatCount="indefinite"
+      />
+    </path>
+    <path d="M140 90 L170 60" stroke="white" stroke-width="6" stroke-linecap="round">
+      <animate
+              attributeName="stroke-width"
+              values="6;8;6"
+              dur="1s"
+              begin="0.2s"
+              repeatCount="indefinite"
+      />
+      <animate
+              attributeName="opacity"
+              values="0.5;1;0.5"
+              dur="1s"
+              begin="0.2s"
+              repeatCount="indefinite"
+      />
+    </path>
+    <path d="M140 110 L160 130" stroke="white" stroke-width="6" stroke-linecap="round">
+      <animate
+              attributeName="stroke-width"
+              values="6;8;6"
+              dur="1s"
+              begin="0.4s"
+              repeatCount="indefinite"
+      />
+      <animate
+              attributeName="opacity"
+              values="0.5;1;0.5"
+              dur="1s"
+              begin="0.4s"
+              repeatCount="indefinite"
+      />
+    </path>
+  </g>
+
+  <!-- 轻量级符号带旋转动画 -->
+  <circle cx="150" cy="130" r="15" fill="white" opacity="0.7">
+    <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from="0 150 130"
+            to="360 150 130"
+            dur="8s"
+            repeatCount="indefinite"
+    />
+  </circle>
+
+  <!-- 模块化结构符号带动画 -->
+  <g>
+    <rect x="130" y="90" width="10" height="10" fill="white" opacity="0.7">
+      <animate
+              attributeName="opacity"
+              values="0.5;0.9;0.5"
+              dur="2s"
+              begin="0s"
+              repeatCount="indefinite"
+      />
+    </rect>
+    <rect x="145" y="90" width="10" height="10" fill="white" opacity="0.7">
+      <animate
+              attributeName="opacity"
+              values="0.5;0.9;0.5"
+              dur="2s"
+              begin="0.3s"
+              repeatCount="indefinite"
+      />
+    </rect>
+    <rect x="160" y="90" width="10" height="10" fill="white" opacity="0.7">
+      <animate
+              attributeName="opacity"
+              values="0.5;0.9;0.5"
+              dur="2s"
+              begin="0.6s"
+              repeatCount="indefinite"
+      />
+    </rect>
+  </g>
+</svg>

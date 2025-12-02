@@ -1,0 +1,57 @@
+---
+title: 应用构建
+description: 从打包到部署的最佳实践
+sidebar:
+    order: 5
+---
+
+import {Aside} from '@astrojs/starlight/components';
+import CheckAuthorize from '../../../components/CheckAuthorize.astro'
+
+<CheckAuthorize/>
+
+Feat 应用可以通过 Maven 的 `maven-shade-plugin` 插件打包成一个包含所有依赖的可执行 jar 包（也称为 fat jar）。
+
+在 `pom.xml` 中添加以下配置：
+
+```xml title="pom.xml"
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.5.0</version>
+            <executions>
+                <execution>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>shade</goal>
+                    </goals>
+                    <configuration>
+                        <!-- 采用追加的方式 -->
+                        <transformer
+                                implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                            <resource>META-INF/services/tech.smartboot.feat.cloud.CloudService</resource>
+                        </transformer>
+                        <transformers>
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <mainClass>your.package.MainClass</mainClass>
+                            </transformer>
+                        </transformers>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+
+<Aside>
+    请将 `your.package.MainClass` 替换为您的主类的完整类名。
+</Aside>
+
+执行以下命令进行打包：
+
+```bash
+mvn clean package
+```

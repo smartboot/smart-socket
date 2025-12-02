@@ -1,0 +1,265 @@
+---
+title: MCP 开发实践
+description: Model Context Protocol 集成开发详细教程
+sidebar:
+    order: 6
+---
+import CheckAuthorize from '../../../components/CheckAuthorize.astro'
+import { TabItem, Tabs } from "@astrojs/starlight/components";
+
+<CheckAuthorize/>
+
+Model Context Protocol (MCP) 是一种开放协议，允许 AI 系统与应用程序安全地交换信息和工具。Feat Cloud 提供了完整的 MCP 支持，包括：
+
+- **工具 (Tools)**: 允许 AI 助手调用应用程序中的功能
+- **提示词 (Prompts)**: 提供预定义的提示词模板
+- **资源 (Resources)**: 共享文本或二进制资源
+
+Feat Cloud 提供两种 MCP 服务构建方式：
+
+1. **默认 MCP 服务器（零配置）**：框架自动创建 MCP 服务器实例
+2. **自定义 MCP 服务端点（可扩展）**：通过注解精细控制服务配置
+
+## 默认 MCP Server（推荐）
+只要`Controller`类中出现 任意 @Tool、@Prompt 或 @Resource 注解，Feat Cloud 就会在源码编译期时为你生成一个默认 MCP 服务器实例，无需额外配置。
+
+### 快速上手
+```java
+@Controller
+public class DefaultMcpUsageController {
+    
+    @Autowired
+    private McpServer mcpServer;
+    
+    @PostConstruct
+    public void init() {
+        // 添加工具到默认MCP服务器
+        mcpServer.addTool(ServerTool.of("currentTime")
+            .description("获取当前时间")
+            .inputSchema(ServerTool.boolProperty("withMilliseconds", "是否包含毫秒"))
+            .doAction(ctx -> {
+                boolean withMs = ctx.getArguments().getBooleanValue("withMilliseconds");
+                if (withMs) {
+                    return ToolResult.ofText(String.valueOf(System.currentTimeMillis()));
+                } else {
+                    return ToolResult.ofText(String.valueOf(System.currentTimeMillis() / 1000));
+                }
+            }));
+            
+        // 添加提示词到默认MCP服务器
+        mcpServer.addPrompt(ServerPrompt.of("greeting")
+            .description("问候语提示词")
+            .arguments(tech.smartboot.feat.ai.mcp.model.Prompt.argument("name", "用户姓名"))
+            .doAction(ctx -> {
+                String name = ctx.getArguments().getString("name");
+                return PromptMessage.ofText(RoleEnum.Assistant, "你好，" + name + "！有什么我可以帮助你的吗？");
+            }));
+    }
+
+    @Tool(description = "简单的问候工具")
+    public String greeting(@Param(required = true, description = "用户姓名") String name) {
+        return "你好，" + name + "！";
+    }
+
+    // 其他业务方法...
+}
+```
+
+## 自定义 MCP Server
+
+对于更复杂的 MCP 服务需求，您可以使用 `@McpEndpoint` 注解创建自定义 MCP 服务端点。
+相较于默认 MCP 服务，自定义 MCP 服务端仅仅是在 Controller 中额外多了一个 `@McpEndpoint` 注解。
+
+### 使用示例
+
+下面是一个完整的 MCP Controller 示例，展示了如何使用所有 MCP 注解：
+
+```java
+@Controller
+@McpEndpoint(
+    name = "demo-mcp-service",
+    title = "Demo MCP Service",
+    sseEndpoint = "/mcp/sse",
+    sseMessageEndpoint = "/mcp/sse/message",
+    streamableEndpoint = "/mcp/stream"
+)
+public class McpDemoController {
+
+    /**
+     * 定义一个工具，用于获取用户信息
+     */
+    @Tool(name = "getUserInfo", description = "根据用户ID获取用户信息")
+    public UserInfo getUserInfo(
+        @Param(required = true, description = "用户ID") Long userId
+    ) {
+        // 实现获取用户信息的逻辑
+        UserInfo user = new UserInfo();
+        user.setId(userId);
+        user.setName("User " + userId);
+        user.setEmail(userId + "@example.com");
+        return user;
+    }
+
+    /**
+     * 定义一个文本提示词
+     */
+    @Prompt(
+        name = "codeReviewPrompt",
+        description = "代码审查提示词",
+        type = PromptType.TEXT
+    )
+    public String codeReviewPrompt(
+        @Param(required = true, description = "代码片段") String codeSnippet
+    ) {
+        return "请审查以下代码并提供改进建议：" + codeSnippet;
+    }
+
+    /**
+     * 定义一个文本资源
+     */
+    @Resource(
+        uri = "/resources/coding-standards.md",
+        name = "编码规范",
+        description = "团队编码规范文档",
+        mimeType = "text/markdown",
+        isText = true
+    )
+    public String codingStandards() {
+        return """
+            # 编码规范
+
+            ## 命名规范
+            1. 类名使用大驼峰命名法
+            2. 方法名使用小驼峰命名法
+            
+            ## 代码格式
+            1. 缩进使用4个空格
+            2. 行宽不超过120个字符
+            """;
+    }
+}
+```
+
+```java
+public class UserInfo {
+    private Long id;
+    private String name;
+    private String email;
+
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+}
+```
+
+
+## 注解详解
+
+### @McpEndpoint
+`@McpEndpoint` 注解用于标记一个 Controller 类作为 MCP 服务端点。它定义了 MCP 服务的基本配置，包括服务信息和各种 MCP 操作的端点地址。
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `name` | String | `"feat-mcp-server"` | MCP 服务名称，对应 MCP 协议中服务的 name 字段 |
+| `title` | String | `"Feat MCP Server"` | MCP 服务标题，对应 MCP 协议中服务的 title 字段 |
+| `version` | String | `Feat.VERSION` | MCP 服务版本，对应 MCP 协议中服务的 version 字段 |
+| `sseEndpoint` | String | 必填 | SSE 端点地址，用于建立 SSE 连接的端点 URL 路径 |
+| `sseMessageEndpoint` | String | 必填 | SSE 消息端点地址，用于发送 SSE 消息的端点 URL 路径 |
+| `streamableEndpoint` | String | 必填 | 流式传输端点地址，用于支持流式数据传输的端点 URL 路径 |
+| `resourceEnable` | boolean | `true` | 资源功能开关，控制是否启用 MCP 资源 (resources/list) 功能 |
+| `toolEnable` | boolean | `true` | 工具功能开关，控制是否启用 MCP 工具 (tools/list, tools/call) 功能 |
+| `promptsEnable` | boolean | `true` | 提示词功能开关，控制是否启用 MCP 提示词 (prompts/list) 功能 |
+| `loggingEnable` | boolean | `true` | 日志功能开关，控制是否启用 MCP 日志 (logging) 功能 |
+
+### @Tool
+`@Tool` 注解用于标记一个方法作为 MCP 工具。工具具有可执行性，可以与外部系统进行交互，是 MCP 协议的重要组成部分。
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `name` | String | 方法名 | 工具名称，在 MCP 协议中用于唯一标识一个工具，客户端通过该名称调用工具 |
+| `description` | String | `""` | 工具描述信息，用于向客户端说明工具的功能和使用方法 |
+
+MCP 工具支持多种返回类型：
+
+1. **基本类型**: `String`, `int`, `long`, `float`, `double`, `boolean`, `byte`
+2. **复合类型**: 自定义对象（会自动序列化为 JSON）
+3. **专用类型**: `ToolResult.TextContent`, `ToolResult.ImageContent`
+
+#### 示例
+
+```java
+// 返回文本内容
+@Tool(description = "获取文本信息")
+public ToolResult.TextContent getTextInfo() {
+    return ToolResult.ofText("这是文本内容");
+}
+
+// 返回图片内容
+@Tool(description = "获取图片信息")
+public ToolResult.ImageContent getImageInfo() {
+    return ToolResult.ofImage("base64-encoded-image-data", "image/png");
+}
+```
+
+### @Param
+`@Param` 注解用于定义 MCP 工具的参数信息。
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `required` | boolean | 必填 | 参数是否必需，对应 JSON Schema 中的 required 字段 |
+| `description` | String | `""` | 参数描述信息，对应 JSON Schema 中的 description 字段 |
+
+### @Prompt
+`@Prompt` 注解用于定义 MCP 提示词资源。
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `name` | String | 必填 | 提示词名称，必须唯一，对应 MCP 协议中提示词的 name 字段 |
+| `description` | String | `""` | 提示词描述信息，对应 MCP 协议中提示词的 description 字段 |
+| `type` | PromptType | 必填 | 提示词类型，对应 MCP 协议中提示词的 type 字段 |
+| `role` | RoleEnum | `RoleEnum.User` | 提示词角色，对应 MCP 协议中提示词的 role 字段 |
+| `mimeType` | String | `""` | 提示词内容的 MIME 类型，对应 MCP 协议中提示词的 mimeType 字段 |
+
+MCP 支持多种提示词类型：
+
+1. **TEXT**: 纯文本提示词
+2. **IMAGE**: 图片提示词
+3. **AUDIO**: 音频提示词
+4. **EMBEDDED_RESOURCE**: 嵌入式资源提示词
+
+#### 示例
+
+```java
+// 文本提示词
+@Prompt(name = "textPrompt", type = PromptType.TEXT)
+public String textPrompt() {
+    return "这是一个文本提示词";
+}
+
+// 图片提示词
+@Prompt(name = "imagePrompt", type = PromptType.IMAGE, mineType = "image/png")
+public String imagePrompt() {
+    return "base64-encoded-image-data";
+}
+```
+
+### @Resource
+`@Resource` 注解用于定义 MCP 资源，对应 MCP 协议中 resources/list 操作的资源定义。
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `uri` | String | 必填 | 资源 URI，在 MCP 协议中用于唯一标识和访问一个资源 |
+| `name` | String | 必填 | 资源名称，对应 MCP 协议中资源的 name 字段 |
+| `description` | String | `""` | 资源描述信息，对应 MCP 协议中资源的 description 字段 |
+| `isText` | boolean | `true` | 资源类型标识，true 表示文本资源，false 表示二进制资源 |
+| `mimeType` | String | `""` | 资源内容的 MIME 类型，对应 MCP 协议中资源的 mimeType 字段 |
+
+
+## 小结
+
+通过 Feat Cloud 提供的 MCP 支持，您可以轻松地为 AI 助手提供上下文信息和工具能力。默认 MCP 服务器适合快速上手，而自定义 MCP 服务端点则提供了更精细的控制能力。根据您的具体需求选择合适的方案即可。

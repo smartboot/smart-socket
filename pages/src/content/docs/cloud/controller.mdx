@@ -1,0 +1,547 @@
+---
+title: Controller 开发实践
+description: Feat Cloud Controller 注解开发详细教程与最佳实践
+sidebar:
+    order: 4
+---
+import CheckAuthorize from '../../../components/CheckAuthorize.astro'
+import {TabItem, Tabs, Aside} from "@astrojs/starlight/components";
+import Mermaid from '../../../components/Mermaid.astro';
+
+<CheckAuthorize/>
+
+让我们一起来探索 Feat Cloud 中强大的 Controller 功能！Controller 是处理 HTTP 请求的核心组件，通过一系列简洁的注解，你可以轻松构建功能丰富的 Web 应用程序。这个教程将带你从基础到进阶，全面掌握 Controller 的使用方法。
+
+## 概述
+
+Controller 是 Feat Cloud 中处理 HTTP 请求的核心组件。通过一系列注解，开发者可以轻松地将类标记为控制器，并将方法映射到特定的 HTTP 请求路径和方法。
+
+Feat Cloud 在设计 Controller 注解时，借鉴了 Spring 的设计理念，降低学习成本的同时进行了极致简化，专注于高性能和易用性。
+
+## 核心注解
+
+Feat Cloud 提供以下核心注解：
+- [`@Controller`](#controller) - 标记控制器类
+- [`@RequestMapping`](#requestmapping) - 定义请求路由
+- [`@Param`](#param) - 绑定查询参数
+- [`@PathParam`](#pathparam) - 绑定路径参数  
+- [`@InterceptorMapping`](#interceptormapping) - 配置拦截器
+- [`@PostConstruct`](#生命周期管理) - 初始化回调
+- [`@PreDestroy`](#生命周期管理) - 销毁回调
+
+## Controller 工作流程
+
+当我们发起一个 HTTP 请求时，Controller 是如何处理它的呢？让我们通过下面的流程图来了解一下：
+
+<Mermaid code={`graph TD
+    A[HTTP请求到达] --> B{路径匹配}
+    B -->|匹配成功| C[找到对应Controller]
+    C --> D{方法匹配}
+    D -->|匹配成功| E[调用处理方法]
+    E --> F[处理请求参数]
+    F --> G[执行业务逻辑]
+    G --> H[返回响应结果]
+    H --> I[发送HTTP响应]
+    
+    B -->|匹配失败| J[404错误]
+    D -->|匹配失败| K[405错误]
+`}/>
+
+是不是很清晰？接下来我们就来详细了解每个注解的使用方法。
+
+## 注解详解
+
+### `@Controller`
+
+`@Controller` 用于标记一个类为控制器，作为 Spring 风格的注解设计，降低学习成本。
+
+通常与 `@RequestMapping` 一起使用来定义请求映射路径。
+
+**定义：**
+```java
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.SOURCE)
+@Documented
+public @interface Controller {
+    String value() default "";
+    
+    boolean gzip() default false;
+    
+    int gzipThreshold() default 256;
+}
+```
+
+**参数说明：**
+- **value**: 定义了 Controller 的基础路径，其他方法级别的请求路径会基于这个基础路径。
+- **gzip**: 是否开启响应内容的 gzip 压缩，默认关闭。
+- **gzipThreshold**: gzip 压缩阈值，低于此值则不进行 gzip 压缩，默认 256 字节。
+
+**使用示例：**
+```java
+// 基础用法
+@Controller
+public class UserController { }
+
+// 指定基础路径
+@Controller("/user")
+public class UserController { }
+
+// 启用 gzip 压缩
+@Controller(value = "/api", gzip = true, gzipThreshold = 512)
+public class ApiController { }
+```
+
+### `@RequestMapping`
+
+`@RequestMapping` 用于标记方法，表示该方法处理特定的 HTTP 请求路径。
+
+支持指定 HTTP 请求方法，有效类型：`GET`, `HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`, `TRACE`
+
+**定义：**
+```java
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.SOURCE)
+@Documented
+public @interface RequestMapping {
+    String value() default "";
+
+    RequestMethod[] method() default {};
+}
+```
+
+**参数说明：**
+- **value**: 指定与该方法关联的 URL 路径，默认为空字符串，意味着使用 Controller 级别的路径前缀（如果有）。
+- **method**: 指定该方法支持的 HTTP 请求类型，默认不限制请求方法，即所有类型都可以访问该方法。
+
+**使用示例：**
+```java
+@Controller("/api")
+public class ApiController {
+    
+    // 基础用法，处理所有HTTP方法
+    @RequestMapping("/users")
+    public String getAllUsers() {
+        return "所有用户列表";
+    }
+    
+    // 指定HTTP方法
+    @RequestMapping(value = "/users", method = RequestMethod.POST)
+    public String createUser() {
+        return "创建用户";
+    }
+    
+    // 支持多种HTTP方法
+    @RequestMapping(value = "/users/{id}", method = {RequestMethod.GET, RequestMethod.PUT})
+    public String getUserOrModify(@PathParam("id") String id) {
+        return "获取或修改ID为 " + id + " 的用户";
+    }
+}
+```
+
+### `@Param`
+
+`@Param` 用于绑定请求中的查询参数（Query Parameters）到方法参数上。当方法参数为自定义 POJO 类型时，可无需使用 `@Param` 注解，框架会自动进行参数绑定。
+
+**定义：**
+```java
+@Target({ElementType.PARAMETER})
+@Retention(RetentionPolicy.SOURCE)
+@Documented
+public @interface Param {
+    String value();
+}
+```
+
+**参数说明：**
+- **value**: 指定要绑定的查询参数的名称。
+
+**使用示例：**
+```java
+@Controller("/api")
+public class ApiController {
+    
+    // 基础用法
+    @RequestMapping("/search")
+    public String search(@Param("keyword") String keyword) {
+        return "搜索关键词: " + keyword;
+    }
+    
+    // 多个参数
+    @RequestMapping("/filter")
+    public String filter(@Param("category") String category, 
+                        @Param("price") int price) {
+        return "分类: " + category + ", 价格: " + price;
+    }
+    
+    // 对象参数自动绑定（无需@Param）
+    @RequestMapping("/user")
+    public String createUser(User user) {
+        return "创建用户: " + user.getName() + ", 年龄: " + user.getAge();
+    }
+}
+```
+
+### `@PathParam`
+
+`@PathParam` 用于绑定请求中的路径参数（Path Parameters）到方法参数上。
+
+**定义：**
+```java
+@Target({ElementType.PARAMETER})
+@Retention(RetentionPolicy.SOURCE)
+@Documented
+public @interface PathParam {
+    String value();
+}
+```
+
+**参数说明：**
+- **value**: 指定要绑定的路径参数的名称，该名称必须与路由中定义的占位符名称一致。
+
+**使用示例：**
+```java
+@Controller("/api")
+public class ApiController {
+    
+    // 基础用法
+    @RequestMapping("/users/{id}")
+    public String getUserById(@PathParam("id") String userId) {
+        return "获取用户ID: " + userId;
+    }
+    
+    // 多个路径参数
+    @RequestMapping("/users/{userId}/orders/{orderId}")
+    public String getOrder(@PathParam("userId") String userId, 
+                          @PathParam("orderId") String orderId) {
+        return "用户 " + userId + " 的订单 " + orderId;
+    }
+}
+```
+
+### `@InterceptorMapping`
+
+`@InterceptorMapping` 用于为特定的请求路径添加拦截器逻辑，在请求到达目标方法之前执行一些操作。
+
+**定义：**
+```java
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.SOURCE)
+@Documented
+public @interface InterceptorMapping {
+    String[] value() default "";
+}
+```
+
+**参数说明：**
+- **value**: 指定拦截器应用的 URL 路径模式数组。
+
+**使用示例：**
+```java
+@Controller("/api")
+public class ApiController {
+    
+    @RequestMapping("/users")
+    public String getUsers() {
+        return "用户列表";
+    }
+    
+    // 为API路径添加拦截器
+    @InterceptorMapping({"/api/users/*", "/api/admin/*"})
+    public Interceptor authInterceptor() {
+        return (context, completableFuture, chain) -> {
+            // 前置处理：权限验证
+            String token = context.Request.getHeader("Authorization");
+            if (token == null || !isValidToken(token)) {
+                context.Response.setStatus(401);
+                context.Response.write("Unauthorized".getBytes());
+                completableFuture.complete(null);
+                return;
+            }
+            
+            // 继续执行请求链
+            chain.proceed(context, completableFuture);
+            
+            // 后置处理：记录访问日志
+            System.out.println("API 访问完成: " + context.Request.getRequestURI());
+        };
+    }
+    
+    private boolean isValidToken(String token) {
+        // 实际的 token 验证逻辑
+        return "valid-token".equals(token);
+    }
+}
+```
+
+## 实践示例
+
+掌握了基本概念后，让我们通过一些实际的例子来看看如何使用这些注解。
+
+### 基础 Controller 示例
+
+```java
+@Controller("demo2")
+public class Demo2Controller {
+    
+    // 基础路径映射
+    @RequestMapping("/hello")
+    public String test1() {
+        return "hello world";
+    }
+    
+    // 支持查询参数
+    @RequestMapping("/param1")
+    public String test2(@Param("param") String param) {
+        return "hello " + param;
+    }
+    
+    // 多个查询参数
+    @RequestMapping("/param2")
+    public String test3(@Param("param1") String param1, @Param("param2") String param2) {
+        return "hello " + param1 + " " + param2;
+    }
+    
+    // 支持对象参数绑定
+    @RequestMapping("/param3")
+    public String test4(TestParam param) {
+        return "hello " + param.getParam1() + " " + param.getParam2();
+    }
+    
+    // 命名参数对象
+    @RequestMapping("/param4")
+    public String test5(@Param("param") TestParam param) {
+        return "hello param is " + param;
+    }
+}
+```
+
+对应的参数对象：
+
+```java
+public class TestParam {
+    private String param1;
+    private String param2;
+    
+    // getters and setters
+    public String getParam1() { return param1; }
+    public void setParam1(String param1) { this.param1 = param1; }
+    
+    public String getParam2() { return param2; }
+    public void setParam2(String param2) { this.param2 = param2; }
+}
+```
+
+### RESTful API 示例
+
+```java
+@Controller("/api/users")
+public class UserController {
+    
+    // GET /api/users - 获取所有用户
+    @RequestMapping(method = RequestMethod.GET)
+    public List<User> getAllUsers() {
+        // 实际业务逻辑
+        return userService.getAllUsers();
+    }
+    
+    // POST /api/users - 创建用户
+    @RequestMapping(method = RequestMethod.POST)
+    public User createUser(User user) {
+        // 实际业务逻辑
+        return userService.createUser(user);
+    }
+    
+    // GET /api/users/{id} - 获取特定用户
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public User getUser(@PathParam("id") String id) {
+        // 实际业务逻辑
+        return userService.getUserById(id);
+    }
+    
+    // PUT /api/users/{id} - 更新用户
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    public User updateUser(@PathParam("id") String id, User user) {
+        // 实际业务逻辑
+        return userService.updateUser(id, user);
+    }
+    
+    // DELETE /api/users/{id} - 删除用户
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public void deleteUser(@PathParam("id") String id) {
+        // 实际业务逻辑
+        userService.deleteUser(id);
+    }
+}
+```
+
+## 生命周期管理
+
+Feat Cloud 支持 Bean 生命周期注解，可以在适当的时机执行初始化和清理逻辑：
+
+```java
+@Controller
+class Demo1Controller {
+
+    @PostConstruct
+    public void init() {
+        System.out.println("Controller 初始化完成");
+        // 可以在这里进行一些初始化操作，如加载配置、建立连接等
+    }
+
+    @RequestMapping("/test1")
+    public String test1() {
+        return "hello";
+    }
+
+    @PreDestroy
+    public void destroy() {
+        System.out.println("Controller 正在销毁");
+        // 可以在这里进行一些清理操作，如关闭连接、释放资源等
+    }
+}
+```
+
+## 拦截器使用
+
+通过 `@InterceptorMapping` 注解可以为特定路径添加拦截器：
+
+```java
+@Controller("api")
+public class ApiController {
+    
+    @RequestMapping("/users")
+    public String getUsers() {
+        return "用户列表";
+    }
+    
+    // 为API路径添加拦截器
+    @InterceptorMapping({"/api/users/*", "/api/admin/*"})
+    public Interceptor authInterceptor() {
+        return (context, completableFuture, chain) -> {
+            // 前置处理：权限验证
+            String token = context.Request.getHeader("Authorization");
+            if (token == null || !isValidToken(token)) {
+                context.Response.setStatus(401);
+                context.Response.write("Unauthorized".getBytes());
+                completableFuture.complete(null);
+                return;
+            }
+            
+            // 继续执行请求链
+            chain.proceed(context, completableFuture);
+            
+            // 后置处理：记录访问日志
+            System.out.println("API 访问完成: " + context.Request.getRequestURI());
+        };
+    }
+    
+    private boolean isValidToken(String token) {
+        // 实际的 token 验证逻辑
+        return "valid-token".equals(token);
+    }
+}
+```
+
+**拦截器使用注意事项：**
+- **路径匹配**：支持精确匹配（如 `/path`）和通配符匹配（如 `/path/*`）
+- **执行顺序**：多个拦截器按定义顺序执行
+- **异步处理**：正确处理 `CompletableFuture` 以支持异步请求
+- **异常处理**：拦截器内需要处理可能的异常情况
+
+## 最佳实践
+
+掌握了基础知识后，让我们来看看一些最佳实践，帮助你写出更好的代码。
+
+### 1. 合理组织 Controller 结构
+
+```java
+// 推荐：按功能模块组织
+@Controller("/api/users")
+public class UserController { }
+
+@Controller("/api/orders")
+public class OrderController { }
+
+@Controller("/api/products")
+public class ProductController { }
+```
+
+### 2. 使用 DTO 进行数据传输
+
+```java
+// 推荐：使用专门的 DTO 类
+@Controller("/api/users")
+public class UserController {
+    
+    @RequestMapping(method = RequestMethod.POST)
+    public UserDto createUser(CreateUserRequest request) {
+        User user = userService.create(request);
+        return UserDto.from(user);
+    }
+}
+```
+
+### 3. 统一返回格式
+
+```java
+// 推荐：使用统一的返回格式
+@Controller("/api")
+public class ApiController {
+    
+    @RequestMapping("/users")
+    public RestResult<List<User>> getUsers() {
+        try {
+            List<User> users = userService.getAllUsers();
+            return RestResult.ok(users);
+        } catch (Exception e) {
+            return RestResult.error(e.getMessage());
+        }
+    }
+}
+```
+
+### 4. 合理使用 gzip 压缩
+
+```java
+// 对于返回大量文本数据的接口，启用 gzip 压缩
+@Controller(value = "/api/reports", gzip = true, gzipThreshold = 1024)
+public class ReportController {
+    
+    @RequestMapping("/monthly")
+    public String getMonthlyReport() {
+        // 返回大量文本数据
+        return generateMonthlyReport();
+    }
+}
+```
+
+### 5. 异常处理
+
+```java
+@Controller("/api")
+public class ApiController {
+    
+    @RequestMapping("/users/{id}")
+    public User getUser(@PathParam("id") String id) {
+        try {
+            return userService.getUserById(id);
+        } catch (UserNotFoundException e) {
+            // 可以抛出自定义异常或返回错误响应
+            throw new ResourceNotFoundException("用户不存在");
+        }
+    }
+}
+```
+
+## 总结
+
+通过这篇教程，我们学习了 Feat Cloud 中 Controller 的各种用法，包括：
+
+1. 如何使用核心注解 (`@Controller`, `@RequestMapping`, `@Param`, `@PathParam`)
+2. 如何实现拦截器功能
+3. 如何管理 Controller 的生命周期
+4. 一些实用的最佳实践
+
+掌握了这些知识，你就可以轻松地构建功能丰富的 Web 应用程序了。记住，实践是最好的老师，不妨动手试试这些功能吧！
+
+有关完整示例，请参见 [Controller 相关测试代码](https://gitee.com/smartboot/feat/blob/master/feat-cloud-aot-vm/src/test/java/tech/smartboot/feat/cloud/test)
