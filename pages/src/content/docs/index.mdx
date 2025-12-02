@@ -1,68 +1,54 @@
 ---
-title: Feat
-description: 一款高性能、低资源消耗的Java Web服务开发框架
+title: smart-socket
+description: 极简、易用、高性能的AIO通信框架，人人都能轻松应对百万级长连接场景。5G时代的通信微内核，适用于IM、RPC、IoT等诸多领域
 template: splash
 hero:
-  tagline: 运行性能超 <b>Vert.x</b>，开发体验近似 <b>SpringBoot</b> ，以 <b>AI 原生</b> 和 <b>云原生</b> 双引擎驱动的现代化 Java Web 服务开发框架
+  tagline: <b>极简</b>、<b>易用</b>、<b>高性能</b> 的AIO通信框架，帮你精准治理海量连接下的每一帧数据！
   image:
-    file: ../../assets/banner.svg
+    file: ../../assets/houston.webp
   actions:
-    - text: Feat 启程
-      link: ./guides/about/
+    - text: 快速开始
+      link: ./guides/getting-started/
       icon: right-arrow
 ---
 
-import { Card, CardGrid,LinkCard,LinkButton } from '@astrojs/starlight/components';
-import FeatUsers from '../../components/FeatUsers.astro'
-import {ContributorList} from "starlight-contributor-list";
+import { Card, CardGrid, LinkCard, LinkButton } from '@astrojs/starlight/components';
+import { ContributorList } from "starlight-contributor-list";
 
-<FeatUsers/>
+## 项目简介
 
-## 产品特色
+smart-socket 是一款增强了原生 JDK 实现的 AIO 通信框架。
+
+换言之，smart-socket 100% 遵循 JDK 对于 AIO 接口规范的定义，只是重新提供了一套代码实现。
+使其有着相较 JDK 官方 AIO 更高的通信性能，更少的资源开销，以及更稳定的运行保障。
+
+## 核心优势
 
 <CardGrid>
-	<Card title="<span style='color:#ffffff;background-color:#fa541c;border-bottom: 2px solid #fa541c'> &nbsp;F&nbsp;</span><span style='color:#fa541c;border-bottom: 2px solid #fa541c'>ree</span>" icon="seti:happenings">
-        基于AGPL-3.0开源协议，保障技术透明与社区共建。合规授权企业可自由商用，共建开放生态。
+	<Card title="高性能" icon="rocket">
+        相较于原生JDK NIO/AIO具有更高的通信性能，更低的资源消耗，以及更稳定的运行保障。
 	</Card>
-	<Card title="<span style='color:#ffffff;background-color:#722ed1;border-bottom: 2px solid #722ed1'>&nbsp;E&nbsp;</span><span style='color:#722ed1;border-bottom: 2px solid #722ed1'>lastic</span>" icon="rocket">
-        柔性伸缩架构，轻松应对海量并发请求，支持十万级、百万级 QPS，满足高并发场景需求。
+	<Card title="极简设计" icon="puzzle">
+        核心代码不到1500行，工程结构、包层次清晰，学习门槛低，二次开发只需实现2个接口。
 	</Card>
-	<Card title="<span style='color:#ffffff;background-color:#52c41a;border-bottom: 2px solid #52c41a'>&nbsp;A&nbsp;</span><span style='color:#52c41a;border-bottom: 2px solid #52c41a'>dvanced</span>" icon="puzzle">
-        全面支持 HTTP/1.0、1.1、2.0、WebSocket、SSE、TLS/SSL 等现代 Web 技术，内置路由、文件上传、WAF 等丰富功能。
+	<Card title="稳定可靠" icon="shield">
+        良好的线程模型、内存模型设计，保障服务高效稳定的运行，已在众多企业生产环境中验证。
 	</Card>
-	<Card title="<span style='color:#ffffff;background-color:#eb2f96;border-bottom: 2px solid #eb2f96'>&nbsp;T&nbsp;</span><span style='color:#eb2f96;border-bottom: 2px solid #eb2f96'>iny</span>" icon="github">
-        微内核架构，基于自研smart-socket通信引擎。冷启动耗时低于 100ms，极致性能与资源效率的完美平衡。
+	<Card title="插件扩展" icon="github">
+        支持自定义插件，并已提供了丰富的内置插件，包括SSL/TLS、心跳检测、断链重连等功能。
 	</Card>
 </CardGrid>
 
-```java title="Application.java"
-@Controller
-public class Application {
-    @RequestMapping("/")
-    public String helloWorld() {
-        return "hello Feat Cloud";
-    }
-
-    public static void main(String[] args) {
-        Feat.cloudServer().listen();
-    }
-}
-```
-
-<center>
-    <h2>Feat boasts unparalleled performance</h2>
-    ![](../../assets/performance.svg)
-</center>
-
 ## Contributors
-<ContributorList githubRepo="smartboot/feat"/>
+<ContributorList githubRepo="smartboot/smart-socket"/>
 
 ## 生态项目
+
 <CardGrid>
-    <LinkCard title="smart-socket" target="_blank" description="Java AIO 实现的支持百万级长连接通信框架" href="https://smartboot.tech/smart-socket/" />
-    <LinkCard title="smart-servlet" target="_blank" description="提供一个自主可控的轻量级 Tomcat/Undertow 可替代版本，基于 Feat 重新定义下一代 Servlet 容器!" href="https://smartboot.tech/smart-servlet/" />
-    <LinkCard title="smart-mqtt" target="_blank" description="一款面向物联网领域的 MQTT 消息中间件产品" href="https://smartboot.tech/smart-mqtt/enterprise.html" />
-    <LinkCard title="Redisun" target="_blank" description="基于 smart-socket 开发的轻量级 Redis 客户端，专为 Java 平台设计，支持异步非阻塞 I/O 操作" href="https://smartboot.tech/redisun/" />
+    <LinkCard title="Feat" target="_blank" description="高性能 Java Web 服务框架，开发体验类似 SpringBoot，运行性能超越 Vert.x。" href="https://smartboot.tech/feat/" />
+    <LinkCard title="smart-servlet" target="_blank" description="实现了 Servlet 6.1 规范的 Web 容器，支持多应用隔离部署。" href="https://smartboot.tech/smart-servlet/" />
+    <LinkCard title="smart-mqtt" target="_blank" description="云原生分布式 MQTT Broker 服务器，支持海量物联网设备互联互通。" href="https://smartboot.tech/smart-mqtt/enterprise.html" />
+    <LinkCard title="Redisun" target="_blank" description="基于 smart-socket 开发的轻量级 Redis 客户端，专为 Java 平台设计。" href="https://smartboot.tech/redisun/" />
 </CardGrid>
 
 <hr/>
@@ -71,9 +57,9 @@ public class Application {
 ###  联系我们
 
     <p>
-        Hi~ 我是 **三刀**，Feat 的作者。
+        Hi~ 我是 **三刀**，***smart-socket*** 的作者。
 
-        您可以跟我聊聊：如何进行 Feat 的最佳实践;
+        您可以跟我聊聊：如何进行 smart-socket 的最佳实践;
 
         也可以向我了解：关于产品实现原理的细节;
 
@@ -91,7 +77,7 @@ public class Application {
         variant="secondary"
         icon="email"
         iconPlacement="start"
-    >
+        >
         zhengjunweimail @163.com
     </LinkButton>
 </center>

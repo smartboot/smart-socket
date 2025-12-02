@@ -1,19 +1,19 @@
 ---
-title: Feat 文档写作标准
-description: 为确保 Feat 文档的一致性、专业性和易读性而制定的写作标准。所有参与 Feat 文档编写的 AI 应遵循这些准则，以产出符合项目要求的高质量文档。
+title: smart-socket 文档写作标准
+description: 为确保 smart-socket 文档的一致性、专业性和易读性而制定的写作标准。所有参与 smart-socket 文档编写的 AI 应遵循这些准则，以产出符合项目要求的高质量文档。
 ---
 
 ## 关于文档
 
-本文档是 Feat 框架的文档写作标准指南，旨在确保所有 AI 生成的文档具有一致性、专业性和易读性。
+本文档是 smart-socket 框架的文档写作标准指南，旨在确保所有 AI 生成的文档具有一致性、专业性和易读性。
 
-Feat 文档遵循"实践为主，原理为辅"的理念，优先介绍功能的实际应用，然后根据需要解释相关技术原理，帮助读者快速上手并解决实际问题。
+smart-socket 文档遵循"实践为主，原理为辅"的理念，优先介绍功能的实际应用，然后根据需要解释相关技术原理，帮助读者快速上手并解决实际问题。
 
 ## 1. 文档结构规范
 
 ### 1.1 基本结构
 
-一篇标准的 Feat 技术文档应包含以下要素：
+一篇标准的 smart-socket 技术文档应包含以下要素：
 
 1. **文档头部信息**：包含标题、描述等元数据
 2. **引言部分**：简要介绍文档主题和目标
@@ -96,29 +96,10 @@ sidebar:
 - 使用适当的语法高亮标记
 - **代码验证**：所有代码示例必须基于项目实际源码，确保与项目实际情况完全一致，不得出现任何虚构或不正确的代码片段
 
-```java
-// 实践导向的示例：展示如何创建HTTP服务
-public class HttpServerExample {
-    public static void main(String[] args) {
-        // 创建HTTP服务器并监听8081端口
-        Feat.httpServer()
-                .httpHandler(request -> {
-                    // 处理HTTP请求，返回"Hello World"响应
-                    request.getResponse().write("Hello World");
-                })
-                .listen(8081);
-    }
-}
-// 注：省略了不影响理解的样板代码
-```
-
-所有代码示例都应该链接到 Gitee 仓库中的实际文件，以便读者可以查看完整的上下文和运行示例。例如：
-
-有关完整示例，请参见 [HelloWorld.java](https://gitee.com/smartboot/feat/blob/master/feat-test/src/main/java/tech/smartboot/feat/demo/HelloWorld.java)
-
+所有代码示例都应该链接到 Gitee 仓库中的实际文件，以便读者可以查看完整的上下文和运行示例。
 :::note
 如果文档中的代码示例需要提供完整可运行的代码，应当在文档中添加指向 Gitee 仓库中实际文件的链接，方便读者查找和运行完整示例。
-代码统一存放在：https://gitee.com/smartboot/feat/blob/master/feat-test/src/main/java/tech/smartboot/feat/docs/ 目录下。
+代码统一存放在：https://gitee.com/smartboot/smart-socket/blob/master/example/src/main/javajava/org/smartboot/socket/example/ 目录下。
 :::
 
 :::caution
@@ -184,11 +165,11 @@ public class HttpServerExample {
 
 5. **Mermaid 图表样式风格约束**：
 
-为了确保 Feat 文档中所有 Mermaid 图表具有一致的视觉风格和专业外观，特制定以下样式约束：
+为了确保 smart-socket 文档中所有 Mermaid 图表具有一致的视觉风格和专业外观，特制定以下样式约束：
 
 **颜色规范**：
    - 默认使用黑白配色方案，确保打印和屏幕显示效果一致
-   - 如需使用颜色，应遵循 Feat 品牌色彩规范：主色调为蓝色 (#2196F3)
+   - 如需使用颜色，应遵循 smart-socket 品牌色彩规范：主色调为蓝色 (#2196F3)
    - 不同类型的节点应通过形状区分，而非颜色区分
    - 连接线使用黑色，默认宽度为 1px
 
@@ -400,7 +381,7 @@ graph TB
 ### 6.1 内容准确性
 
 - 确保功能使用说明的准确性
-- 基于 Feat 项目实际情况进行描述
+- 基于 smart-socket 项目实际情况进行描述
 - 优先验证实践示例的正确性
 - 避免推测性内容
 - 所有代码示例必须与项目实际源码保持一致，禁止虚构代码
@@ -414,7 +395,7 @@ graph TB
 ### 6.3 上下文理解
 
 - 准确理解用户查询意图，重点关注功能使用需求
-- 结合 Feat 框架特点进行阐述，突出实用性
+- 结合 smart-socket 框架特点进行阐述，突出实用性
 - 考虑目标读者的技术水平，提供合适的实践指导
 
 ## 7. 文档质量检查清单
@@ -437,8 +418,8 @@ graph TB
 - [ ] 各章节是否逻辑清晰、粒度适中
 - [ ] 对于复杂功能是否提供了架构设计图
 
-通过遵循以上标准，AI 编写的 Feat 文档将更加专业、一致且易于理解，有助于提升整个项目的文档质量和用户体验。
+通过遵循以上标准，AI 编写的 smart-socket 文档将更加专业、一致且易于理解，有助于提升整个项目的文档质量和用户体验。
 
 ## 8. 总结
 
-本文档为 Feat 框架的 AI 文档生成提供了全面的指导原则。通过遵循这些规范，AI 可以生成高质量、一致性强且易于理解的技术文档。记住始终以用户需求为中心，注重实用性，并保持内容的准确性和时效性。
+本文档为 smart-socket 框架的 AI 文档生成提供了全面的指导原则。通过遵循这些规范，AI 可以生成高质量、一致性强且易于理解的技术文档。记住始终以用户需求为中心，注重实用性，并保持内容的准确性和时效性。

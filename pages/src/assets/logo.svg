@@ -36,19 +36,16 @@
     />
   </circle>
 
-  <!-- F字母带渐入动画 -->
-  <path
-          d="M70 50 H140 V70 H90 V90 H130 V110 H90 V150 H70 V50Z"
-          fill="white"
-          opacity="0.9"
-          filter="url(#glow)">
+  <!-- S字母带渐入动画 -->
+  <text x="50" y="155" font-family="Arial, sans-serif" font-size="150" font-weight="bold" fill="white" opacity="0.9" filter="url(#glow)">
+    S
     <animate
             attributeName="opacity"
             values="0.8;1;0.8"
             dur="3s"
             repeatCount="indefinite"
     />
-  </path>
+  </text>
 
   <!-- 速度线条带动画 -->
   <g>

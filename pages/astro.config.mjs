@@ -13,9 +13,9 @@ export default defineConfig({
     integrations: [
         starlight({
             title: 'smart-socket',
-            // logo: {
-                src: './src/assets/feat_logo_v2.svg',
-            // },
+            logo: {
+                src: './src/assets/logo.svg',
+            },
             customCss: [
                 // 你的自定义 CSS 文件的相对路径
                 './src/styles/custom.css',
@@ -25,27 +25,14 @@ export default defineConfig({
                     tag: 'meta',
                     attrs: {
                         property: 'keywords',
-                        content: 'smart-http,feat,web,java web,web服务器,java服务器,高性能web服务器',
+                        content: 'smart-socket,java,nio,aio,网络通信,高性能,异步通信,java框架',
                     }
                 }, {
                     tag: 'meta',
                     attrs: {
                         property: 'description',
-                        content: 'Feat是一款基于Java语言开发的轻量级、高性能Web服务器',
+                        content: 'smart-socket是一款基于Java AIO实现的轻量级、高性能网络通信框架',
                     }
-                },
-                {
-                //     tag: 'script',
-                //     attrs: {
-                //         src: 'https://smartboot.tech/js/gitee.js'
-                //     }
-                // },{
-                    tag:'script',
-                    content: `if(!location.pathname.endsWith("feat/")&&!location.pathname.endsWith("/unstar/")&&!location.pathname.endsWith("/auth/")){
-                                checkStar("smartboot","feat",function(){
-                                    location.href="/feat/unstar/";
-                                });
-                            }`
                 },
                 {
                     tag: 'script',
@@ -64,7 +51,7 @@ export default defineConfig({
                 {icon: 'github', label: 'GitHub', href: 'https://github.com/smartboot/smart-socket'},
                 {icon: 'seti:git', label: 'Gitee', href: 'https://gitee.com/smartboot/smart-socket'}
             ],
-            plugins: [starlightImageZoomPlugin(),starlightScrollToTop({
+            plugins: [starlightImageZoomPlugin(), starlightScrollToTop({
                 // Button position
                 // Tooltip text
                 tooltipText: 'Back to top',
@@ -99,24 +86,13 @@ export default defineConfig({
                     autogenerate: {directory: 'guides'},
                 },
                 {
-                    label: 'Feat Server开发',
-                    autogenerate: {directory: 'server'},
-                },
-                {
-                    label: 'Feat Cloud开发',
-                    autogenerate: {directory: 'cloud'},
-                },
-                {
-                    label: 'Feat Client开发',
-                    autogenerate: {directory: 'client'},
-                },
-                {
-                    label: 'Feat AI开发',
-                    autogenerate: {directory: 'ai'},
-                },
-                {
                     label: '附录',
-                    autogenerate: {directory: 'appendix'},
+                    items: [
+                        {
+                            label: 'smart-socket实用教程📚',
+                            link: 'https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg4MzU2NDA0Nw==&action=getalbum&album_id=4244214517749514252#wechat_redirect',
+                        },
+                    ],
                 },
             ],
         }),
