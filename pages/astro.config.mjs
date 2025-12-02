@@ -86,21 +86,8 @@ export default defineConfig({
                     autogenerate: {directory: 'guides'},
                 },
                 {
-                    label: '插件',
-                    autogenerate: {directory: 'plugin'},
-                },
-                {
                     label: '附录',
-                    items: [
-                        {
-                            label: 'smart-socket实用教程📚',
-                            link: 'https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg4MzU2NDA0Nw==&action=getalbum&album_id=4244214517749514252#wechat_redirect',
-                        },
-                        {
-                            label: '付费服务💰️',
-                            slug: 'appendix/service',
-                        },
-                    ],
+                    autogenerate: {directory: 'appendix'},
                 },
             ],
         }),
