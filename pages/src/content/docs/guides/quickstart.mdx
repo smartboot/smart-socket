@@ -1,0 +1,218 @@
+---
+title: 🚩五分钟上手
+description: 快速上手 smart-socket 通信框架
+sidebar:
+    order: 2
+---
+
+import wx_book from './img/wx_book.png'
+
+欢迎来到 smart-socket 的世界！如果你刚刚接触这个框架，那么你来对地方了。本文将带你一步步构建一个完整的通信服务，让你在短短几分钟内就能看到成果。
+
+虽然五分钟能让你快速入门，但要成为真正的高手还需要在实践中不断磨练。
+
+## 准备工作
+
+在开始编码之前，我们需要做一些准备工作：
+
+1. 安装好 Java 开发环境（JDK 8+）
+2. 准备一个 IDE（推荐使用 IntelliJ IDEA）
+3. 确保 Maven 已安装并配置好
+
+:::note
+JDK 版本兼容性说明：
+smart-socket 1.7.5 版本完全兼容 JDK 8 及以上所有版本，推荐使用此版本以获得最佳性能和最新功能。
+:::
+
+## 第一步：创建 Maven 项目并引入依赖
+
+首先，创建一个新的 Maven 项目。然后在 pom.xml 文件中添加 smart-socket 依赖：
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>io.github.smartboot.socket</groupId>
+        <artifactId>aio-core</artifactId>
+        <version>1.7.5</version>
+    </dependency>
+</dependencies>
+```
+
+:::tip
+如果下载依赖较慢，可以配置阿里云镜像仓库加速：
+```xml
+<repositories>
+    <repository>
+        <id>alimaven</id>
+        <name>aliyun maven</name>
+        <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+    </repository>
+</repositories>
+```
+:::
+
+## 第二步：定义通信协议
+
+通信的第一步就是定义协议。这里我们创建一个简单的字符串协议，它能够处理变长字符串消息：
+
+```java
+import org.smartboot.socket.Protocol;
+import org.smartboot.socket.transport.AioSession;
+
+import java.nio.ByteBuffer;
+
+public class StringProtocol implements Protocol<String> {
+
+    @Override
+    public String decode(ByteBuffer readBuffer, AioSession session) {
+        // 检查缓冲区中是否有足够的数据读取长度字段
+        int remaining = readBuffer.remaining();
+        if (remaining < Integer.BYTES) {
+            return null;
+        }
+        
+        // 标记当前位置，如果数据不完整可以复位
+        readBuffer.mark();
+        
+        // 读取消息长度
+        int length = readBuffer.getInt();
+        
+        // 如果消息长度超过了剩余数据，则说明是半包，需要复位并等待更多数据
+        if (length > readBuffer.remaining()) {
+            readBuffer.reset();
+            return null;
+        }
+        
+        // 读取完整的消息内容
+        byte[] b = new byte[length];
+        readBuffer.get(b);
+        
+        // 返回解码后的字符串
+        return new String(b);
+    }
+}
+```
+
+这段代码实现了基于长度字段的协议解析，这是一种非常常见的通信协议设计方式。
+
+## 第三步：实现服务端
+
+现在让我们创建服务端程序。服务端会接收客户端发送的消息，并将其原样返回：
+
+```java
+import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.transport.AioQuickServer;
+import org.smartboot.socket.transport.WriteBuffer;
+
+import java.io.IOException;
+
+public class StringServer {
+
+    public static void main(String[] args) throws IOException {
+        // 创建消息处理器
+        MessageProcessor<String> processor = (session, msg) -> {
+            System.out.println("收到客户端消息: " + msg);
+            
+            // 获取写入缓冲区
+            WriteBuffer outputStream = session.writeBuffer();
+            try {
+                // 将消息原样返回给客户端
+                byte[] bytes = msg.getBytes();
+                outputStream.writeInt(bytes.length);  // 先写入长度
+                outputStream.write(bytes);           // 再写入内容
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        };
+
+        // 创建并启动服务端
+        AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
+        server.start();
+        
+        System.out.println("服务端已启动，监听端口: 8888");
+    }
+}
+```
+
+在上面的代码中，我们使用了 [AioQuickServer](https://gitee.com/smartboot/smart-socket/blob/master/example/src/main/java/org/smartboot/socket/example/benchmark/StringServer.java) 来快速搭建服务端，它封装了大部分复杂的异步IO操作。
+
+## 第四步：实现客户端
+
+最后我们来创建客户端程序，它会连接到服务端并发送一条测试消息：
+
+```java
+import org.smartboot.socket.MessageProcessor;
+import org.smartboot.socket.transport.AioQuickClient;
+import org.smartboot.socket.transport.AioSession;
+import org.smartboot.socket.transport.WriteBuffer;
+
+import java.io.IOException;
+
+public class StringClient {
+
+    public static void main(String[] args) throws IOException {
+        // 创建消息处理器，处理服务端返回的消息
+        MessageProcessor<String> processor = (session, msg) -> 
+            System.out.println("收到服务端响应: " + msg);
+            
+        // 创建并连接客户端
+        AioQuickClient client = new AioQuickClient("localhost", 8888, new StringProtocol(), processor);
+        AioSession session = client.start();
+        
+        // 获取写入缓冲区并发送消息
+        WriteBuffer writeBuffer = session.writeBuffer();
+        byte[] data = "hello smart-socket".getBytes();
+        writeBuffer.writeInt(data.length);  // 先写入长度
+        writeBuffer.write(data);           // 再写入内容
+        writeBuffer.flush();               // 刷新缓冲区，确保消息发送
+        
+        System.out.println("消息已发送: hello smart-socket");
+    }
+}
+```
+
+这段代码展示了如何使用 [AioQuickClient](https://gitee.com/smartboot/smart-socket/blob/master/example/src/main/java/org/smartboot/socket/example/benchmark/StringClient.java) 快速创建客户端并与服务端建立连接。
+
+## 运行测试
+
+现在让我们来测试刚才编写的程序：
+
+1. 首先运行 StringServer 类的 main 方法启动服务端
+2. 然后运行 StringClient 类的 main 方法启动客户端
+
+如果一切顺利，你应该会在服务端控制台看到：
+```
+收到客户端消息: hello smart-socket
+```
+
+在客户端控制台看到：
+```
+收到服务端响应: hello smart-socket
+```
+
+## 恭喜你！
+
+🎉 恭喜你完成了 smart-socket 的第一个通信程序！虽然这只是一个小例子，但它展示了 smart-socket 的核心功能。
+
+在实际项目中，你可能会遇到更复杂的场景，例如：
+
+- 🔧 **异常处理**：如何优雅地处理网络异常和业务异常
+- ⏱️ **超时控制**：如何设置合理的连接和读写超时
+- 📦 **粘包拆包**：如何处理TCP协议中的粘包和拆包问题
+- ❤️ **心跳检测**：如何维持长连接的有效性
+- 🔁 **断线重连**：如何在网络中断后自动恢复连接
+- 📨 **消息队列**：如何高效处理大量并发消息
+- 🔄 **并发控制**：如何在高并发场景下保证系统稳定性
+- 🔒 **线程安全**：如何避免多线程环境下的数据竞争
+- ⚡ **性能优化**：如何最大化系统吞吐量
+
+这些问题 smart-socket 都提供了相应的解决方案，你可以在后续的文档中深入了解。
+
+:::tip
+想要了解更多高级功能？请继续阅读我们的其他文档，或者加入我们的技术交流群获得实时帮助！
+:::
+
+<center>
+    <h1>smart-socket实战教程</h1>
+    <img src={wx_book.src} width="40%"/>
+</center>
