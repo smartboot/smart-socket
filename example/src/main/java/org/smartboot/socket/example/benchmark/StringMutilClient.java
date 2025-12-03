@@ -12,7 +12,7 @@ package org.smartboot.socket.example.benchmark;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
-import org.smartboot.socket.extension.protocol.StringProtocol;
+import org.smartboot.socket.example.StringProtocol;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.WriteBuffer;

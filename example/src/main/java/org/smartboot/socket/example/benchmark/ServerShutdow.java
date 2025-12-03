@@ -6,7 +6,7 @@ import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 import org.smartboot.socket.extension.plugins.BufferPageMonitorPlugin;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
-import org.smartboot.socket.extension.protocol.StringProtocol;
+import org.smartboot.socket.example.StringProtocol;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;

@@ -7,7 +7,7 @@
  *
  ******************************************************************************/
 
-package org.smartboot.socket.extension.protocol;
+package org.smartboot.socket.benchmark;
 
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
@@ -22,9 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author 三刀
  * @version V1.0 , 2018/11/23
- * @deprecated 该算法仅适合作为示例，不适合实际使用。
  */
-public class StringProtocol implements Protocol<String> {
+class StringProtocol implements Protocol<String> {
 
     private final Charset charset;
 

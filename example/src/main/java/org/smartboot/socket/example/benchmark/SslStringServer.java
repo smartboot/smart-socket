@@ -15,7 +15,7 @@ import org.smartboot.socket.extension.plugins.BufferPageMonitorPlugin;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.extension.plugins.SslPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
-import org.smartboot.socket.extension.protocol.StringProtocol;
+import org.smartboot.socket.example.StringProtocol;
 import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.ssl.factory.ServerSSLContextFactory;
 import org.smartboot.socket.transport.AioQuickServer;

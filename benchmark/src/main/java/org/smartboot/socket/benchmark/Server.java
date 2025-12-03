@@ -4,7 +4,6 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.plugins.MonitorPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
-import org.smartboot.socket.extension.protocol.StringProtocol;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.WriteBuffer;

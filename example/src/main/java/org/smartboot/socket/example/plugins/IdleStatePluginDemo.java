@@ -3,7 +3,7 @@ package org.smartboot.socket.example.plugins;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.extension.plugins.IdleStatePlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
-import org.smartboot.socket.extension.protocol.StringProtocol;
+import org.smartboot.socket.example.StringProtocol;
 import org.smartboot.socket.transport.AioQuickClient;
 import org.smartboot.socket.transport.AioQuickServer;
 import org.smartboot.socket.transport.AioSession;
