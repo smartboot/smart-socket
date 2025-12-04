@@ -26,7 +26,7 @@ public class ReceiverClient {
         StringProtocol protocol = new StringProtocol();
         AioQuickClient[] clients = new AioQuickClient[4];
         for (int i = 0; i < clients.length; i++) {
-            clients[i] = new AioQuickClient("localhost", 8080, protocol, (session, msg) -> System.out.println("ReceiverClient:" + session.getSessionID() + " 收到Push消息:" + msg));
+            clients[i] = new AioQuickClient("localhost", 8080, protocol, (session, msg) -> System.out.println("ReceiverClient:" + session + " 收到Push消息:" + msg));
             clients[i].start(channelGroup);
         }
     }

@@ -14,27 +14,27 @@ import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.transport.AioSession;
 import org.smartboot.socket.transport.WriteBuffer;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * @author 三刀
  * @version V1.0 , 2020/4/25
  */
 public class PushServerProcessorMessage implements MessageProcessor<String> {
-    private Map<String, AioSession> sessionMap = new ConcurrentHashMap<>();
+    private Set<AioSession> sessionMap = new ConcurrentSkipListSet<>();
 
     @Override
     public void process(AioSession session, String msg) {
         System.out.println("收到SendClient发送的消息:" + msg);
         byte[] bytes = msg.getBytes();
-        sessionMap.values().forEach(onlineSession -> {
+        sessionMap.forEach(onlineSession -> {
             if (session == onlineSession) {
                 return;
             }
             WriteBuffer writeBuffer = onlineSession.writeBuffer();
             try {
-                System.out.println("发送Push至ReceiverClient:" + onlineSession.getSessionID());
+                System.out.println("发送Push至ReceiverClient:" + onlineSession);
                 writeBuffer.writeInt(bytes.length);
                 writeBuffer.write(bytes);
                 writeBuffer.flush();
@@ -49,12 +49,12 @@ public class PushServerProcessorMessage implements MessageProcessor<String> {
     public void stateEvent(AioSession session, StateMachineEnum stateMachineEnum, Throwable throwable) {
         switch (stateMachineEnum) {
             case NEW_SESSION:
-                System.out.println("与客户端:" + session.getSessionID() + " 建立连接");
-                sessionMap.put(session.getSessionID(), session);
+                System.out.println("与客户端:" + session + " 建立连接");
+                sessionMap.add(session);
                 break;
             case SESSION_CLOSED:
-                System.out.println("断开客户端连接: " + session.getSessionID());
-                sessionMap.remove(session.getSessionID());
+                System.out.println("断开客户端连接: " + session);
+                sessionMap.remove(session);
                 break;
             default:
         }

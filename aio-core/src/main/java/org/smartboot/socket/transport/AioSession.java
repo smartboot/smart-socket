@@ -88,14 +88,6 @@ public abstract class AioSession {
      */
     public abstract void close(boolean immediate);
 
-    /**
-     * 获取当前Session的唯一标识
-     *
-     * @return sessionId
-     */
-    public String getSessionID() {
-        return "aioSession-" + hashCode();
-    }
 
     /**
      * 当前会话是否已失效

@@ -24,7 +24,7 @@ public class SenderClient {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         StringProtocol protocol = new StringProtocol();
-        AioQuickClient clients = new AioQuickClient("localhost", 8080, protocol, (session, msg) -> System.out.println("ReceiverClient:" + session.getSessionID() + " 收到Push消息:" + msg));
+        AioQuickClient clients = new AioQuickClient("localhost", 8080, protocol, (session, msg) -> System.out.println("ReceiverClient:" + session + " 收到Push消息:" + msg));
         AioSession session = clients.start();
         byte[] msg = "HelloWorld".getBytes();
         while (true) {
