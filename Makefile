@@ -1,5 +1,5 @@
 # 当需要升级版本时，执行该命令
-version=1.7.6-SNAPSHOT
+version=1.8.0-SNAPSHOT
 update_version:
 	sed -i  '' 's/public static final String VERSION = ".*";/public static final String VERSION = "v${version}";/' aio-core/src/main/java/org/smartboot/socket/transport/IoServerConfig.java
 	mvn -f smart-socket-parent/pom.xml versions:set -DnewVersion=${version} versions:commit
