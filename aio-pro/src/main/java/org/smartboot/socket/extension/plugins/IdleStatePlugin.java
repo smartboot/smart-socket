@@ -66,7 +66,7 @@ public final class IdleStatePlugin<T> extends AbstractPlugin<T> {
             }
             this.task = timer.scheduleWithFixedDelay(() -> {
                 long currentTime = System.currentTimeMillis();
-                if ((currentTime - readTimestamp) > IdleStatePlugin.this.idleTimeout || (currentTime - writeTimestamp) > IdleStatePlugin.this.idleTimeout) {
+                if ((currentTime - readTimestamp) > IdleStatePlugin.this.idleTimeout && (currentTime - writeTimestamp) > IdleStatePlugin.this.idleTimeout) {
                     try {
                         close();
                     } catch (IOException ignore) {
