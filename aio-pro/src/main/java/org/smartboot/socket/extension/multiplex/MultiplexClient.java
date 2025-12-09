@@ -433,4 +433,15 @@ public class MultiplexClient<T> {
         clients.forEach((client, aioQuickClient) -> release(client));
     }
 
+    /**
+     * 检查多路复用客户端是否已关闭
+     * <p>
+     * 该方法返回当前多路复用客户端是否已关闭。
+     * </p>
+     *
+     * @return true 表示已关闭，false 表示未关闭
+     */
+    public boolean isClosed() {
+        return closed;
+    }
 }
