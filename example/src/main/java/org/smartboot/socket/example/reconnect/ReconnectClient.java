@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutionException;
 public class ReconnectClient {
     private AioQuickClient client;
     private AioSession session;
-    private boolean running = true;
+    private volatile boolean running = true;
 
     {
         new Thread(new Runnable() {

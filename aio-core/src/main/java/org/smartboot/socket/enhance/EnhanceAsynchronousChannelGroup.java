@@ -72,7 +72,7 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
     /**
      * group运行状态
      */
-    boolean running = true;
+    volatile boolean running = true;
 
     /**
      * 忽略 SelectionKey.OP_ACCEPT，该情况不存在资源回收需求
