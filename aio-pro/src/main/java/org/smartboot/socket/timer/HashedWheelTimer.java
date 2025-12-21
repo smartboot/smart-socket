@@ -69,7 +69,7 @@ public class HashedWheelTimer implements Timer, Runnable {
      * 定时器运行状态标志
      * true表示定时器正在运行，false表示定时器已关闭
      */
-    private boolean running = true;
+    private volatile boolean running = true;
 
     /**
      * 默认的全局共享定时器实例
