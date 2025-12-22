@@ -40,7 +40,6 @@ import java.util.function.Supplier;
  * <li>{@link TcpAioSession#getAttachment()} </li>
  * <li>{@link TcpAioSession#getLocalAddress()} </li>
  * <li>{@link TcpAioSession#getRemoteAddress()} </li>
- * <li>{@link TcpAioSession#getSessionID()} </li>
  * <li>{@link TcpAioSession#isInvalid()} </li>
  * <li>{@link TcpAioSession#setAttachment(Object)}  </li>
  * </ol>
