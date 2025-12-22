@@ -194,12 +194,7 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
             return;
         }
         if (writeInBuf == null) {
-            if (chunkSize >= len) {
-                writeInBuf = pool.allocateByThreadId(chunkSize);
-            } else {
-                int m = len % chunkSize;
-                writeInBuf = pool.allocateByThreadId(m == 0 ? len : len + chunkSize - m);
-            }
+            writeInBuf = pool.allocateByThreadId(chunkSize);
         }
         ByteBuffer writeBuffer = writeInBuf.buffer();
         if (closed) {
@@ -369,7 +364,7 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
         if (item != null) {
             return item;
         }
-        if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
+        if (writeInBuf != null) {
             writeInBuf.buffer().flip();
             VirtualBuffer buffer = writeInBuf;
             writeInBuf = null;
