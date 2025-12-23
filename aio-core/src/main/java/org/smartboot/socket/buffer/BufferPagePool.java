@@ -108,25 +108,14 @@ public final class BufferPagePool {
     }
 
     /**
-     * 按顺序从内存页组中分配指定大小的虚拟缓冲区。
-     * 该方法会按顺序依次从内存页中获取缓冲区，使用原子计数器确保顺序分配。
+     * 从内存池中分配一个BufferPage实例。
+     * 该方法使用简单的轮询（Round Robin）策略来分配内存页，通过原子操作保证多线程环境下的线程安全。
+     * 使用无符号右移掩码（& Integer.MAX_VALUE）确保索引值为正数，避免负数索引问题。
      *
-     * @param size 要分配的缓冲区大小
-     * @return 分配的虚拟缓冲区
+     * @return 分配的BufferPage实例
      */
-    public VirtualBuffer allocateSequentially(final int size) {
-        return bufferPages[(cursor.getAndIncrement() & Integer.MAX_VALUE) % bufferPages.length].allocate(size);
-    }
-
-    /**
-     * 根据当前线程 ID 从内存页组中分配指定大小的虚拟缓冲区。
-     * 该方法会根据当前线程的 ID 对内存页数量取模，将缓冲区分配到对应的内存页。
-     *
-     * @param size 要分配的缓冲区大小
-     * @return 分配的虚拟缓冲区
-     */
-    public VirtualBuffer allocateByThreadId(final int size) {
-        return bufferPages[(int) ((Thread.currentThread().getId()) % bufferPages.length)].allocate(size);
+    public BufferPage allocatePage() {
+        return bufferPages[(cursor.getAndIncrement() & Integer.MAX_VALUE) % bufferPages.length];
     }
 
     /**

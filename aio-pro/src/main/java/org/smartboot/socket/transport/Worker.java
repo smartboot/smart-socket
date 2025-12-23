@@ -3,6 +3,7 @@ package org.smartboot.socket.transport;
 import org.smartboot.socket.DecoderException;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
+import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
@@ -40,7 +41,7 @@ public final class Worker implements Runnable {
     /**
      * read 内存池
      */
-    private BufferPagePool readBufferPage = null;
+    private BufferPage readBufferPage = null;
     private final BlockingQueue<Runnable> requestQueue = new ArrayBlockingQueue<>(256);
 
     /**
@@ -56,7 +57,7 @@ public final class Worker implements Runnable {
     }
 
     public Worker(BufferPagePool readBufferPage, BufferPagePool writeBufferPool, int threadNum) throws IOException {
-        this.readBufferPage = readBufferPage;
+        this.readBufferPage = readBufferPage.allocatePage();
         this.writeBufferPool = writeBufferPool;
         this.selector = Selector.open();
         try {
@@ -146,7 +147,7 @@ public final class Worker implements Runnable {
         IoServerConfig config = channel.config;
         while (count-- > 0) {
             if (standbyBuffer == null) {
-                standbyBuffer = readBufferPage.allocateByThreadId(config.getReadBufferSize());
+                standbyBuffer = readBufferPage.allocate(config.getReadBufferSize());
             }
             ByteBuffer buffer = standbyBuffer.buffer();
             SocketAddress remote = channel.getChannel().receive(buffer);
@@ -155,7 +156,7 @@ public final class Worker implements Runnable {
                 return true;
             }
             VirtualBuffer readyBuffer = standbyBuffer;
-            standbyBuffer = readBufferPage.allocateByThreadId(config.getReadBufferSize());
+            standbyBuffer = readBufferPage.allocate(config.getReadBufferSize());
             buffer.flip();
             Runnable runnable = () -> {
                 //解码

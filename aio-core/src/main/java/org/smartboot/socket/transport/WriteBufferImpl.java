@@ -9,6 +9,7 @@
 
 package org.smartboot.socket.transport;
 
+import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
 
@@ -35,7 +36,7 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
     /**
      * 为当前 WriteBuffer 提供数据存放功能的缓存页
      */
-    private final BufferPagePool pool;
+    private final BufferPage bufferPage;
     /**
      * 缓冲区数据刷新Function
      */
@@ -75,7 +76,7 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
     private final Semaphore semaphore = new Semaphore(1);
 
     WriteBufferImpl(BufferPagePool pool, Consumer<VirtualBuffer> writeConsumer, int chunkSize, int capacity) {
-        this.pool = pool;
+        this.bufferPage = pool.allocatePage();
         this.writeConsumer = writeConsumer;
         this.items = new VirtualBuffer[capacity];
         this.chunkSize = chunkSize;
@@ -113,7 +114,7 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
      */
     public synchronized void writeByte(byte b) {
         if (writeInBuf == null) {
-            writeInBuf = pool.allocateByThreadId(chunkSize);
+            writeInBuf = bufferPage.allocate(chunkSize);
         }
         writeInBuf.buffer().put(b);
         flushWriteBuffer(false);
@@ -194,7 +195,7 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
             return;
         }
         if (writeInBuf == null) {
-            writeInBuf = pool.allocateByThreadId(chunkSize);
+            writeInBuf = bufferPage.allocate(chunkSize);
         }
         ByteBuffer writeBuffer = writeInBuf.buffer();
         if (closed) {

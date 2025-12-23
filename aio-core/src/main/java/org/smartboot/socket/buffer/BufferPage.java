@@ -10,8 +10,6 @@
 package org.smartboot.socket.buffer;
 
 
-import sun.nio.ch.DirectBuffer;
-
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -23,7 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author 三刀
  * @version V1.0 , 2018/10/31
  */
-final class BufferPage {
+public final class BufferPage {
     /**
      * 内存页是否处于空闲状态。
      * 当值为true时，表示当前内存页处于空闲状态，可以进行内存回收；
@@ -95,7 +93,7 @@ final class BufferPage {
      *
      * @param cleanBuffer 待回收的虚拟内存对象
      */
-    public void clean(VirtualBuffer cleanBuffer) {
+    void clean(VirtualBuffer cleanBuffer) {
         cleanBuffers.offer(cleanBuffer);
     }
 
@@ -105,7 +103,7 @@ final class BufferPage {
      * 采用两阶段回收策略：第一次调用时标记内存页为空闲状态，第二次连续调用时才真正回收内存。
      * 这种策略可以避免频繁地分配和释放内存，提高性能。
      */
-    public void tryClean() {
+    void tryClean() {
         // 如果内存页当前不是空闲状态，则标记为空闲并等待下一个周期
         if (!idle) {
             idle = true;
@@ -146,7 +144,7 @@ final class BufferPage {
      * 该方法通常在系统关闭或内存页不再使用时调用，用于彻底释放所有资源。
      * 对于直接缓冲区，会遍历回收队列中的所有VirtualBuffer并释放它们的本地内存。
      */
-    public void release() {
+    void release() {
         // 只有直接缓冲区需要显式释放
         if (direct) {
             VirtualBuffer virtualBuffer;

@@ -123,9 +123,7 @@ public final class AioQuickClient {
      * @param <A>        附件对象类型
      */
     public <A> void start(A attachment, CompletionHandler<AioSession, ? super A> handler) throws IOException {
-        this.asynchronousChannelGroup =
-                new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(2,
-                        Thread::new);
+        this.asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(2, Thread::new);
         start(asynchronousChannelGroup, attachment, handler);
     }
 
@@ -175,7 +173,7 @@ public final class AioQuickClient {
                         throw new RuntimeException("NetMonitor refuse channel");
                     }
                     //连接成功则构造AIOSession对象
-                    session = new TcpAioSession(connectedChannel, config, writeBufferPool, () -> readBufferPool.allocateSequentially(config.getReadBufferSize()));
+                    session = new TcpAioSession(connectedChannel, config, writeBufferPool, () -> readBufferPool.allocatePage().allocate(config.getReadBufferSize()));
                     handler.completed(session, attachment);
                 } catch (Exception e) {
                     failed(e, socketChannel);
@@ -254,9 +252,7 @@ public final class AioQuickClient {
      * @see AioQuickClient#start(AsynchronousChannelGroup)
      */
     public AioSession start() throws IOException {
-        this.asynchronousChannelGroup =
-                new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(2,
-                        Thread::new);
+        this.asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(2, Thread::new);
         return start(asynchronousChannelGroup);
     }
 

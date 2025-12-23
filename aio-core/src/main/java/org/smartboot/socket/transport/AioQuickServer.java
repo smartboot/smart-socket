@@ -155,7 +155,7 @@ public final class AioQuickServer {
     }
 
     private void startAcceptThread() {
-        Supplier<VirtualBuffer> readBufferSupplier = () -> readBufferPool.allocateSequentially(config.getReadBufferSize());
+        Supplier<VirtualBuffer> readBufferSupplier = () -> readBufferPool.allocatePage().allocate(config.getReadBufferSize());
         serverSocketChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
             @Override
             public void completed(AsynchronousSocketChannel channel, Void attachment) {
@@ -283,7 +283,7 @@ public final class AioQuickServer {
     /**
      * 设置输出缓冲区容量
      *
-     * @param chunkSize     单个内存块大小
+     * @param chunkSize  单个内存块大小
      * @param chunkCount 内存块数量上限
      * @return 当前AioQuickServer对象
      */

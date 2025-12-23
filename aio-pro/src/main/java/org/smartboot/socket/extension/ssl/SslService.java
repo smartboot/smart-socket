@@ -10,7 +10,7 @@
 package org.smartboot.socket.extension.ssl;
 
 
-import org.smartboot.socket.buffer.BufferPagePool;
+import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.enhance.EnhanceAsynchronousChannelProvider;
 
 import javax.net.ssl.SSLContext;
@@ -60,7 +60,7 @@ public final class SslService {
         this.consumer = consumer;
     }
 
-    HandshakeModel createSSLEngine(AsynchronousSocketChannel socketChannel, BufferPagePool pool) {
+    HandshakeModel createSSLEngine(AsynchronousSocketChannel socketChannel, BufferPage bufferPage) {
         try {
             HandshakeModel handshakeModel = new HandshakeModel();
             SSLEngine sslEngine = sslContext.createSSLEngine();
@@ -70,11 +70,11 @@ public final class SslService {
             consumer.accept(sslEngine);
 
             handshakeModel.setSslEngine(sslEngine);
-            handshakeModel.setAppWriteBuffer(pool.allocateSequentially(session.getApplicationBufferSize()));
-            handshakeModel.setNetWriteBuffer(pool.allocateSequentially(session.getPacketBufferSize()));
+            handshakeModel.setAppWriteBuffer(bufferPage.allocate(session.getApplicationBufferSize()));
+            handshakeModel.setNetWriteBuffer(bufferPage.allocate(session.getPacketBufferSize()));
             handshakeModel.getNetWriteBuffer().buffer().flip();
-            handshakeModel.setAppReadBuffer(pool.allocateSequentially(session.getApplicationBufferSize()));
-            handshakeModel.setNetReadBuffer(pool.allocateSequentially(session.getPacketBufferSize()));
+            handshakeModel.setAppReadBuffer(bufferPage.allocate(session.getApplicationBufferSize()));
+            handshakeModel.setNetReadBuffer(bufferPage.allocate(session.getPacketBufferSize()));
             sslEngine.beginHandshake();
 
             handshakeModel.setSocketChannel(socketChannel);
