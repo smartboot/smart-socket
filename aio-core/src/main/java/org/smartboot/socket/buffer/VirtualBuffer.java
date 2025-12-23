@@ -10,7 +10,6 @@
 package org.smartboot.socket.buffer;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.Semaphore;
 
 /**
  * 虚拟ByteBuffer缓冲区类，对Java NIO的ByteBuffer进行封装。
@@ -31,13 +30,8 @@ public final class VirtualBuffer {
      * 不受内存池管理，不会被回收复用。
      */
     private final BufferPage bufferPage;
-    /**
-     * 用于控制缓冲区清理状态的信号量。
-     * 使用信号量确保每个VirtualBuffer只能被清理一次，防止重复清理导致的问题。
-     * 初始值为1，表示可以进行一次清理操作；
-     * 当clean()方法被调用后，信号量值变为0，表示已经被清理，不能再次清理。
-     */
-    private final Semaphore clean = new Semaphore(1);
+
+    private boolean enable = true;
     /**
      * 底层的ByteBuffer实例，所有的读写操作最终都会转发到这个缓冲区。
      * 这个缓冲区可能是堆内存缓冲区(HeapByteBuffer)或直接缓冲区(DirectByteBuffer)，
@@ -98,7 +92,7 @@ public final class VirtualBuffer {
         // 清空底层ByteBuffer的内容，重置position和limit
         this.buffer.clear();
         // 重置信号量，使VirtualBuffer可以再次被清理
-        clean.release();
+        enable = true;
     }
 
     /**
@@ -109,9 +103,10 @@ public final class VirtualBuffer {
      *
      * @throws UnsupportedOperationException 如果尝试重复清理同一个VirtualBuffer
      */
-    public void clean() {
+    public synchronized void clean() {
         // 尝试获取信号量，如果获取成功表示这是第一次清理
-        if (clean.tryAcquire()) {
+        if (enable) {
+            enable = false;
             // 如果有关联的BufferPage，则将自己归还给BufferPage
             if (bufferPage != null) {
                 bufferPage.clean(this);
