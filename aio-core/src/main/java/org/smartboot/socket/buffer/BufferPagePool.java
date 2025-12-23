@@ -101,7 +101,7 @@ public final class BufferPagePool {
                         future.cancel(false);
                     }
                 }
-            }, 500, 1000, TimeUnit.MILLISECONDS); // 初始延迟500ms，之后每1000ms执行一次
+            }, 1, 5, TimeUnit.SECONDS); // 初始延迟1s，之后每5s执行一次
         } else {
             future = null;
         }
