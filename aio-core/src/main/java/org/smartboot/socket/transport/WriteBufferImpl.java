@@ -191,18 +191,13 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
 
     @Override
     public synchronized void write(byte[] b, int off, int len) throws IOException {
-        if (len == 0) {
-            return;
+        if (closed) {
+            throw new IOException("writeBuffer has closed");
         }
         if (writeInBuf == null) {
             writeInBuf = bufferPage.allocate(chunkSize);
         }
         ByteBuffer writeBuffer = writeInBuf.buffer();
-        if (closed) {
-            writeInBuf.clean();
-            writeInBuf = null;
-            throw new IOException("writeBuffer has closed");
-        }
         int remaining = writeBuffer.remaining();
         if (remaining > len) {
             writeBuffer.put(b, off, len);
