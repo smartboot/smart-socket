@@ -492,11 +492,9 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
         } catch (Throwable e) {
             // 异常处理
             if (writeCompletionHandler == null) {
-                e.printStackTrace();
                 try {
                     close();
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                } catch (IOException ignored) {
                 }
             } else {
                 writeCompletionHandler.failed(e, writeAttachment);
