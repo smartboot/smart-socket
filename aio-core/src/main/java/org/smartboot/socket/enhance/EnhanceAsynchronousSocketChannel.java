@@ -83,13 +83,13 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      * 读操作的回调处理器，用于处理异步读取完成后的回调逻辑
      * 支持自定义处理读取结果的方式
      */
-    private CompletionHandler<Number, Object> readCompletionHandler;
+    private CompletionHandler<Integer, Object> readCompletionHandler;
 
     /**
      * 写操作的回调处理器，用于处理异步写入完成后的回调逻辑
      * 支持自定义处理写入结果的方式
      */
-    private CompletionHandler<Number, Object> writeCompletionHandler;
+    private CompletionHandler<Integer, Object> writeCompletionHandler;
 
     /**
      * 读操作的附加对象，可在回调时传递额外的上下文信息
@@ -270,19 +270,12 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     @Override
     public final <A> void read(ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
-        if (timeout > 0) {
-            throw new UnsupportedOperationException();
-        }
-        read0(dst, attachment, handler);
-    }
-
-    private <V extends Number, A> void read0(ByteBuffer readBuffer, A attachment, CompletionHandler<V, ? super A> handler) {
         if (this.readCompletionHandler != null) {
             throw new ReadPendingException();
         }
-        this.readBuffer = readBuffer;
+        this.readBuffer = dst;
         this.readAttachment = attachment;
-        this.readCompletionHandler = (CompletionHandler<Number, Object>) handler;
+        this.readCompletionHandler = (CompletionHandler<Integer, Object>) handler;
         boolean syncRead = EnhanceAsynchronousChannelProvider.SYNC_READ_FLAG.get();
         doRead(syncRead, syncRead);
     }
@@ -307,21 +300,15 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
     @Override
     public final <A> void write(ByteBuffer src, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler) {
-        if (timeout > 0) {
-            throw new UnsupportedOperationException();
-        }
-        write0(src, attachment, handler);
-    }
-
-    private <V extends Number, A> void write0(ByteBuffer writeBuffer, A attachment, CompletionHandler<V, ? super A> handler) {
         if (this.writeCompletionHandler != null) {
             throw new WritePendingException();
         }
-        this.writeBuffer = writeBuffer;
+        this.writeBuffer = src;
         this.writeAttachment = attachment;
-        this.writeCompletionHandler = (CompletionHandler<Number, Object>) handler;
+        this.writeCompletionHandler = (CompletionHandler<Integer, Object>) handler;
         while (doWrite()) ;
     }
+
 
     @Override
     public final Future<Integer> write(ByteBuffer src) {
@@ -361,7 +348,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 //            }
             // 低内存模式下的特殊处理：当没有缓冲区时，直接返回可读信号
             if (lowMemory && direct && readBuffer == null) {
-                CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
+                CompletionHandler<Integer, Object> completionHandler = readCompletionHandler;
                 Object attach = readAttachment;
                 resetRead();
                 completionHandler.completed(EnhanceAsynchronousChannelProvider.READABLE_SIGNAL, attach);
@@ -403,7 +390,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
 
             if (readSize != 0 || !hasRemain) {
-                CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
+                CompletionHandler<Integer, Object> completionHandler = readCompletionHandler;
                 Object attach = readAttachment;
                 resetRead();
                 completionHandler.completed(readSize, attach);
@@ -433,7 +420,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 } catch (Throwable ignore) {
                 }
             } else {
-                CompletionHandler<Number, Object> completionHandler = readCompletionHandler;
+                CompletionHandler<Integer, Object> completionHandler = readCompletionHandler;
                 Object attach = readAttachment;
                 resetRead();
                 completionHandler.failed(e, attach);
@@ -471,7 +458,7 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
 
             // 写入完成或缓冲区已空
             if (writeSize != 0 || !writeBuffer.hasRemaining()) {
-                CompletionHandler<Number, Object> completionHandler = writeCompletionHandler;
+                CompletionHandler<Integer, Object> completionHandler = writeCompletionHandler;
                 Object attach = writeAttachment;
                 resetWrite();
                 writeInterrupted = true;
