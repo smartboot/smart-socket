@@ -10,7 +10,6 @@
 package org.smartboot.socket.transport;
 
 
-import org.smartboot.socket.DecoderException;
 import org.smartboot.socket.MessageProcessor;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
@@ -262,7 +261,7 @@ final class TcpAioSession extends AioSession {
         }
         final ByteBuffer readBuffer = this.readBuffer.buffer();
         final MessageProcessor messageProcessor = config.getProcessor();
-        while (readBuffer.hasRemaining() && status == SESSION_STATUS_ENABLED) {
+        while (status == SESSION_STATUS_ENABLED) {
             Object dataEntry;
             try {
                 dataEntry = config.getProtocol().decode(readBuffer, this);
@@ -304,7 +303,7 @@ final class TcpAioSession extends AioSession {
             readBuffer.compact();
             //读缓冲区已满
             if (!readBuffer.hasRemaining()) {
-                DecoderException exception = new DecoderException("readBuffer overflow. The current TCP connection " + "will be closed. Please fix your " + config.getProtocol().getClass().getSimpleName() + "#decode bug.");
+                IllegalStateException exception = new IllegalStateException("readBuffer overflow. The current TCP connection " + "will be closed. Please fix your " + config.getProtocol().getClass().getSimpleName() + "#decode bug.");
                 messageProcessor.stateEvent(this, StateMachineEnum.DECODE_EXCEPTION, exception);
                 throw exception;
             }

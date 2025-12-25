@@ -1,6 +1,5 @@
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.DecoderException;
 import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
@@ -171,7 +170,7 @@ public final class Worker implements Runnable {
                         Object request = config.getProtocol().decode(buffer, session);
                         //理论上每个UDP包都是一个完整的消息
                         if (request == null) {
-                            config.getProcessor().stateEvent(session, StateMachineEnum.DECODE_EXCEPTION, new DecoderException("decode result is null, buffer size: " + buffer.remaining()));
+                            config.getProcessor().stateEvent(session, StateMachineEnum.DECODE_EXCEPTION, new IllegalStateException("decode result is null, buffer size: " + buffer.remaining()));
                             break;
                         } else {
                             config.getProcessor().process(session, request);
