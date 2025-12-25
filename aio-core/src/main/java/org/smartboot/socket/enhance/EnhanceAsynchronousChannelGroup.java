@@ -11,6 +11,7 @@ package org.smartboot.socket.enhance;
 
 import java.io.IOException;
 import java.nio.channels.AsynchronousChannelGroup;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AsynchronousChannelProvider;
@@ -137,19 +138,24 @@ class EnhanceAsynchronousChannelGroup extends AsynchronousChannelGroup {
             }
         });
         commonWorker = new Worker(Selector.open(), selectionKey -> {
-            if (selectionKey.isAcceptable()) {
-                EnhanceAsynchronousServerSocketChannel serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) selectionKey.attachment();
-                serverSocketChannel.doAccept();
-            } else if (selectionKey.isConnectable()) {
-                Runnable runnable = (Runnable) selectionKey.attachment();
-                runnable.run();
-            } else if (selectionKey.isReadable()) {
-                //仅同步read会用到此线程资源
-                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
-                removeOps(selectionKey, SelectionKey.OP_READ);
-                asynchronousSocketChannel.doRead(true, false);
-            } else {
-                throw new IllegalStateException("unexpect callback,key valid:" + selectionKey.isValid() + " ,interestOps:" + selectionKey.interestOps());
+            try {
+                if (selectionKey.isAcceptable()) {
+                    EnhanceAsynchronousServerSocketChannel serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) selectionKey.attachment();
+                    serverSocketChannel.doAccept();
+                } else if (selectionKey.isConnectable()) {
+                    Runnable runnable = (Runnable) selectionKey.attachment();
+                    runnable.run();
+                } else if (selectionKey.isReadable()) {
+                    //仅同步read会用到此线程资源
+                    EnhanceAsynchronousSocketChannel asynchronousSocketChannel = (EnhanceAsynchronousSocketChannel) selectionKey.attachment();
+                    removeOps(selectionKey, SelectionKey.OP_READ);
+                    asynchronousSocketChannel.doRead(true, false);
+                } else {
+                    throw new IllegalStateException("unexpect callback,key valid:" + selectionKey.isValid() + " ,interestOps:" + selectionKey.interestOps());
+                }
+            } catch (CancelledKeyException e) {
+                //通常只有同步read会存在该情况
+                System.err.println("cancel key error");
             }
         });
 
