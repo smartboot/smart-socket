@@ -27,7 +27,9 @@ final class IoServerConfig {
 
     /**
      * banner信息
+     * @deprecated 通过banner.txt可以自定义banner内容
      */
+    @Deprecated
     public static final String BANNER = "\n" +
             "                               _                           _             _   \n" +
             "                              ( )_                        ( )           ( )_ \n" +

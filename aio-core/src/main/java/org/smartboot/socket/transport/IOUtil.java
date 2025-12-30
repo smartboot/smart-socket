@@ -9,9 +9,15 @@
 
 package org.smartboot.socket.transport;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.NotYetConnectedException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author 三刀
@@ -41,4 +47,18 @@ final class IOUtil {
         }
     }
 
+    /**
+     * @param in 文件输入流
+     */
+    static List<String> readLineFromStream(InputStream in) throws IOException {
+        List<String> result = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                result.add(line);
+            }
+        }
+
+        return result;
+    }
 }

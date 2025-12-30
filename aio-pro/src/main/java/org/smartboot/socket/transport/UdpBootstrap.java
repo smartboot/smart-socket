@@ -16,6 +16,7 @@ import org.smartboot.socket.buffer.BufferPagePool;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
+import java.util.function.Consumer;
 
 /**
  * UDP服务启动类
@@ -41,6 +42,18 @@ public class UdpBootstrap {
     private Worker worker;
     private boolean innerWorker = false;
 
+    /**
+     * banner实例
+     * <p>可以通过banner.txt来自定义</p>
+     */
+    private final Banner banner;
+
+    /**
+     * 默认banner
+     */
+    private final Consumer<IoServerConfig> defaultBanner = (config) -> {
+        System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket[udp] ::\t(" + IoServerConfig.VERSION + ")");
+    };
 
     public <Request> UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor, Worker worker) {
         this(protocol, messageProcessor);
@@ -50,6 +63,8 @@ public class UdpBootstrap {
     public <Request> UdpBootstrap(Protocol<Request> protocol, MessageProcessor<Request> messageProcessor) {
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
+
+        this.banner = new Banner(config);
     }
 
     /**
@@ -78,9 +93,7 @@ public class UdpBootstrap {
      */
     public UdpChannel open(String host, int port) throws IOException {
         // 增加广告说明
-        if (config.isBannerEnabled()) {
-            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket[udp] ::\t(" + IoServerConfig.VERSION + ")");
-        }
+        if (config.isBannerEnabled()) banner.printBanner("banner.txt", defaultBanner);
         //初始化内存池
         if (writeBufferPool == null) {
             this.writeBufferPool = BufferPagePool.DEFAULT_BUFFER_PAGE_POOL;

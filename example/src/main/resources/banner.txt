@@ -1,0 +1,5 @@
+Version: ${version} | Port: ${port} | backlog: ${backlog}
+Technical Support:
+ - Document: https://smartboot.tech]
+ - Gitee: https://gitee.com/smartboot/smart-socket
+ - Github: https://github.com/smartboot/smart-socket
