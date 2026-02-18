@@ -1,6 +1,5 @@
 ## smart-socket
 
-### 本人的另一作品 driver-box 正在参加 Gitee 2025 最受欢迎的开源软件投票活动，快来给我投票吧！https://gitee.com/activity/2025opensource?ident=ITVLU3
 
 [![](https://img.shields.io/badge/lang-Chinese-<green>.svg)](README.md) [![](https://img.shields.io/badge/lang-English-<green>.svg)](./README.en.md)
 
