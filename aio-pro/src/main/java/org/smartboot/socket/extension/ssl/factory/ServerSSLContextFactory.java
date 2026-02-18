@@ -7,6 +7,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.InputStream;
+import java.nio.channels.AsynchronousSocketChannel;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 
@@ -63,7 +64,7 @@ public final class ServerSSLContextFactory implements SSLContextFactory {
     }
 
     @Override
-    public void initSSLEngine(SSLEngine sslEngine) {
+    public void initSSLEngine(AsynchronousSocketChannel channel, SSLEngine sslEngine) {
         sslEngine.setUseClientMode(false);
     }
 }

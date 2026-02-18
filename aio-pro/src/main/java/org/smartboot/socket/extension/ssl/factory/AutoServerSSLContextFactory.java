@@ -1,25 +1,26 @@
 package org.smartboot.socket.extension.ssl.factory;
 
 import sun.security.x509.AlgorithmId;
+import sun.security.x509.BasicConstraintsExtension;
 import sun.security.x509.CertificateAlgorithmId;
 import sun.security.x509.CertificateExtensions;
 import sun.security.x509.CertificateSerialNumber;
 import sun.security.x509.CertificateValidity;
 import sun.security.x509.CertificateVersion;
 import sun.security.x509.CertificateX509Key;
+import sun.security.x509.GeneralName;
+import sun.security.x509.GeneralNames;
+import sun.security.x509.KeyUsageExtension;
+import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CertInfo;
-import sun.security.x509.SubjectAlternativeNameExtension;
-import sun.security.x509.GeneralNames;
-import sun.security.x509.GeneralName;
-import sun.security.x509.BasicConstraintsExtension;
-import sun.security.x509.KeyUsageExtension;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.math.BigInteger;
+import java.nio.channels.AsynchronousSocketChannel;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -98,7 +99,7 @@ public final class AutoServerSSLContextFactory implements SSLContextFactory {
     }
 
     @Override
-    public void initSSLEngine(SSLEngine sslEngine) {
+    public void initSSLEngine(AsynchronousSocketChannel channel, SSLEngine sslEngine) {
         sslEngine.setUseClientMode(false);
     }
 
@@ -134,23 +135,23 @@ public final class AutoServerSSLContextFactory implements SSLContextFactory {
 
         // 设置扩展信息
         CertificateExtensions extensions = new CertificateExtensions();
-        
+
         // 添加基本约束扩展（表明这是CA证书）
         extensions.set(BasicConstraintsExtension.NAME, new BasicConstraintsExtension(true, -1));
-        
+
         // 添加密钥用法扩展
         boolean[] keyUsage = new boolean[9];
         keyUsage[0] = true; // digitalSignature
         keyUsage[2] = true; // keyEncipherment
         keyUsage[5] = true; // keyCertSign
         extensions.set(KeyUsageExtension.NAME, new KeyUsageExtension(keyUsage));
-        
+
         // 添加主题替代名称扩展
         GeneralNames generalNames = new GeneralNames();
         generalNames.add(new GeneralName(new sun.security.x509.DNSName(commonName)));
         extensions.set(SubjectAlternativeNameExtension.NAME,
-                      new SubjectAlternativeNameExtension(generalNames));
-        
+                new SubjectAlternativeNameExtension(generalNames));
+
         certInfo.set(X509CertInfo.EXTENSIONS, extensions);
 
         // 创建并签名证书

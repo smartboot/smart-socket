@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.channels.AsynchronousSocketChannel;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -62,7 +63,7 @@ public final class PemServerSSLContextFactory implements SSLContextFactory {
     }
 
     @Override
-    public void initSSLEngine(SSLEngine sslEngine) {
+    public void initSSLEngine(AsynchronousSocketChannel channel, SSLEngine sslEngine) {
         sslEngine.setUseClientMode(false);
     }
 

@@ -2,6 +2,7 @@ package org.smartboot.socket.extension.ssl.factory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import java.nio.channels.AsynchronousSocketChannel;
 
 /**
  * @author 三刀（zhengjunweimail@163.com）
@@ -10,5 +11,5 @@ import javax.net.ssl.SSLEngine;
 public interface SSLContextFactory {
     SSLContext create() throws Exception;
 
-    void initSSLEngine(SSLEngine sslEngine);
+    void initSSLEngine(AsynchronousSocketChannel channel, SSLEngine sslEngine);
 }

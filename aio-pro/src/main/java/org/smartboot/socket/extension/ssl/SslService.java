@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 /**
  * TLS/SSL服务
@@ -35,7 +35,7 @@ public final class SslService {
     private boolean debug;
     private final SSLContext sslContext;
 
-    private final Consumer<SSLEngine> consumer;
+    private final BiConsumer<AsynchronousSocketChannel, SSLEngine> consumer;
 
     private final CompletionHandler<Integer, HandshakeModel> completionHandler = new CompletionHandler<Integer, HandshakeModel>() {
         @Override
@@ -55,7 +55,7 @@ public final class SslService {
         }
     };
 
-    public SslService(SSLContext sslContext, Consumer<SSLEngine> consumer) {
+    public SslService(SSLContext sslContext, BiConsumer<AsynchronousSocketChannel, SSLEngine> consumer) {
         this.sslContext = sslContext;
         this.consumer = consumer;
     }
@@ -67,7 +67,7 @@ public final class SslService {
             SSLSession session = sslEngine.getSession();
 
             //更新SSLEngine配置
-            consumer.accept(sslEngine);
+            consumer.accept(socketChannel, sslEngine);
 
             handshakeModel.setSslEngine(sslEngine);
             handshakeModel.setAppWriteBuffer(bufferPage.allocate(session.getApplicationBufferSize()));

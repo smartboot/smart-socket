@@ -43,8 +43,8 @@ public final class SslPlugin<T> extends AbstractPlugin<T> {
 
     public SslPlugin(SSLContextFactory factory, Consumer<SSLEngine> consumer, BufferPagePool pool) throws Exception {
         this.pool = pool;
-        sslService = new SslService(factory.create(), sslEngine -> {
-            factory.initSSLEngine(sslEngine);
+        sslService = new SslService(factory.create(), (channel, sslEngine) -> {
+            factory.initSSLEngine(channel, sslEngine);
             if (consumer != null) {
                 consumer.accept(sslEngine);
             }
