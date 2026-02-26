@@ -119,7 +119,18 @@ public class UdpBootstrap {
             worker.shutdown();
         }
     }
-
+    /**
+     * 设置写缓冲区容量
+     *
+     * @param chunkSize  单个内存块大小
+     * @param chunkCount 内存块数量上限
+     * @return 当前UdpBootstrap对象
+     */
+    public UdpBootstrap setWriteBuffer(int chunkSize, int chunkCount) {
+        this.config.setWriteChunkSize(chunkSize);
+        this.config.setWriteChunkCount(chunkCount);
+        return this;
+    }
     /**
      * 设置读缓存区大小
      *
