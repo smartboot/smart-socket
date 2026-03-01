@@ -414,14 +414,14 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                 EnhanceAsynchronousChannelGroup.interestOps(readWorker, readSelectionKey, SelectionKey.OP_READ);
             }
         } catch (Throwable e) {
-            if (readCompletionHandler == null) {
+            Object attach = readAttachment;
+            CompletionHandler<Integer, Object> completionHandler = readCompletionHandler;
+            if (completionHandler == null) {
                 try {
                     close();
                 } catch (Throwable ignore) {
                 }
             } else {
-                CompletionHandler<Integer, Object> completionHandler = readCompletionHandler;
-                Object attach = readAttachment;
                 resetRead();
                 completionHandler.failed(e, attach);
             }
