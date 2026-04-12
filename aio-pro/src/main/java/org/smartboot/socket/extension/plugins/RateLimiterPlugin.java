@@ -9,6 +9,7 @@
 
 package org.smartboot.socket.extension.plugins;
 
+import org.smartboot.socket.Plugin;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
 
 import java.nio.ByteBuffer;
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * @author 三刀（zhengjunweimail@163.com）
  * @version V1.0 , 2021/6/29
  */
-public class RateLimiterPlugin<T> extends AbstractPlugin<T> {
+public class RateLimiterPlugin<T> implements Plugin<T> {
 
     /**
      * read 流控阈值

@@ -165,10 +165,7 @@ public final class AioQuickClient {
             @Override
             public void completed(Void result, AsynchronousSocketChannel socketChannel) {
                 try {
-                    AsynchronousSocketChannel connectedChannel = socketChannel;
-                    if (config.getMonitor() != null) {
-                        connectedChannel = config.getMonitor().shouldAccept(socketChannel);
-                    }
+                    AsynchronousSocketChannel connectedChannel = config.getPlugin().shouldAccept(socketChannel);;
                     if (connectedChannel == null) {
                         throw new RuntimeException("NetMonitor refuse channel");
                     }

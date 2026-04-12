@@ -2,7 +2,7 @@ package org.smartboot.socket.extension.multiplex;
 
 import org.smartboot.socket.Protocol;
 import org.smartboot.socket.extension.plugins.IdleStatePlugin;
-import org.smartboot.socket.extension.plugins.Plugin;
+import org.smartboot.socket.Plugin;
 import org.smartboot.socket.extension.plugins.SslPlugin;
 import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
 import org.smartboot.socket.extension.ssl.factory.ClientSSLContextFactory;

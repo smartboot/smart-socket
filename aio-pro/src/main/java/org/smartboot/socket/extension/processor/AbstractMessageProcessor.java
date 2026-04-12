@@ -10,9 +10,8 @@
 package org.smartboot.socket.extension.processor;
 
 import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.NetMonitor;
+import org.smartboot.socket.Plugin;
 import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.extension.plugins.Plugin;
 import org.smartboot.socket.transport.AioSession;
 
 import java.nio.channels.AsynchronousSocketChannel;
@@ -23,7 +22,7 @@ import java.util.List;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>, NetMonitor {
+public abstract class AbstractMessageProcessor<T> implements MessageProcessor<T>, Plugin<T> {
 
     private final List<Plugin<T>> plugins = new ArrayList<>();
 

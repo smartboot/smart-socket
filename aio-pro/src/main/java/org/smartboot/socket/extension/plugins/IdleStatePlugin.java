@@ -1,5 +1,6 @@
 package org.smartboot.socket.extension.plugins;
 
+import org.smartboot.socket.Plugin;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
 import org.smartboot.socket.timer.HashedWheelTimer;
 import org.smartboot.socket.timer.TimerTask;
@@ -16,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * @author 三刀（zhengjunweimail@163.com）
  * @version V1.0 , 2023/10/22
  */
-public final class IdleStatePlugin<T> extends AbstractPlugin<T> {
+public final class IdleStatePlugin<T> implements Plugin<T> {
 
     private static final HashedWheelTimer timer = new HashedWheelTimer(r -> {
         Thread thread = new Thread(r, "idleStateMonitor");

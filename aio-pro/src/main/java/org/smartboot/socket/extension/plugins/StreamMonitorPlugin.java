@@ -9,6 +9,7 @@
 
 package org.smartboot.socket.extension.plugins;
 
+import org.smartboot.socket.Plugin;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
 import org.smartboot.socket.channels.UnsupportedAsynchronousSocketChannel;
 
@@ -32,7 +33,7 @@ import java.util.function.BiConsumer;
  * @author 三刀（zhengjunweimail@163.com）
  * @version V1.0 , 2021/6/2
  */
-public class StreamMonitorPlugin<T> extends AbstractPlugin<T> {
+public class StreamMonitorPlugin<T> implements Plugin<T> {
     public static final BiConsumer<AsynchronousSocketChannel, byte[]> BLUE_HEX_INPUT_STREAM = (channel, bytes) -> {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         try {

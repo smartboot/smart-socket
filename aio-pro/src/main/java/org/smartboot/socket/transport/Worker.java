@@ -1,6 +1,5 @@
 package org.smartboot.socket.transport;
 
-import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPage;
 import org.smartboot.socket.buffer.BufferPagePool;
@@ -161,11 +160,8 @@ public final class Worker implements Runnable {
                 //解码
                 UdpAioSession session = new UdpAioSession(channel, remote, writeBufferPool);
                 try {
-                    NetMonitor netMonitor = config.getMonitor();
-                    if (netMonitor != null) {
-                        netMonitor.beforeRead(session);
-                        netMonitor.afterRead(session, buffer.remaining());
-                    }
+                    config.getPlugin().beforeRead(session);
+                    config.getPlugin().afterRead(session, buffer.remaining());
                     do {
                         Object request = config.getProtocol().decode(buffer, session);
                         //理论上每个UDP包都是一个完整的消息

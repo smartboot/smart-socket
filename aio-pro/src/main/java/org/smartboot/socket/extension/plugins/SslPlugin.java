@@ -9,6 +9,7 @@
 
 package org.smartboot.socket.extension.plugins;
 
+import org.smartboot.socket.Plugin;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.extension.ssl.ClientAuth;
 import org.smartboot.socket.extension.ssl.SslAsynchronousSocketChannel;
@@ -29,7 +30,7 @@ import java.util.function.Consumer;
  * @author 三刀
  * @version V1.0 , 2020/4/17
  */
-public final class SslPlugin<T> extends AbstractPlugin<T> {
+public final class SslPlugin<T> implements Plugin<T> {
     private final SslService sslService;
     private final BufferPagePool pool;
 

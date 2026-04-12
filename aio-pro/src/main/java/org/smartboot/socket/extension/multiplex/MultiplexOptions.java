@@ -1,7 +1,7 @@
 package org.smartboot.socket.extension.multiplex;
 
 import org.smartboot.socket.buffer.BufferPagePool;
-import org.smartboot.socket.extension.plugins.Plugin;
+import org.smartboot.socket.Plugin;
 
 import java.nio.channels.AsynchronousChannelGroup;
 import java.util.ArrayList;

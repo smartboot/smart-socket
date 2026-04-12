@@ -10,7 +10,7 @@
 package org.smartboot.socket.transport;
 
 import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.NetMonitor;
+import org.smartboot.socket.Plugin;
 import org.smartboot.socket.Protocol;
 
 import java.net.SocketOption;
@@ -59,7 +59,7 @@ final class IoServerConfig {
     /**
      * 服务器消息拦截器
      */
-    private NetMonitor monitor;
+    private Plugin plugin;
     /**
      * 服务器端口号
      */
@@ -137,8 +137,8 @@ final class IoServerConfig {
         this.port = port;
     }
 
-    public NetMonitor getMonitor() {
-        return monitor;
+    public Plugin getPlugin() {
+        return plugin;
     }
 
     public Protocol getProtocol() {
@@ -158,7 +158,8 @@ final class IoServerConfig {
      */
     public void setProcessor(MessageProcessor processor) {
         this.processor = processor;
-        this.monitor = (processor instanceof NetMonitor) ? (NetMonitor) processor : null;
+        this.plugin = (processor instanceof Plugin) ? (Plugin) processor : new Plugin() {
+        };
     }
 
     public int getReadBufferSize() {
@@ -226,7 +227,7 @@ final class IoServerConfig {
                 ", writeChunkSize=" + writeChunkSize +
                 ", writeChunkCount=" + writeChunkCount +
                 ", host='" + host + '\'' +
-                ", monitor=" + monitor +
+                ", plugin=" + plugin +
                 ", port=" + port +
                 ", backlog=" + backlog +
                 ", processor=" + processor +

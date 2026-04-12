@@ -107,9 +107,7 @@ public final class UdpChannel {
     }
 
     private boolean send(VirtualBuffer virtualBuffer, UdpAioSession session) {
-        if (config.getMonitor() != null) {
-            config.getMonitor().beforeWrite(session);
-        }
+        config.getPlugin().beforeWrite(session);
         int size = 0;
         try {
             size = channel.send(virtualBuffer.buffer(), session.getRemoteAddress());
@@ -119,9 +117,7 @@ public final class UdpChannel {
         if (size == 0) {
             return false;
         }
-        if (config.getMonitor() != null) {
-            config.getMonitor().afterWrite(session, size);
-        }
+        config.getPlugin().afterWrite(session, size);
         virtualBuffer.clean();
         session.byteBuf.finishWrite();
         session.writeBuffer().flush();

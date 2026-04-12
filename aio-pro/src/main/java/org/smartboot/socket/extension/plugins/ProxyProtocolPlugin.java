@@ -1,5 +1,6 @@
 package org.smartboot.socket.extension.plugins;
 
+import org.smartboot.socket.Plugin;
 import org.smartboot.socket.channels.AsynchronousSocketChannelProxy;
 
 import java.io.IOException;
@@ -15,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @param <T>
  */
-public class ProxyProtocolPlugin<T> extends AbstractPlugin<T> {
+public class ProxyProtocolPlugin<T> implements Plugin<T> {
     private static final byte AF_UNSPEC_BYTE = 0x00;
     private static final int AF_IPV4_BYTE = 0x10;
     private static final byte AF_IPV6_BYTE = 0x20;

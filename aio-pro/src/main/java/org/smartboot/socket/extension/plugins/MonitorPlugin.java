@@ -9,6 +9,7 @@
 
 package org.smartboot.socket.extension.plugins;
 
+import org.smartboot.socket.Plugin;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.timer.HashedWheelTimer;
 import org.smartboot.socket.transport.AioSession;
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.LongAdder;
  * @author 三刀
  * @version V1.0 , 2018/8/19
  */
-public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnable {
+public final class MonitorPlugin<T> implements Plugin<T>, Runnable {
     /**
      * 当前周期内流入字节数
      */
@@ -134,9 +135,9 @@ public final class MonitorPlugin<T> extends AbstractPlugin<T> implements Runnabl
                 + "\r\nread count:\t" + curReadCount + "\twrite count:\t" + curWriteCount
 
                 + (udp ? "" : "\r\nconnect count:\t" + connectCount
-                + "\r\ndisconnect count:\t" + disConnectCount
-                + "\r\nonline count:\t" + onlineCount
-                + "\r\nconnected total:\t" + totalConnect)
+                              + "\r\ndisconnect count:\t" + disConnectCount
+                              + "\r\nonline count:\t" + onlineCount
+                              + "\r\nconnected total:\t" + totalConnect)
                 + "\r\nRequests/sec:\t" + curProcessMsgNum * 1.0 / seconds
                 + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "(MB)");
     }

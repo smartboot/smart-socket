@@ -9,6 +9,7 @@
 
 package org.smartboot.socket.extension.plugins;
 
+import org.smartboot.socket.Plugin;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.timer.HashedWheelTimer;
 import org.smartboot.socket.timer.TimerTask;
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * @author 三刀
  * @version V1.0 , 2019/4/14
  */
-public class BufferPageMonitorPlugin<T> extends AbstractPlugin<T> {
+public class BufferPageMonitorPlugin<T> implements Plugin<T> {
     /**
      * 任务执行频率
      */

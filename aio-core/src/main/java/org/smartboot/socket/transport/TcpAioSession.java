@@ -11,7 +11,6 @@ package org.smartboot.socket.transport;
 
 
 import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.NetMonitor;
 import org.smartboot.socket.StateMachineEnum;
 import org.smartboot.socket.buffer.BufferPagePool;
 import org.smartboot.socket.buffer.VirtualBuffer;
@@ -148,10 +147,7 @@ final class TcpAioSession extends AioSession {
      * <p>需要调用控制同步</p>
      */
     void writeCompleted(int result) {
-        NetMonitor monitor = config.getMonitor();
-        if (monitor != null) {
-            monitor.afterWrite(this, result);
-        }
+        config.getPlugin().afterWrite(this, result);
         VirtualBuffer writeBuffer = TcpAioSession.this.writeBuffer;
         TcpAioSession.this.writeBuffer = null;
         if (writeBuffer == null) {
@@ -240,10 +236,7 @@ final class TcpAioSession extends AioSession {
             return;
         }
         // 接收到的消息进行预处理
-        NetMonitor monitor = config.getMonitor();
-        if (monitor != null) {
-            monitor.afterRead(this, result);
-        }
+        config.getPlugin().afterRead(this, result);
         this.eof = result == -1;
         if (SESSION_STATUS_CLOSED != status) {
             this.readBuffer.buffer().flip();
@@ -312,10 +305,7 @@ final class TcpAioSession extends AioSession {
         }
 
         //read from channel
-        NetMonitor monitor = config.getMonitor();
-        if (monitor != null) {
-            monitor.beforeRead(this);
-        }
+        config.getPlugin().beforeRead(this);
         channel.read(readBuffer, 0L, TimeUnit.MILLISECONDS, this, READ_COMPLETION_HANDLER);
     }
 
@@ -346,10 +336,7 @@ final class TcpAioSession extends AioSession {
      */
     private void continueWrite(VirtualBuffer writeBuffer) {
         this.writeBuffer = writeBuffer;
-        NetMonitor monitor = config.getMonitor();
-        if (monitor != null) {
-            monitor.beforeWrite(this);
-        }
+        config.getPlugin().beforeWrite(this);
         channel.write(writeBuffer.buffer(), 0L, TimeUnit.MILLISECONDS, this, WRITE_COMPLETION_HANDLER);
     }
 

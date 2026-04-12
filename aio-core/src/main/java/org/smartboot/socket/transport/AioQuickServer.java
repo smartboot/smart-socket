@@ -184,25 +184,17 @@ public final class AioQuickServer {
      */
     private void createSession(AsynchronousSocketChannel channel, Supplier<VirtualBuffer> readBufferSupplier) {
         //连接成功则构造AIOSession对象
-        TcpAioSession session = null;
-        AsynchronousSocketChannel acceptChannel = channel;
         try {
-            if (config.getMonitor() != null) {
-                acceptChannel = config.getMonitor().shouldAccept(channel);
-            }
+            AsynchronousSocketChannel acceptChannel = config.getPlugin().shouldAccept(channel);
             if (acceptChannel != null) {
                 acceptChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
-                session = new TcpAioSession(acceptChannel, this.config, writeBufferPool, readBufferSupplier);
+                new TcpAioSession(acceptChannel, this.config, writeBufferPool, readBufferSupplier);
             } else {
                 config.getProcessor().stateEvent(null, StateMachineEnum.REJECT_ACCEPT, null);
                 IOUtil.close(channel);
             }
         } catch (Exception e) {
-            if (session == null) {
-                IOUtil.close(channel);
-            } else {
-                session.close();
-            }
+            IOUtil.close(channel);
             config.getProcessor().stateEvent(null, StateMachineEnum.INTERNAL_EXCEPTION, e);
         }
     }
