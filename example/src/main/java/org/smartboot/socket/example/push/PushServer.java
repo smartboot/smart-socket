@@ -21,6 +21,7 @@ import java.io.IOException;
 public class PushServer {
     public static void main(String[] args) throws IOException {
         AioQuickServer server = new AioQuickServer(8080, new StringProtocol(), new PushServerProcessorMessage());
+        server.setBannerEnabled(true);
         server.start();
     }
 }

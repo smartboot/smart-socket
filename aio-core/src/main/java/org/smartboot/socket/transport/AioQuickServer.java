@@ -26,6 +26,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.security.InvalidParameterException;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -66,6 +67,12 @@ public final class AioQuickServer {
      * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
      */
     private final IoServerConfig config = new IoServerConfig();
+
+    /**
+     * banner实例
+     * <p>可以通过资源文件里面的banner.txt来自定义banner</p>
+     */
+    private final Banner banner;
     private static long threadSeqNumber;
     /**
      * write 内存池
@@ -76,6 +83,16 @@ public final class AioQuickServer {
      */
     private BufferPagePool readBufferPool = null;
 
+    /**
+     * 默认banner
+     */
+    private final Consumer<IoServerConfig> defaultBanner = (config) -> {
+        System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + "::\t(" + IoServerConfig.VERSION + ") [port: " + config.getPort() + ", threadNum:" + config.getThreadNum() + "]");
+        System.out.println("Technical Support:");
+        System.out.println(" - Document: https://smartboot.tech]");
+        System.out.println(" - Gitee: https://gitee.com/smartboot/smart-socket");
+        System.out.println(" - Github: https://github.com/smartboot/smart-socket");
+    };
 
     /**
      * 设置服务端启动必要参数配置
@@ -89,6 +106,8 @@ public final class AioQuickServer {
         config.setProtocol(protocol);
         config.setProcessor(messageProcessor);
         config.setThreadNum(Runtime.getRuntime().availableProcessors());
+
+        this.banner = new Banner(config);
     }
 
     /**
@@ -118,13 +137,7 @@ public final class AioQuickServer {
      * @throws IOException IO异常
      */
     public void start(AsynchronousChannelGroup asynchronousChannelGroup) throws IOException {
-        if (config.isBannerEnabled()) {
-            System.out.println(IoServerConfig.BANNER + "\r\n :: smart-socket " + "::\t(" + IoServerConfig.VERSION + ") [port: " + config.getPort() + ", threadNum:" + config.getThreadNum() + "]");
-            System.out.println("Technical Support:");
-            System.out.println(" - Document: https://smartboot.tech]");
-            System.out.println(" - Gitee: https://gitee.com/smartboot/smart-socket");
-            System.out.println(" - Github: https://github.com/smartboot/smart-socket");
-        }
+        if (config.isBannerEnabled()) banner.printBanner("banner.txt", defaultBanner);
         try {
             if (writeBufferPool == null) {
                 this.writeBufferPool = BufferPagePool.DEFAULT_BUFFER_PAGE_POOL;
