@@ -9,7 +9,12 @@
 
 package io.github.smartboot.socket.extension.ssl.factory;
 
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.InputStream;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.security.KeyStore;

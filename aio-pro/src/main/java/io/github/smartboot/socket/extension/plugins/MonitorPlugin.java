@@ -135,9 +135,9 @@ public final class MonitorPlugin<T> implements Plugin<T>, Runnable {
                 + "\r\nread count:\t" + curReadCount + "\twrite count:\t" + curWriteCount
 
                 + (udp ? "" : "\r\nconnect count:\t" + connectCount
-                              + "\r\ndisconnect count:\t" + disConnectCount
-                              + "\r\nonline count:\t" + onlineCount
-                              + "\r\nconnected total:\t" + totalConnect)
+                + "\r\ndisconnect count:\t" + disConnectCount
+                + "\r\nonline count:\t" + onlineCount
+                + "\r\nconnected total:\t" + totalConnect)
                 + "\r\nRequests/sec:\t" + curProcessMsgNum * 1.0 / seconds
                 + "\r\nTransfer/sec:\t" + (curInFlow * 1.0 / (1024 * 1024) / seconds) + "(MB)");
     }

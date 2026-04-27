@@ -119,6 +119,7 @@ public class UdpBootstrap {
             worker.shutdown();
         }
     }
+
     /**
      * 设置写缓冲区容量
      *
@@ -131,6 +132,7 @@ public class UdpBootstrap {
         this.config.setWriteChunkCount(chunkCount);
         return this;
     }
+
     /**
      * 设置读缓存区大小
      *
