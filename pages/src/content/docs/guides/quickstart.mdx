@@ -55,8 +55,8 @@ smart-socket 1.7.5 版本完全兼容 JDK 8 及以上所有版本，推荐使用
 通信的第一步就是定义协议。这里我们创建一个简单的字符串协议，它能够处理变长字符串消息：
 
 ```java
-import org.smartboot.socket.Protocol;
-import org.smartboot.socket.transport.AioSession;
+import io.github.smartboot.socket.Protocol;
+import io.github.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
 
@@ -99,9 +99,9 @@ public class StringProtocol implements Protocol<String> {
 现在让我们创建服务端程序。服务端会接收客户端发送的消息，并将其原样返回：
 
 ```java
-import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.transport.AioQuickServer;
-import org.smartboot.socket.transport.WriteBuffer;
+import io.github.smartboot.socket.MessageProcessor;
+import io.github.smartboot.socket.transport.AioQuickServer;
+import io.github.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
 
@@ -140,10 +140,10 @@ public class StringServer {
 最后我们来创建客户端程序，它会连接到服务端并发送一条测试消息：
 
 ```java
-import org.smartboot.socket.MessageProcessor;
-import org.smartboot.socket.transport.AioQuickClient;
-import org.smartboot.socket.transport.AioSession;
-import org.smartboot.socket.transport.WriteBuffer;
+import io.github.smartboot.socket.MessageProcessor;
+import io.github.smartboot.socket.transport.AioQuickClient;
+import io.github.smartboot.socket.transport.AioSession;
+import io.github.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
 
