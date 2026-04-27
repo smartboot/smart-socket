@@ -1,7 +1,7 @@
 # 当需要升级版本时，执行该命令
-version=1.9.0-SNAPSHOT
+version=2.0.0-SNAPSHOT
 update_version:
-	sed -i  '' 's/public static final String VERSION = ".*";/public static final String VERSION = "v${version}";/' aio-core/src/main/java/org/smartboot/socket/transport/IoServerConfig.java
+	sed -i  '' 's/public static final String VERSION = ".*";/public static final String VERSION = "v${version}";/' aio-core/src/main/java/io/github/smartboot/socket/transport/IoServerConfig.java
 	mvn -f smart-socket-parent/pom.xml versions:set -DnewVersion=${version} versions:commit
 	mvn -f smart-socket-parent/pom.xml clean install
 	mvn versions:use-dep-version -Dincludes=io.github.smartboot.socket:smart-socket-parent -DdepVersion=${version} versions:commit
