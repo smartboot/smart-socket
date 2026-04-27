@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017-2020, org.smartboot. All rights reserved.
+ * Copyright (c) 2017-2020, tech.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: SslDemo.java
  * Date: 2020-04-16

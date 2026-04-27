@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017-2021, org.smartboot. All rights reserved.
+ * Copyright (c) 2017-2021, tech.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: DelimiterFrameDecoderTest.java
  * Date: 2021-11-07

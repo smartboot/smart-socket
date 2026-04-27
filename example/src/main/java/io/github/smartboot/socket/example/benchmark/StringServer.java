@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017-2026, org.smartboot. All rights reserved.
+ * Copyright (c) 2017-2026, tech.smartboot. All rights reserved.
  * project name: smart-socket
  * file name: StringServer.java
  * Date: 2026-04-27
