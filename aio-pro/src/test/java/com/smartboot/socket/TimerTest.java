@@ -1,7 +1,7 @@
 package com.smartboot.socket;
 
-import org.smartboot.socket.timer.HashedWheelTimer;
-import org.smartboot.socket.timer.Timer;
+import io.github.smartboot.socket.timer.HashedWheelTimer;
+import io.github.smartboot.socket.timer.Timer;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

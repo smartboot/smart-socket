@@ -1,0 +1,212 @@
+/*******************************************************************************
+ * Copyright (c) 2017-2026, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: Worker.java
+ * Date: 2026-04-27
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
+
+package io.github.smartboot.socket.transport;
+
+import io.github.smartboot.socket.StateMachineEnum;
+import io.github.smartboot.socket.buffer.BufferPage;
+import io.github.smartboot.socket.buffer.BufferPagePool;
+import io.github.smartboot.socket.buffer.VirtualBuffer;
+
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
+
+public final class Worker implements Runnable {
+    private final static int MAX_READ_TIMES = 16;
+    private static final Runnable SELECTOR_CHANNEL = () -> {
+    };
+    private static final Runnable SHUTDOWN_CHANNEL = () -> {
+    };
+    /**
+     * 当前Worker绑定的Selector
+     */
+    private final Selector selector;
+    /**
+     * write 内存池
+     */
+    private BufferPagePool writeBufferPool = null;
+    /**
+     * read 内存池
+     */
+    private BufferPage readBufferPage = null;
+    private final BlockingQueue<Runnable> requestQueue = new ArrayBlockingQueue<>(256);
+
+    /**
+     * 待注册的事件
+     */
+    private final ConcurrentLinkedQueue<Consumer<Selector>> registers = new ConcurrentLinkedQueue<>();
+
+    private VirtualBuffer standbyBuffer;
+    private final ExecutorService executorService;
+
+    public Worker(BufferPagePool writeBufferPool, int threadNum) throws IOException {
+        this(writeBufferPool, writeBufferPool, threadNum);
+    }
+
+    public Worker(BufferPagePool readBufferPage, BufferPagePool writeBufferPool, int threadNum) throws IOException {
+        this.readBufferPage = readBufferPage.allocatePage();
+        this.writeBufferPool = writeBufferPool;
+        this.selector = Selector.open();
+        try {
+            this.requestQueue.put(SELECTOR_CHANNEL);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        //启动worker线程组
+        executorService = new ThreadPoolExecutor(threadNum, threadNum, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new ThreadFactory() {
+            int i = 0;
+
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "smart-socket:udp-" + Worker.this.hashCode() + "-" + (++i));
+            }
+        });
+        for (int i = 0; i < threadNum; i++) {
+            executorService.execute(this);
+        }
+    }
+
+    /**
+     * 注册事件
+     */
+    void addRegister(Consumer<Selector> register) {
+        registers.offer(register);
+        selector.wakeup();
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                Runnable runnable = requestQueue.take();
+                //服务终止
+                if (runnable == SHUTDOWN_CHANNEL) {
+                    break;
+                } else if (runnable == SELECTOR_CHANNEL) {
+                    try {
+                        doSelector();
+                    } finally {
+                        requestQueue.put(SELECTOR_CHANNEL);
+                    }
+                } else {
+                    runnable.run();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            requestQueue.offer(SHUTDOWN_CHANNEL);
+            selector.wakeup();
+        }
+    }
+
+    private void doSelector() throws IOException {
+        Consumer<Selector> register;
+        while ((register = registers.poll()) != null) {
+            register.accept(selector);
+        }
+        Set<SelectionKey> keySet = selector.selectedKeys();
+        if (keySet.isEmpty()) {
+            selector.select();
+        }
+        Iterator<SelectionKey> keyIterator = keySet.iterator();
+        // 执行本次已触发待处理的事件
+        while (keyIterator.hasNext()) {
+            SelectionKey key = keyIterator.next();
+            UdpChannel udpChannel = (UdpChannel) key.attachment();
+            if (!key.isValid()) {
+                keyIterator.remove();
+                udpChannel.close();
+                continue;
+            }
+            if (key.isWritable()) {
+                udpChannel.doWrite();
+            }
+            if (key.isReadable() && !doRead(udpChannel)) {
+                break;
+            }
+            keyIterator.remove();
+        }
+    }
+
+    private boolean doRead(UdpChannel channel) throws IOException {
+        int count = MAX_READ_TIMES;
+        IoServerConfig config = channel.config;
+        while (count-- > 0) {
+            if (standbyBuffer == null) {
+                standbyBuffer = readBufferPage.allocate(config.getReadBufferSize());
+            }
+            ByteBuffer buffer = standbyBuffer.buffer();
+            SocketAddress remote = channel.getChannel().receive(buffer);
+            if (remote == null) {
+                buffer.clear();
+                return true;
+            }
+            VirtualBuffer readyBuffer = standbyBuffer;
+            standbyBuffer = readBufferPage.allocate(config.getReadBufferSize());
+            buffer.flip();
+            Runnable runnable = () -> {
+                //解码
+                UdpAioSession session = new UdpAioSession(channel, remote, writeBufferPool);
+                try {
+                    config.getPlugin().beforeRead(session);
+                    config.getPlugin().afterRead(session, buffer.remaining());
+                    do {
+                        Object request = config.getProtocol().decode(buffer, session);
+                        //理论上每个UDP包都是一个完整的消息
+                        if (request == null) {
+                            config.getProcessor().stateEvent(session, StateMachineEnum.DECODE_EXCEPTION, new IllegalStateException("decode result is null, buffer size: " + buffer.remaining()));
+                            break;
+                        } else {
+                            config.getProcessor().process(session, request);
+                        }
+                    } while (buffer.hasRemaining());
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    config.getProcessor().stateEvent(session, StateMachineEnum.DECODE_EXCEPTION, e);
+                } finally {
+                    session.writeBuffer().flush();
+                    readyBuffer.clean();
+                }
+            };
+            if (!requestQueue.offer(runnable)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    void shutdown() {
+        try {
+            requestQueue.put(SHUTDOWN_CHANNEL);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        selector.wakeup();
+        executorService.shutdown();
+        //关闭所有连接
+        selector.keys().forEach(key -> {
+            UdpChannel udpChannel = (UdpChannel) key.attachment();
+            udpChannel.close();
+        });
+        try {
+            selector.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}

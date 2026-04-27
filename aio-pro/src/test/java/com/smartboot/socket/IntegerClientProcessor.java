@@ -9,9 +9,9 @@
 
 package com.smartboot.socket;
 
-import org.smartboot.socket.StateMachineEnum;
-import org.smartboot.socket.extension.processor.AbstractMessageProcessor;
-import org.smartboot.socket.transport.AioSession;
+import io.github.smartboot.socket.AbstractMessageProcessor;
+import io.github.smartboot.socket.StateMachineEnum;
+import io.github.smartboot.socket.transport.AioSession;
 
 /**
  * @author 三刀

@@ -50,7 +50,7 @@
                             <transformers>
 <!--                                <transformer-->
 <!--                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">-->
-<!--                                    <mainClass>org.smartboot.socket.benchmark.Server</mainClass>-->
+<!--                                    <mainClass>benchmark.io.github.smartboot.socket.Server</mainClass>-->
 <!--                                </transformer>-->
                                 <!-- 采用追加的方式 -->
 <!--                                <transformer-->

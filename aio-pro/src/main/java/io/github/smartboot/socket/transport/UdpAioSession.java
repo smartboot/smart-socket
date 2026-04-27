@@ -1,0 +1,79 @@
+/*******************************************************************************
+ * Copyright (c) 2017-2026, org.smartboot. All rights reserved.
+ * project name: smart-socket
+ * file name: UdpAioSession.java
+ * Date: 2026-04-27
+ * Author: sandao (zhengjunweimail@163.com)
+ *
+ ******************************************************************************/
+
+package io.github.smartboot.socket.transport;
+
+import io.github.smartboot.socket.StateMachineEnum;
+import io.github.smartboot.socket.buffer.BufferPagePool;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+
+/**
+ * @author 三刀
+ * @version V1.0 , 2019/8/25
+ */
+final class UdpAioSession extends AioSession {
+
+    private final UdpChannel udpChannel;
+
+    private final SocketAddress remote;
+
+    final WriteBufferImpl byteBuf;
+
+    UdpAioSession(final UdpChannel udpChannel, final SocketAddress remote, BufferPagePool pool) {
+        this.udpChannel = udpChannel;
+        this.remote = remote;
+        this.byteBuf = new WriteBufferImpl(pool, buffer -> udpChannel.write(buffer, UdpAioSession.this), udpChannel.config.getWriteChunkSize(), 1);
+        udpChannel.config.getProcessor().stateEvent(this, StateMachineEnum.NEW_SESSION, null);
+    }
+
+    @Override
+    public WriteBuffer writeBuffer() {
+        return byteBuf;
+    }
+
+    @Override
+    public ByteBuffer readBuffer() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void awaitRead() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void signalRead() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * 为确保消息尽可能发送，UDP不支持立即close
+     *
+     * @param immediate true:立即关闭,false:响应消息发送完后关闭
+     */
+    @Override
+    public void close(boolean immediate) {
+        byteBuf.flush();
+    }
+
+    @Override
+    public InetSocketAddress getLocalAddress() throws IOException {
+        return (InetSocketAddress) udpChannel.getChannel().getLocalAddress();
+    }
+
+    @Override
+    public InetSocketAddress getRemoteAddress() {
+        return (InetSocketAddress) remote;
+    }
+
+}
