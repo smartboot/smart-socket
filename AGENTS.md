@@ -329,7 +329,7 @@ AioQuickServer server = new AioQuickServer()
 
 ```xml
 <dependency>
-    <groupId>org.smartboot.socket</groupId>
+    <groupId>io.github.smartboot.socket</groupId>
     <artifactId>aio-core</artifactId>
     <version>{版本号}</version>
 </dependency>
