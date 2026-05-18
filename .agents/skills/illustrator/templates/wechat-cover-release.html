@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品发布类文章封面模板 - 900×383</title>
+    <style>
+        :root {
+            --feat-primary: #c026d3;
+            --feat-primary-light: #d946ef;
+            --feat-primary-dark: #a21caf;
+            --feat-secondary: #64748b;
+            --feat-accent: #f59e0b;
+            --neutral-50: #fafafa;
+            --neutral-100: #f5f5f5;
+            --neutral-200: #e5e5e5;
+            --neutral-500: #737373;
+            --neutral-700: #404040;
+            --neutral-800: #262626;
+            --neutral-900: #171717;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 
+                -apple-system, 
+                BlinkMacSystemFont, 
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "Microsoft YaHei",
+                "Helvetica Neue", 
+                sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .container {
+            width: 900px;
+            height: 383px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--feat-primary) 0%, var(--feat-primary-dark) 100%);
+            padding: 50px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .version-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            width: fit-content;
+        }
+        
+        .new-tag {
+            background: var(--feat-accent);
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.05em;
+        }
+        
+        .title {
+            font-size: 42px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-bottom: 12px;
+            max-width: 700px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 400;
+            line-height: 1.5;
+            max-width: 600px;
+        }
+        
+        .features {
+            display: flex;
+            gap: 20px;
+            margin-top: 24px;
+        }
+        
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 16px;
+            border-radius: 8px;
+        }
+        
+        .feature-icon {
+            font-size: 18px;
+        }
+        
+        .feature-text {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 500;
+        }
+        
+        .brand {
+            position: absolute;
+            bottom: 30px;
+            right: 50px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .brand-logo {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .brand-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .decoration {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            opacity: 0.1;
+            background: 
+                radial-gradient(circle at 80% 30%, rgba(255,255,255,0.3) 0%, transparent 50%),
+                radial-gradient(circle at 90% 70%, rgba(255,255,255,0.2) 0%, transparent 40%);
+        }
+        
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="grid-overlay"></div>
+        <div class="decoration"></div>
+        
+        <div class="version-badge">
+            <span class="new-tag">NEW</span>
+            <span>v2.0.0</span>
+        </div>
+        
+        <h1 class="title">Feat 2.0 正式发布</h1>
+        
+        <p class="subtitle">全新架构设计，性能提升 300%，带来更优雅的开发体验</p>
+        
+        <div class="features">
+            <div class="feature">
+                <span class="feature-icon">⚡</span>
+                <span class="feature-text">性能提升 300%</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">📦</span>
+                <span class="feature-text">体积减少 50%</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">🤖</span>
+                <span class="feature-text">AI 能力集成</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">☁️</span>
+                <span class="feature-text">云原生支持</span>
+            </div>
+        </div>
+        
+        <div class="brand">
+            <div class="brand-logo">F</div>
+            <span class="brand-name">Feat</span>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手绘风格对比展示 - 900×500</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --art-warm-cream: #fef9f3;
+            --art-soft-pink: #fce4ec;
+            --art-lavender: #f3e5f5;
+            --art-mint: #e8f5e9;
+            --art-peach: #fff3e0;
+            --art-sky: #e3f2fd;
+            
+            --art-primary: #7c6ba0;
+            --art-primary-light: #9b8ab8;
+            --art-primary-dark: #5a4a7a;
+            
+            --art-secondary: #e8a4b8;
+            --art-accent: #e89b5a;
+            --art-highlight: #e85a5a;
+            
+            --art-line: #5d4e37;
+            --art-line-light: #6b5b45;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 
+                "ZCOOL KuaiLe",
+                "Ma Shan Zheng",
+                "ZCOOL XiaoWei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "Microsoft YaHei",
+                sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+        }
+        
+        .container {
+            width: 900px;
+            height: 500px;
+            position: relative;
+            overflow: hidden;
+            background: var(--art-warm-cream);
+        }
+        
+        .sketch-border {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 3px solid var(--art-line);
+            border-radius: 24px;
+            transform: rotate(-0.2deg);
+        }
+        
+        .sketch-border::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            right: -6px;
+            bottom: -6px;
+            border: 2px dashed var(--art-line-light);
+            border-radius: 28px;
+            opacity: 0.4;
+            transform: rotate(0.3deg);
+        }
+        
+        .sketch-border::after {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: -12px;
+            right: -12px;
+            bottom: -12px;
+            border: 1px dotted var(--art-line-light);
+            border-radius: 32px;
+            opacity: 0.25;
+            transform: rotate(-0.15deg);
+        }
+        
+        .header {
+            text-align: center;
+            padding-top: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .title {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--art-line);
+            position: relative;
+            display: inline-block;
+            padding: 0 20px 10px;
+        }
+        
+        .title::before,
+        .title::after {
+            content: '✿';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: var(--art-secondary);
+        }
+        
+        .title::before {
+            left: -10px;
+        }
+        
+        .title::after {
+            right: -10px;
+        }
+        
+        .title-underline {
+            position: absolute;
+            bottom: 0;
+            left: 10%;
+            right: 10%;
+            height: 4px;
+            background: linear-gradient(90deg, 
+                var(--art-primary) 0%, 
+                var(--art-secondary) 50%, 
+                var(--art-accent) 100%);
+            border-radius: 2px;
+            transform: skewX(-5deg);
+        }
+        
+        .content {
+            display: flex;
+            position: relative;
+            z-index: 1;
+            height: calc(100% - 90px);
+            padding: 15px 25px 20px;
+        }
+        
+        .side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            position: relative;
+            border-radius: 16px;
+        }
+        
+        .side.left {
+            background: linear-gradient(180deg, 
+                rgba(252, 228, 236, 0.6) 0%, 
+                rgba(243, 229, 245, 0.4) 50%,
+                rgba(255, 255, 255, 0.2) 100%);
+            margin-right: 35px;
+        }
+        
+        .side.right {
+            background: linear-gradient(180deg, 
+                rgba(232, 245, 233, 0.6) 0%, 
+                rgba(227, 242, 253, 0.4) 50%,
+                rgba(255, 255, 255, 0.2) 100%);
+            margin-left: 35px;
+        }
+        
+        .side-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 2px dashed var(--art-line-light);
+            position: relative;
+        }
+        
+        .side-header::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--art-line-light);
+            opacity: 0.3;
+        }
+        
+        .side-icon {
+            font-size: 48px;
+            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1));
+        }
+        
+        .side-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--art-line);
+        }
+        
+        .side-desc {
+            font-size: 13px;
+            color: var(--art-line-light);
+            font-style: italic;
+            margin-top: 3px;
+        }
+        
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            color: var(--art-line);
+            background: rgba(255, 255, 255, 0.75);
+            padding: 12px 16px;
+            border-radius: 14px;
+            border-left: 5px solid var(--art-primary);
+            position: relative;
+            box-shadow: 2px 2px 0 rgba(93, 78, 55, 0.1);
+        }
+        
+        .side.right .feature-item {
+            border-left-color: var(--art-accent);
+        }
+        
+        .feature-item::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: -2px;
+            bottom: -2px;
+            border: 1px solid var(--art-line-light);
+            border-radius: 14px;
+            opacity: 0.15;
+            z-index: -1;
+        }
+        
+        .feature-icon {
+            font-size: 20px;
+        }
+        
+        .feature-text {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .vs-divider {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .vs-diagonal {
+            position: absolute;
+            width: 3px;
+            height: 180px;
+            background: linear-gradient(180deg, 
+                transparent 0%,
+                var(--art-line) 20%,
+                var(--art-primary) 50%,
+                var(--art-line) 80%,
+                transparent 100%);
+            border-radius: 2px;
+        }
+        
+        .vs-diagonal-left {
+            transform: rotate(-25deg);
+            left: -20px;
+        }
+        
+        .vs-diagonal-right {
+            transform: rotate(25deg);
+            right: -20px;
+        }
+        
+        .vs-badge {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--art-primary) 0%, var(--art-primary-dark) 100%);
+            border: 4px solid var(--art-line);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+            z-index: 1;
+            position: relative;
+            box-shadow: 
+                4px 4px 0 rgba(93, 78, 55, 0.3),
+                0 0 0 3px var(--art-warm-cream);
+            transform: rotate(-3deg);
+        }
+        
+        .vs-badge::before {
+            content: '⚔️';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+        }
+        
+        .vs-badge::after {
+            content: '⚔️';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+        }
+        
+        .vs-spark {
+            position: absolute;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        .vs-spark:nth-child(1) { top: -25px; left: -15px; }
+        .vs-spark:nth-child(2) { top: -20px; right: -10px; }
+        .vs-spark:nth-child(3) { bottom: -25px; left: -10px; }
+        .vs-spark:nth-child(4) { bottom: -20px; right: -15px; }
+        
+        .corner-deco {
+            position: absolute;
+            font-size: 24px;
+            opacity: 0.5;
+            z-index: 1;
+        }
+        
+        .corner-deco.top-left { 
+            top: 18px; 
+            left: 18px; 
+            transform: rotate(-15deg);
+        }
+        .corner-deco.top-right { 
+            top: 18px; 
+            right: 18px; 
+            transform: rotate(15deg);
+        }
+        .corner-deco.bottom-left { 
+            bottom: 18px; 
+            left: 18px; 
+            transform: rotate(15deg);
+        }
+        .corner-deco.bottom-right { 
+            bottom: 18px; 
+            right: 18px; 
+            transform: rotate(-15deg);
+        }
+        
+        .floating-deco {
+            position: absolute;
+            font-size: 16px;
+            opacity: 0.4;
+            z-index: 1;
+        }
+        
+        .doodle {
+            position: absolute;
+            opacity: 0.2;
+            z-index: 0;
+        }
+        
+        .doodle-1 {
+            top: 100px;
+            left: 50px;
+            width: 30px;
+            height: 30px;
+            border: 2px solid var(--art-line);
+            border-radius: 50%;
+        }
+        
+        .doodle-2 {
+            top: 120px;
+            right: 60px;
+            width: 25px;
+            height: 25px;
+            border: 2px dashed var(--art-line);
+            transform: rotate(45deg);
+        }
+        
+        .doodle-3 {
+            bottom: 90px;
+            left: 70px;
+            width: 20px;
+            height: 20px;
+            border: 2px dotted var(--art-line);
+            border-radius: 4px;
+        }
+        
+        .doodle-4 {
+            bottom: 100px;
+            right: 50px;
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--art-line);
+            border-radius: 6px;
+            transform: rotate(30deg);
+        }
+        
+        .squiggle {
+            position: absolute;
+            width: 40px;
+            height: 20px;
+            border: 2px solid var(--art-line);
+            border-top: none;
+            border-radius: 0 0 50% 50%;
+            opacity: 0.15;
+            z-index: 0;
+        }
+        
+        .squiggle-1 {
+            top: 85px;
+            left: 100px;
+            transform: rotate(-10deg);
+        }
+        
+        .squiggle-2 {
+            top: 95px;
+            right: 110px;
+            transform: rotate(10deg) scaleX(-1);
+        }
+        
+        .brand {
+            position: absolute;
+            bottom: 24px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--art-line-light);
+            z-index: 1;
+        }
+        
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--art-primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            border: 2px solid var(--art-line);
+            flex-shrink: 0;
+        }
+        
+        .brand span {
+            display: block;
+        }
+        
+        .hand-drawn-line {
+            position: absolute;
+            height: 2px;
+            background: var(--art-line-light);
+            opacity: 0.2;
+            z-index: 0;
+        }
+        
+        .line-1 {
+            top: 75px;
+            left: 80px;
+            width: 60px;
+            transform: rotate(-3deg);
+        }
+        
+        .line-2 {
+            top: 82px;
+            right: 90px;
+            width: 50px;
+            transform: rotate(2deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sketch-border"></div>
+        
+        <span class="corner-deco top-left">🌸</span>
+        <span class="corner-deco top-right">🌺</span>
+        <span class="corner-deco bottom-left">🌼</span>
+        
+        <span class="floating-deco" style="top: 75px; left: 55px;">✨</span>
+        <span class="floating-deco" style="top: 90px; right: 65px;">💫</span>
+        <span class="floating-deco" style="bottom: 75px; left: 75px;">⭐</span>
+        <span class="floating-deco" style="bottom: 85px; right: 55px;">🌟</span>
+        <span class="floating-deco" style="top: 180px; left: 40px; font-size: 12px; opacity: 0.2;">○</span>
+        <span class="floating-deco" style="top: 220px; right: 45px; font-size: 10px; opacity: 0.25;">◦</span>
+        <span class="floating-deco" style="bottom: 160px; left: 60px; font-size: 14px; opacity: 0.2;">✦</span>
+        <span class="floating-deco" style="bottom: 200px; right: 70px; font-size: 11px; opacity: 0.2;">·</span>
+        
+        <div class="doodle doodle-1"></div>
+        <div class="doodle doodle-2"></div>
+        <div class="doodle doodle-3"></div>
+        <div class="doodle doodle-4"></div>
+        
+        <div class="squiggle squiggle-1"></div>
+        <div class="squiggle squiggle-2"></div>
+        
+        <div class="hand-drawn-line line-1"></div>
+        <div class="hand-drawn-line line-2"></div>
+        
+        <div class="header">
+            <h1 class="title">
+                传统 vs 现代
+                <span class="title-underline"></span>
+            </h1>
+        </div>
+        
+        <div class="content">
+            <div class="side left">
+                <div class="side-header">
+                    <span class="side-icon">🐢</span>
+                    <div>
+                        <div class="side-title">传统方式</div>
+                        <div class="side-desc">按部就班，稳步前行</div>
+                    </div>
+                </div>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <span class="feature-icon">📋</span>
+                        <span class="feature-text">固定流程</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">⏰</span>
+                        <span class="feature-text">周期较长</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">👥</span>
+                        <span class="feature-text">依赖人工</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📊</span>
+                        <span class="feature-text">经验驱动</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="vs-divider">
+                <div class="vs-diagonal vs-diagonal-left"></div>
+                <div class="vs-diagonal vs-diagonal-right"></div>
+                <span class="vs-spark">✨</span>
+                <span class="vs-spark">✨</span>
+                <span class="vs-spark">✨</span>
+                <span class="vs-spark">✨</span>
+                <div class="vs-badge">VS</div>
+            </div>
+            
+            <div class="side right">
+                <div class="side-header">
+                    <span class="side-icon">🐇</span>
+                    <div>
+                        <div class="side-title">现代方式</div>
+                        <div class="side-desc">敏捷高效，智能驱动</div>
+                    </div>
+                </div>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <span class="feature-icon">⚡</span>
+                        <span class="feature-text">灵活迭代</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🚀</span>
+                        <span class="feature-text">快速交付</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🤖</span>
+                        <span class="feature-text">AI 辅助</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📈</span>
+                        <span class="feature-text">数据驱动</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="brand">
+            <div class="brand-icon">F</div>
+            <span>Feat</span>
+        </div>
+    </div>
+</body>
+</html>

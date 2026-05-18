@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信公众号文中插图模板 - 艺术画风格 - 900×600</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&display=swap');
+        
+        :root {
+            --art-warm-cream: #fef9f3;
+            --art-soft-pink: #fce4ec;
+            --art-lavender: #f3e5f5;
+            --art-mint: #e8f5e9;
+            --art-peach: #fff3e0;
+            --art-sky: #e3f2fd;
+            
+            --art-primary: #6b5b95;
+            --art-secondary: #f7cac9;
+            --art-accent: #88b04b;
+            --art-highlight: #ff6f61;
+            
+            --art-line: #5d4e37;
+            --art-line-light: #8b7355;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 
+                -apple-system, 
+                BlinkMacSystemFont, 
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "Microsoft YaHei",
+                "Helvetica Neue", 
+                sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .container {
+            width: 900px;
+            height: 600px;
+            position: relative;
+            overflow: hidden;
+            background: var(--art-warm-cream);
+            padding: 32px 40px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .paper-texture {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+        
+        .decorative-corner {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            opacity: 0.15;
+        }
+        
+        .decorative-corner.top-left {
+            top: -20px;
+            left: -20px;
+            transform: rotate(15deg);
+        }
+        
+        .decorative-corner.top-right {
+            top: -10px;
+            right: -10px;
+            transform: rotate(75deg);
+        }
+        
+        .decorative-corner.bottom-left {
+            bottom: -15px;
+            left: -15px;
+            transform: rotate(-45deg);
+        }
+        
+        .decorative-corner.bottom-right {
+            bottom: -10px;
+            right: -10px;
+            transform: rotate(135deg);
+        }
+        
+        .header {
+            margin-bottom: 20px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--art-line);
+            letter-spacing: 0.02em;
+            margin-bottom: 8px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .title::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--art-secondary);
+            border-radius: 2px;
+            transform: rotate(-0.5deg);
+        }
+        
+        .title-underline {
+            position: absolute;
+            bottom: -6px;
+            left: 10px;
+            width: 80%;
+            height: 2px;
+            background: var(--art-accent);
+            border-radius: 2px;
+            transform: rotate(0.8deg);
+            opacity: 0.6;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: var(--art-line-light);
+            font-weight: 400;
+            font-style: italic;
+        }
+        
+        .content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 16px;
+            min-height: 0;
+        }
+        
+        .card {
+            background: #ffffff;
+            border: 2.5px solid var(--art-line);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 3px 3px 0 rgba(93, 78, 55, 0.15);
+        }
+        
+        .card:nth-child(1) {
+            transform: rotate(-0.8deg);
+            background: linear-gradient(135deg, #ffffff 0%, var(--art-lavender) 100%);
+        }
+        
+        .card:nth-child(2) {
+            transform: rotate(0.5deg);
+            background: linear-gradient(135deg, #ffffff 0%, var(--art-mint) 100%);
+        }
+        
+        .card:nth-child(3) {
+            transform: rotate(-0.3deg);
+            background: linear-gradient(135deg, #ffffff 0%, var(--art-soft-pink) 100%);
+        }
+        
+        .card:nth-child(4) {
+            transform: rotate(0.6deg);
+            background: linear-gradient(135deg, #ffffff 0%, var(--art-peach) 100%);
+        }
+        
+        .card:nth-child(5) {
+            transform: rotate(-0.4deg);
+            background: linear-gradient(135deg, #ffffff 0%, var(--art-sky) 100%);
+        }
+        
+        .card:nth-child(6) {
+            transform: rotate(0.7deg);
+            background: linear-gradient(135deg, #ffffff 0%, var(--art-lavender) 100%);
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            opacity: 0.2;
+        }
+        
+        .card:nth-child(1)::before { background: var(--art-primary); }
+        .card:nth-child(2)::before { background: var(--art-accent); }
+        .card:nth-child(3)::before { background: var(--art-highlight); }
+        .card:nth-child(4)::before { background: #f59e0b; }
+        .card:nth-child(5)::before { background: #0891b2; }
+        .card:nth-child(6)::before { background: var(--art-primary); }
+        
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: #ffffff;
+            border: 2px solid var(--art-line);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+            box-shadow: 2px 2px 0 rgba(93, 78, 55, 0.2);
+        }
+        
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--art-line);
+            margin-bottom: 6px;
+            flex-shrink: 0;
+        }
+        
+        .card-desc {
+            font-size: 12px;
+            color: var(--art-line-light);
+            line-height: 1.6;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+        
+        .card-tag {
+            display: inline-block;
+            background: var(--art-secondary);
+            color: var(--art-line);
+            font-size: 10px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-top: 8px;
+            align-self: flex-start;
+            flex-shrink: 0;
+            border: 1.5px solid var(--art-line);
+        }
+        
+        .card:nth-child(1) .card-tag { background: var(--art-lavender); }
+        .card:nth-child(2) .card-tag { background: var(--art-mint); }
+        .card:nth-child(3) .card-tag { background: var(--art-soft-pink); }
+        .card:nth-child(4) .card-tag { background: var(--art-peach); }
+        .card:nth-child(5) .card-tag { background: var(--art-sky); }
+        .card:nth-child(6) .card-tag { background: var(--art-lavender); }
+        
+        .footer {
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 2px dashed var(--art-line-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .footer-text {
+            font-size: 12px;
+            color: var(--art-line-light);
+            font-style: italic;
+        }
+        
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .brand-logo {
+            width: 28px;
+            height: 28px;
+            background: var(--art-primary);
+            border: 2px solid var(--art-line);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            box-shadow: 2px 2px 0 rgba(93, 78, 55, 0.2);
+        }
+        
+        .brand-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--art-line);
+            font-family: 'Caveat', cursive;
+        }
+        
+        .hand-drawn-line {
+            position: absolute;
+            height: 2px;
+            background: var(--art-line);
+            opacity: 0.1;
+            border-radius: 1px;
+        }
+        
+        .line-1 {
+            top: 15%;
+            left: 5%;
+            width: 15%;
+            transform: rotate(-2deg);
+        }
+        
+        .line-2 {
+            top: 85%;
+            right: 5%;
+            width: 20%;
+            transform: rotate(1.5deg);
+        }
+        
+        .doodle {
+            position: absolute;
+            opacity: 0.12;
+            font-size: 24px;
+        }
+        
+        .doodle-star-1 {
+            top: 8%;
+            right: 8%;
+            transform: rotate(15deg);
+        }
+        
+        .doodle-star-2 {
+            bottom: 12%;
+            left: 6%;
+            transform: rotate(-20deg);
+        }
+        
+        .doodle-circle {
+            top: 45%;
+            right: 3%;
+            width: 30px;
+            height: 30px;
+            border: 2px dashed var(--art-line);
+            border-radius: 50%;
+            transform: rotate(10deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="paper-texture"></div>
+        
+        <svg class="decorative-corner top-left" viewBox="0 0 100 100">
+            <path d="M10,50 Q30,20 50,10 Q70,25 90,50 Q75,70 50,90 Q25,75 10,50" 
+                  fill="none" stroke="#6b5b95" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <svg class="decorative-corner top-right" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="35" fill="none" stroke="#f7cac9" stroke-width="2"/>
+            <circle cx="50" cy="50" r="25" fill="none" stroke="#f7cac9" stroke-width="1.5"/>
+        </svg>
+        <svg class="decorative-corner bottom-left" viewBox="0 0 100 100">
+            <path d="M20,80 Q50,60 80,80" fill="none" stroke="#88b04b" stroke-width="2" stroke-linecap="round"/>
+            <path d="M25,70 Q50,50 75,70" fill="none" stroke="#88b04b" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <svg class="decorative-corner bottom-right" viewBox="0 0 100 100">
+            <path d="M30,30 L70,30 L70,70 L30,70 Z" fill="none" stroke="#ff6f61" stroke-width="2" 
+                  transform="rotate(10 50 50)"/>
+        </svg>
+        
+        <div class="hand-drawn-line line-1"></div>
+        <div class="hand-drawn-line line-2"></div>
+        
+        <div class="doodle doodle-star-1">✦</div>
+        <div class="doodle doodle-star-2">✿</div>
+        <div class="doodle doodle-circle"></div>
+        
+        <div class="header">
+            <h2 class="title">Feat 核心特性</h2>
+            <div class="title-underline"></div>
+            <p class="subtitle">六大核心能力，构建高性能现代应用</p>
+        </div>
+        
+        <div class="content">
+            <div class="card">
+                <div class="card-icon">⚡</div>
+                <div class="card-title">极致性能</div>
+                <div class="card-desc">基于 smart-socket 高性能网络框架，支持百万级并发连接</div>
+                <span class="card-tag">核心能力</span>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">🔧</div>
+                <div class="card-title">简洁易用</div>
+                <div class="card-desc">直观的 API 设计，零配置快速启动，专注业务逻辑</div>
+                <span class="card-tag">开发体验</span>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">🛡️</div>
+                <div class="card-title">安全可靠</div>
+                <div class="card-desc">内置安全防护机制，完善的异常处理，保障稳定运行</div>
+                <span class="card-tag">企业级</span>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">📦</div>
+                <div class="card-title">模块化设计</div>
+                <div class="card-desc">灵活的模块化架构，按需引入功能组件，保持轻量级</div>
+                <span class="card-tag">架构</span>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">🌐</div>
+                <div class="card-title">云原生支持</div>
+                <div class="card-desc">原生支持云原生部署，AOT 编译优化，容器化友好</div>
+                <span class="card-tag">云原生</span>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">🤖</div>
+                <div class="card-title">AI 集成</div>
+                <div class="card-desc">内置 AI 能力支持，轻松集成大语言模型，构建智能应用</div>
+                <span class="card-tag">前沿技术</span>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <span class="footer-text">Feat Framework · 高性能 Java Web 框架</span>
+            <div class="brand">
+                <div class="brand-logo">F</div>
+                <span class="brand-name">Feat</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

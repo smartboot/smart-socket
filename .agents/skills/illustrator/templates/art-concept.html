@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手绘风格概念展示 - 900×500</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --art-warm-cream: #fef9f3;
+            --art-soft-pink: #fce4ec;
+            --art-lavender: #f3e5f5;
+            --art-mint: #e8f5e9;
+            --art-peach: #fff3e0;
+            --art-sky: #e3f2fd;
+            
+            --art-primary: #7c6ba0;
+            --art-primary-light: #9b8ab8;
+            --art-primary-dark: #5a4a7a;
+            
+            --art-secondary: #e8a4b8;
+            --art-accent: #e89b5a;
+            --art-highlight: #e85a5a;
+            
+            --art-line: #5d4e37;
+            --art-line-light: #6b5b45;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 
+                "ZCOOL KuaiLe",
+                "Ma Shan Zheng",
+                "ZCOOL XiaoWei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "Microsoft YaHei",
+                sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+        }
+        
+        .container {
+            width: 900px;
+            height: 500px;
+            position: relative;
+            overflow: hidden;
+            background: var(--art-warm-cream);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sketch-border {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            border: 3px solid var(--art-line);
+            border-radius: 20px;
+            transform: rotate(-0.3deg);
+        }
+        
+        .sketch-border::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border: 2px dashed var(--art-line-light);
+            border-radius: 22px;
+            opacity: 0.4;
+        }
+        
+        .corner-deco {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            opacity: 0.6;
+        }
+        
+        .corner-deco.top-left { top: 30px; left: 30px; }
+        .corner-deco.top-right { top: 30px; right: 30px; }
+        .corner-deco.bottom-left { bottom: 30px; left: 30px; }
+        .corner-deco.bottom-right { bottom: 30px; right: 30px; }
+        
+        .main-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .icon-container {
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .main-icon {
+            font-size: 80px;
+            display: inline-block;
+        }
+        
+        .orbit-icons {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .orbit-icon {
+            position: absolute;
+            font-size: 28px;
+            opacity: 0.8;
+            transition: transform 0.3s ease;
+        }
+        
+        .orbit-icon:nth-child(1) { 
+            top: 8%; 
+            left: 58%; 
+            transform: translateX(-50%) rotate(12deg); 
+        }
+        .orbit-icon:nth-child(2) { 
+            top: 42%; 
+            right: 2%; 
+            transform: translateY(-50%) rotate(-8deg); 
+        }
+        .orbit-icon:nth-child(3) { 
+            bottom: 5%; 
+            left: 42%; 
+            transform: translateX(-50%) rotate(-15deg); 
+        }
+        .orbit-icon:nth-child(4) { 
+            top: 48%; 
+            left: 0; 
+            transform: translateY(-50%) rotate(20deg); 
+        }
+        
+        .title {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--art-line);
+            margin-bottom: 16px;
+            letter-spacing: 0.05em;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--art-secondary);
+            border-radius: 2px;
+            transform: skewX(-5deg);
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: var(--art-line-light);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        
+        .keywords {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .keyword {
+            background: var(--art-soft-pink);
+            color: var(--art-primary);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 2px solid var(--art-line);
+            transform: rotate(-1deg);
+        }
+        
+        .keyword:nth-child(2) {
+            background: var(--art-lavender);
+            transform: rotate(1deg);
+        }
+        
+        .keyword:nth-child(3) {
+            background: var(--art-mint);
+            transform: rotate(-0.5deg);
+        }
+        
+        .deco-line {
+            position: absolute;
+            width: 60%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--art-line-light), transparent);
+            opacity: 0.3;
+        }
+        
+        .deco-line.top { top: 80px; }
+        .deco-line.bottom { bottom: 80px; }
+        
+        .floating-deco {
+            position: absolute;
+            font-size: 20px;
+            opacity: 0.4;
+        }
+        
+        .brand {
+            position: absolute;
+            bottom: 24px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--art-line-light);
+        }
+        
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--art-primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            border: 2px solid var(--art-line);
+            flex-shrink: 0;
+        }
+        
+        .brand span {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sketch-border"></div>
+        
+        <div class="corner-deco top-left">✿</div>
+        <div class="corner-deco top-right">❀</div>
+        <div class="corner-deco bottom-left">✿</div>
+        
+        <div class="deco-line top"></div>
+        <div class="deco-line bottom"></div>
+        
+        <div class="floating-deco" style="top: 100px; left: 80px;">✨</div>
+        <div class="floating-deco" style="top: 150px; right: 100px;">💫</div>
+        <div class="floating-deco" style="bottom: 120px; left: 120px;">⭐</div>
+        <div class="floating-deco" style="bottom: 100px; right: 80px;">🌟</div>
+        <div class="floating-deco" style="top: 200px; left: 150px; font-size: 12px; opacity: 0.2;">○</div>
+        <div class="floating-deco" style="top: 280px; right: 60px; font-size: 10px; opacity: 0.25;">◦</div>
+        <div class="floating-deco" style="bottom: 180px; left: 50px; font-size: 14px; opacity: 0.2;">✦</div>
+        
+        <div class="main-content">
+            <div class="icon-container">
+                <div class="orbit-icons">
+                    <span class="orbit-icon">🔍</span>
+                    <span class="orbit-icon">🧠</span>
+                    <span class="orbit-icon">🔗</span>
+                    <span class="orbit-icon">💡</span>
+                </div>
+                <span class="main-icon">🤖</span>
+            </div>
+            
+            <h1 class="title">AI 推理可视化</h1>
+            <p class="subtitle">让 AI 的思考过程清晰可见<br>理解每一步推理的逻辑</p>
+            
+            <div class="keywords">
+                <span class="keyword">🔍 可观测</span>
+                <span class="keyword">🧠 深度推理</span>
+                <span class="keyword">🔗 Hook 机制</span>
+            </div>
+        </div>
+        
+        <div class="brand">
+            <div class="brand-icon">F</div>
+            <span>Feat</span>
+        </div>
+    </div>
+</body>
+</html>

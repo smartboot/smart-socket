@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分层架构图 - 手绘风格</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --art-warm-cream: #fef9f3;
+            --art-soft-pink: #fce4ec;
+            --art-lavender: #f3e5f5;
+            --art-mint: #e8f5e9;
+            --art-peach: #fff3e0;
+            --art-sky: #e3f2fd;
+            
+            --art-primary: #7c6ba0;
+            --art-primary-light: #9b8ab8;
+            --art-primary-dark: #5a4a7a;
+            
+            --art-secondary: #e8a4b8;
+            --art-accent: #e89b5a;
+            --art-highlight: #e85a5a;
+            
+            --art-line: #5d4e37;
+            --art-line-light: #6b5b45;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 
+                "ZCOOL KuaiLe",
+                "Ma Shan Zheng",
+                "ZCOOL XiaoWei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "Microsoft YaHei",
+                sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+        }
+        
+        .container {
+            width: 900px;
+            height: 600px;
+            position: relative;
+            overflow: hidden;
+            background: var(--art-warm-cream);
+            padding: 30px 40px;
+        }
+        
+        .sketch-border {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            border: 3px solid var(--art-line);
+            border-radius: 16px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--art-line);
+        }
+        
+        .subtitle {
+            font-size: 13px;
+            color: var(--art-line-light);
+            margin-top: 6px;
+        }
+        
+        .layers {
+            position: relative;
+            height: calc(100% - 80px);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 1;
+        }
+        
+        .layer {
+            display: flex;
+            border: 3px solid var(--art-line);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .layer.presentation { flex: 0.8; }
+        .layer.business { flex: 1.3; }
+        .layer.integration { flex: 1; }
+        .layer.data { flex: 1; }
+        .layer.infrastructure { flex: 0.9; }
+        
+        .layer-label {
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-right: 3px solid var(--art-line);
+            position: relative;
+        }
+        
+        .layer-number {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--art-line);
+            opacity: 0.3;
+            position: absolute;
+            top: 4px;
+            left: 8px;
+        }
+        
+        .layer-icon {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+        
+        .layer-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--art-line);
+            text-align: center;
+        }
+        
+        .layer-content {
+            flex: 1;
+            display: flex;
+            gap: 12px;
+            padding: 10px 16px;
+            align-items: center;
+        }
+        
+        .module {
+            flex: 1;
+            background: white;
+            border: 2px solid var(--art-line);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+        
+        .module-icon {
+            font-size: 20px;
+        }
+        
+        .module-info {
+            flex: 1;
+        }
+        
+        .module-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--art-line);
+        }
+        
+        .module-desc {
+            font-size: 9px;
+            color: var(--art-line-light);
+            margin-top: 2px;
+        }
+        
+        .module.highlight {
+            background: var(--art-lavender);
+            border-color: var(--art-primary);
+            border-width: 3px;
+        }
+        
+        .layer.presentation { background: linear-gradient(90deg, var(--art-sky) 0%, transparent 30%); }
+        .layer.business { background: linear-gradient(90deg, var(--art-lavender) 0%, transparent 30%); }
+        .layer.integration { background: linear-gradient(90deg, var(--art-mint) 0%, transparent 30%); }
+        .layer.data { background: linear-gradient(90deg, var(--art-peach) 0%, transparent 30%); }
+        .layer.infrastructure { background: linear-gradient(90deg, var(--art-soft-pink) 0%, transparent 30%); }
+        
+        .dependency-arrow {
+            position: absolute;
+            left: 50%;
+            font-size: 16px;
+            color: var(--art-primary);
+            opacity: 0.7;
+            z-index: 2;
+        }
+        
+        .arrow-down { 
+            top: -10px; 
+            transform: translateX(-50%); 
+        }
+        
+        .layer-connector {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 6px;
+            background: repeating-linear-gradient(
+                180deg,
+                var(--art-primary) 0px,
+                var(--art-primary) 3px,
+                transparent 3px,
+                transparent 6px
+            );
+            opacity: 0.5;
+            z-index: 2;
+        }
+        
+        .layer-connector.top { top: 0; }
+        .layer-connector.bottom { bottom: 0; }
+        
+        .cross-cut {
+            position: absolute;
+            right: 20px;
+            top: 80px;
+            bottom: 80px;
+            width: 80px;
+            border: 2px dashed var(--art-accent);
+            border-radius: 8px;
+            background: rgba(136, 176, 75, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .cross-cut-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--art-accent);
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+        
+        .cross-cut-item {
+            font-size: 16px;
+        }
+        
+        .deco {
+            position: absolute;
+            font-size: 16px;
+            opacity: 0.4;
+        }
+        
+        .brand {
+            position: absolute;
+            bottom: 24px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--art-line-light);
+            z-index: 1;
+        }
+        
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--art-primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            border: 2px solid var(--art-line);
+            flex-shrink: 0;
+        }
+        
+        .brand span {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sketch-border"></div>
+        
+        <span class="deco" style="top: 30px; left: 30px;">🏗️</span>
+        <span class="deco" style="top: 35px; right: 35px;">📐</span>
+        <span class="deco" style="bottom: 50px; left: 35px;">🔧</span>
+        
+        <span class="floating-deco" style="position: absolute; top: 100px; left: 50px; font-size: 12px; opacity: 0.2;">○</span>
+        <span class="floating-deco" style="position: absolute; top: 180px; right: 55px; font-size: 10px; opacity: 0.25;">◦</span>
+        <span class="floating-deco" style="position: absolute; bottom: 120px; left: 60px; font-size: 14px; opacity: 0.2;">✦</span>
+        <span class="floating-deco" style="position: absolute; bottom: 200px; right: 45px; font-size: 11px; opacity: 0.2;">·</span>
+        
+        <div class="header">
+            <h1 class="title">分层架构设计</h1>
+            <p class="subtitle">清晰的职责划分，松耦合高内聚</p>
+        </div>
+        
+        <div class="layers">
+            <div class="layer presentation">
+                <div class="layer-label">
+                    <span class="layer-number">L5</span>
+                    <span class="layer-icon">🎨</span>
+                    <span class="layer-name">表现层</span>
+                </div>
+                <div class="layer-content">
+                    <div class="module">
+                        <span class="module-icon">🌐</span>
+                        <div class="module-info">
+                            <div class="module-name">Web UI</div>
+                            <div class="module-desc">用户界面</div>
+                        </div>
+                    </div>
+                    <div class="module">
+                        <span class="module-icon">📱</span>
+                        <div class="module-info">
+                            <div class="module-name">Mobile</div>
+                            <div class="module-desc">移动端</div>
+                        </div>
+                    </div>
+                    <div class="module">
+                        <span class="module-icon">🔌</span>
+                        <div class="module-info">
+                            <div class="module-name">API</div>
+                            <div class="module-desc">接口层</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="dependency-arrow arrow-down">⬇️</span>
+            </div>
+            
+            <div class="layer business">
+                <div class="layer-label">
+                    <span class="layer-number">L4</span>
+                    <span class="layer-icon">💼</span>
+                    <span class="layer-name">业务层</span>
+                </div>
+                <div class="layer-content">
+                    <div class="module highlight">
+                        <span class="module-icon">🔧</span>
+                        <div class="module-info">
+                            <div class="module-name">Core Service</div>
+                            <div class="module-desc">核心业务</div>
+                        </div>
+                    </div>
+                    <div class="module highlight">
+                        <span class="module-icon">🤖</span>
+                        <div class="module-info">
+                            <div class="module-name">AI Service</div>
+                            <div class="module-desc">AI 能力</div>
+                        </div>
+                    </div>
+                    <div class="module">
+                        <span class="module-icon">👤</span>
+                        <div class="module-info">
+                            <div class="module-name">User Service</div>
+                            <div class="module-desc">用户管理</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="dependency-arrow arrow-down">⬇️</span>
+            </div>
+            
+            <div class="layer integration">
+                <div class="layer-label">
+                    <span class="layer-number">L3</span>
+                    <span class="layer-icon">🔗</span>
+                    <span class="layer-name">集成层</span>
+                </div>
+                <div class="layer-content">
+                    <div class="module">
+                        <span class="module-icon">📨</span>
+                        <div class="module-info">
+                            <div class="module-name">Message Queue</div>
+                            <div class="module-desc">消息中间件</div>
+                        </div>
+                    </div>
+                    <div class="module">
+                        <span class="module-icon">🔗</span>
+                        <div class="module-info">
+                            <div class="module-name">Hook System</div>
+                            <div class="module-desc">钩子机制</div>
+                        </div>
+                    </div>
+                    <div class="module">
+                        <span class="module-icon">🔄</span>
+                        <div class="module-info">
+                            <div class="module-name">Event Bus</div>
+                            <div class="module-desc">事件总线</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="dependency-arrow arrow-down">⬇️</span>
+            </div>
+            
+            <div class="layer data">
+                <div class="layer-label">
+                    <span class="layer-number">L2</span>
+                    <span class="layer-icon">💾</span>
+                    <span class="layer-name">数据层</span>
+                </div>
+                <div class="layer-content">
+                    <div class="module">
+                        <span class="module-icon">🗄️</span>
+                        <div class="module-info">
+                            <div class="module-name">Repository</div>
+                            <div class="module-desc">数据仓库</div>
+                        </div>
+                    </div>
+                    <div class="module">
+                        <span class="module-icon">📦</span>
+                        <div class="module-info">
+                            <div class="module-name">Cache</div>
+                            <div class="module-desc">缓存层</div>
+                        </div>
+                    </div>
+                    <div class="module">
+                        <span class="module-icon">🔍</span>
+                        <div class="module-info">
+                            <div class="module-name">Search</div>
+                            <div class="module-desc">搜索引擎</div>
+                        </div>
+                    </div>
+                </div>
+                <span class="dependency-arrow arrow-down">⬇️</span>
+            </div>
+            
+            <div class="layer infrastructure">
+                <div class="layer-label">
+                    <span class="layer-number">L1</span>
+                    <span class="layer-icon">🏗️</span>
+                    <span class="layer-name">基础层</span>
+                </div>
+                <div class="layer-content">
+                    <div class="module">
+                        <span class="module-icon">⚙️</span>
+                        <div class="module-info">
+                            <div class="module-name">Config</div>
+                            <div class="module-desc">配置管理</div>
+                        </div>
+                    </div>
+                    <div class="module">
+                        <span class="module-icon">📊</span>
+                        <div class="module-info">
+                            <div class="module-name">Metrics</div>
+                            <div class="module-desc">监控指标</div>
+                        </div>
+                    </div>
+                    <div class="module">
+                        <span class="module-icon">📝</span>
+                        <div class="module-info">
+                            <div class="module-name">Logging</div>
+                            <div class="module-desc">日志系统</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="cross-cut">
+            <span class="cross-cut-item">🔒</span>
+            <span class="cross-cut-label">横切关注点</span>
+            <span class="cross-cut-item">⚡</span>
+            <span class="cross-cut-item">🛡️</span>
+        </div>
+        
+        <div class="brand">
+            <div class="brand-icon">F</div>
+            <span>Feat</span>
+        </div>
+    </div>
+</body>
+</html>

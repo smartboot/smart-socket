@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手绘风格氛围展示 - 900×500</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --art-warm-cream: #fef9f3;
+            --art-soft-pink: #fce4ec;
+            --art-lavender: #f3e5f5;
+            --art-mint: #e8f5e9;
+            --art-peach: #fff3e0;
+            --art-sky: #e3f2fd;
+            --art-primary: #6b5b95;
+            --art-secondary: #f7cac9;
+            --art-accent: #88b04b;
+            --art-highlight: #ff6f61;
+            --art-line: #5d4e37;
+            --art-line-light: #8b7355;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 
+                "ZCOOL KuaiLe",
+                "Ma Shan Zheng",
+                "ZCOOL XiaoWei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "Microsoft YaHei",
+                sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+        }
+        
+        .container {
+            width: 900px;
+            height: 500px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--art-lavender) 0%, var(--art-soft-pink) 50%, var(--art-peach) 100%);
+            padding: 40px 50px;
+        }
+        
+        .sketch-border {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 3px solid var(--art-line);
+            border-radius: 20px;
+        }
+        
+        .content {
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+        
+        .main-quote {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--art-line);
+            text-align: center;
+            line-height: 1.6;
+            max-width: 700px;
+            position: relative;
+            padding: 0 60px;
+        }
+        
+        .main-quote::before,
+        .main-quote::after {
+            content: '"';
+            position: absolute;
+            font-size: 80px;
+            color: var(--art-secondary);
+            font-family: Georgia, serif;
+            line-height: 1;
+        }
+        
+        .main-quote::before {
+            top: -20px;
+            left: 0;
+        }
+        
+        .main-quote::after {
+            content: '"';
+            bottom: -40px;
+            right: 0;
+        }
+        
+        .author {
+            margin-top: 30px;
+            font-size: 16px;
+            color: var(--art-line-light);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .author-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--art-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: 2px solid var(--art-line);
+        }
+        
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        
+        .float-item {
+            position: absolute;
+            font-size: 28px;
+            opacity: 0.5;
+        }
+        
+        .float-item:nth-child(1) { top: 15%; left: 10%; }
+        .float-item:nth-child(2) { top: 20%; right: 15%; }
+        .float-item:nth-child(3) { top: 60%; left: 8%; }
+        .float-item:nth-child(4) { top: 70%; right: 12%; }
+        .float-item:nth-child(5) { top: 40%; left: 5%; font-size: 20px; }
+        .float-item:nth-child(6) { top: 35%; right: 8%; font-size: 20px; }
+        .float-item:nth-child(7) { bottom: 20%; left: 15%; font-size: 24px; }
+        .float-item:nth-child(8) { bottom: 25%; right: 18%; font-size: 24px; }
+        
+        .deco-line {
+            position: absolute;
+            width: 150px;
+            height: 3px;
+            background: var(--art-line);
+            opacity: 0.2;
+            border-radius: 2px;
+        }
+        
+        .deco-line:nth-of-type(1) { top: 80px; left: 80px; transform: rotate(-15deg); }
+        .deco-line:nth-of-type(2) { top: 100px; right: 100px; transform: rotate(15deg); }
+        .deco-line:nth-of-type(3) { bottom: 80px; left: 100px; transform: rotate(10deg); }
+        .deco-line:nth-of-type(4) { bottom: 100px; right: 80px; transform: rotate(-10deg); }
+        
+        .brand {
+            position: absolute;
+            bottom: 24px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--art-line-light);
+            z-index: 1;
+        }
+        
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--art-primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            border: 2px solid var(--art-line);
+            flex-shrink: 0;
+        }
+        
+        .brand span {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sketch-border"></div>
+        
+        <div class="floating-elements">
+            <span class="float-item">🌸</span>
+            <span class="float-item">🦋</span>
+            <span class="float-item">🌺</span>
+            <span class="float-item">🌼</span>
+            <span class="float-item">✨</span>
+            <span class="float-item">💫</span>
+            <span class="float-item">🌷</span>
+            <span class="float-item">🌻</span>
+        </div>
+        
+        <span class="floating-deco" style="position: absolute; top: 60px; left: 40px; font-size: 12px; opacity: 0.2;">○</span>
+        <span class="floating-deco" style="position: absolute; top: 100px; right: 50px; font-size: 10px; opacity: 0.25;">◦</span>
+        <span class="floating-deco" style="position: absolute; bottom: 80px; left: 60px; font-size: 14px; opacity: 0.2;">✦</span>
+        <span class="floating-deco" style="position: absolute; bottom: 120px; right: 40px; font-size: 11px; opacity: 0.2;">·</span>
+        
+        <div class="deco-line"></div>
+        <div class="deco-line"></div>
+        <div class="deco-line"></div>
+        <div class="deco-line"></div>
+        
+        <div class="content">
+            <p class="main-quote">
+                一个人就是一支队伍<br>
+                用技术杠杆撬动个人价值
+            </p>
+            
+            <div class="author">
+                <div class="author-avatar">🚀</div>
+                <span>Feat · 独立开发者的最佳伙伴</span>
+            </div>
+        </div>
+        
+        <div class="brand">
+            <div class="brand-icon">F</div>
+            <span>Feat</span>
+        </div>
+    </div>
+</body>
+</html>

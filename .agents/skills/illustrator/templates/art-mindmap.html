@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手绘风格思维导图 - 900×600</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --art-warm-cream: #fef9f3;
+            --art-soft-pink: #fce4ec;
+            --art-lavender: #f3e5f5;
+            --art-mint: #e8f5e9;
+            --art-peach: #fff3e0;
+            --art-sky: #e3f2fd;
+            
+            --art-primary: #7c6ba0;
+            --art-primary-light: #9b8ab8;
+            --art-primary-dark: #5a4a7a;
+            
+            --art-secondary: #e8a4b8;
+            --art-accent: #e89b5a;
+            --art-highlight: #e85a5a;
+            
+            --art-line: #5d4e37;
+            --art-line-light: #6b5b45;
+            
+            --branch-1: #e8a4b8;
+            --branch-2: #7c6ba0;
+            --branch-3: #e89b5a;
+            --branch-4: #88b04b;
+            --branch-5: #5da5d8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 
+                "ZCOOL KuaiLe",
+                "Ma Shan Zheng",
+                "ZCOOL XiaoWei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "Microsoft YaHei",
+                sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+        }
+        
+        .container {
+            width: 900px;
+            height: 600px;
+            position: relative;
+            overflow: hidden;
+            background: var(--art-warm-cream);
+        }
+        
+        .sketch-border {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            border: 3px solid var(--art-line);
+            border-radius: 20px;
+            transform: rotate(-0.2deg);
+        }
+        
+        .sketch-border::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border: 2px dashed var(--art-line-light);
+            border-radius: 22px;
+            opacity: 0.35;
+        }
+        
+        .center-node {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        
+        .center-circle {
+            width: 110px;
+            height: 110px;
+            background: linear-gradient(135deg, var(--art-primary) 0%, var(--art-primary-dark) 100%);
+            border: 3px solid var(--art-line);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 3px 3px 0 rgba(93, 78, 55, 0.2);
+            transform: rotate(-2deg);
+        }
+        
+        .center-icon {
+            font-size: 28px;
+            margin-bottom: 2px;
+        }
+        
+        .center-text {
+            font-size: 15px;
+            font-weight: 700;
+            color: #ffffff;
+            text-align: center;
+            line-height: 1.2;
+        }
+        
+        .branches {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+        
+        .branch {
+            position: absolute;
+        }
+        
+        .branch-connector {
+            position: absolute;
+            z-index: 1;
+        }
+        
+        .branch-connector svg {
+            overflow: visible;
+        }
+        
+        .branch-path {
+            fill: none;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        
+        .branch-node {
+            background: white;
+            border: 2px solid var(--art-line);
+            border-radius: 12px;
+            padding: 8px 12px;
+            box-shadow: 2px 2px 0 rgba(93, 78, 55, 0.15);
+            min-width: 100px;
+            max-width: 130px;
+        }
+        
+        .branch-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        
+        .branch-icon {
+            font-size: 18px;
+        }
+        
+        .branch-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--art-line);
+        }
+        
+        .branch-items {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .branch-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--art-line-light);
+        }
+        
+        .branch-item::before {
+            content: '•';
+            font-size: 12px;
+            color: var(--art-primary);
+        }
+        
+        .branch-1 .branch-node { background: linear-gradient(135deg, rgba(232, 164, 184, 0.3) 0%, white 100%); }
+        .branch-1 .branch-path { stroke: var(--branch-1); }
+        
+        .branch-2 .branch-node { background: linear-gradient(135deg, rgba(124, 107, 160, 0.2) 0%, white 100%); }
+        .branch-2 .branch-path { stroke: var(--branch-2); }
+        
+        .branch-3 .branch-node { background: linear-gradient(135deg, rgba(232, 155, 90, 0.25) 0%, white 100%); }
+        .branch-3 .branch-path { stroke: var(--branch-3); }
+        
+        .branch-4 .branch-node { background: linear-gradient(135deg, rgba(136, 176, 75, 0.2) 0%, white 100%); }
+        .branch-4 .branch-path { stroke: var(--branch-4); }
+        
+        .branch-5 .branch-node { background: linear-gradient(135deg, rgba(93, 165, 216, 0.2) 0%, white 100%); }
+        .branch-5 .branch-path { stroke: var(--branch-5); }
+        
+        .branch-1 { top: 75px; left: 55px; }
+        .branch-2 { top: 75px; right: 55px; }
+        .branch-3 { bottom: 65px; left: 55px; }
+        .branch-4 { bottom: 65px; right: 55px; }
+        
+        .branch-connector-1 { top: 130px; left: 55px; }
+        .branch-connector-2 { top: 130px; right: 55px; }
+        .branch-connector-3 { bottom: 130px; left: 55px; }
+        .branch-connector-4 { bottom: 130px; right: 55px; }
+        
+        .floating-deco {
+            position: absolute;
+            font-size: 14px;
+            opacity: 0.3;
+            z-index: 0;
+        }
+        
+        .corner-deco {
+            position: absolute;
+            font-size: 18px;
+            opacity: 0.4;
+            z-index: 0;
+        }
+        
+        .brand {
+            position: absolute;
+            bottom: 20px;
+            right: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--art-line-light);
+            z-index: 20;
+        }
+        
+        .brand-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--art-primary);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 12px;
+            border: 2px solid var(--art-line);
+            flex-shrink: 0;
+        }
+        
+        .brand span {
+            display: block;
+        }
+        
+        .title-area {
+            position: absolute;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 15;
+        }
+        
+        .main-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--art-line);
+            margin-bottom: 2px;
+        }
+        
+        .main-subtitle {
+            font-size: 11px;
+            color: var(--art-line-light);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sketch-border"></div>
+        
+        <span class="corner-deco" style="top: 22px; left: 22px;">🌿</span>
+        <span class="corner-deco" style="top: 22px; right: 22px;">✨</span>
+        <span class="corner-deco" style="bottom: 22px; left: 22px;">💡</span>
+        
+        <span class="floating-deco" style="top: 100px; left: 200px;">⭐</span>
+        <span class="floating-deco" style="top: 140px; right: 180px;">💫</span>
+        <span class="floating-deco" style="bottom: 120px; left: 220px;">✨</span>
+        <span class="floating-deco" style="bottom: 100px; right: 200px;">🌟</span>
+        <span class="floating-deco" style="top: 200px; left: 100px; font-size: 10px; opacity: 0.2;">○</span>
+        <span class="floating-deco" style="top: 250px; right: 120px; font-size: 12px; opacity: 0.2;">◦</span>
+        <span class="floating-deco" style="bottom: 180px; left: 150px; font-size: 11px; opacity: 0.2;">✦</span>
+        <span class="floating-deco" style="bottom: 220px; right: 150px; font-size: 10px; opacity: 0.25;">·</span>
+        
+        <div class="title-area">
+            <h1 class="main-title">Feat 核心能力图谱</h1>
+            <p class="main-subtitle">一站式解决方案，赋能开发者</p>
+        </div>
+        
+        <div class="branches">
+            <div class="branch-connector branch-connector-1">
+                <svg width="250" height="120" viewBox="0 0 250 120">
+                    <path class="branch-path" d="M0,0 Q80,60 125,120" />
+                </svg>
+            </div>
+            <div class="branch branch-1">
+                <div class="branch-node">
+                    <div class="branch-header">
+                        <span class="branch-icon">🚀</span>
+                        <span class="branch-title">高性能</span>
+                    </div>
+                    <div class="branch-items">
+                        <span class="branch-item">异步非阻塞</span>
+                        <span class="branch-item">零拷贝技术</span>
+                        <span class="branch-item">连接池优化</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="branch-connector branch-connector-2">
+                <svg width="250" height="120" viewBox="0 0 250 120">
+                    <path class="branch-path" d="M250,0 Q170,60 125,120" />
+                </svg>
+            </div>
+            <div class="branch branch-2">
+                <div class="branch-node">
+                    <div class="branch-header">
+                        <span class="branch-icon">🤖</span>
+                        <span class="branch-title">AI 集成</span>
+                    </div>
+                    <div class="branch-items">
+                        <span class="branch-item">多模型支持</span>
+                        <span class="branch-item">推理可视化</span>
+                        <span class="branch-item">Agent 框架</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="branch-connector branch-connector-3">
+                <svg width="250" height="120" viewBox="0 0 250 120">
+                    <path class="branch-path" d="M0,120 Q80,60 125,0" />
+                </svg>
+            </div>
+            <div class="branch branch-3">
+                <div class="branch-node">
+                    <div class="branch-header">
+                        <span class="branch-icon">☁️</span>
+                        <span class="branch-title">云原生</span>
+                    </div>
+                    <div class="branch-items">
+                        <span class="branch-item">AOT 编译</span>
+                        <span class="branch-item">容器化部署</span>
+                        <span class="branch-item">服务网格</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="branch-connector branch-connector-4">
+                <svg width="250" height="120" viewBox="0 0 250 120">
+                    <path class="branch-path" d="M250,120 Q170,60 125,0" />
+                </svg>
+            </div>
+            <div class="branch branch-4">
+                <div class="branch-node">
+                    <div class="branch-header">
+                        <span class="branch-icon">🔧</span>
+                        <span class="branch-title">易扩展</span>
+                    </div>
+                    <div class="branch-items">
+                        <span class="branch-item">插件机制</span>
+                        <span class="branch-item">Hook 系统</span>
+                        <span class="branch-item">SPI 扩展</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="center-node">
+            <div class="center-circle">
+                <span class="center-icon">⚡</span>
+                <span class="center-text">Feat<br>框架</span>
+            </div>
+        </div>
+        
+        <div class="brand">
+            <div class="brand-icon">F</div>
+            <span>Feat</span>
+        </div>
+    </div>
+</body>
+</html>

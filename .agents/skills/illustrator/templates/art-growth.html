@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手绘风格成长展示 - 900×500</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --art-warm-cream: #fef9f3;
+            --art-soft-pink: #fce4ec;
+            --art-lavender: #f3e5f5;
+            --art-mint: #e8f5e9;
+            --art-peach: #fff3e0;
+            --art-sky: #e3f2fd;
+            
+            --art-primary: #7c6ba0;
+            --art-primary-light: #9b8ab8;
+            --art-primary-dark: #5a4a7a;
+            
+            --art-secondary: #e8a4b8;
+            --art-accent: #e89b5a;
+            --art-highlight: #e85a5a;
+            
+            --art-line: #5d4e37;
+            --art-line-light: #6b5b45;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 
+                "ZCOOL KuaiLe",
+                "Ma Shan Zheng",
+                "ZCOOL XiaoWei",
+                "PingFang SC",
+                "Hiragino Sans GB",
+                "Microsoft YaHei",
+                sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+        }
+        
+        .container {
+            width: 900px;
+            height: 500px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, var(--art-sky) 0%, var(--art-mint) 100%);
+            padding: 40px 50px;
+        }
+        
+        .sketch-border {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 3px solid var(--art-line);
+            border-radius: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--art-line);
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: var(--art-line-light);
+            margin-top: 8px;
+        }
+        
+        .content {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            position: relative;
+            z-index: 1;
+            height: calc(100% - 120px);
+            padding-bottom: 20px;
+        }
+        
+        .stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        .stage-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            filter: drop-shadow(2px 2px 0 rgba(93, 78, 55, 0.2));
+        }
+        
+        .stage:nth-child(1) .stage-icon { font-size: 28px; }
+        .stage:nth-child(2) .stage-icon { font-size: 44px; }
+        .stage:nth-child(3) .stage-icon { font-size: 60px; }
+        .stage:nth-child(4) .stage-icon { font-size: 80px; }
+        
+        .stage-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--art-line);
+            margin-bottom: 6px;
+        }
+        
+        .stage-desc {
+            font-size: 12px;
+            color: var(--art-line-light);
+            text-align: center;
+            max-width: 120px;
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 60px;
+            left: 50px;
+            right: 50px;
+            height: 20px;
+            background: var(--art-mint);
+            border-top: 3px solid var(--art-accent);
+            border-radius: 10px 10px 0 0;
+            z-index: 0;
+        }
+        
+        .tree-trunk {
+            position: absolute;
+            bottom: 80px;
+            width: 8px;
+            height: 60px;
+            background: linear-gradient(180deg, var(--art-accent) 0%, #5d4037 100%);
+            border-radius: 4px;
+            z-index: 0;
+        }
+        
+        .tree-trunk:nth-of-type(1) { left: 150px; height: 30px; }
+        .tree-trunk:nth-of-type(2) { left: 320px; height: 50px; }
+        .tree-trunk:nth-of-type(3) { left: 500px; height: 70px; }
+        .tree-trunk:nth-of-type(4) { left: 700px; height: 90px; }
+        
+        .sun {
+            position: absolute;
+            top: 60px;
+            right: 80px;
+            font-size: 48px;
+            opacity: 0.8;
+        }
+        
+        .cloud {
+            position: absolute;
+            font-size: 32px;
+            opacity: 0.6;
+        }
+        
+        .cloud:nth-of-type(1) { top: 70px; left: 100px; }
+        .cloud:nth-of-type(2) { top: 90px; left: 300px; }
+        .cloud:nth-of-type(3) { top: 60px; left: 550px; }
+        
+        .arrow-path {
+            position: absolute;
+            bottom: 180px;
+            left: 120px;
+            right: 120px;
+            height: 3px;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--art-line) 0px,
+                var(--art-line) 8px,
+                transparent 8px,
+                transparent 16px
+            );
+            opacity: 0.4;
+            z-index: 0;
+        }
+        
+        .growth-curve {
+            position: absolute;
+            top: 50%;
+            left: 80px;
+            right: 80px;
+            height: 200px;
+            transform: translateY(-20%);
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .growth-curve svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .curve-path {
+            fill: none;
+            stroke: var(--art-primary);
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-dasharray: 8 4;
+            opacity: 0.4;
+        }
+        
+        .curve-fill {
+            fill: url(#curveGradient);
+            opacity: 0.1;
+        }
+        
+        .stage-connector {
+            position: absolute;
+            width: 2px;
+            background: linear-gradient(180deg, var(--art-primary) 0%, transparent 100%);
+            opacity: 0.3;
+            z-index: 0;
+        }
+        
+        .stage:nth-child(1) .stage-connector { height: 60px; bottom: 100%; left: 50%; transform: translateX(-50%); }
+        .stage:nth-child(2) .stage-connector { height: 80px; bottom: 100%; left: 50%; transform: translateX(-50%); }
+        .stage:nth-child(3) .stage-connector { height: 100px; bottom: 100%; left: 50%; transform: translateX(-50%); }
+        .stage:nth-child(4) .stage-connector { height: 120px; bottom: 100%; left: 50%; transform: translateX(-50%); }
+        
+        .brand {
+            position: absolute;
+            bottom: 24px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--art-line-light);
+            z-index: 1;
+        }
+        
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--art-primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            border: 2px solid var(--art-line);
+            flex-shrink: 0;
+        }
+        
+        .brand span {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sketch-border"></div>
+        
+        <span class="sun">☀️</span>
+        <span class="cloud">☁️</span>
+        <span class="cloud">☁️</span>
+        <span class="cloud">☁️</span>
+        
+        <span class="floating-deco" style="position: absolute; top: 80px; left: 50px; font-size: 14px; opacity: 0.2;">✨</span>
+        <span class="floating-deco" style="position: absolute; top: 120px; right: 60px; font-size: 12px; opacity: 0.25;">⭐</span>
+        <span class="floating-deco" style="position: absolute; bottom: 100px; left: 80px; font-size: 10px; opacity: 0.2;">○</span>
+        <span class="floating-deco" style="position: absolute; bottom: 140px; right: 100px; font-size: 12px; opacity: 0.2;">✦</span>
+        
+        <div class="header">
+            <h1 class="title">从种子到大树</h1>
+            <p class="subtitle">程序员成长的四个阶段</p>
+        </div>
+        
+        <div class="arrow-path"></div>
+        
+        <div class="growth-curve">
+            <svg viewBox="0 0 740 200" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="curveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#7c6ba0;stop-opacity:0" />
+                        <stop offset="100%" style="stop-color:#7c6ba0;stop-opacity:0.3" />
+                    </linearGradient>
+                </defs>
+                <path class="curve-fill" d="M0,180 Q185,160 370,100 T740,20 L740,200 L0,200 Z" />
+                <path class="curve-path" d="M0,180 Q185,160 370,100 T740,20" />
+            </svg>
+        </div>
+        
+        <div class="content">
+            <div class="stage">
+                <span class="stage-icon">🌱</span>
+                <h3 class="stage-title">新手期</h3>
+                <p class="stage-desc">学习基础<br>积累经验</p>
+            </div>
+            
+            <div class="stage">
+                <span class="stage-icon">🌿</span>
+                <h3 class="stage-title">成长期</h3>
+                <p class="stage-desc">独立开发<br>解决问题</p>
+            </div>
+            
+            <div class="stage">
+                <span class="stage-icon">🌳</span>
+                <h3 class="stage-title">成熟期</h3>
+                <p class="stage-desc">架构设计<br>团队协作</p>
+            </div>
+            
+            <div class="stage">
+                <span class="stage-icon">🌲</span>
+                <h3 class="stage-title">专家期</h3>
+                <p class="stage-desc">技术引领<br>价值创造</p>
+            </div>
+        </div>
+        
+        <div class="brand">
+            <div class="brand-icon">F</div>
+            <span>Feat</span>
+        </div>
+    </div>
+</body>
+</html>
