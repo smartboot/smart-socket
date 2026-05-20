@@ -96,11 +96,6 @@ public final class AioQuickClient {
     private BufferPagePool readBufferPool = null;
 
     /**
-     * 是否开启低内存模式
-     */
-    private boolean lowMemory = true;
-
-    /**
      * 当前构造方法设置了启动Aio客户端的必要参数，基本实现开箱即用。
      *
      * @param host             远程服务器地址
@@ -123,7 +118,7 @@ public final class AioQuickClient {
      * @param <A>        附件对象类型
      */
     public <A> void start(A attachment, CompletionHandler<AioSession, ? super A> handler) throws IOException {
-        this.asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(2, Thread::new);
+        this.asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider().openAsynchronousChannelGroup(2, Thread::new);
         start(asynchronousChannelGroup, attachment, handler);
     }
 
@@ -249,7 +244,7 @@ public final class AioQuickClient {
      * @see AioQuickClient#start(AsynchronousChannelGroup)
      */
     public AioSession start() throws IOException {
-        this.asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(2, Thread::new);
+        this.asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider().openAsynchronousChannelGroup(2, Thread::new);
         return start(asynchronousChannelGroup);
     }
 
@@ -382,7 +377,7 @@ public final class AioQuickClient {
      * @return
      */
     public AioQuickClient disableLowMemory() {
-        this.lowMemory = false;
+        config.disableLowMemory();
         return this;
     }
 }

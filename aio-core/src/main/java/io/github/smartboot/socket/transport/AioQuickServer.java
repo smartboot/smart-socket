@@ -58,10 +58,6 @@ public final class AioQuickServer {
     private AsynchronousChannelGroup asynchronousChannelGroup;
 
     /**
-     * 是否开启低内存模式
-     */
-    private boolean lowMemory = true;
-    /**
      * 客户端服务配置。
      * <p>调用AioQuickClient的各setXX()方法，都是为了设置config的各配置项</p>
      */
@@ -108,7 +104,7 @@ public final class AioQuickServer {
      * @throws IOException IO异常
      */
     public void start() throws IOException {
-        asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(lowMemory).openAsynchronousChannelGroup(config.getThreadNum(), r -> new Thread(r, "smart-socket:Thread-" + (threadSeqNumber++)));
+        asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider().openAsynchronousChannelGroup(config.getThreadNum(), r -> new Thread(r, "smart-socket:Thread-" + (threadSeqNumber++)));
         start(asynchronousChannelGroup);
     }
 
@@ -329,7 +325,7 @@ public final class AioQuickServer {
      * @return
      */
     public AioQuickServer disableLowMemory() {
-        this.lowMemory = false;
+        config.disableLowMemory();
         return this;
     }
 }

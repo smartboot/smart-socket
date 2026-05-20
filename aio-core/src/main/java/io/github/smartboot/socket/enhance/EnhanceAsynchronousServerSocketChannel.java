@@ -72,12 +72,6 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
     private boolean acceptPending;
 
     /**
-     * 是否启用低内存模式
-     * 在低内存模式下，会采用特殊的内存管理策略以减少内存占用
-     */
-    private final boolean lowMemory;
-
-    /**
      * 接受连接操作的调用计数器
      * 用于限制连续接受连接的次数，避免某个服务器持续占用接受线程
      */
@@ -91,12 +85,11 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
      * @param lowMemory                       是否启用低内存模式
      * @throws IOException 如果创建底层通道时发生IO错误
      */
-    EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup, boolean lowMemory) throws IOException {
+    EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup) throws IOException {
         super(enhanceAsynchronousChannelGroup.provider());
         this.enhanceAsynchronousChannelGroup = enhanceAsynchronousChannelGroup;
         serverSocketChannel = ServerSocketChannel.open();
         serverSocketChannel.configureBlocking(false);
-        this.lowMemory = lowMemory;
     }
 
     /**
@@ -183,7 +176,7 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
                 socketChannel = serverSocketChannel.accept();
             }
             if (socketChannel != null) {
-                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = new EnhanceAsynchronousSocketChannel(enhanceAsynchronousChannelGroup, socketChannel, lowMemory);
+                EnhanceAsynchronousSocketChannel asynchronousSocketChannel = new EnhanceAsynchronousSocketChannel(enhanceAsynchronousChannelGroup, socketChannel);
                 //这行代码不要乱动
                 socketChannel.configureBlocking(false);
                 socketChannel.finishConnect();

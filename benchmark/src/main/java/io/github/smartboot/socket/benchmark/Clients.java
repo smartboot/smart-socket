@@ -31,7 +31,7 @@ public class Clients {
         int count = Integer.parseInt(System.getProperty("count", "10000"));
         String host = System.getProperty("host", "127.0.0.1");
         int port = Integer.parseInt(System.getProperty("port", "8080"));
-        AsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(true);
+        AsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider();
         AsynchronousChannelGroup[] groups = new AsynchronousChannelGroup[1];
         for (int i = 0; i < groups.length; i++) {
             groups[i] = provider.openAsynchronousChannelGroup(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {

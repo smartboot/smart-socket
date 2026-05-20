@@ -94,6 +94,11 @@ final class IoServerConfig {
     private int threadNum = 1;
 
     /**
+     * 是否开启低内存模式
+     */
+    private boolean lowMemory = true;
+
+    /**
      * 获取默认内存块大小
      *
      * @return 内存块大小
@@ -218,6 +223,19 @@ final class IoServerConfig {
 
     public void setBacklog(int backlog) {
         this.backlog = backlog;
+    }
+
+    /**
+     * 禁用低代码模式
+     *
+     * @return
+     */
+    public void disableLowMemory() {
+        this.lowMemory = false;
+    }
+
+    public boolean isLowMemory() {
+        return lowMemory;
     }
 
     @Override

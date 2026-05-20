@@ -110,13 +110,6 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
     private SelectionKey readSelectionKey;
 
     /**
-     * 是否启用低内存模式
-     * 在低内存模式下，会采用特殊的内存管理策略以减少内存占用
-     * 适用于资源受限的环境
-     */
-    private final boolean lowMemory;
-
-    /**
      * 写操作中断标志
      * 用于控制写操作的中断状态，防止写操作重入
      * true表示写操作被中断，false表示可以继续写入
@@ -130,11 +123,10 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
      */
     private byte readInvoker = EnhanceAsynchronousChannelGroup.MAX_INVOKER;
 
-    public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel, boolean lowMemory) throws IOException {
+    public EnhanceAsynchronousSocketChannel(EnhanceAsynchronousChannelGroup group, SocketChannel channel) throws IOException {
         super(group.provider());
         this.channel = channel;
         readWorker = group.getReadWorker();
-        this.lowMemory = lowMemory;
     }
 
     protected EnhanceAsynchronousChannelGroup group() {
@@ -340,14 +332,8 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
             if (readCompletionHandler == null) {
                 return;
             }
-            // 处理Future调用被取消的情况
-//            if (readCompletionHandler instanceof FutureCompletionHandler && ((FutureCompletionHandler) readCompletionHandler).isDone()) {
-//                EnhanceAsynchronousChannelGroup.removeOps(readSelectionKey, SelectionKey.OP_READ);
-//                resetRead();
-//                return;
-//            }
-            // 低内存模式下的特殊处理：当没有缓冲区时，直接返回可读信号
-            if (lowMemory && direct && readBuffer == null) {
+            // 此类情况说明处于 READ_MONITOR_SIGNAL 状态
+            if (direct && readBuffer == null) {
                 CompletionHandler<Integer, Object> completionHandler = readCompletionHandler;
                 Object attach = readAttachment;
                 resetRead();
@@ -381,8 +367,8 @@ class EnhanceAsynchronousSocketChannel extends AsynchronousSocketChannel {
                     });
                     return;
                 }
-                //释放内存
-                if (lowMemory && readBuffer.position() == 0) {
+                //进入 read 监听之前释放缓冲区，节省内存
+                if (readBuffer.position() == 0) {
                     readBuffer = null;
                     readCompletionHandler.completed(EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL, readAttachment);
                 }

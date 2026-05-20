@@ -63,7 +63,7 @@ public class ServerShutdow {
         processor.addPlugin(new MonitorPlugin<>(5));
         server.start();
 
-        AsynchronousChannelGroup asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider(false).openAsynchronousChannelGroup(Runtime.getRuntime().availableProcessors(), r -> new Thread(r, "ClientGroup"));
+        AsynchronousChannelGroup asynchronousChannelGroup = new EnhanceAsynchronousChannelProvider().openAsynchronousChannelGroup(Runtime.getRuntime().availableProcessors(), r -> new Thread(r, "ClientGroup"));
         for (int i = 0; i < 100; i++) {
             new Thread(() -> {
                 try {

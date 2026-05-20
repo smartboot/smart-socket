@@ -60,16 +60,6 @@ public final class EnhanceAsynchronousChannelProvider extends AsynchronousChanne
      * 用于标识通道数据可读状态，值为-3
      */
     public static final int READABLE_SIGNAL = -3;
-    /**
-     * 低内存模式标志
-     * 当设置为true时，系统将采用更保守的内存使用策略，
-     * 适用于内存资源受限的环境
-     */
-    private final boolean lowMemory;
-
-    public EnhanceAsynchronousChannelProvider(boolean lowMemory) {
-        this.lowMemory = lowMemory;
-    }
 
     /**
      * 创建一个新的异步通道组
@@ -108,7 +98,7 @@ public final class EnhanceAsynchronousChannelProvider extends AsynchronousChanne
      */
     @Override
     public AsynchronousServerSocketChannel openAsynchronousServerSocketChannel(AsynchronousChannelGroup group) throws IOException {
-        return new EnhanceAsynchronousServerSocketChannel(checkAndGet(group), lowMemory);
+        return new EnhanceAsynchronousServerSocketChannel(checkAndGet(group));
     }
 
     /**
@@ -121,7 +111,7 @@ public final class EnhanceAsynchronousChannelProvider extends AsynchronousChanne
      */
     @Override
     public AsynchronousSocketChannel openAsynchronousSocketChannel(AsynchronousChannelGroup group) throws IOException {
-        return new EnhanceAsynchronousSocketChannel(checkAndGet(group), SocketChannel.open(), lowMemory);
+        return new EnhanceAsynchronousSocketChannel(checkAndGet(group), SocketChannel.open());
     }
 
     /**

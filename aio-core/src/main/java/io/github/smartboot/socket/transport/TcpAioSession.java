@@ -227,12 +227,19 @@ final class TcpAioSession extends AioSession {
     void readCompleted(int result) {
         //释放缓冲区
         if (result == EnhanceAsynchronousChannelProvider.READ_MONITOR_SIGNAL) {
-            this.readBuffer.clean();
-            this.readBuffer = null;
+            if (config.isLowMemory()) {
+                this.readBuffer.clean();
+                this.readBuffer = null;
+            }
             return;
         }
         if (result == EnhanceAsynchronousChannelProvider.READABLE_SIGNAL) {
-            doRead();
+            if (config.isLowMemory()) {
+                doRead();
+            } else {
+                this.readBuffer.buffer().flip();
+                signalRead();
+            }
             return;
         }
         // 接收到的消息进行预处理
