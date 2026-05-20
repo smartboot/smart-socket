@@ -82,7 +82,6 @@ final class EnhanceAsynchronousServerSocketChannel extends AsynchronousServerSoc
      * 创建一个新的增强型异步服务器Socket通道实例
      *
      * @param enhanceAsynchronousChannelGroup 关联的异步通道组，用于管理该通道的资源
-     * @param lowMemory                       是否启用低内存模式
      * @throws IOException 如果创建底层通道时发生IO错误
      */
     EnhanceAsynchronousServerSocketChannel(EnhanceAsynchronousChannelGroup enhanceAsynchronousChannelGroup) throws IOException {

@@ -94,9 +94,9 @@ final class IoServerConfig {
     private int threadNum = 1;
 
     /**
-     * 是否开启低内存模式
+     * 是否保留读缓冲区（不禁用空闲时释放）
      */
-    private boolean lowMemory = true;
+    private boolean retainReadBuffer = false;
 
     /**
      * 获取默认内存块大小
@@ -226,16 +226,16 @@ final class IoServerConfig {
     }
 
     /**
-     * 禁用低代码模式
+     * 启用读缓冲区保留模式
+     * 启用后，读缓冲区将被复用，不会在读监听时释放
      *
-     * @return
      */
-    public void disableLowMemory() {
-        this.lowMemory = false;
+    public void enableRetainReadBuffer() {
+        this.retainReadBuffer = true;
     }
 
-    public boolean isLowMemory() {
-        return lowMemory;
+    public boolean isRetainReadBuffer() {
+        return retainReadBuffer;
     }
 
     @Override

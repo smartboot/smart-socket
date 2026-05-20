@@ -58,7 +58,7 @@ public class Server {
         server.setReadBufferSize(1024)
                 .setThreadNum(Runtime.getRuntime().availableProcessors() + 1)
                 .setBufferPagePool(bufferPagePool)
-                .disableLowMemory()
+                .retainReadBuffer()
                 .setWriteBuffer(4096, 1);
         processor.addPlugin(new MonitorPlugin<>(5));
         server.start();

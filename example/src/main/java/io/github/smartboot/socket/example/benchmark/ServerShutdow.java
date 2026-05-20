@@ -57,7 +57,7 @@ public class ServerShutdow {
         server.setReadBufferSize(1024 * 1024)
                 .setThreadNum(2)
                 .setBufferPagePool(bufferPagePool)
-                .disableLowMemory()
+                .retainReadBuffer()
                 .setWriteBuffer(4096, 512);
         processor.addPlugin(new BufferPageMonitorPlugin<>(server, 6));
         processor.addPlugin(new MonitorPlugin<>(5));

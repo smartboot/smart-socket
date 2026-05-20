@@ -372,12 +372,18 @@ public final class AioQuickClient {
     }
 
     /**
-     * 禁用低代码模式
+     * <p>
+     * 当读缓冲区处于闲置状态时，smart-socket 默认释放缓冲区，
+     * 该策略有利于海量连接场景下大幅节省内存，缺点在于增加了内存申请/释放的开销（这种损耗极其轻微，可忽略不计）
+     * </p>
+     * <p>
+     * 如果追求极致性能，且内存资源充裕，可考虑使用 retainReadBuffer 方法，
+     * </p>
      *
-     * @return
+     * @return 当前 AioQuickClient 实例
      */
-    public AioQuickClient disableLowMemory() {
-        config.disableLowMemory();
+    public AioQuickClient retainReadBuffer() {
+        config.enableRetainReadBuffer();
         return this;
     }
 }
