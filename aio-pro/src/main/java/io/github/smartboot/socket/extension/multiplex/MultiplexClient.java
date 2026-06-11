@@ -414,6 +414,7 @@ public class MultiplexClient<T> {
     public final void release(AioQuickClient client) {
         // 检查连接是否属于当前多路复用客户端
         if (clients.remove(client) == null) {
+            client.shutdownNow();
             throw new IllegalArgumentException("client is not belong to this multiplex client");
         }
         release0(client);
