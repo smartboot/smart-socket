@@ -183,7 +183,7 @@ public class MultiplexClient<T> {
             AioSession session = client.getSession();
             // 检查连接是否有效
             if (session == null || session.isInvalid()) {
-                release(client);
+                release0(client);
                 continue;
             }
 
@@ -340,7 +340,7 @@ public class MultiplexClient<T> {
                     AioQuickClient c;
                     while (time == latestTime && clients.size() > multiplexOptions.getMinConnections() && (c = resuingClients.poll()) != null) {
 //                        System.out.println("release...");
-                        release(c);
+                        release0(c);
                     }
                 }
 
@@ -416,7 +416,10 @@ public class MultiplexClient<T> {
         if (clients.remove(client) == null) {
             throw new IllegalArgumentException("client is not belong to this multiplex client");
         }
+        release0(client);
+    }
 
+    private void release0(AioQuickClient client) {
         try {
             // 立即关闭连接
             client.shutdownNow();
@@ -444,6 +447,6 @@ public class MultiplexClient<T> {
      */
     public void close() {
         closed = true;
-        clients.forEach((client, aioQuickClient) -> release(client));
+        clients.forEach((client, aioQuickClient) -> release0(client));
     }
 }
