@@ -166,7 +166,12 @@ public class MultiplexClient<T> {
                 }
             }
         }
-        semaphore.acquire();
+        if (multiplexOptions.getConnectTimeout() <= 0) {
+            semaphore.acquire();
+        } else if (!semaphore.tryAcquire(multiplexOptions.getConnectTimeout(), TimeUnit.MILLISECONDS)) {
+            throw new IllegalStateException("Failed to acquire connection within " + multiplexOptions.getConnectTimeout() + " ms. All connections are in use and max connections limit (" + multiplexOptions.getMaxConnections() + ") has been reached.");
+        }
+
         AioQuickClient client;
         // 循环尝试从可复用连接队列中获取连接
         while (true) {
