@@ -320,15 +320,15 @@ public final class AioQuickServer {
     }
 
     /**
-     * <p>
-     * 当读缓冲区处于闲置状态时，smart-socket 默认释放缓冲区，
-     * 该策略有利于海量连接场景下大幅节省内存，缺点在于增加了内存申请/释放的开销（这种损耗极其轻微，可忽略不计）
-     * </p>
-     * <p>
-     * 如果追求极致性能，且内存资源充裕，可考虑使用 retainReadBuffer 方法，
-     * </p>
+     * 保留读缓冲区。
      *
-     * @return 当前 AioQuickServer 实例
+     * 默认情况下，smart-socket 会在连接空闲时释放读缓冲区，
+     * 以降低海量连接场景下的内存占用。
+     *
+     * 调用此方法后，每个连接将持续持有读缓冲区，
+     * 可减少缓冲区重复申请的开销。
+     *
+     * 适用于高吞吐、持续活跃的连接场景。
      */
     public AioQuickServer retainReadBuffer() {
         config.enableRetainReadBuffer();
