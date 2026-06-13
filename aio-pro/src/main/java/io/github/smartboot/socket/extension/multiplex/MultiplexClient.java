@@ -75,7 +75,7 @@ public class MultiplexClient<T> {
      * true表示客户端已关闭，不再接受新的连接请求
      * </p>
      */
-    private boolean closed;
+    private volatile boolean closed;
 
     /**
      * 首次连接标识
@@ -91,7 +91,7 @@ public class MultiplexClient<T> {
      * 存储可以复用的空闲连接，采用先进先出策略
      * </p>
      */
-    private final ConcurrentLinkedDeque<AioQuickClient> resuingClients = new ConcurrentLinkedDeque<>();
+    private final ConcurrentLinkedDeque<AioQuickClient> reusingClients = new ConcurrentLinkedDeque<>();
 
     /**
      * 所有活跃连接映射表
@@ -117,7 +117,7 @@ public class MultiplexClient<T> {
      * 以判断连接是否已空闲超过指定时间（默认60秒）
      * </p>
      */
-    private long latestTime = System.currentTimeMillis();
+    private volatile long latestTime = System.currentTimeMillis();
 
     private volatile Semaphore semaphore;
 
@@ -172,30 +172,35 @@ public class MultiplexClient<T> {
             throw new IllegalStateException("Failed to acquire connection within " + multiplexOptions.getConnectTimeout() + " ms. All connections are in use and max connections limit (" + multiplexOptions.getMaxConnections() + ") has been reached.");
         }
 
-        AioQuickClient client;
-        // 循环尝试从可复用连接队列中获取连接
-        while (true) {
-            client = resuingClients.pollFirst();
-            if (client == null) {
-                break;
-            }
+        try {
+            while (!closed) {
+                // 1. 优先复用连接
+                AioQuickClient client;
 
-            AioSession session = client.getSession();
-            // 检查连接是否有效
-            if (session == null || session.isInvalid()) {
-                release0(client);
-                continue;
-            }
+                while ((client = reusingClients.pollFirst()) != null) {
+                    AioSession session = client.getSession();
 
-            // 触发连接复用回调
-            onReuse(client);
-            return client;
+                    if (session == null || session.isInvalid()) {
+                        client.shutdownNow(); // 关闭无效连接
+                        continue;
+                    }
+
+                    // 复用连接,回调异常不影响主流程
+                    try {
+                        onReuse(client);
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+                    return client;
+                }
+
+                createNewClient();
+            }
+        } catch (Throwable t) {
+            semaphore.release();
+            throw t;
         }
-
-        // 创建新的连接
-        createNewClient();
-        // 递归调用，直到获取到有效的连接
-        return acquire();
+        throw new IllegalStateException("client closed");
     }
 
     /**
@@ -263,13 +268,22 @@ public class MultiplexClient<T> {
 
         // 将新创建的连接添加到连接管理器中
         clients.put(client, client);
-        resuingClients.offerLast(client);
+        reusingClients.offerLast(client);
+
+        if (closed) {
+            client.shutdownNow();
+            throw new IllegalStateException("client closed");
+        }
 
         // 启动连接监控任务
         startConnectionMonitor();
 
-        // 触发新连接创建回调
-        onNew(client);
+        // 触发新连接创建回调,回调异常不影响主流程
+        try {
+            onNew(client);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -338,30 +352,21 @@ public class MultiplexClient<T> {
                 // 如果超过60秒没有使用连接，则清理可复用连接队列中的连接
                 if (System.currentTimeMillis() - time > 60 * 1000) {
                     AioQuickClient c;
-                    while (time == latestTime && clients.size() > multiplexOptions.getMinConnections() && (c = resuingClients.poll()) != null) {
+                    //回收期间若产生连接需求，则不回收
+                    while (time == latestTime && clients.size() > multiplexOptions.getMinConnections() && (c = reusingClients.poll()) != null) {
 //                        System.out.println("release...");
-                        release0(c);
-                    }
-                }
-
-                // 如果没有活动连接，则取消监控任务
-                if (clients.isEmpty()) {
-                    TimerTask oldTask = timerTask;
-                    timerTask = null;
-                    oldTask.cancel();
-
-                    // 取消任务后再次检查是否有新连接加入，如果有则重新启动监控任务
-                    if (!clients.isEmpty()) {
-                        startConnectionMonitor();
+                        //由于信号量已得到释放，所以这里不需要再次检查信号量
+                        clients.remove(c);
+                        c.shutdownNow();
                     }
                 }
 
                 // 确保维持最小连接数
                 maintainMinConnections();
             }, 1, TimeUnit.MINUTES);
-            // 确保维持最小连接数
-            maintainMinConnections();
         }
+        // 确保维持最小连接数
+        maintainMinConnections();
     }
 
     /**
@@ -371,12 +376,11 @@ public class MultiplexClient<T> {
      * 即使在空闲状态下也不会低于该数量。</p>
      */
     private void maintainMinConnections() {
-
         // 如果当前连接数小于最小连接数，则创建新的连接
         while (clients.size() < multiplexOptions.getMinConnections()) {
             try {
                 createNewClient();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 // 创建连接失败，记录日志但不中断操作
                 e.printStackTrace();
                 break;
@@ -394,11 +398,16 @@ public class MultiplexClient<T> {
      * @throws IllegalArgumentException 如果连接不属于当前多路复用客户端
      */
     public final void reuse(AioQuickClient client) {
-        // 将连接放回可复用连接队列
-        resuingClients.addFirst(client);
+        if (clients.containsKey(client)) {
+            // 将连接放回可复用连接队列
+            reusingClients.addFirst(client);
 
-        // 释放信号量
-        releaseSemaphore();
+            // 释放信号量
+            semaphore.release();
+        } else {
+            client.shutdownNow();
+            throw new IllegalArgumentException("client is not belong to this multiplex client");
+        }
     }
 
     /**
@@ -412,31 +421,11 @@ public class MultiplexClient<T> {
      * @throws IllegalArgumentException 如果连接不属于当前多路复用客户端
      */
     public final void release(AioQuickClient client) {
+        client.shutdownNow();
         // 检查连接是否属于当前多路复用客户端
         if (clients.remove(client) == null) {
-            client.shutdownNow();
             throw new IllegalArgumentException("client is not belong to this multiplex client");
         }
-        release0(client);
-    }
-
-    private void release0(AioQuickClient client) {
-        try {
-            // 立即关闭连接
-            client.shutdownNow();
-        } finally {
-            // 释放信号量，允许创建新连接
-            releaseSemaphore();
-        }
-    }
-
-    /**
-     * 释放信号量许可
-     * <p>
-     * 释放一个信号量许可，允许创建新的连接。
-     * </p>
-     */
-    private void releaseSemaphore() {
         semaphore.release();
     }
 
@@ -448,6 +437,16 @@ public class MultiplexClient<T> {
      */
     public void close() {
         closed = true;
-        clients.forEach((client, aioQuickClient) -> release0(client));
+        // 取消连接监控任务
+        TimerTask oldTask = timerTask;
+        if (oldTask != null) {
+            oldTask.cancel();
+        }
+        // 关闭所有连接
+        clients.forEach((client, aioQuickClient) -> {
+            client.shutdownNow();
+            // 释放信号量,激活可能存在的 acquire 阻塞
+            semaphore.release();
+        });
     }
 }
