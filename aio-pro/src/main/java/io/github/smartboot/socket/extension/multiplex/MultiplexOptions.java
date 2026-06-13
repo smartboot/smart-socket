@@ -123,7 +123,7 @@ public class MultiplexOptions<T> {
      * <p>控制客户端维持的最小连接数量，即使在空闲状态下也会保持该数量的连接。
      * 这样可以避免频繁创建和销毁连接的开销，默认值为0。</p>
      */
-    private int minConnections = 0;
+    private int minConnections = 8;
 
     /**
      * 读取内存池

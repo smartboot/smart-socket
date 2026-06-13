@@ -314,9 +314,16 @@ public class MultiplexClient<T> {
      * <b>重要提示：</b>用户在使用完连接后，必须主动调用 {@link #reuse(AioQuickClient)} 或 {@link #release(AioQuickClient)} 进行资源回收。
      * </p>
      * <p>
-     * 该方法将使用完毕的连接放回可复用连接队列中，以便后续请求可以复用该连接。
-     * 如果当前存在等待获取连接的线程，或者活跃连接数小于最小连接数配置，
-     * 则将连接放入复用队列；否则直接释放该连接。
+     * 该方法将使用完毕的连接放回可复用连接队列的头部，以便后续请求可以优先复用该连接。
+     * 同时释放信号量许可，允许新的连接请求被处理。
+     * </p>
+     * <p>
+     * <b>连接池管理策略：</b>
+     * <ul>
+     *   <li>当信号量可用许可数达到最大连接数且活跃连接数超过最小连接数时，会自动清理多余的空闲连接</li>
+     *   <li>清理策略：从复用队列尾部移除连接并关闭，保持连接池在合理规模</li>
+     *   <li>此机制可以有效控制内存占用，避免空闲连接过多造成资源浪费</li>
+     * </ul>
      * </p>
      * <p>
      * <b>注意事项：</b>
@@ -328,16 +335,21 @@ public class MultiplexClient<T> {
      * </ul>
      * </p>
      *
-     * @param client 需要回收的客户端连接
-     * @throws IllegalArgumentException 如果连接不属于当前多路复用客户端
+     * @param client 需要回收的客户端连接，该连接将被放入复用队列供后续请求使用
      */
     public final void reuse(AioQuickClient client) {
-        if (semaphore.hasQueuedThreads() || clients.size() < multiplexOptions.getMinConnections()) {
-            //提升活跃连接利用率
-            reusingClients.addFirst(client);
-            semaphore.release();
-        } else {
-            release(client);
+        //提升活跃连接利用率
+        reusingClients.addFirst(client);
+        semaphore.release();
+
+        int i = 0;
+        while (i++ < multiplexOptions.getMaxConnections() && semaphore.availablePermits() == multiplexOptions.getMaxConnections() && clients.size() > multiplexOptions.getMinConnections()) {
+            AioQuickClient c = reusingClients.pollLast();
+            if (c == null) {
+                break;
+            }
+            clients.remove(c);
+            c.shutdownNow();
         }
     }
 
