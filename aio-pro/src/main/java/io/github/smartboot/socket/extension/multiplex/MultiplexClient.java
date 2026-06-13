@@ -161,8 +161,9 @@ public class MultiplexClient<T> {
             throw new IllegalStateException("client closed");
         }
 
+        long acquireTime = System.currentTimeMillis();
         // 更新最后使用时间
-        latestTime = System.currentTimeMillis();
+        latestTime = acquireTime;
         if (semaphore == null) {
             synchronized (this) {
                 if (semaphore == null) {
@@ -178,6 +179,10 @@ public class MultiplexClient<T> {
 
         try {
             while (!closed) {
+                //循环申请超时
+                if (multiplexOptions.getConnectTimeout() > 0 && System.currentTimeMillis() - acquireTime > multiplexOptions.getConnectTimeout()) {
+                    throw new IllegalStateException("Failed to acquire connection within " + multiplexOptions.getConnectTimeout() + " ms. All connections are in use and max connections limit (" + multiplexOptions.getMaxConnections() + ") has been reached.");
+                }
                 // 1. 优先复用连接
                 AioQuickClient client;
 
