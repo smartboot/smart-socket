@@ -345,7 +345,7 @@ public class MultiplexClient<T> {
         semaphore.release();
 
 
-        while (v == version && clients.size() > multiplexOptions.getMinConnections()) {
+        while (v == version && semaphore.availablePermits() == multiplexOptions.getMaxConnections() && clients.size() > multiplexOptions.getMinConnections()) {
             AioQuickClient c = reusingClients.pollLast();
             if (c == null) {
                 break;
