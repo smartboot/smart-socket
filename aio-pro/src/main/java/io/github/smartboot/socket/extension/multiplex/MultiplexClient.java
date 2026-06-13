@@ -83,6 +83,8 @@ public class MultiplexClient<T> {
      */
     private boolean firstConnected = true;
 
+    private volatile int version;
+
     /**
      * 可链路复用的连接队列
      * <p>
@@ -140,7 +142,7 @@ public class MultiplexClient<T> {
         if (closed) {
             throw new IllegalStateException("client closed");
         }
-
+        version++;
         long acquireTime = System.currentTimeMillis();
         // 更新最后使用时间
         if (semaphore == null) {
@@ -155,7 +157,6 @@ public class MultiplexClient<T> {
         } else if (!semaphore.tryAcquire(multiplexOptions.getConnectTimeout(), TimeUnit.MILLISECONDS)) {
             throw new IllegalStateException("Failed to acquire connection within " + multiplexOptions.getConnectTimeout() + " ms. All connections are in use and max connections limit (" + multiplexOptions.getMaxConnections() + ") has been reached.");
         }
-
         try {
             while (!closed) {
                 //循环申请超时
@@ -338,12 +339,13 @@ public class MultiplexClient<T> {
      * @param client 需要回收的客户端连接，该连接将被放入复用队列供后续请求使用
      */
     public final void reuse(AioQuickClient client) {
+        int v = version;
         //提升活跃连接利用率
         reusingClients.addFirst(client);
         semaphore.release();
 
-        int i = 0;
-        while (i++ < multiplexOptions.getMaxConnections() && semaphore.availablePermits() == multiplexOptions.getMaxConnections() && clients.size() > multiplexOptions.getMinConnections()) {
+
+        while (v == version && clients.size() > multiplexOptions.getMinConnections()) {
             AioQuickClient c = reusingClients.pollLast();
             if (c == null) {
                 break;
