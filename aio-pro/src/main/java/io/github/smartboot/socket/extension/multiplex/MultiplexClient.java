@@ -119,6 +119,10 @@ public class MultiplexClient<T> {
      */
     private volatile long latestTime = System.currentTimeMillis();
 
+    /**
+     * 信号量，用于控制最大连接数
+     *
+     */
     private volatile Semaphore semaphore;
 
     /**
@@ -362,31 +366,22 @@ public class MultiplexClient<T> {
                 }
 
                 // 确保维持最小连接数
-                maintainMinConnections();
+                while (clients.size() < multiplexOptions.getMinConnections()) {
+                    try {
+                        createNewClient();
+                    } catch (Throwable e) {
+                        // 创建连接失败，记录日志但不中断操作
+                        e.printStackTrace();
+                        break;
+                    }
+                }
+                if (closed) {
+                    close();
+                }
             }, 1, TimeUnit.MINUTES);
         }
-        // 确保维持最小连接数
-        maintainMinConnections();
     }
 
-    /**
-     * 维持最小连接数
-     *
-     * <p>该方法确保连接池中至少维持指定数量的连接，
-     * 即使在空闲状态下也不会低于该数量。</p>
-     */
-    private void maintainMinConnections() {
-        // 如果当前连接数小于最小连接数，则创建新的连接
-        while (clients.size() < multiplexOptions.getMinConnections()) {
-            try {
-                createNewClient();
-            } catch (Throwable e) {
-                // 创建连接失败，记录日志但不中断操作
-                e.printStackTrace();
-                break;
-            }
-        }
-    }
 
     /**
      * 回收连接用于后续复用
