@@ -8,8 +8,7 @@ smart-socket 是一款增强了原生 JDK 实现的 AIO 通信框架。
 换言之，smart-socket 100% 遵循 JDK 对于 AIO 接口规范的定义，只是重新提供了一套代码实现。
 使其有着相较 JDK 官方 AIO 更高的通信性能，更少的资源开销，以及更稳定的运行保障。
 
-- **[文档地址](https://smartboot.tech/smart-socket/)**
-- **[我们的用户](https://smartboot.tech/smart-socket/guides/users/)**
+- **[《smart-socket实战指南》](https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg4MzU2NDA0Nw==&action=getalbum&album_id=4244214517749514252#wechat_redirect)**：（自学不会的赠送提供一次 1V1 指导）
 
 ### 为什么开发 smart-socket?
 - AIO 是一个面向开发人员更友好的设计理念，值得被更多人应用。
