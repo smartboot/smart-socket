@@ -29,7 +29,6 @@ With its simplicity, ease of use and high performance, smart-socket has been rec
 |---|---|
 |BlackListPlugin|Blacklist plugin, smart-socket will refuse to establish a connection with the IP in the blacklist|
 |BufferPageMonitorPlugin|Memory pool monitoring plugin|
-|HeartPlugin|Heartbeat plugin|
 |MonitorPlugin|Service Metrics Monitoring Plugin|
 |SocketOptionPlugin|Connection property configuration plugin|
 |SslPlugin|TLS/SSL encrypted communication plugin|

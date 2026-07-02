@@ -57,7 +57,6 @@ smart-socket 作为底层通信微内核，已支撑多个高性能中间件项�
 |---|---|
 |BlackListPlugin|黑名单插件,smart-socket会拒绝与黑名单中的IP建立连接|
 |BufferPageMonitorPlugin|内存池监控插件|
-|HeartPlugin|心跳插件|
 |MonitorPlugin|服务指标监控插件|
 |SocketOptionPlugin|连接属性配置插件|
 |SslPlugin|TLS/SSL加密通讯插件|
