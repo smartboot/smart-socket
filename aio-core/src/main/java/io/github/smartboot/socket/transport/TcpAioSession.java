@@ -382,7 +382,7 @@ final class TcpAioSession extends AioSession {
     }
 
     private void assertState() {
-        if (status == SESSION_STATUS_ENABLED) {
+        if (status != SESSION_STATUS_ENABLED) {
             throw new IllegalStateException("session is disable now");
         }
     }
