@@ -174,11 +174,13 @@ final class TcpAioSession extends AioSession {
      * @return 输入流
      */
     public WriteBuffer writeBuffer() {
+        assertState();
         return byteBuf;
     }
 
     @Override
     public ByteBuffer readBuffer() {
+        assertState();
         return readBuffer.buffer();
     }
 
@@ -320,6 +322,7 @@ final class TcpAioSession extends AioSession {
      * 同步读取数据
      */
     public int read(long timeout, TimeUnit unit) throws IOException {
+        assertState();
         ByteBuffer buffer = readBuffer.buffer();
         buffer.compact();
         int readSize;
@@ -378,5 +381,9 @@ final class TcpAioSession extends AioSession {
         }
     }
 
-
+    private void assertState() {
+        if (status == SESSION_STATUS_ENABLED) {
+            throw new IllegalStateException("session is disable now");
+        }
+    }
 }
