@@ -1,17 +1,17 @@
-
 # smart-socket
 
 <p align="center">
 
-<b>A lightweight, high-performance Java networking framework for building reliable and scalable network applications.</b>
+<b>A lightweight Java AIO communication framework for building high-performance TCP applications.</b>
 
 </p>
+
 
 <p align="center">
 
 [![License](https://img.shields.io/github/license/smartboot/smart-socket)](LICENSE)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.smartboot.socket/aio-core)](https://central.sonatype.com/artifact/io.github.smartboot.socket/aio-core)
 [![GitHub Stars](https://img.shields.io/github/stars/smartboot/smart-socket)](https://github.com/smartboot/smart-socket)
-[![GitHub Issues](https://img.shields.io/github/issues/smartboot/smart-socket)](https://github.com/smartboot/smart-socket/issues)
 
 </p>
 
@@ -20,220 +20,167 @@
 
 ## Introduction
 
-smart-socket is a lightweight Java networking framework based on the JDK asynchronous I/O model.
+smart-socket is a lightweight Java AIO communication framework built on top of the JDK asynchronous I/O model.
 
-It provides a simple, efficient, and extensible communication layer for building high-performance applications, such as:
+It provides a simple programming model for developing TCP communication applications with:
 
-- Custom TCP servers
-- IoT platforms
-- Message systems
-- RPC frameworks
-- Real-time applications
-- High-concurrency backend services
+- Protocol-based message processing
+- Session-oriented connection management
+- Efficient memory management
+- Extensible plugin architecture
 
 
-smart-socket focuses on:
+smart-socket is designed for scenarios that require:
 
-- Simple programming model
-- Low memory consumption
-- High performance
-- Easy customization
-- Stable long-running connections
-
-
-Unlike many heavyweight networking frameworks, smart-socket keeps the core architecture small and understandable, allowing developers to focus on business protocols instead of complex framework internals.
+- Long-lived TCP connections
+- Custom communication protocols
+- High-concurrency network applications
+- Lightweight Java infrastructure components
 
 
 ---
 
-# Why smart-socket?
+## Features
 
 
-Building high-concurrency network applications usually requires dealing with:
+### 🚀 Java AIO Based
 
-- Connection management
-- Asynchronous I/O
-- Buffer management
-- Protocol parsing
-- Thread scheduling
+Built on the native JDK asynchronous I/O API.
 
+smart-socket simplifies Java AIO development by providing higher-level abstractions:
 
-Existing solutions often provide powerful features but may introduce additional complexity.
-
-smart-socket provides a lightweight alternative:
-
-> A small, efficient, and extensible networking foundation for Java developers who need control and simplicity.
+- AioQuickServer
+- AioQuickClient
+- AioSession
 
 
 ---
 
-# Features
+### 🪶 Lightweight Architecture
 
-
-## 🚀 High Performance
-
-smart-socket is designed for high-concurrency communication scenarios.
-
-Key features:
-
-- Asynchronous network I/O
-- Efficient connection processing
-- Optimized memory usage
-- Stable long-term connections
-
-
-It is suitable for applications requiring thousands or millions of concurrent connections.
-
-
----
-
-## 🪶 Lightweight Architecture
-
-
-smart-socket keeps the core implementation simple and compact.
+smart-socket focuses on simplicity and low dependency overhead.
 
 Benefits:
 
 - Easy to understand
-- Easy to debug
-- Easy to extend
-- Low dependency footprint
-
-
-Developers can quickly understand the internal architecture and customize it for their own requirements.
+- Easy to integrate
+- Easy to customize
 
 
 ---
 
-## 💾 Low Memory Consumption
+### 🔌 Protocol Driven Design
 
+smart-socket separates network communication from message processing.
 
-Long-lived connections require efficient resource management.
+Two core interfaces define application logic:
 
-smart-socket provides:
-
-- Optimized buffer management
-- Reduced unnecessary object allocation
-- Efficient connection lifecycle handling
-
-
-This makes it suitable for:
-
-- IoT devices
-- Edge computing
-- Embedded systems
-- Large-scale connection services
-
-
----
-
-## 🔌 Simple Programming Model
-
-
-Building a custom protocol requires only a few core components.
-
-
-The main abstractions are:
 
 ```
 
-Protocol
+Protocol<T>
 
-MessageProcessor
+MessageProcessor<T>
 
-````
-
-
-Example:
+```
 
 
-```java
-public class EchoProcessor implements MessageProcessor {
+`Protocol` is responsible for decoding network data into application messages.
 
-    @Override
-    public void process(
-            AioSession session,
-            Object message) {
+`MessageProcessor` handles decoded messages and executes business logic.
 
-        session.write(message);
-    }
-}
-````
-
-Developers can focus on protocol and business logic without dealing with low-level network details.
 
 ---
 
-## 🧩 Extensible Plugin System
+### 💾 Efficient Memory Management
 
-smart-socket provides a flexible plugin architecture.
+smart-socket provides an optimized buffer management model for network communication.
 
-Built-in plugins include:
+It helps reduce unnecessary memory allocation and improves stability for long-running connections.
 
-| Plugin                | Description                     |
-| --------------------- | ------------------------------- |
-| SSL Plugin            | TLS/SSL encrypted communication |
-| Heartbeat Plugin      | Connection health detection     |
-| Monitor Plugin        | Runtime metrics collection      |
-| Blacklist Plugin      | IP access control               |
-| Socket Option Plugin  | Socket configuration            |
-| Stream Monitor Plugin | Network traffic monitoring      |
 
-Developers can create custom plugins to extend the framework.
+---
+
+### 🧩 Extensible Plugin System
+
+Plugins can extend communication behavior without modifying the core framework.
+
+Built-in capabilities include:
+
+- SSL/TLS support
+- Socket configuration
+- Runtime monitoring
+- Traffic monitoring
+- Buffer monitoring
+
 
 ---
 
 # Architecture
 
+
+
+```mermaid
+flowchart TB
+
+    APP[Your Application]
+
+    subgraph API[smart-socket Programming Model]
+
+        PROTOCOL[Protocol&lt;T&gt;<br/>Decode network data]
+
+        PROCESSOR[MessageProcessor&lt;T&gt;<br/>Handle messages]
+
+        SESSION[AioSession<br/>Connection abstraction]
+
+    end
+
+
+    subgraph CORE[smart-socket Core]
+
+        BUFFER[Buffer Management]
+
+        PIPELINE[Plugin Pipeline]
+
+        IO[Async IO Runtime]
+
+    end
+
+
+    JDK[JDK AsynchronousSocketChannel]
+
+
+    APP --> PROTOCOL
+    APP --> PROCESSOR
+
+    PROTOCOL --> SESSION
+    PROCESSOR --> SESSION
+
+    SESSION --> BUFFER
+    SESSION --> PIPELINE
+
+    BUFFER --> IO
+    PIPELINE --> IO
+
+    IO --> JDK
 ```
-+--------------------------------+
-|          Application           |
-+--------------------------------+
 
-              |
 
-+--------------------------------+
-|      MessageProcessor          |
-+--------------------------------+
 
-              |
+The framework separates:
 
-+--------------------------------+
-|          Protocol              |
-+--------------------------------+
+- Network communication
+- Protocol decoding
+- Business processing
 
-              |
-
-+--------------------------------+
-|      smart-socket Core         |
-+--------------------------------+
-
-              |
-
-+--------------------------------+
-| JDK AsynchronousSocketChannel  |
-+--------------------------------+
-
-              |
-
-+--------------------------------+
-|        Operating System        |
-+--------------------------------+
-```
-
-smart-socket separates:
-
-* Network communication
-* Protocol processing
-* Business logic
-
-This architecture makes applications easier to maintain and extend.
 
 ---
 
 # Quick Start
 
+
 ## Maven Dependency
+
 
 ```xml
 <dependency>
@@ -241,110 +188,91 @@ This architecture makes applications easier to maintain and extend.
     <artifactId>aio-core</artifactId>
     <version>${latest.version}</version>
 </dependency>
-```
+````
 
 ---
 
-## Create a Server
-
-Example:
+## Create a TCP Server
 
 ```java
 public class EchoServer {
 
     public static void main(String[] args) {
 
-        AioQuickServer server =
-                new AioQuickServer(8080);
+        AioQuickServer<String> server =
+                new AioQuickServer<>(
+                        8888,
+                        new StringProtocol(),
+                        new StringProcessor()
+                );
 
         server.start();
     }
 }
 ```
 
-A simple asynchronous server can be started with only a few lines of code.
+Your asynchronous TCP server is ready.
+
+---
+
+# Client Support
+
+smart-socket also provides client-side communication support through:
+
+```
+AioQuickClient
+```
+
+The same protocol and message processing model can be used for both client and server communication.
 
 ---
 
 # Use Cases
 
-## Custom TCP Protocol
+## Custom TCP Protocols
 
-smart-socket is suitable for:
+Build communication systems for:
 
-* Industrial communication protocols
-* Private network protocols
-* Financial systems
-* Real-time communication
-
----
-
-## IoT Applications
-
-For large-scale device communication:
-
-* Persistent connections
-* Low memory usage
-* Efficient message processing
-
-smart-socket provides a reliable communication foundation.
+* Industrial protocols
+* Private communication protocols
+* Real-time applications
 
 ---
 
-## Messaging Systems
+## IoT Communication
 
-Use smart-socket to build:
+Suitable for:
 
-* Message brokers
-* Gateway services
-* Distributed communication components
+* Device connections
+* Gateway applications
+* Long-lived TCP communication
 
 ---
 
-## Database and Client Components
+## Infrastructure Components
 
-smart-socket can also serve as the networking layer for:
+smart-socket can be used as the communication foundation for:
 
-* Database clients
-* Cache clients
-* Service connectors
+* Message systems
+* RPC components
+* Custom clients
+* Network services
 
 ---
 
 # Ecosystem
 
-smart-socket is the communication foundation behind several high-performance Java projects in the smartboot ecosystem.
-
-```
-                    smart-socket
-
-                         |
-
-        +----------------+----------------+
-
-        |                |                |
-
-       Feat          smart-mqtt       Redisun
-
-        |                |                |
-
-  Web Framework     IoT Broker     Redis Client
-```
-
----
+smart-socket is part of the smartboot open-source ecosystem and provides the communication foundation for multiple projects.
 
 ## Feat
 
 A lightweight Java application framework for modern backend development.
 
-Feat provides:
+Features:
 
-* High-performance web services
-* Cloud-native application development
-* Simple programming model
 * Lightweight runtime
-
-smart-socket provides the underlying network communication capability for Feat.
+* Simple programming model
+* High-performance web services
 
 Repository:
 
@@ -354,16 +282,13 @@ Repository:
 
 ## smart-mqtt
 
-A lightweight MQTT broker designed for large-scale IoT communication.
+A lightweight MQTT broker designed for IoT communication.
 
 Features:
 
 * High-concurrency device connections
-* Efficient message delivery
+* Efficient message processing
 * Lightweight deployment
-* Reliable communication
-
-smart-socket provides the high-performance networking layer for smart-mqtt.
 
 Repository:
 
@@ -373,53 +298,17 @@ Repository:
 
 ## Redisun
 
-A lightweight Redis client component for Java, built on top of smart-socket.
+A lightweight Redis client component built on smart-socket.
 
-Redisun focuses on:
+Features:
 
-* High-performance Redis communication
+* Redis protocol communication
 * Efficient connection management
 * Lightweight architecture
-* Easy integration
-
-By using smart-socket as the network engine, Redisun provides a controllable and efficient Redis client implementation.
 
 Repository:
 
 [https://github.com/smartboot/redisun](https://github.com/smartboot/redisun)
-
----
-
-# smart-socket vs Traditional Networking Frameworks
-
-smart-socket is designed for developers who prefer a lightweight and understandable networking foundation.
-
-|                 | smart-socket | Traditional Frameworks |
-| --------------- | ------------ | ---------------------- |
-| Architecture    | Lightweight  | Feature-rich           |
-| Learning curve  | Low          | Medium / High          |
-| Custom protocol | Simple       | Depends                |
-| Resource usage  | Low          | Depends                |
-| Customization   | Easy         | Depends                |
-
-Different scenarios require different tools.
-
-smart-socket focuses on simplicity, performance, and control.
-
----
-
-# Performance
-
-smart-socket focuses on:
-
-* High throughput
-* Stable latency
-* Efficient memory usage
-* Long-running connection stability
-
-Benchmark results:
-
-Coming soon.
 
 ---
 
@@ -437,34 +326,15 @@ Examples:
 
 # Roadmap
 
-* [x] High-performance AIO core
+* [x] Java AIO communication core
+* [x] TCP client and server support
+* [x] Protocol-based communication model
 * [x] Plugin architecture
 * [x] SSL/TLS support
-* [x] Connection monitoring
-* [x] Memory optimization
-* [x] Production usage in smartboot ecosystem
-* [ ] More protocol examples
-* [ ] More international documentation
+* [x] Monitoring support
+* [ ] More examples
 * [ ] More ecosystem integrations
-
----
-
-# Community
-
-If you are building:
-
-* IoT platforms
-* Message systems
-* RPC frameworks
-* Database clients
-* Real-time services
-* Custom network protocols
-
-smart-socket can provide a lightweight and reliable communication foundation.
-
-GitHub:
-
-[https://github.com/smartboot/smart-socket](https://github.com/smartboot/smart-socket)
+* [ ] More international documentation
 
 ---
 
@@ -484,16 +354,3 @@ You can help by:
 # License
 
 smart-socket is licensed under the Apache License 2.0.
-
----
-
-# Thanks
-
-Thanks to:
-
-* GitHub
-* Gitee
-* JetBrains
-
-for supporting open-source development.
-
