@@ -127,9 +127,9 @@ flowchart TB
 
     subgraph API[smart-socket Programming Model]
 
-        PROTOCOL[Protocol&lt;T&gt;<br/>Decode network data]
+        PROTOCOL[Protocol<T><br/>Decode network data]
 
-        PROCESSOR[MessageProcessor&lt;T&gt;<br/>Handle messages]
+        PROCESSOR[MessageProcessor<T><br/>Handle messages]
 
         SESSION[AioSession<br/>Connection abstraction]
 
@@ -185,7 +185,7 @@ The framework separates:
 ```xml
 <dependency>
     <groupId>io.github.smartboot.socket</groupId>
-    <artifactId>aio-core</artifactId>
+    <artifactId>aio-pro</artifactId>
     <version>${latest.version}</version>
 </dependency>
 ````
@@ -225,54 +225,22 @@ AioQuickClient
 
 The same protocol and message processing model can be used for both client and server communication.
 
----
-
-# Use Cases
-
-## Custom TCP Protocols
-
-Build communication systems for:
-
-* Industrial protocols
-* Private communication protocols
-* Real-time applications
-
----
-
-## IoT Communication
-
-Suitable for:
-
-* Device connections
-* Gateway applications
-* Long-lived TCP communication
-
----
-
-## Infrastructure Components
-
-smart-socket can be used as the communication foundation for:
-
-* Message systems
-* RPC components
-* Custom clients
-* Network services
 
 ---
 
 # Ecosystem
 
-smart-socket is part of the smartboot open-source ecosystem and provides the communication foundation for multiple projects.
+smart-socket is part of the smartboot open-source ecosystem. It provides the networking foundation for a range of lightweight, high-performance projects.
 
 ## Feat
 
-A lightweight Java application framework for modern backend development.
+A lightweight Java application framework for building modern backend services.
 
 Features:
 
-* Lightweight runtime
-* Simple programming model
-* High-performance web services
+* Lightweight runtime with minimal overhead
+* Simple and productive programming model
+* High-performance web service development
 
 Repository:
 
@@ -282,13 +250,13 @@ Repository:
 
 ## smart-mqtt
 
-A lightweight MQTT broker designed for IoT communication.
+A lightweight MQTT broker for connecting and managing IoT devices.
 
 Features:
 
-* High-concurrency device connections
-* Efficient message processing
-* Lightweight deployment
+* Efficient support for high-concurrency device connections
+* MQTT-focused message routing and processing
+* Lightweight deployment for resource-constrained environments
 
 Repository:
 
@@ -298,13 +266,13 @@ Repository:
 
 ## Redisun
 
-A lightweight Redis client component built on smart-socket.
+A lightweight Redis client component built on top of smart-socket for efficient Redis communication.
 
 Features:
 
-* Redis protocol communication
+* Redis protocol support
 * Efficient connection management
-* Lightweight architecture
+* Simple integration with Java applications
 
 Repository:
 
@@ -316,7 +284,7 @@ Repository:
 
 Documentation:
 
-[https://smartboot.tech/](https://smartboot.tech/)
+[https://smartboot.tech/smart-socket](https://smartboot.tech/smart-socket)
 
 Examples:
 
