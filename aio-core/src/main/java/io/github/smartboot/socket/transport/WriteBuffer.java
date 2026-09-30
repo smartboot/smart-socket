@@ -23,10 +23,6 @@ import java.util.function.Consumer;
 
 public interface WriteBuffer extends Closeable {
 
-    default void write(int b) {
-        writeByte((byte) b);
-    }
-
     /**
      * 输出一个short类型的数据
      *
@@ -37,7 +33,6 @@ public interface WriteBuffer extends Closeable {
 
     /**
      * @param b 待输出数值
-     * @see #write(int)
      */
     void writeByte(byte b);
 

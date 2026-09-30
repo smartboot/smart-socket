@@ -14,7 +14,6 @@ import io.github.smartboot.socket.buffer.BufferPagePool;
 import io.github.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritePendingException;
 import java.util.concurrent.Semaphore;
@@ -27,7 +26,7 @@ import java.util.function.Consumer;
  * @version V1.0 , 2018/11/8
  */
 
-final class WriteBufferImpl extends OutputStream implements WriteBuffer {
+final class WriteBufferImpl implements WriteBuffer {
     /**
      * 存储已就绪待输出的数据
      */
@@ -82,18 +81,6 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
         this.chunkSize = chunkSize;
     }
 
-    /**
-     * 按照{@link OutputStream#write(int)}规范：要写入的字节是参数 b 的八个低位。 b 的 24 个高位将被忽略。
-     * <br/>
-     * 而使用该接口时容易传入非byte范围内的数据，接口定义与实际使用出现歧义的可能性较大，故建议废弃该方法，选用{@link WriteBufferImpl#writeByte(byte)}。
-     *
-     * @param b 输出字节
-     * @deprecated
-     */
-    @Override
-    public void write(int b) {
-        writeByte((byte) b);
-    }
 
     /**
      * 输出一个short类型的数据
@@ -110,7 +97,6 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
 
     /**
      * @param b 待输出数值
-     * @see #write(int)
      */
     public synchronized void writeByte(byte b) {
         if (writeInBuf == null) {
