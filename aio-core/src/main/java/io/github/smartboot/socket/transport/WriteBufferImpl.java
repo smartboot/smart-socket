@@ -191,7 +191,7 @@ final class WriteBufferImpl extends OutputStream implements WriteBuffer {
 
     @Override
     public synchronized void write(byte[] b, int off, int len) throws IOException {
-        while (off < len) {
+        while (len > 0) {
             if (closed) {
                 throw new IOException("writeBuffer has closed");
             }
