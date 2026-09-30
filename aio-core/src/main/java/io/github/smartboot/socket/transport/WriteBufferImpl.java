@@ -113,11 +113,20 @@ final class WriteBufferImpl implements WriteBuffer {
         writeInBuf.buffer().flip();
         VirtualBuffer virtualBuffer = writeInBuf;
         writeInBuf = null;
+        offerWriteBuffer(virtualBuffer);
+    }
+
+    /**
+     * 将待输出数据投入输出队列：队列空闲则直接输出，否则缓存至队尾;
+     * 队列已满时阻塞等待，直至出现空位或 WriteBuffer 被关闭。
+     *
+     * @param virtualBuffer 待输出的数据
+     */
+    private void offerWriteBuffer(VirtualBuffer virtualBuffer) {
         if (count == 0 && semaphore.tryAcquire()) {
             writeConsumer.accept(virtualBuffer);
             return;
         }
-
 
         try {
             while (count == items.length) {
@@ -233,34 +242,8 @@ final class WriteBufferImpl implements WriteBuffer {
         if (completionConsumer != null) {
             throw new WritePendingException();
         }
-        if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
-            throw new IllegalStateException();
-        }
         this.completionConsumer = consumer;
-        VirtualBuffer wrap = VirtualBuffer.wrap(byteBuffer);
-        if (count == 0 && semaphore.tryAcquire()) {
-            writeConsumer.accept(wrap);
-            return;
-        }
-        try {
-            while (count == items.length) {
-                this.wait();
-                //防止因close诱发内存泄露
-                if (closed) {
-                    return;
-                }
-            }
-
-            items[putIndex] = wrap;
-            if (++putIndex == items.length) {
-                putIndex = 0;
-            }
-            count++;
-        } catch (InterruptedException e1) {
-            throw new RuntimeException(e1);
-        } finally {
-            flush();
-        }
+        offerWriteBuffer(VirtualBuffer.wrap(byteBuffer));
     }
 
     /**
