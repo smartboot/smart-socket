@@ -12,7 +12,6 @@ package io.github.smartboot.socket.transport;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.function.Consumer;
 
 /**
  * 包装当前会话分配到的虚拟Buffer,提供流式操作方式
@@ -59,13 +58,17 @@ public interface WriteBuffer extends Closeable {
 
     void write(byte[] b, int off, int len) throws IOException;
 
-    void write(byte[] bytes, int offset, int len, Consumer<WriteBuffer> consumer) throws IOException;
-
-    default void write(byte[] bytes, Consumer<WriteBuffer> consumer) throws IOException {
-        write(bytes, 0, bytes.length, consumer);
-    }
-
-    void transferFrom(ByteBuffer byteBuffer, Consumer<WriteBuffer> consumer) throws IOException;
+    /**
+     * 输出指定的ByteBuffer。该buffer从此由框架接管,调用方不得再读写,直至releaseCallback触发。
+     * releaseCallback表示框架不再引用该buffer,调用方可安全复用或释放它,
+     * 回调保证恰好执行一次(可能是数据已写出,也可能是会话关闭后数据被丢弃)。
+     * 回调在IO线程触发。
+     * <p>注意:回调触发不代表数据已成功送达对端。</p>
+     *
+     * @param byteBuffer     待输出的数据
+     * @param releaseCallback buffer释放回调,触发后调用方可安全复用该buffer
+     */
+    void write(ByteBuffer byteBuffer, Runnable releaseCallback);
 
     void flush();
 }

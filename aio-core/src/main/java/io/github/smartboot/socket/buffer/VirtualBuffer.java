@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
  * @author 三刀
  * @version V1.0 , 2018/10/31
  */
-public final class VirtualBuffer {
+public class VirtualBuffer {
 
     /**
      * 当前虚拟buffer的归属内存页。
@@ -38,7 +38,6 @@ public final class VirtualBuffer {
      * 具体类型由创建VirtualBuffer的BufferPage决定。
      *
      * @see ByteBuffer
-     * @see java.nio.HeapByteBuffer
      * @see sun.nio.ch.DirectBuffer
      */
     private final ByteBuffer buffer;
@@ -57,15 +56,28 @@ public final class VirtualBuffer {
     }
 
     /**
-     * 将现有的ByteBuffer包装成VirtualBuffer。
+     * 将现有的ByteBuffer包装成VirtualBuffer，并绑定释放回调。
      * 通过这种方式创建的VirtualBuffer不受内存池管理，不会被回收复用。
      * 这个方法通常用于将外部传入的ByteBuffer转换为VirtualBuffer，以便统一接口。
+     * <p>releaseCallback在clean()时触发，表示框架不再引用该buffer，调用方可安全复用或释放它；
+     * 可能因数据已写出，也可能因会话关闭后数据被丢弃，不代表数据已成功送达对端。
+     * 回调保证恰好执行一次。</p>
      *
-     * @param buffer 要包装的ByteBuffer实例
+     * @param buffer         要包装的ByteBuffer实例
+     * @param releaseCallback buffer释放回调，随clean()触发
      * @return 包装后的VirtualBuffer实例
      */
-    public static VirtualBuffer wrap(ByteBuffer buffer) {
-        return new VirtualBuffer(null, buffer);
+    public static VirtualBuffer wrap(ByteBuffer buffer, Runnable releaseCallback) {
+        return new VirtualBuffer(null, buffer) {
+            @Override
+            public synchronized void clean() {
+                try {
+                    super.clean();
+                } finally {
+                    releaseCallback.run();
+                }
+            }
+        };
     }
 
 

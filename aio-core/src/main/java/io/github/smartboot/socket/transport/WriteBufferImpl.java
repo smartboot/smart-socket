@@ -15,7 +15,6 @@ import io.github.smartboot.socket.buffer.VirtualBuffer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.WritePendingException;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
@@ -206,44 +205,22 @@ final class WriteBufferImpl implements WriteBuffer {
         }
     }
 
-    private Consumer<WriteBuffer> completionConsumer;
-
     /**
-     * 执行异步输出操作。
-     * 此方法会将指定的字节流异步写入，并在完成时通知提供的消费者。
+     * 输出指定的ByteBuffer,数据由框架接管直至写出或因会话关闭被丢弃,
+     * 之后触发releaseCallback,调用方可安全复用该buffer。
+     * <p>注意:回调触发不代表数据已成功送达对端。</p>
      *
-     * @param bytes    待输出的字节流。
-     * @param offset   字节流中开始输出的偏移量。
-     * @param len      要输出的字节数。
-     * @param consumer 完成输出后调用的消费者接口，用于处理写入完成后的缓冲区。
-     * @throws IOException           如果在写入过程中发生I/O错误。
-     * @throws WritePendingException 如果已有写入操作未完成，此时再调用此方法会抛出此异常。
+     * @param byteBuffer     待输出的数据
+     * @param releaseCallback buffer释放回调
      */
-    public synchronized void write(byte[] bytes, int offset, int len, Consumer<WriteBuffer> consumer) throws IOException {
-        if (completionConsumer != null) {
-            throw new WritePendingException();
-        }
-        this.completionConsumer = consumer;
-        write(bytes, offset, len);
-        flush();
-    }
-
-    public synchronized void write(byte[] bytes, Consumer<WriteBuffer> consumer) throws IOException {
-        write(bytes, 0, bytes.length, consumer);
-    }
-
-    public synchronized void transferFrom(ByteBuffer byteBuffer, Consumer<WriteBuffer> consumer) throws IOException {
+    public synchronized void write(ByteBuffer byteBuffer, Runnable releaseCallback) {
         if (!byteBuffer.hasRemaining()) {
             throw new IllegalStateException("none remaining byteBuffer");
         }
         if (writeInBuf != null && writeInBuf.buffer().position() > 0) {
             flushWriteBuffer(true);
         }
-        if (completionConsumer != null) {
-            throw new WritePendingException();
-        }
-        this.completionConsumer = consumer;
-        offerWriteBuffer(VirtualBuffer.wrap(byteBuffer));
+        offerWriteBuffer(VirtualBuffer.wrap(byteBuffer, releaseCallback));
     }
 
     /**
@@ -330,17 +307,12 @@ final class WriteBufferImpl implements WriteBuffer {
         if (item != null) {
             return item;
         }
+        item = writeInBuf;
         if (writeInBuf != null) {
             writeInBuf.buffer().flip();
-            VirtualBuffer buffer = writeInBuf;
             writeInBuf = null;
-            return buffer;
-        } else if (completionConsumer != null) {
-            Consumer<WriteBuffer> consumer = completionConsumer;
-            this.completionConsumer = null;
-            consumer.accept(this);
         }
-        return null;
+        return item;
     }
 
 }
