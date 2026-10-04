@@ -63,18 +63,27 @@ public class VirtualBuffer {
      * 可能因数据已写出，也可能因会话关闭后数据被丢弃，不代表数据已成功送达对端。
      * 回调保证恰好执行一次。</p>
      *
-     * @param buffer         要包装的ByteBuffer实例
+     * @param buffer          要包装的ByteBuffer实例
      * @param releaseCallback buffer释放回调，随clean()触发
      * @return 包装后的VirtualBuffer实例
      */
     public static VirtualBuffer wrap(ByteBuffer buffer, Runnable releaseCallback) {
         return new VirtualBuffer(null, buffer) {
+            Runnable runnable = releaseCallback;
+
             @Override
             public synchronized void clean() {
                 try {
                     super.clean();
                 } finally {
-                    releaseCallback.run();
+                    if (runnable != null) {
+                        try {
+                            runnable.run();
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                        runnable = null;
+                    }
                 }
             }
         };
