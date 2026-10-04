@@ -62,13 +62,14 @@ public interface WriteBuffer extends Closeable {
      * 输出指定的ByteBuffer。该buffer从此由框架接管,调用方不得再读写,直至releaseCallback触发。
      * releaseCallback表示框架不再引用该buffer,调用方可安全复用或释放它,
      * 回调保证恰好执行一次(可能是数据已写出,也可能是会话关闭后数据被丢弃)。
-     * 回调在IO线程触发。
+     * 回调在IO线程触发,回调中抛出的异常会被捕获并打印,不会中断输出流程。
      * <p>注意:回调触发不代表数据已成功送达对端。</p>
      *
      * @param byteBuffer     待输出的数据
      * @param releaseCallback buffer释放回调,触发后调用方可安全复用该buffer
+     * @throws IOException 输出流已关闭
      */
-    void write(ByteBuffer byteBuffer, Runnable releaseCallback);
+    void write(ByteBuffer byteBuffer, Runnable releaseCallback) throws IOException;
 
     void flush();
 }

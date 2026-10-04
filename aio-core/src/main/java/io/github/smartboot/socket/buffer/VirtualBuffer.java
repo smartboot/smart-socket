@@ -61,7 +61,7 @@ public class VirtualBuffer {
      * 这个方法通常用于将外部传入的ByteBuffer转换为VirtualBuffer，以便统一接口。
      * <p>releaseCallback在clean()时触发，表示框架不再引用该buffer，调用方可安全复用或释放它；
      * 可能因数据已写出，也可能因会话关闭后数据被丢弃，不代表数据已成功送达对端。
-     * 回调保证恰好执行一次。</p>
+     * 回调保证恰好执行一次。回调中抛出的异常会被捕获并打印，不会中断clean()流程及后续写出管线。</p>
      *
      * @param buffer          要包装的ByteBuffer实例
      * @param releaseCallback buffer释放回调，随clean()触发

@@ -212,8 +212,12 @@ final class WriteBufferImpl implements WriteBuffer {
      *
      * @param byteBuffer     待输出的数据
      * @param releaseCallback buffer释放回调
+     * @throws IOException 输出流已关闭
      */
-    public synchronized void write(ByteBuffer byteBuffer, Runnable releaseCallback) {
+    public synchronized void write(ByteBuffer byteBuffer, Runnable releaseCallback) throws IOException {
+        if (closed) {
+            throw new IOException("writeBuffer has closed");
+        }
         if (!byteBuffer.hasRemaining()) {
             throw new IllegalStateException("none remaining byteBuffer");
         }
