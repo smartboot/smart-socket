@@ -73,17 +73,13 @@ public class VirtualBuffer {
 
             @Override
             public synchronized void clean() {
-                try {
-                    super.clean();
-                } finally {
-                    if (runnable != null) {
-                        try {
-                            runnable.run();
-                        } catch (Throwable e) {
-                            e.printStackTrace();
-                        }
-                        runnable = null;
+                if (runnable != null) {
+                    try {
+                        runnable.run();
+                    } catch (Throwable e) {
+                        e.printStackTrace();
                     }
+                    runnable = null;
                 }
             }
         };
