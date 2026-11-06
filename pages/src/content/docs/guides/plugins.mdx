@@ -1,0 +1,274 @@
+---
+title: 插件机制
+description: 七个扩展点、七个官方插件，以及如何写一个自己的插件
+sidebar:
+    order: 6
+---
+
+插件是 smart-socket 最有价值的扩展能力：**不改业务代码、不动框架源码，就能插手每一条连接的读写链路**。心跳、限流、SSL、PROXY 协议、流量监控，全部是以插件形式实现的。
+
+## 插件的七个扩展点
+
+```java
+public interface Plugin<T> {
+    default AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) { return channel; }
+    default void beforeRead(AioSession session) { }
+    default void afterRead(AioSession session, int readSize) { }
+    default void beforeWrite(AioSession session) { }
+    default void afterWrite(AioSession session, int writeSize) { }
+    default boolean preProcess(AioSession session, T msg) { return true; }
+    default void stateEvent(StateMachineEnum state, AioSession session, Throwable throwable) { }
+}
+```
+
+在一条消息的完整生命周期里，它们的触发顺序是：
+
+```text
+连接接入
+  └─ shouldAccept(channel)        ← 可返回包装后的 channel，返回 null 则拒绝连接
+       │
+读 ────┼─ beforeRead(session)
+       │      ↓ 从网卡读字节
+       │  afterRead(session, readSize)
+       │      ↓ Protocol.decode()
+       ├─ preProcess(session, msg)  ← 返回 false 则丢弃这条消息
+       │      ↓
+       │  MessageProcessor.process(session, msg)   ← 你的业务代码
+       │
+写 ────┼─ beforeWrite(session)
+       │      ↓ 写网卡
+       │  afterWrite(session, writeSize)
+       │
+状态 ──┴─ stateEvent(state, session, throwable)
+```
+
+:::tip[`shouldAccept` 为什么返回 channel 而不是 boolean]
+因为它支持**包装**。`SSL`、`限流`、`PROXY 协议`都靠这一招：把原始 channel 包一层代理，之后所有读写都自动经过这一层，业务和框架完全无感。
+:::
+
+## 怎么注册
+
+框架只认一条路径：**`MessageProcessor` 必须实现 `Plugin`**。
+
+```java
+AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
+    @Override public void process0(AioSession session, String msg) { }
+    @Override public void stateEvent0(AioSession s, StateMachineEnum e, Throwable t) { }
+};
+
+processor.addPlugin(new IdleStatePlugin<>(60_000));
+processor.addPlugin(new MonitorPlugin<>(5));
+
+AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
+server.start();
+```
+
+用 lambda 写的 `MessageProcessor` 无法挂插件——这是新手最常卡住的地方。
+
+:::caution[插件顺序是有意义的]
+`addPlugin` 按**加入顺序**执行，`shouldAccept` 的包装也是按顺序套娃：**后加入的插件更靠近原始字节流**。
+
+所以：业务类插件（鉴权、统计）放前面，字节层面的插件（SSL、PROXY）放后面。官方 `SslStringServer` 示例就是把 `SslPlugin` 最后加入的。
+:::
+
+## 官方插件一览
+
+全部位于 `aio-pro` 的 `io.github.smartboot.socket.extension.plugins` 包下。
+
+| 插件 | 构造 | 作用 |
+|---|---|---|
+| `IdleStatePlugin` | `(int idleTimeoutMs)`<br/>`(int, boolean readMonitor, boolean writeMonitor)` | 空闲断开 |
+| `RateLimiterPlugin` | `(int readBytesPerSec, int writeBytesPerSec)` | 读写速率限制 |
+| `MonitorPlugin` | `()` `(int seconds)` `(int seconds, boolean udp)` | 吞吐量指标打印 |
+| `BufferPageMonitorPlugin` | `(AioQuickServer server, int seconds)` | 内存池使用情况打印 |
+| `StreamMonitorPlugin` | `()` `(inputConsumer, outputConsumer)` | 原始码流抓包（调试神器） |
+| `ProxyProtocolPlugin` | `()` `(boolean strict)` | 解析 HAProxy PROXY 协议头 |
+| `SslPlugin` | 见下文 | TLS/SSL 加密 |
+
+### IdleStatePlugin：空闲断开
+
+```java
+// 60 秒空闲则关闭连接
+processor.addPlugin(new IdleStatePlugin<>(60_000));
+
+// 只监控「读」空闲：适合纯推送场景（服务端一直写，客户端不回包）
+processor.addPlugin(new IdleStatePlugin<>(60_000, true, false));
+```
+
+:::note[它的判定条件是「双向都空闲」]
+默认同时监控读和写，只有**读和写都超过 `idleTimeout` 没有发生**才会关闭连接。这一点对推送服务很友好：只要服务端还在往下推数据，连接就不会被误杀。
+
+想缩短单侧空闲的判定，就把不需要监控的一侧显式传 `false`。
+:::
+
+### RateLimiterPlugin：字节级限流
+
+```java
+// 每连接：读 1 MB/s，写 512 KB/s
+processor.addPlugin(new RateLimiterPlugin<>(1024 * 1024, 512 * 1024));
+```
+
+单位是**字节/秒**，走 1 秒滑动窗口。注意是**每个连接**独立限流，不是全局。
+
+两个参数都必须 `> 0` 才生效，任一为 0 则整个插件关闭。
+
+### MonitorPlugin / BufferPageMonitorPlugin：运行时指标
+
+```java
+processor.addPlugin(new MonitorPlugin<>(5));              // 每 5 秒打印吞吐
+processor.addPlugin(new BufferPageMonitorPlugin<>(server, 6));  // 每 6 秒打印内存池
+```
+
+`MonitorPlugin` 输出的是持续吞吐量（读/写字节数、消息数），`BufferPageMonitorPlugin` 输出内存池的分配与回收情况。
+
+:::caution[BufferPageMonitorPlugin 需要在 start 之前创建]
+它构造时要传 `server` 对象，而 `server.start()` 才会初始化内部结构。所以**先 `addPlugin`，再 `start()`**，顺序反了会报错。
+:::
+
+### StreamMonitorPlugin：抓原始码流
+
+协议解析对不上、怀疑对端发的内容和你以为的不一样时，用它把原始字节打出来：
+
+```java
+import static io.github.smartboot.socket.extension.plugins.StreamMonitorPlugin.BLUE_HEX_INPUT_STREAM;
+import static io.github.smartboot.socket.extension.plugins.StreamMonitorPlugin.RED_HEX_OUTPUT_STREAM;
+
+processor.addPlugin(new StreamMonitorPlugin<>(BLUE_HEX_INPUT_STREAM, RED_HEX_OUTPUT_STREAM));
+```
+
+内置了四个开箱即用的消费者：`BLUE_HEX_INPUT_STREAM`、`RED_HEX_OUTPUT_STREAM`、`BLUE_TEXT_INPUT_STREAM`、`RED_TEXT_OUTPUT_STREAM`。也能传自己的 `BiConsumer<AsynchronousSocketChannel, byte[]>`。
+
+:::danger[只能在开发环境用]
+它会打印所有连接的完整报文，性能和内存开销都很大，还可能把敏感数据写进日志。**上线前务必移除。**
+:::
+
+### ProxyProtocolPlugin：拿到真实客户端 IP
+
+部署在 HAProxy / Nginx / SLB 之后，`getRemoteAddress()` 拿到的是负载均衡器的 IP。开启 PROXY 协议后，由插件在握手阶段解析出真实来源地址。
+
+```java
+processor.addPlugin(new ProxyProtocolPlugin());
+```
+
+`new ProxyProtocolPlugin(true)` 是严格模式：头部格式不合法则直接拒绝连接。
+
+同时需要负载均衡器侧开启 `send-proxy`（HAProxy）或对应的 PROXY Protocol 配置，否则解析不到。
+
+## 自定义插件
+
+官方插件不够用时，自己写一个通常只有几十行。下面这个统计插件是生产环境最常用的基础设施：
+
+```java title="TrafficStatsPlugin.java"
+import io.github.smartboot.socket.Plugin;
+import io.github.smartboot.socket.StateMachineEnum;
+import io.github.smartboot.socket.transport.AioSession;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+public class TrafficStatsPlugin<T> implements Plugin<T> {
+
+    private final AtomicLong readBytes = new AtomicLong();
+    private final AtomicLong writeBytes = new AtomicLong();
+    private final AtomicInteger online = new AtomicInteger();
+
+    @Override
+    public void afterRead(AioSession session, int readSize) {
+        readBytes.addAndGet(readSize);
+    }
+
+    @Override
+    public void afterWrite(AioSession session, int writeSize) {
+        writeBytes.addAndGet(writeSize);
+    }
+
+    @Override
+    public void stateEvent(StateMachineEnum state, AioSession session, Throwable throwable) {
+        if (state == StateMachineEnum.NEW_SESSION) {
+            online.incrementAndGet();
+        } else if (state == StateMachineEnum.SESSION_CLOSED) {
+            online.decrementAndGet();
+        }
+    }
+
+    public long getReadBytes()  { return readBytes.get(); }
+    public long getWriteBytes() { return writeBytes.get(); }
+    public int  getOnline()     { return online.get(); }
+}
+```
+
+用法：
+
+```java
+TrafficStatsPlugin<String> stats = new TrafficStatsPlugin<>();
+processor.addPlugin(stats);
+
+AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
+server.start();
+
+// 交给你的监控系统定时拉取
+System.out.printf("在线: %d, 读: %d B, 写: %d B%n",
+        stats.getOnline(), stats.getReadBytes(), stats.getWriteBytes());
+```
+
+### 用 `preProcess` 做鉴权拦截
+
+`preProcess` 返回 `false` 时，消息**不会进入 `process`**。这是实现「未登录连接不得下发业务指令」的正确位置：
+
+```java
+public class AuthPlugin implements Plugin<Command> {
+
+    @Override
+    public boolean preProcess(AioSession session, Command cmd) {
+        // 登录指令放行
+        if (cmd.getType() == Command.Type.LOGIN) {
+            return true;
+        }
+        // 其余指令要求已登录（附件里存了 userId）
+        if (session.getAttachment() == null) {
+            System.out.println("未登录连接尝试下发业务指令，已丢弃: " + session);
+            return false;
+        }
+        return true;
+    }
+}
+```
+
+:::note[所有插件的 `preProcess` 都会执行]
+框架会遍历全部插件、收集结果后取「与」——只要有一个返回 `false` 就丢弃，但**不会短路**。所以别在 `preProcess` 里依赖「前面已经拦住了就不会轮到我」。
+:::
+
+### 用 `shouldAccept` 做 IP 黑名单
+
+```java
+public class IpBlacklistPlugin implements Plugin<Object> {
+
+    private final Set<String> blacklist =
+            new HashSet<>(Arrays.asList("10.0.0.66", "10.0.0.67"));
+
+    @Override
+    public AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) {
+        try {
+            String ip = ((InetSocketAddress) channel.getRemoteAddress())
+                    .getAddress().getHostAddress();
+            if (blacklist.contains(ip)) {
+                channel.close();       // 关掉底层通道
+                return null;           // 返回 null = 拒绝接入
+            }
+        } catch (IOException e) {
+            return null;
+        }
+        return channel;
+    }
+}
+```
+
+## 什么时候不该用插件
+
+| 需求 | 建议 |
+|---|---|
+| 业务逻辑分支 | 写在 `process` 里，别做成插件 |
+| 单次请求的日志 | 写在 `process` 里，插件里拿不到完整上下文 |
+| 需要跨连接协调的复杂逻辑 | 用独立组件，插件只做「顺路采集」 |
+
+插件适合**横切关注点**：统计、限流、加密、协议适配。它的所有回调都跑在 IO 线程上，任何阻塞操作都会拖垮整条线程。

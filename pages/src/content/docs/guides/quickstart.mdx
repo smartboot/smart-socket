@@ -1,212 +1,255 @@
 ---
-title: 五分钟上手🚩
-description: 快速上手 smart-socket 通信框架
+title: 五分钟上手
+description: 从零写一个能跑通的 echo 服务端与客户端，打通协议、处理器、写缓冲三个核心环节
 sidebar:
     order: 2
 ---
 
+这一页只做一件事：**让你在五分钟内跑起来一个真正能收发数据的程序**，并且知道每一行代码在做什么。
 
-欢迎来到 smart-socket 的世界！如果你刚刚接触这个框架，那么你来对地方了。本文将带你一步步构建一个完整的通信服务，让你在短短几分钟内就能看到成果。
+跑完之后，你会得到一个最小的「回显（echo）服务」：客户端发一句话，服务端原样回一句话。
 
-虽然五分钟能让你快速入门，但要成为真正的高手还需要在实践中不断磨练。
+## 你会写出什么
 
-## 准备工作
+| 文件 | 职责 | 关键接口 |
+|---|---|---|
+| `StringProtocol.java` | 决定「一段字节」在哪里切开 | `Protocol<T>` |
+| `EchoServer.java` | 收到消息后回写 | `AioQuickServer`、`MessageProcessor<T>` |
+| `EchoClient.java` | 连接、发送、接收响应 | `AioQuickClient`、`AioSession` |
 
-在开始编码之前，我们需要做一些准备工作：
+## 第 0 步：准备环境
 
-1. 安装好 Java 开发环境（JDK 8+）
-2. 准备一个 IDE（推荐使用 IntelliJ IDEA）
-3. 确保 Maven 已安装并配置好
+| 项 | 要求 |
+|---|---|
+| JDK | **8 及以上**（框架本身就是用 JDK 8 编译发布的） |
+| 构建工具 | Maven 3.6+ |
+| 当前版本 | **2.2.0** |
 
-:::note
-JDK 版本兼容性说明：
-smart-socket 2.2.0 版本完全兼容 JDK 8 及以上所有版本，推荐使用最新版本以获得最佳性能和最新功能。
-:::
+在 `pom.xml` 中加入依赖：
 
-## 第一步：创建 Maven 项目并引入依赖
-
-首先，创建一个新的 Maven 项目。然后在 pom.xml 文件中添加 smart-socket 依赖：
-
-```xml
-<dependencies>
-    <dependency>
-        <groupId>io.github.smartboot.socket</groupId>
-        <artifactId>aio-core</artifactId>
-        <version>2.2.0</version>
-    </dependency>
-</dependencies>
+```xml title="pom.xml"
+<dependency>
+    <groupId>io.github.smartboot.socket</groupId>
+    <artifactId>aio-core</artifactId>
+    <version>2.2.0</version>
+</dependency>
 ```
 
-:::tip
-如果下载依赖较慢，可以配置阿里云镜像仓库加速：
-```xml
+:::note[aio-core 和 aio-pro 怎么选]
+- `aio-core`：框架内核，包含 `Protocol`、`MessageProcessor`、`AioSession`、`AioQuickServer`、`AioQuickClient`、内存池。**只做基础通信时，一个依赖就够了。**
+- `aio-pro`：扩展包，依赖 `aio-core`。提供**拆包解码器**（`FixedLengthFrameDecoder`、`DelimiterFrameDecoder`）、**官方插件**（心跳、限流、SSL、监控）、**UDP 支持**。
+
+本页只需要 `aio-core`；后面的《协议设计》和《插件》章节会用到 `aio-pro`。
+:::
+
+如果拉取依赖较慢，可以配置阿里云镜像：
+
+```xml title="pom.xml"
 <repositories>
     <repository>
-        <id>alimaven</id>
-        <name>aliyun maven</name>
+        <id>aliyun</id>
         <url>https://maven.aliyun.com/nexus/content/groups/public/</url>
     </repository>
 </repositories>
 ```
-:::
 
-## 第二步：定义通信协议
+## 第 1 步：定义协议
 
-通信的第一步就是定义协议。这里我们创建一个简单的字符串协议，它能够处理变长字符串消息：
+TCP 是**字节流**，不是消息流。一次 `read` 可能读到半条消息，也可能读到三条半。所以第一件事是约定：**这段字节从哪里切开**。
 
-```java
+我们采用最常见、也最省事的方案——**长度前缀**：先写 4 字节的 int 表示正文长度，再写正文。
+
+```java title="StringProtocol.java"
 import io.github.smartboot.socket.Protocol;
 import io.github.smartboot.socket.transport.AioSession;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 public class StringProtocol implements Protocol<String> {
 
     @Override
     public String decode(ByteBuffer readBuffer, AioSession session) {
-        // 检查缓冲区中是否有足够的数据读取长度字段
-        int remaining = readBuffer.remaining();
-        if (remaining < Integer.BYTES) {
+        // 1. 连长度字段都不够 4 字节，等下一批数据
+        if (readBuffer.remaining() < Integer.BYTES) {
             return null;
         }
-        
-        // 标记当前位置，如果数据不完整可以复位
+
+        // 2. 打个标记，读错了好回退
         readBuffer.mark();
-        
-        // 读取消息长度
         int length = readBuffer.getInt();
-        
-        // 如果消息长度超过了剩余数据，则说明是半包，需要复位并等待更多数据
-        if (length > readBuffer.remaining()) {
+
+        // 3. 长度非法，说明字节流已经对不齐了，直接报错断开
+        if (length < 0 || length > readBuffer.capacity() - Integer.BYTES) {
+            throw new IllegalStateException("非法的消息长度: " + length);
+        }
+
+        // 4. 正文还没到齐，回退到标记位，等下一批数据
+        if (readBuffer.remaining() < length) {
             readBuffer.reset();
             return null;
         }
-        
-        // 读取完整的消息内容
-        byte[] b = new byte[length];
-        readBuffer.get(b);
-        
-        // 返回解码后的字符串
-        return new String(b);
+
+        // 5. 正文到齐，取出来
+        byte[] data = new byte[length];
+        readBuffer.get(data);
+        return new String(data, StandardCharsets.UTF_8);
     }
 }
 ```
 
-这段代码实现了基于长度字段的协议解析，这是一种非常常见的通信协议设计方式。
+这段代码有三条**契约**，必须记住，后面所有协议都遵守它：
 
-## 第三步：实现服务端
+| 契约 | 含义 |
+|---|---|
+| 返回 `null` | 「这条消息还没收完」，框架保留数据、继续等下一次读取。**不是出错，也不是丢弃。** |
+| 返回对象 | 成功解出一条完整消息，框架会立刻交给 `MessageProcessor.process()`。 |
+| 抛异常 | 字节流已无法恢复（长度越界等），框架触发 `DECODE_EXCEPTION` 并关闭会话。 |
 
-现在让我们创建服务端程序。服务端会接收客户端发送的消息，并将其原样返回：
+:::tip[关于 `mark()` / `reset()`]
+`readBuffer` 是框架复用的读缓冲区。你 `getInt()` 之后位置就前进了，如果发现正文没到齐，必须 `reset()` 把位置退回去，否则这 4 个字节就永久丢了，下一轮读到的会是错位的数据。
+:::
 
-```java
+## 第 2 步：写服务端
+
+```java title="EchoServer.java"
 import io.github.smartboot.socket.MessageProcessor;
 import io.github.smartboot.socket.transport.AioQuickServer;
-import io.github.smartboot.socket.transport.WriteBuffer;
-
-import java.io.IOException;
-
-public class StringServer {
-
-    public static void main(String[] args) throws IOException {
-        // 创建消息处理器
-        MessageProcessor<String> processor = (session, msg) -> {
-            System.out.println("收到客户端消息: " + msg);
-            
-            // 获取写入缓冲区
-            WriteBuffer outputStream = session.writeBuffer();
-            try {
-                // 将消息原样返回给客户端
-                byte[] bytes = msg.getBytes();
-                outputStream.writeInt(bytes.length);  // 先写入长度
-                outputStream.write(bytes);           // 再写入内容
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        };
-
-        // 创建并启动服务端
-        AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
-        server.start();
-        
-        System.out.println("服务端已启动，监听端口: 8888");
-    }
-}
-```
-
-在上面的代码中，我们使用了 [AioQuickServer](https://gitee.com/smartboot/smart-socket/blob/master/example/src/main/java/io/github/smartboot/socket/example/benchmark/StringServer.java) 来快速搭建服务端，它封装了大部分复杂的异步IO操作。
-
-## 第四步：实现客户端
-
-最后我们来创建客户端程序，它会连接到服务端并发送一条测试消息：
-
-```java
-import io.github.smartboot.socket.MessageProcessor;
-import io.github.smartboot.socket.transport.AioQuickClient;
 import io.github.smartboot.socket.transport.AioSession;
 import io.github.smartboot.socket.transport.WriteBuffer;
 
 import java.io.IOException;
 
-public class StringClient {
+public class EchoServer {
 
     public static void main(String[] args) throws IOException {
-        // 创建消息处理器，处理服务端返回的消息
-        MessageProcessor<String> processor = (session, msg) -> 
-            System.out.println("收到服务端响应: " + msg);
-            
-        // 创建并连接客户端
-        AioQuickClient client = new AioQuickClient("localhost", 8888, new StringProtocol(), processor);
-        AioSession session = client.start();
-        
-        // 获取写入缓冲区并发送消息
-        WriteBuffer writeBuffer = session.writeBuffer();
-        byte[] data = "hello smart-socket".getBytes();
-        writeBuffer.writeInt(data.length);  // 先写入长度
-        writeBuffer.write(data);           // 再写入内容
-        writeBuffer.flush();               // 刷新缓冲区，确保消息发送
-        
-        System.out.println("消息已发送: hello smart-socket");
+        // 收到一条完整消息后，在这里处理
+        MessageProcessor<String> processor = (session, msg) -> {
+            System.out.println("收到: " + msg);
+
+            WriteBuffer writeBuffer = session.writeBuffer();
+            try {
+                byte[] data = msg.getBytes();
+                writeBuffer.writeInt(data.length);
+                writeBuffer.write(data);
+                writeBuffer.flush();
+            } catch (IOException e) {
+                // 对端已断开时写会抛 IOException，属于正常情况
+                System.out.println("回写失败: " + e.getMessage());
+            }
+        };
+
+        // 端口、协议、处理器 —— 三个参数就够启动
+        AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
+        server.start();
+
+        System.out.println("服务端已启动: tcp://0.0.0.0:8888");
     }
 }
 ```
 
-这段代码展示了如何使用 [AioQuickClient](https://gitee.com/smartboot/smart-socket/blob/master/example/src/main/java/io/github/smartboot/socket/example/benchmark/StringClient.java) 快速创建客户端并与服务端建立连接。
+`start()` **不会阻塞**，绑定端口后立刻返回。框架内部的 IO 线程是非守护线程，所以 `main` 执行完 JVM 也不会退出，服务会一直跑着。
 
-## 运行测试
+想主动停服，调用 `server.shutdown()`。
 
-现在让我们来测试刚才编写的程序：
+## 第 3 步：写客户端
 
-1. 首先运行 StringServer 类的 main 方法启动服务端
-2. 然后运行 StringClient 类的 main 方法启动客户端
+```java title="EchoClient.java"
+import io.github.smartboot.socket.MessageProcessor;
+import io.github.smartboot.socket.transport.AioQuickClient;
+import io.github.smartboot.socket.transport.AioSession;
+import io.github.smartboot.socket.transport.WriteBuffer;
 
-如果一切顺利，你应该会在服务端控制台看到：
+import java.nio.charset.StandardCharsets;
+
+public class EchoClient {
+
+    public static void main(String[] args) throws Exception {
+        // 收到服务端响应后，在这里处理
+        MessageProcessor<String> processor = (session, msg) ->
+                System.out.println("收到响应: " + msg);
+
+        AioQuickClient client = new AioQuickClient("localhost", 8888, new StringProtocol(), processor);
+        AioSession session = client.start();
+
+        WriteBuffer writeBuffer = session.writeBuffer();
+        byte[] data = "hello smart-socket".getBytes(StandardCharsets.UTF_8);
+        writeBuffer.writeInt(data.length);
+        writeBuffer.write(data);
+        writeBuffer.flush();   // 不 flush，数据只会躺在本地缓冲区里
+
+        // 等响应回来（真实项目里应该用 CountDownLatch / CompletableFuture）
+        Thread.sleep(1000);
+
+        client.shutdownNow();
+    }
+}
 ```
-收到客户端消息: hello smart-socket
+
+## 第 4 步：运行
+
+先跑 `EchoServer.main()`，再跑 `EchoClient.main()`。
+
+服务端控制台：
+
+```text
+服务端已启动: tcp://0.0.0.0:8888
+收到: hello smart-socket
 ```
 
-在客户端控制台看到：
+客户端控制台：
+
+```text
+收到响应: hello smart-socket
 ```
-收到服务端响应: hello smart-socket
+
+看到这两行，闭环就打通了。
+
+## 第 5 步：刚才发生了什么
+
+一条消息从网卡到你的代码，中间经过这几个环节：
+
+```text
+        ┌─────────────── IO 线程（非你的线程）───────────────┐
+网卡 ──▶ │ readBuffer 累积字节                                │
+        │      ↓                                            │
+        │ Protocol.decode()  →  返回 null：继续等             │
+        │                    →  返回对象：交给下一步          │
+        │      ↓                                            │
+        │ MessageProcessor.process(session, msg)  ← 你的代码  │
+        │      ↓                                            │
+        │ WriteBuffer.writeInt / write                       │
+        └──────┼────────────────────────────────────────────┘
+               ↓
+          flush() → 进入发送队列 → 异步写回网卡
 ```
 
-## 恭喜你！
+三个必须理解的结论：
 
-🎉 恭喜你完成了 smart-socket 的第一个通信程序！虽然这只是一个小例子，但它展示了 smart-socket 的核心功能。
+1. **`process()` 运行在 IO 线程上**。它阻塞多久，这条 IO 线程上的其他连接就得等多久。耗时逻辑（查库、调 RPC）请自己丢线程池，别在里面 `sleep`。
+2. **`flush()` 是必须的**。`writeInt` / `write` 只是把数据放进本地 chunk 缓冲区；不 flush 就不会进入发送队列。（服务端在每轮读取处理结束后框架会自动 flush 一次，所以上面的服务端代码即使漏写也大概率能跑通——但别依赖这个行为，显式 flush 才是对的。）
+3. **`AioSession` 代表一条连接**，可以安全地跨线程持有并写数据，这是做服务端推送的基础。
 
-在实际项目中，你可能会遇到更复杂的场景，例如：
+## 常见坑
 
-- 🔧 **异常处理**：如何优雅地处理网络异常和业务异常
-- ⏱️ **超时控制**：如何设置合理的连接和读写超时
-- 📦 **粘包拆包**：如何处理TCP协议中的粘包和拆包问题
-- ❤️ **心跳检测**：如何维持长连接的有效性
-- 🔁 **断线重连**：如何在网络中断后自动恢复连接
-- 📨 **消息队列**：如何高效处理大量并发消息
-- 🔄 **并发控制**：如何在高并发场景下保证系统稳定性
-- 🔒 **线程安全**：如何避免多线程环境下的数据竞争
-- ⚡ **性能优化**：如何最大化系统吞吐量
+| 现象 | 原因 | 处理 |
+|---|---|---|
+| 客户端一直收不到响应 | 写了但没 `flush()` | 补上 `flush()` |
+| 服务端收到乱码 | 两端字节序或字符集不一致 | 统一 `getInt()` 读、`writeInt()` 写；字符集显式指定 `UTF_8` |
+| 单条消息超过读缓冲区（默认 512 字节） | 上面这个简化版会判定长度非法并断开 | 用 `FixedLengthFrameDecoder` 收大包，见[协议设计](/smart-socket/guides/protocol/) |
+| `write` 抛 `IOException: writeBuffer has closed` | 会话已关闭还在写 | 先判断 `session.isInvalid()`，或直接捕获后忽略 |
+| 启动报 `Address already in use` | 端口被占用 | 换端口，或先 `server.shutdown()` |
 
-这些问题 smart-socket 都提供了相应的解决方案，你可以在后续的文档中深入了解。
+## 下一步
+
+| 想解决的问题 | 去看 |
+|---|---|
+| 搞懂 `AioSession`、缓冲区、线程模型 | [核心概念](/smart-socket/guides/concepts/) |
+| 消息变长、变大、带分隔符，怎么正确拆包 | [协议设计](/smart-socket/guides/protocol/) |
+| 线程数、缓冲区、超时怎么配 | [配置详解](/smart-socket/guides/configuration/) |
+| 心跳、限流、SSL、监控 | [插件机制](/smart-socket/guides/plugins/) |
+| 断线重连、服务端推送、UDP | [进阶实战](/smart-socket/guides/advanced/) |
 
 :::tip
-想要了解更多高级功能？请继续阅读我们的其他文档，或者加入我们的技术交流群获得实时帮助！
+如果这个项目帮你省了时间，欢迎给 [smart-socket 点个 Star](https://github.com/smartboot/smart-socket)——这是对作者最直接的鼓励。
 :::

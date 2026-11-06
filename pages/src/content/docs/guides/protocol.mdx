@@ -1,0 +1,324 @@
+---
+title: 协议设计
+description: 粘包、拆包、半包的本质与三种标准解法，附完整可运行代码
+sidebar:
+    order: 4
+---
+
+如果你只读一页文档，请读这一页。**90% 的 smart-socket 使用问题，根源都在 `decode` 写错了。**
+
+## 问题的本质
+
+TCP 是**字节流**协议，它只保证字节按序到达，不保证「一次 read = 一条消息」。
+
+```text
+发送方 write 三次:   [msg-A]  [msg-B]  [msg-C]
+
+接收方第一次 read:   [msg-A][msg-B]           ← 粘包
+接收方第二次 read:   [ms                    ← 拆包（半包）
+接收方第三次 read:   g-C]
+```
+
+所以协议层必须自己回答一个问题：**这一串字节，到哪里算一条消息结束？**
+
+业界只有三种答案：
+
+| 方案 | 切分依据 | 优点 | 缺点 | 典型场景 |
+|---|---|---|---|---|
+| **长度前缀** | 前 4 字节声明正文长度 | 二进制友好、解析快、无转义 | 需处理长度字段本身被拆开 | RPC、IM、私有二进制协议 |
+| **分隔符** | 遇到 `\n` / `\r\n` / `\0` 结束 | 人类可读、易调试 | 正文需转义，否则分隔符会误判 | Redis、SMTP、日志流 |
+| **定长** | 每 N 字节一条 | 实现最简单 | 长度固定，浪费带宽 | 硬件指令、定长采集 |
+
+## 先记住 `decode` 的三条契约
+
+```java
+public interface Protocol<T> {
+    T decode(ByteBuffer readBuffer, AioSession session);
+}
+```
+
+| 你的返回值 | 框架的行为 | 你需要注意 |
+|---|---|---|
+| `null` | 保留未消费字节，等下次 read 再调 `decode` | 必须保证调用前后**没有消费**不该消费的字节 |
+| 非 `null` 对象 | 立刻交给 `process()`，若缓冲区还有数据，**继续调 `decode`** | 一次 read 可能连出多条消息，别假设「一次 read 一条」 |
+| 抛异常 | 触发 `DECODE_EXCEPTION`，关闭会话 | 只在字节流已不可恢复时才抛 |
+
+两个关键细节：
+
+1. **`readBuffer` 是复用的**。你只能消费它，不能持有它的引用（一旦返回，框架会 `compact()` 它）。
+2. **需要「回退」时必须先 `mark()`**。`getInt()` 之后位置就前进了，发现数据不够就要 `reset()`。
+
+---
+
+## 方案一：长度前缀（推荐）
+
+### 基础版：适合消息小于读缓冲区
+
+```java title="LengthPrefixedProtocol.java"
+import io.github.smartboot.socket.Protocol;
+import io.github.smartboot.socket.transport.AioSession;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
+public class LengthPrefixedProtocol implements Protocol<String> {
+
+    /** 单条消息允许的最大长度，防止恶意超长包打爆内存 */
+    private static final int MAX_FRAME = 8 * 1024 * 1024;
+
+    @Override
+    public String decode(ByteBuffer readBuffer, AioSession session) {
+        if (readBuffer.remaining() < Integer.BYTES) {
+            return null;                       // 长度字段都没收全
+        }
+
+        readBuffer.mark();
+        int length = readBuffer.getInt();
+
+        if (length < 0 || length > MAX_FRAME) {
+            throw new IllegalStateException("非法帧长度: " + length);
+        }
+        if (readBuffer.remaining() < length) {
+            readBuffer.reset();                // 正文没到齐，长度字段也退回去
+            return null;
+        }
+
+        byte[] data = new byte[length];
+        readBuffer.get(data);
+        return new String(data, StandardCharsets.UTF_8);
+    }
+}
+```
+
+:::danger[这个版本有一个硬限制]
+`readBuffer.remaining()` 永远不会超过读缓冲区大小（默认 512 字节，最大也就是你配的 `readBufferSize`）。所以当 `length` 大于缓冲区容量时，`remaining < length` **永远成立**，消息卡死、连接挂住。
+
+`MAX_FRAME` 只能拦住非法包，救不了合法的大包。大包必须用下面的升级版。
+:::
+
+### 升级版：支持任意大小的消息
+
+思路：长度字段正常消费掉，正文交给 `FixedLengthFrameDecoder` 分多次攒（该类在 **aio-pro** 模块）。
+
+```java title="FrameProtocol.java"
+import io.github.smartboot.socket.Protocol;
+import io.github.smartboot.socket.extension.decoder.FixedLengthFrameDecoder;
+import io.github.smartboot.socket.transport.AioSession;
+
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class FrameProtocol implements Protocol<byte[]> {
+
+    private static final int MAX_FRAME = 64 * 1024 * 1024;
+
+    /** 正在攒大包的会话 → 解码器 */
+    private final Map<AioSession, FixedLengthFrameDecoder> pending = new ConcurrentHashMap<>();
+
+    @Override
+    public byte[] decode(ByteBuffer readBuffer, AioSession session) {
+        // 1. 正在攒大包，继续喂数据
+        FixedLengthFrameDecoder decoder = pending.get(session);
+        if (decoder != null) {
+            if (!decoder.decode(readBuffer)) {
+                return null;                   // 还没攒够
+            }
+            pending.remove(session);
+            return toBytes(decoder.getBuffer());
+        }
+
+        // 2. 读长度字段
+        if (readBuffer.remaining() < Integer.BYTES) {
+            return null;
+        }
+        readBuffer.mark();
+        int length = readBuffer.getInt();
+        if (length < 0 || length > MAX_FRAME) {
+            throw new IllegalStateException("非法帧长度: " + length);
+        }
+
+        // 3. 小包：缓冲区装得下，直接读完
+        if (length <= readBuffer.capacity() - Integer.BYTES) {
+            if (readBuffer.remaining() < length) {
+                readBuffer.reset();
+                return null;
+            }
+            byte[] data = new byte[length];
+            readBuffer.get(data);
+            return data;
+        }
+
+        // 4. 大包：长度字段已消费，正文转交解码器
+        pending.put(session, new FixedLengthFrameDecoder(length));
+        return null;
+    }
+
+    private static byte[] toBytes(ByteBuffer buffer) {
+        byte[] data = new byte[buffer.remaining()];
+        buffer.get(data);
+        return data;
+    }
+}
+```
+
+:::caution[别忘了清理 `pending`]
+`pending` 以 `AioSession` 为 key。如果连接在「攒大包途中」断开，这个条目会一直留着，**造成内存泄漏**。必须配合 `stateEvent` 清理：
+
+```java
+@Override
+public void stateEvent(AioSession session, StateMachineEnum state, Throwable t) {
+    if (state == StateMachineEnum.SESSION_CLOSED) {
+        pending.remove(session);
+    }
+}
+```
+:::
+
+---
+
+## 方案二：分隔符
+
+适合文本协议。aio-pro 提供 `DelimiterFrameDecoder`，支持**多字节分隔符**，也处理了「分隔符被拆到两次 read」的情况。
+
+```java title="LineProtocol.java"
+import io.github.smartboot.socket.Protocol;
+import io.github.smartboot.socket.extension.decoder.DelimiterFrameDecoder;
+import io.github.smartboot.socket.transport.AioSession;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class LineProtocol implements Protocol<String> {
+
+    /** 每条连接一个解码器，按需创建 */
+    private final Map<AioSession, DelimiterFrameDecoder> decoders = new ConcurrentHashMap<>();
+
+    @Override
+    public String decode(ByteBuffer readBuffer, AioSession session) {
+        DelimiterFrameDecoder decoder = decoders.computeIfAbsent(session,
+                s -> new DelimiterFrameDecoder(new byte[]{'\n'}, 1024));
+
+        if (!decoder.decode(readBuffer)) {
+            return null;                       // 还没遇到 '\n'
+        }
+
+        ByteBuffer frame = decoder.getBuffer();   // 注意：包含分隔符本身
+        byte[] data = new byte[frame.remaining() - 1];
+        frame.get(data);
+
+        decoder.reset();                       // 复用，避免反复 new
+        return new String(data, StandardCharsets.UTF_8);
+    }
+}
+```
+
+三个必须知道的点：
+
+| 点 | 说明 |
+|---|---|
+| `getBuffer()` **包含分隔符** | 所以要预留 1 字节（多字节分隔符则预留 `endFlag.length`） |
+| 返回 `true` 后必须 `reset()` | 否则再次 `decode` 会抛 `RuntimeException: delimiter has finish read` |
+| `unitBufferSize` 是**初始段大小** | 超过会自动扩容分段，不是长度上限 |
+
+---
+
+## 方案三：定长
+
+最简单，也最容易踩容量坑。
+
+```java title="FixedProtocol.java"
+import io.github.smartboot.socket.Protocol;
+import io.github.smartboot.socket.transport.AioSession;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
+public class FixedProtocol implements Protocol<String> {
+
+    private static final int FRAME = 64;
+
+    @Override
+    public String decode(ByteBuffer readBuffer, AioSession session) {
+        if (readBuffer.remaining() < FRAME) {
+            return null;
+        }
+        byte[] data = new byte[FRAME];
+        readBuffer.get(data);
+        return new String(data, StandardCharsets.UTF_8).trim();
+    }
+}
+```
+
+:::danger[定长协议必须调大读缓冲区]
+默认 `readBufferSize = 512`，如果 `FRAME > 512`，`remaining` 永远达不到 `FRAME`，**消息永远收不到**。必须：
+
+```java
+server.setReadBufferSize(FRAME * 2);
+```
+:::
+
+---
+
+## 编码端：怎么把字节写出去
+
+解码对了，编码也必须对称。长度前缀协议的标准写法：
+
+```java title="FrameWriter.java"
+import io.github.smartboot.socket.transport.WriteBuffer;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+public final class FrameWriter {
+
+    public static void writeString(WriteBuffer out, String msg) throws IOException {
+        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
+        out.writeInt(data.length);   // 与 decode 的 getInt() 对称
+        out.write(data);
+        out.flush();                 // 一批写完后统一 flush
+    }
+}
+```
+
+:::caution[多线程写同一连接的坑]
+`writeInt()` 内部先在共享的 `cacheByte` 里拼字节，再调 `write()` 入队，这两步不是一个原子操作。**两个线程同时对同一 `session` 调 `writeInt()`，可能把彼此的字节混进同一条消息。**
+
+正确做法二选一：
+
+```java
+// 做法 A：先在本地拼好整帧，一次 write（write(byte[]) 内部是同步的）
+byte[] frame = buildFrame(msg);
+session.writeBuffer().write(frame, 0, frame.length);
+session.writeBuffer().flush();
+
+// 做法 B：业务侧对 session 加锁，保证 writeInt + write 连续
+synchronized (session) {
+    session.writeBuffer().writeInt(data.length);
+    session.writeBuffer().write(data);
+}
+```
+:::
+
+## 五个经典错误
+
+| 错误写法 | 后果 | 正确做法 |
+|---|---|---|
+| 半包时直接 `return null`，没 `reset()` | 长度字段被吃掉，后续全部错位、乱码 | `mark()` → `getInt()` → 不够就 `reset()` |
+| 用 `readBuffer.position()` 判断「读完了」 | `position` 是写指针，与可读数据无关 | 一律用 `remaining()` |
+| 在 `decode` 里 `new byte[readBuffer.remaining()]` 不管长度字段 | 把「后续消息」也当成本条内容 | 严格按长度字段取 |
+| 把 `readBuffer` 存到成员变量「下次再用」 | 框架 `compact()` 后数据已被覆盖 | 需要跨调用保存就**拷贝**成 `byte[]` |
+| 认为一次 `read` 只会调一次 `decode` | 高并发下漏处理消息 | `decode` 可能被连续调用，返回 `null` 才停 |
+
+## 选型建议
+
+| 你的场景 | 建议 |
+|---|---|
+| 自研二进制协议 / RPC / IM | **长度前缀 + 大包升级版**，最稳 |
+| 兼容 Redis、SMTP、日志行协议 | 分隔符，注意转义 |
+| 对接硬件、定长帧 | 定长，务必先调 `setReadBufferSize` |
+| 消息里既有文本又有二进制 | 长度前缀，正文内部再自行分层（TLV） |
+
+想直接看官方维护的实现，参考 `example` 模块里的 `StringProtocol`（长度前缀 + `FixedLengthFrameDecoder` 的完整组合）。

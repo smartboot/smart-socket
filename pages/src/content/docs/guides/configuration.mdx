@@ -1,0 +1,261 @@
+---
+title: 配置详解
+description: 线程数、读写缓冲、内存池、连接超时——每个参数该填多少，以及为什么
+sidebar:
+    order: 5
+---
+
+smart-socket 的默认配置目标是「能跑起来」，不是「能扛住生产」。这一页把每个参数讲清楚，并给出可直接抄走的模板。
+
+## 两种配置方式
+
+所有服务端配置都是 `AioQuickServer` 的链式方法，最后调 `start()`：
+
+```java
+AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
+server.setThreadNum(8)
+      .setReadBufferSize(1024)
+      .setWriteBuffer(1024, 32)
+      .setBacklog(2048)
+      .setBannerEnabled(false);
+
+server.start();
+```
+
+## 服务端参数全表
+
+| 方法 | 默认值 | 作用 | 建议 |
+|---|---|---|---|
+| `setThreadNum(int)` | **1** | IO 线程数 | `CPU 核数 + 1`，**必改** |
+| `setReadBufferSize(int)` | `512` | 单连接读缓冲字节数 | 按单条消息大小定，见下文 |
+| `setWriteBuffer(int chunkSize, int chunkCount)` | `128, 16` | 写缓冲块大小 / 队列容量 | 单次写大于 128B 就必须调 |
+| `setBufferPagePool(BufferPagePool)` | 框架内置池 | 替换内存池 | 需要控制内存上限时用 |
+| `setBufferPagePool(read, write)` | 同上 | 读写池分离 | 读写特征差异大时用 |
+| `setBacklog(int)` | `1000` | TCP 半连接队列 | 高并发建连场景调到 2048+ |
+| `setBannerEnabled(boolean)` | `true` | 启动时打印 banner | 生产建议关掉 |
+| `setOption(SocketOption, V)` | `TCP_NODELAY=true` | 透传 JDK Socket 选项 | 一般不用改 |
+| `retainReadBuffer()` | `false` | 读缓冲跨读周期保留 | 高频短消息场景可开 |
+| `shutdown()` | — | 关闭监听与 IO 线程组 | 优雅停服用 |
+
+### 1. `threadNum`：最常见的性能瓶颈
+
+默认 `threadNum = 1`。也就是说，**所有连接的 `decode` 和 `process` 都跑在同一条线程上**。
+
+```java
+// 8 核机器
+server.setThreadNum(Runtime.getRuntime().availableProcessors() + 1);
+```
+
+为什么不设成 100？因为 IO 线程是**串行处理**的，线程数超过核数只会增加上下文切换。真正耗时的业务应该异步化，而不是靠加 IO 线程硬扛：
+
+```java
+MessageProcessor<Order> processor = (session, order) -> {
+    // 不要在这里查库、调 RPC
+    businessPool.submit(() -> {
+        Result r = orderService.handle(order);
+        session.writeBuffer().write(r.toBytes());
+        session.writeBuffer().flush();
+    });
+};
+```
+
+### 2. `readBufferSize`：由「最大单条消息」决定
+
+读缓冲区是**每条连接独占**的。它决定了单次能缓存多少字节，也直接决定了内存占用：
+
+```text
+总读内存 ≈ 连接数 × readBufferSize
+10 万连接 × 512B          ≈ 49 MB      （默认，够用）
+10 万连接 × 4KB           ≈ 390 MB
+10 万连接 × 64KB          ≈ 6.25 GB    （危险）
+```
+
+选择原则：
+
+| 你的消息大小 | `readBufferSize` |
+|---|---|
+| < 512B（心跳、指令） | 保持默认 `512` |
+| 几百 B ~ 几 KB | `1024` ~ `4096` |
+| 单条几十 KB | 不要调大缓冲区，改用 `FixedLengthFrameDecoder` 分段收 |
+| 文件 / 大报文 | 绝对不要靠调大 `readBufferSize` 解决 |
+
+:::danger[不要用「调大缓冲区」解决大包]
+缓冲区是按连接数乘算的。为了收 1MB 报文把 `readBufferSize` 设成 1MB，1000 个连接就要 1GB 内存，而且大部分时间是空的。正确做法见[协议设计](/smart-socket/guides/protocol/)里「升级版：支持任意大小的消息」。
+:::
+
+### 3. `setWriteBuffer(chunkSize, chunkCount)`：写路径的吞吐开关
+
+```java
+server.setWriteBuffer(1024, 512);
+//                 ↑      ↑
+//          单块字节数   队列可缓存的块数
+```
+
+- `chunkSize` **必须大于你单次写入的量**。默认 128 字节，一次写 1KB 会立刻触发多次分块与 flush，性能很差。
+- `chunkCount` 是「对端读得慢时，本地最多能积压多少块」。超出后写入线程会**阻塞等待**（背压），这其实是保护机制，不要设成几万来「避免阻塞」——那只会把 OOM 提前。
+
+| 场景 | 建议值 |
+|---|---|
+| 短指令（< 128B） | `512, 64` |
+| 常规业务消息（1KB 左右） | `1024, 512` |
+| 大报文 / 文件传输 | `8192, 128`（块大、队列短） |
+
+### 4. `BufferPagePool`：控制内存上限
+
+默认池由框架内部维护。要精确控制内存，或让多个 server 共享一个池：
+
+```java
+// 页数 = CPU 核数 + 1，使用堆外内存
+BufferPagePool pool = new BufferPagePool(
+        Runtime.getRuntime().availableProcessors() + 1, true);
+
+AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
+server.setBufferPagePool(pool);
+server.start();
+```
+
+读写特征差异大时可以分离（读多写少、写多读少）：
+
+```java
+server.setBufferPagePool(readPool, writePool);
+```
+
+:::caution[池对象的生命周期]
+`BufferPagePool` 创建后由框架长期持有，**不要在运行时反复 new**。多个 server 共享同一个池是安全的，但共享意味着争用，高负载下建议各用各的。
+:::
+
+## 客户端配置
+
+```java
+AioQuickClient client = new AioQuickClient("127.0.0.1", 8888, new StringProtocol(), processor);
+
+client.setReadBufferSize(1024)
+      .setWriteBuffer(1024, 32)
+      .connectTimeout(3000)      // 毫秒
+      .bindLocal("192.168.1.10", 0)   // 指定出口 IP，端口 0 = 随机
+      .setBufferPagePool(pool);
+
+AioSession session = client.start();
+```
+
+| 方法 | 说明 |
+|---|---|
+| `start()` | **同步**连接，返回 `AioSession`，内部创建 2 线程的 IO 组 |
+| `start(AsynchronousChannelGroup)` | 复用外部线程组连接（推荐批量客户端） |
+| `start(attachment, handler)` | **异步**连接，结果走 `CompletionHandler` 回调 |
+| `connectTimeout(int)` | 连接超时（毫秒），`0` 表示不设超时 |
+| `bindLocal(host, port)` | 绑定本地地址，用于多网卡 / 指定源 IP |
+| `shutdown()` | 关闭会话，等已排队数据写完 |
+| `shutdownNow()` | 立即关闭，丢弃未发完的数据 |
+| `getSession()` | 拿到当前会话（可能为 `null`） |
+
+### 异步连接：不阻塞调用线程
+
+```java
+AioQuickClient client = new AioQuickClient("127.0.0.1", 8888, new StringProtocol(), processor);
+client.start(null, new CompletionHandler<AioSession, Object>() {
+    @Override
+    public void completed(AioSession session, Object attachment) {
+        System.out.println("连接成功: " + session);
+    }
+
+    @Override
+    public void failed(Throwable exc, Object attachment) {
+        System.out.println("连接失败: " + exc.getMessage());
+    }
+});
+```
+
+### `shutdown` 还是 `shutdownNow`
+
+| 方法 | 行为 | 用在哪 |
+|---|---|---|
+| `shutdown()` | 关闭会话，**已入队的数据继续发完** | 正常退出、优雅下线 |
+| `shutdownNow()` | 立刻关闭通道，未发完的数据丢弃 | 故障恢复、重连前清理 |
+
+做重连时用 `shutdownNow()`，否则旧连接的残留数据可能和新连接混在一起。
+
+## 复用线程组：多个服务端 / 大量客户端
+
+默认每个 `AioQuickServer` / `AioQuickClient` 都会自建线程组。开 10 个服务端就是 10 组线程，纯浪费。
+
+```java
+// 一组线程，服务多个端口
+AsynchronousChannelGroup group = AsynchronousChannelGroup.withFixedThreadPool(
+        Runtime.getRuntime().availableProcessors() + 1,
+        r -> new Thread(r, "shared-io"));
+
+for (int port : new int[]{8001, 8002, 8003}) {
+    AioQuickServer server = new AioQuickServer(port, new StringProtocol(), processor);
+    server.start(group);
+}
+```
+
+:::caution[共享线程组后不要随便 shutdown]
+`server.shutdown()` 会连带关闭传入的线程组。共享场景下停单个 server 会误伤其他实例——这类需求请自行管理线程组生命周期，只关闭 `serverSocketChannel` 层面。
+:::
+
+## 生产级模板
+
+```java title="ProductionServer.java"
+import io.github.smartboot.socket.AbstractMessageProcessor;
+import io.github.smartboot.socket.StateMachineEnum;
+import io.github.smartboot.socket.buffer.BufferPagePool;
+import io.github.smartboot.socket.extension.plugins.BufferPageMonitorPlugin;
+import io.github.smartboot.socket.extension.plugins.IdleStatePlugin;
+import io.github.smartboot.socket.extension.plugins.MonitorPlugin;
+import io.github.smartboot.socket.transport.AioQuickServer;
+import io.github.smartboot.socket.transport.AioSession;
+
+public class ProductionServer {
+
+    public static void main(String[] args) throws Exception {
+        int cpu = Runtime.getRuntime().availableProcessors();
+
+        AbstractMessageProcessor<byte[]> processor = new AbstractMessageProcessor<byte[]>() {
+            @Override
+            public void process0(AioSession session, byte[] msg) {
+                // 业务处理（注意：在 IO 线程上，不要阻塞）
+            }
+
+            @Override
+            public void stateEvent0(AioSession session, StateMachineEnum state, Throwable t) {
+                if (t != null) {
+                    // 换成你的日志框架
+                    System.err.println(state + " -> " + t.getMessage());
+                }
+            }
+        };
+
+        AioQuickServer server = new AioQuickServer(8888, new FrameProtocol(), processor);
+
+        server.setThreadNum(cpu + 1)
+              .setReadBufferSize(2048)
+              .setWriteBuffer(4096, 256)
+              .setBacklog(2048)
+              .setBannerEnabled(false)
+              .setBufferPagePool(new BufferPagePool(cpu + 1, true));
+
+        // 60 秒无读写则断开
+        processor.addPlugin(new IdleStatePlugin<>(60_000));
+        // 每 5 秒打印一次吞吐指标
+        processor.addPlugin(new MonitorPlugin<>(5));
+        // 每 6 秒打印一次内存池使用情况（需在 start 之前创建）
+        processor.addPlugin(new BufferPageMonitorPlugin<>(server, 6));
+
+        server.start();
+    }
+}
+```
+
+## 配置自检清单
+
+上线前逐条过一遍：
+
+- [ ] `setThreadNum` 改过（没改就是单线程跑全站）
+- [ ] `chunkSize >= 单次写入字节数`（否则每写一次就分块）
+- [ ] `readBufferSize × 连接数` 在内存预算内
+- [ ] 大报文走解码器，没靠调大 `readBufferSize` 硬扛
+- [ ] 客户端重连前用 `shutdownNow()`，正常退出用 `shutdown()`
+- [ ] 大量实例复用了 `AsynchronousChannelGroup`
+- [ ] 生产环境关了 banner，接了真正的日志/监控

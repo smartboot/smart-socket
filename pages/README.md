@@ -35,14 +35,34 @@ pages/
 
 `astro.config.mjs` 的 `sidebar` 使用 `autogenerate`，在 `guides/` 或 `appendix/` 下新增 `.mdx` 文件会自动出现在导航中，无需手动登记。
 
+## 教程结构
+
+`guides/` 下的文件构成一套由浅入深的教程，`order` 决定侧边栏顺序：
+
+| order | 文件 | 内容 |
+|---|---|---|
+| 1 | `about.mdx` | 项目概述 |
+| 2 | `quickstart.mdx` | 五分钟上手：协议 + 服务端 + 客户端闭环 |
+| 3 | `concepts.mdx` | 核心概念：`Protocol` / `MessageProcessor` / `Plugin` / `AioSession`、线程与内存模型 |
+| 4 | `protocol.mdx` | 协议设计：长度前缀、分隔符、定长三种拆包方案 |
+| 5 | `configuration.mdx` | 配置详解：线程数、读写缓冲、内存池、客户端参数 |
+| 6 | `plugins.mdx` | 插件机制与 7 个官方插件、自定义插件 |
+| 7 | `advanced.mdx` | 进阶实战：心跳、重连、推送、TLS、UDP |
+| 8 | `faq.mdx` | 常见问题、排障、性能调优 |
+| 10 | `users.mdx` | 用户案例 |
+
+新增教程页时，请沿用同样的写法：**先讲清原理，再给可运行代码，最后列常见坑**。
+
 ## 写作规范
 
 动笔前请先读 [文档写作标准](./src/content/docs/ai_prompt.mdx)。要点：
 
-- 代码示例必须取自 `example/` 下的真实文件，并链接到 Gitee 完整路径，禁止凭空编写
+- 代码示例必须能对着 `aio-core` / `aio-pro` 的**真实签名**编译通过；有现成示例时优先取自 `example/` 下的真实文件
 - 依赖版本号必须与当前发布版本一致（当前为 **2.2.0**）
 - 包名统一使用 `io.github.smartboot.socket`
 - 示例中引用的源码路径必须是 `io/github/smartboot/socket/...`，不要残留重构前的 `org/smartboot/socket/...`
+- Maven 坐标 `aio-core` / `aio-pro` 不要混用不同版本号
+- 示例代码保持 **JDK 8 兼容**（不用 `Set.of`、`var`、`List.of` 等 JDK 9+ API）
 
 ## 多语言
 

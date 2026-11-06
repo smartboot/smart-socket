@@ -1,0 +1,426 @@
+---
+title: 进阶实战
+description: 心跳保活、断线重连、服务端推送、TLS 加密、UDP 五套可直接运行的方案
+sidebar:
+    order: 7
+---
+
+前面四页解决了「能通」，这一页解决「能上生产」。
+
+:::note[文中的 `FrameWriter`]
+它是上一页[协议设计](/smart-socket/guides/protocol/)末尾定义的小工具类，只做一件事：按「长度前缀」把字符串写出去并 `flush()`。直接照着抄一份放到你的项目里即可。
+:::
+
+## 一、心跳保活
+
+长连接会被中间设备（NAT 网关、防火墙、负载均衡）静默掐断，现象是「不发数据时连接看着还在，一发包就报错」。解法是两端配合：
+
+- **服务端**：超过 N 秒无读写就断开，回收僵尸连接；
+- **客户端**：定时发心跳包，证明自己还活着。
+
+### 服务端：空闲断开
+
+```java
+import io.github.smartboot.socket.extension.plugins.IdleStatePlugin;
+
+// 90 秒内读写都没有发生 → 关闭连接
+processor.addPlugin(new IdleStatePlugin<>(90_000));
+```
+
+### 客户端：定时心跳
+
+```java
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+ScheduledExecutorService heartbeat = Executors.newSingleThreadScheduledExecutor(r -> {
+    Thread t = new Thread(r, "heartbeat");
+    t.setDaemon(true);
+    return t;
+});
+
+heartbeat.scheduleAtFixedRate(() -> {
+    if (session.isInvalid()) {
+        return;                        // 连接已断，交给重连逻辑处理
+    }
+    try {
+        FrameWriter.writeString(session.writeBuffer(), "ping");
+    } catch (IOException e) {
+        // 写失败通常意味着连接已断，忽略，下一轮重连会兜底
+    }
+}, 30, 30, TimeUnit.SECONDS);
+```
+
+:::tip[心跳间隔怎么定]
+取「中间设备最短空闲超时」的三分之一左右。常见 NAT 超时是 5 分钟，服务端 90 秒、客户端 30 秒是安全的组合。
+
+**不要**设成 1 秒——心跳本身也是流量，百万连接下 1 秒一次心跳就是百万 QPS。
+:::
+
+:::note[心跳包也是业务消息]
+上面的 `ping` 会走完整的 `decode → process` 链路。如果你的协议带消息类型字段，建议给心跳单独一个类型、在 `process` 里直接返回，不要走业务分支，避免污染业务逻辑。
+:::
+
+## 二、断线重连
+
+客户端不需要「猜」连接是否断了——`AioSession` 有明确的状态。
+
+### 方案 A：状态事件驱动（推荐）
+
+```java title="ReconnectClient.java"
+import io.github.smartboot.socket.AbstractMessageProcessor;
+import io.github.smartboot.socket.StateMachineEnum;
+import io.github.smartboot.socket.transport.AioQuickClient;
+import io.github.smartboot.socket.transport.AioSession;
+
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class ReconnectClient {
+
+    private final AtomicBoolean reconnecting = new AtomicBoolean(false);
+    private volatile AioQuickClient client;
+    private volatile AioSession session;
+
+    public void start() throws IOException {
+        connect();
+    }
+
+    private void connect() {
+        try {
+            client = new AioQuickClient("127.0.0.1", 8888, new StringProtocol(),
+                    new AbstractMessageProcessor<String>() {
+                        @Override
+                        public void process0(AioSession session, String msg) {
+                            System.out.println("收到: " + msg);
+                        }
+
+                        @Override
+                        public void stateEvent0(AioSession session, StateMachineEnum state, Throwable t) {
+                            if (state == StateMachineEnum.SESSION_CLOSED) {
+                                scheduleReconnect();
+                            }
+                        }
+                    });
+            client.connectTimeout(3000);
+            session = client.start();
+            System.out.println("连接成功: " + session.getRemoteAddress());
+        } catch (IOException e) {
+            scheduleReconnect();
+        }
+    }
+
+    private void scheduleReconnect() {
+        if (!reconnecting.compareAndSet(false, true)) {
+            return;                        // 已经在重连，别叠加
+        }
+        Thread t = new Thread(() -> {
+            int attempt = 0;
+            while (true) {
+                attempt++;
+                long backoff = Math.min(30_000L, 1000L * (1L << Math.min(attempt, 5)));
+                try {
+                    Thread.sleep(backoff);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                try {
+                    if (client != null) {
+                        client.shutdownNow();      // 先彻底清掉旧连接
+                    }
+                    connect();
+                    reconnecting.set(false);
+                    return;
+                } catch (Exception ignored) {
+                    // 继续下一轮，退避时间递增
+                }
+            }
+        }, "reconnect");
+        t.setDaemon(true);
+        t.start();
+    }
+}
+```
+
+要点：
+
+| 点 | 原因 |
+|---|---|
+| 用 `stateEvent(SESSION_CLOSED)` 触发 | 比轮询 `isInvalid()` 及时，且不占线程 |
+| 重连前调 `shutdownNow()` | 旧客户端的线程组和残留缓冲必须释放，否则重连一次泄漏一组线程 |
+| `AtomicBoolean` 去重 | 网络抖动会连续触发多个 `SESSION_CLOSED`，不去重会并发建连 |
+| 指数退避 + 上限 | 服务端宕机时避免客户端把重连打成 DDoS |
+
+### 方案 B：定时巡检（简单场景）
+
+```java
+ScheduledExecutorService monitor = Executors.newSingleThreadScheduledExecutor();
+monitor.scheduleWithFixedDelay(() -> {
+    if (session == null || session.isInvalid()) {
+        connect();
+    }
+}, 5, 5, TimeUnit.SECONDS);
+```
+
+够用，但最多会晚 5 秒发现断线。业务对断线敏感就用方案 A。
+
+## 三、服务端主动推送
+
+推送的本质是：**把 `AioSession` 存起来，需要时从任意线程往里写**。`AioSession` 的写操作是线程安全的。
+
+```java title="PushProcessor.java"
+import io.github.smartboot.socket.MessageProcessor;
+import io.github.smartboot.socket.StateMachineEnum;
+import io.github.smartboot.socket.transport.AioSession;
+import io.github.smartboot.socket.transport.WriteBuffer;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class PushProcessor implements MessageProcessor<String> {
+
+    /** 在线连接表：ConcurrentHashMap.newKeySet() 是 JDK 8 的最优选择 */
+    private final Set<AioSession> sessions = ConcurrentHashMap.newKeySet();
+
+    @Override
+    public void process(AioSession session, String msg) {
+        // 客户端发来的消息，这里可以理解为「上线登记」
+        session.setAttachment(msg);
+        System.out.println("收到 " + msg + " 的消息");
+    }
+
+    @Override
+    public void stateEvent(AioSession session, StateMachineEnum state, Throwable throwable) {
+        if (state == StateMachineEnum.NEW_SESSION) {
+            sessions.add(session);
+        } else if (state == StateMachineEnum.SESSION_CLOSED) {
+            sessions.remove(session);       // 必须移除，否则内存泄漏
+        }
+    }
+
+    /** 广播：可在任意业务线程调用 */
+    public void broadcast(String message) {
+        byte[] data = message.getBytes(StandardCharsets.UTF_8);
+        for (AioSession session : sessions) {
+            if (session.isInvalid()) {
+                sessions.remove(session);
+                continue;
+            }
+            try {
+                WriteBuffer out = session.writeBuffer();
+                out.writeInt(data.length);
+                out.write(data);
+                out.flush();
+            } catch (IOException e) {
+                sessions.remove(session);   // 写失败说明连接已不可用
+            }
+        }
+    }
+}
+```
+
+用法：
+
+```java
+PushProcessor processor = new PushProcessor();
+AioQuickServer server = new AioQuickServer(8888, new StringProtocol(), processor);
+server.start();
+
+// 任意线程随时推送
+new Thread(() -> {
+    while (true) {
+        try {
+            Thread.sleep(10_000);
+        } catch (InterruptedException e) {
+            return;
+        }
+        processor.broadcast("server push: " + System.currentTimeMillis());
+    }
+}).start();
+```
+
+:::danger[广播必须放在独立线程]
+`broadcast` 里每个 `flush()` 都可能因为对端读得慢而阻塞（写队列满了会等）。如果在 `process` 里调用广播，一条慢连接就能卡死整条 IO 线程上的所有连接。
+
+生产环境的做法：**推送走独立线程 + 队列**，并对慢客户端做超时剔除。上面的例子之所以起独立线程，正是这个原因。
+:::
+
+### 单播：按用户找连接
+
+```java
+private final Map<String, AioSession> userSessions = new ConcurrentHashMap<>();
+
+// 登录成功后
+userSessions.put(userId, session);
+session.setAttachment(userId);
+
+// 定向推送
+public void sendTo(String userId, String message) throws IOException {
+    AioSession session = userSessions.get(userId);
+    if (session == null || session.isInvalid()) {
+        return;
+    }
+    FrameWriter.writeString(session.writeBuffer(), message);
+}
+
+// SESSION_CLOSED 里
+userSessions.remove(session.getAttachment(), session);
+```
+
+## 四、TLS 加密
+
+### 1. 生成证书
+
+```bash
+keytool -genkeypair -alias smart-socket \
+  -keyalg RSA -keysize 2048 -validity 36500 \
+  -storetype JKS \
+  -keystore server.keystore \
+  -storepass 123456 -keypass 123456 \
+  -dname "CN=localhost, OU=dev, O=smartboot, L=Hangzhou, ST=Zhejiang, C=CN"
+```
+
+:::caution[必须显式指定 `-storetype JKS`]
+JDK 9 之后 `keytool` 默认生成 PKCS12 格式，而 `ServerSSLContextFactory` 是按 **JKS** 加载的。不指定会报 `Keystore was tampered with, or password was incorrect`。
+:::
+
+### 2. 服务端
+
+```java
+import io.github.smartboot.socket.extension.plugins.SslPlugin;
+import io.github.smartboot.socket.extension.ssl.ClientAuth;
+import io.github.smartboot.socket.extension.ssl.factory.ServerSSLContextFactory;
+
+import java.io.FileInputStream;
+import java.io.InputStream;
+
+InputStream keystore = new FileInputStream("server.keystore");
+
+SslPlugin<String> ssl = new SslPlugin<>(
+        new ServerSSLContextFactory(keystore, "123456", "123456"),
+        ClientAuth.NONE);              // NONE=不校验客户端证书
+
+processor.addPlugin(ssl);              // 注意：SSL 要最后加，最贴近字节流
+```
+
+### 3. 客户端
+
+```java
+import io.github.smartboot.socket.extension.plugins.SslPlugin;
+import io.github.smartboot.socket.extension.ssl.factory.ClientSSLContextFactory;
+
+SslPlugin<String> ssl = new SslPlugin<>(new ClientSSLContextFactory());
+processor.addPlugin(ssl);
+```
+
+:::danger[默认的客户端工厂不校验服务端证书]
+`new ClientSSLContextFactory()` 使用了一个「信任所有证书」的 `X509TrustManager`。**这只能用于开发联调**——线上等于把中间人攻击的门开着。
+
+生产环境必须传入 trustStore：
+
+```java
+SslPlugin<String> ssl = new SslPlugin<>(new ClientSSLContextFactory(
+        new FileInputStream("client.truststore"), "123456", null, null));
+```
+:::
+
+### 双向认证（mTLS）
+
+```java
+// 服务端：要求客户端出示证书
+new SslPlugin<>(new ServerSSLContextFactory(keystore, "123456", "123456"),
+        ClientAuth.REQUIRE);
+
+// 客户端：带上自己的证书
+new ClientSSLContextFactory(
+        new FileInputStream("client.truststore"), "123456",
+        new FileInputStream("client.keystore"), "123456");
+```
+
+`ClientAuth` 三个值：`NONE`（不校验）、`OPTIONAL`（有则校验）、`REQUIRE`（必须校验）。
+
+## 五、UDP
+
+UDP 的 API 与 TCP 平行，但用的是 `UdpBootstrap` 而不是 `AioQuickServer`。它在 **aio-pro** 模块里。
+
+### 服务端
+
+```java title="UdpEchoServer.java"
+import io.github.smartboot.socket.AbstractMessageProcessor;
+import io.github.smartboot.socket.StateMachineEnum;
+import io.github.smartboot.socket.buffer.BufferPagePool;
+import io.github.smartboot.socket.transport.AioSession;
+import io.github.smartboot.socket.transport.UdpBootstrap;
+
+public class UdpEchoServer {
+
+    public static void main(String[] args) throws Exception {
+        AbstractMessageProcessor<String> processor = new AbstractMessageProcessor<String>() {
+            @Override
+            public void process0(AioSession session, String msg) {
+                try {
+                    FrameWriter.writeString(session.writeBuffer(), msg);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void stateEvent0(AioSession session, StateMachineEnum state, Throwable t) {
+            }
+        };
+
+        new UdpBootstrap(new StringProtocol(), processor)
+                .setThreadNum(Runtime.getRuntime().availableProcessors())
+                .setReadBufferSize(2048)
+                .setBufferPagePool(new BufferPagePool(
+                        Runtime.getRuntime().availableProcessors(), true))
+                .open(9999);
+    }
+}
+```
+
+### 客户端
+
+```java
+UdpBootstrap bootstrap = new UdpBootstrap(new StringProtocol(), processor)
+        .setReadBufferSize(2048);
+
+UdpChannel channel = bootstrap.open();                    // 随机本地端口
+AioSession session = channel.connect("127.0.0.1", 9999);  // UDP 的「会话」对应一个远端地址
+FrameWriter.writeString(session.writeBuffer(), "hello udp");
+```
+
+### TCP 与 UDP 的关键差异
+
+| 维度 | TCP（`AioQuickServer`） | UDP（`UdpBootstrap`） |
+|---|---|---|
+| 连接语义 | 有连接，`AioSession` 与连接一一对应 | 无连接，`AioSession` 对应远端地址的四元组 |
+| 可靠性 | 可靠、有序 | 不保证到达、不保证顺序 |
+| 单包大小 | 无上限（靠拆包） | 受 MTU 限制，建议 ≤ 1400 字节 |
+| 协议要求 | 必须自己拆包 | 天然有报文边界，通常**不需要**拆包 |
+| 空闲断开 | `IdleStatePlugin` 有效 | 无连接可断，插件意义不大 |
+
+:::tip[UDP 不要照搬 TCP 的协议]
+TCP 那套「长度前缀 + 半包缓存」在 UDP 里是多余的——一个 `receive` 就是一条完整报文。UDP 的 `decode` 通常直接 `return new String(...)`。
+
+真要用，记得 `MonitorPlugin` 的 UDP 版本是 `new MonitorPlugin(5, true)`。
+:::
+
+## 六、优雅停机
+
+```java
+Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+    System.out.println("正在停机...");
+    server.shutdown();          // 关闭监听 + IO 线程组
+    // 如果你有自己的业务线程池，也在这里关
+    businessPool.shutdown();
+    System.out.println("已停机");
+}));
+```
+
+`server.shutdown()` 只关闭**监听通道和线程组**，不会逐个通知客户端「我要走了」。需要优雅下线协议的话，得自己先广播一条 `bye` 消息、等客户端主动断开，再 `shutdown()`。

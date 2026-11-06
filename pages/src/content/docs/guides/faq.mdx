@@ -1,0 +1,253 @@
+---
+title: 常见问题与排障
+description: 依赖冲突、包名迁移、收不到消息、内存泄漏、性能瓶颈——按现象查原因
+sidebar:
+    order: 8
+---
+
+## 版本与依赖
+
+### 该引哪个依赖？
+
+```xml
+<!-- 只做基础 TCP 通信 -->
+<dependency>
+    <groupId>io.github.smartboot.socket</groupId>
+    <artifactId>aio-core</artifactId>
+    <version>2.2.0</version>
+</dependency>
+
+<!-- 需要解码器 / 官方插件 / UDP 时，引这个（它已包含 aio-core） -->
+<dependency>
+    <groupId>io.github.smartboot.socket</groupId>
+    <artifactId>aio-pro</artifactId>
+    <version>2.2.0</version>
+</dependency>
+```
+
+判据：
+
+| 你要用的东西 | 需要的依赖 |
+|---|---|
+| `AioQuickServer`、`AioQuickClient`、`Protocol`、`MessageProcessor` | `aio-core` |
+| `FixedLengthFrameDecoder`、`DelimiterFrameDecoder` | `aio-pro` |
+| `IdleStatePlugin`、`RateLimiterPlugin`、`SslPlugin`、`MonitorPlugin` | `aio-pro` |
+| `UdpBootstrap` | `aio-pro` |
+
+:::tip[别同时引两个版本]
+`aio-pro` 会传递依赖 `aio-core`。如果你又显式引了**不同版本**的 `aio-core`，Maven 的最近优先原则可能选出低版本，导致 `NoSuchMethodError`。用 `mvn dependency:tree` 确认只有一份。
+:::
+
+### 从 1.x 升级到 2.x：包名全变了
+
+2.0 开始的破坏性变更：**根包名从 `org.smartboot.socket` 迁移到 `io.github.smartboot.socket`**。
+
+```java
+// 1.x
+import org.smartboot.socket.transport.AioQuickServer;
+import org.smartboot.socket.Protocol;
+
+// 2.x
+import io.github.smartboot.socket.transport.AioQuickServer;
+import io.github.smartboot.socket.Protocol;
+```
+
+升级清单：
+
+- [ ] 所有 `import` 批量替换 `org.smartboot.socket` → `io.github.smartboot.socket`
+- [ ] `StringProtocol` 等示例里的 `FixedLengthFrameDecoder` 包路径同步替换
+- [ ] 检查 `pom.xml` 里是否还残留旧 `groupId`
+- [ ] 清理 IDE 缓存并重新 Maven reload（否则会出现「类明明存在却找不到」的幻觉）
+- [ ] 如果项目里留了旧包路径下的同名 `.java` 文件，删掉——它们会以重复类身份参与编译
+
+### IDEA 里编译报「找不到符号」，但依赖明明下载了
+
+大概率是 IDE 缓存。依次尝试：
+
+```bash
+mvn -U clean install -DskipTests
+```
+
+然后 IDEA 里 `File → Invalidate Caches / Restart`。
+
+---
+
+## 收不到消息 / 解析异常
+
+### 客户端发出去了，服务端没反应
+
+按顺序排查：
+
+| 检查点 | 现象 | 修法 |
+|---|---|---|
+| 有没有 `flush()` | 数据躺在本地 chunk 缓冲里没进发送队列 | 补 `flush()` |
+| `chunkSize` 是否小于单次写入量 | 每写一次就多次分块，偶发卡顿 | `setWriteBuffer` 调大 `chunkSize` |
+| 协议两端是否对称 | 服务端 `getInt()`、客户端 `writeInt()` 必须一致 | 检查字节序与字段顺序 |
+| 服务端 `decode` 是否总返回 `null` | 长度字段判断写错，永远认为「不够」 | 打印 `readBuffer.remaining()` 和解析出的 `length` |
+
+最有效的调试手段是 `StreamMonitorPlugin`，直接把原始字节打出来对照：
+
+```java
+processor.addPlugin(new StreamMonitorPlugin<>(
+        StreamMonitorPlugin.BLUE_HEX_INPUT_STREAM,
+        StreamMonitorPlugin.RED_HEX_OUTPUT_STREAM));
+```
+
+### 偶发乱码 / 消息错位
+
+基本可以断定是**半包处理时没回退读指针**：
+
+```java
+readBuffer.mark();
+int length = readBuffer.getInt();
+if (readBuffer.remaining() < length) {
+    readBuffer.reset();   // ← 少了这一行，长度字段就被永久吃掉了
+    return null;
+}
+```
+
+### 大消息收不到，小消息正常
+
+`readBufferSize` 撑不下这条消息，而 `decode` 又在死等 `remaining >= length`。两条路：
+
+1. 用 `FixedLengthFrameDecoder` 分段收（推荐，见[协议设计](/smart-socket/guides/protocol/)）；
+2. 临时调大 `setReadBufferSize()`（仅适合消息上限可控的场景）。
+
+### 抛 `readBuffer overflow` 异常
+
+```text
+java.lang.IllegalStateException: readBuffer overflow. The current TCP connection will be closed.
+Please fix your ...#decode bug.
+```
+
+含义很明确：**`decode` 消费字节的速度赶不上读入速度**，缓冲区被写满。三个原因：
+
+| 原因 | 表现 | 修法 |
+|---|---|---|
+| `decode` 该返回对象时返回了 `null` | 数据一直堆着不消费 | 检查解析条件 |
+| `decode` 在等一个永远凑不齐的长度 | 长度字段或协议约定错了 | 核对两端协议 |
+| 单条消息超过缓冲区容量 | 只有大消息触发 | 用解码器分段收 |
+
+---
+
+## 连接与资源
+
+### 连接数上不去
+
+| 检查点 | 说明 |
+|---|---|
+| 文件句柄限制 | Linux 下 `ulimit -n` 默认 1024，百万连接必须调大（`/etc/security/limits.conf`） |
+| `backlog` | 默认 1000，突发建连会拒连；`setBacklog(2048)` 以上 |
+| 端口范围 | 客户端侧 `net.ipv4.ip_local_port_range` 决定可用源端口数 |
+| 内存 | `连接数 × (readBufferSize + 写缓冲)`，先算清楚再上量 |
+
+### 连接建立了，但很快被断开
+
+按可能性排序：
+
+1. **`IdleStatePlugin` 超时太短**：它要求「读写都空闲」才断开，但如果两端都不发数据，秒级就会断。检查 `idleTimeout` 单位——**是毫秒**，不是秒。
+2. **负载均衡的空闲超时**：SLB / Nginx 默认 60s 无数据就断，需要在客户端加心跳，或调大 LB 的 `idle_timeout`。
+3. **`decode` 抛异常**：触发 `DECODE_EXCEPTION` 后框架会关连接。把 `stateEvent` 里的异常打出来。
+
+```java
+@Override
+public void stateEvent(AioSession session, StateMachineEnum state, Throwable t) {
+    if (t != null) {
+        System.err.println(state + " -> " + t);   // 先看到，再谈修
+    }
+}
+```
+
+### 内存持续增长，不回落
+
+| 原因 | 排查方法 |
+|---|---|
+| 在线会话表没清理 | 检查 `SESSION_CLOSED` 里有没有 `remove` |
+| 协议里用 `Map<AioSession, ...>` 存解码器 | 连接断开时没 `remove`，是框架级泄漏高发点 |
+| `retainReadBuffer()` 开着 | 每条连接常驻 `readBufferSize` 内存，连接数涨内存就涨 |
+| 业务侧 `setAttachment` 存了大对象 | 附件随会话存活，会话不关就不释放 |
+
+用 `jmap -histo:live <pid>` 看 `AioSession` / `VirtualBuffer` / 你的协议类实例数是否随连接数线性增长。
+
+### 线程泄漏：重启客户端后线程数只增不减
+
+每次 `new AioQuickClient(...).start()` 都会创建一组 IO 线程。**重连时必须先 `shutdownNow()` 旧实例**，否则每重连一次泄漏一组：
+
+```java
+if (client != null) {
+    client.shutdownNow();
+}
+client = new AioQuickClient(...);
+```
+
+线程名可以在 `jstack` 里直接看到：服务端为 `smart-socket:Thread-N`，心跳插件为 `idleStateMonitor`。数量对不上就是泄漏。
+
+---
+
+## 性能调优
+
+### 先量，再调
+
+`benchmark` 模块自带压测程序：`Server` 起服务端，`Clients` 起客户端。在 IDE 里直接运行这两个 `main` 方法即可：
+
+```text
+benchmark/src/main/java/io/github/smartboot/socket/benchmark/
+├── Server.java     ← 先跑这个
+└── Clients.java    ← 再跑这个（可多开几个进程制造压力）
+```
+
+压测参数在 `Clients` 里写死了（连接数、报文大小、发送频率），按你的目标场景改。
+
+没有基线数据就调参数，等于闭眼改代码。
+
+### 四个最有效的调整点
+
+| 优先级 | 调整 | 从 → 到 | 收益 |
+|---|---|---|---|
+| 1 | `setThreadNum` | `1` → `CPU+1` | 多核用起来了，通常翻几倍 |
+| 2 | `chunkSize` | `128` → `1024/4096` | 减少分块与 flush 次数 |
+| 3 | 业务异步化 | `process` 里同步调下游 → 丢线程池 | 消除 IO 线程阻塞 |
+| 4 | `BufferPagePool` 容量 | 默认 → `CPU+1` 页 | 减少池争用 |
+
+### 别做的事
+
+| 反模式 | 为什么不行 |
+|---|---|
+| `process` 里 `Thread.sleep` / 同步 RPC | 阻塞 IO 线程，同线程所有连接一起卡 |
+| `threadNum` 设成 100+ | 线程数超过核数只会增加切换开销 |
+| 为收大包把 `readBufferSize` 调到 MB 级 | 内存按连接数乘算，几千连接就 OOM |
+| `chunkCount` 调到几万「避免阻塞」 | 阻塞是背压保护，绕过它只是把 OOM 推后 |
+| 在 `decode` / `process` 里打大量日志 | IO 线程上的同步 IO 是最贵的操作 |
+
+### 压测时的常见误判
+
+- **客户端先到瓶颈**：压测机 CPU 打满、QPS 上不去，先看客户端侧，别急着改服务端代码。
+- **没关 banner 和监控插件**：`MonitorPlugin` 每秒打印会污染数据，压测时先移除。
+- **忘了 `TCP_NODELAY`**：框架默认已开启，但如果你自己包了 channel 要注意别关掉，否则小包延迟会明显上升。
+
+---
+
+## 异常信息对照表
+
+| 异常 / 日志 | 含义 | 处理 |
+|---|---|---|
+| `writeBuffer has closed` | 会话已关闭还在写 | 写前判 `session.isInvalid()`，或捕获忽略 |
+| `none remaining byteBuffer` | `write(ByteBuffer, callback)` 传了空 buffer | 检查 `hasRemaining()` |
+| `OutputStream has closed` | `flush()` 时缓冲已关闭 | 同上，属正常竞态 |
+| `非法的帧长度` / 你自己抛的 | 字节流错位或遭到畸形包 | 加长度上限校验，记录对端 IP |
+| `readBuffer overflow` | `decode` 消费太慢 | 见上文 |
+| `Address already in use` | 端口被占用 | 换端口，或等 `TIME_WAIT` 释放 |
+| `Connection reset by peer` | 对端强制关闭（RST） | 正常网络现象，靠重连兜底 |
+| `Keystore was tampered with` | keystore 格式或密码不对 | 用 `-storetype JKS` 重新生成 |
+
+---
+
+## 还是没解决？
+
+提 issue 时请带上这三样，能极大缩短定位时间：
+
+1. **最小复现**：协议实现 + `process` + 启停代码，能独立跑起来的那种；
+2. **版本**：`aio-core` / `aio-pro` 的确切版本号；
+3. **关键日志**：`stateEvent` 里的异常栈、`StreamMonitorPlugin` 打出的原始字节。
+
+仓库地址：[GitHub](https://github.com/smartboot/smart-socket) / [Gitee](https://gitee.com/smartboot/smart-socket)
