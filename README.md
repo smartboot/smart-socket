@@ -1,5 +1,7 @@
 # smart-socket
 
+[![](https://img.shields.io/badge/lang-English-green.svg)](README.md) [![](https://img.shields.io/badge/lang-Chinese-green.svg)](README_zh.md)
+
 <p align="center">
   <b>A lightweight Java AIO framework for high-performance TCP applications</b><br/>
   Simple API · Low memory footprint · Built for long-lived connections & custom protocols
@@ -66,7 +68,7 @@ Java’s native AIO (NIO.2) provides a clean asynchronous programming model, but
 <dependency>
     <groupId>io.github.smartboot.socket</groupId>
     <artifactId>aio-pro</artifactId>
-    <version>2.1.3</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 

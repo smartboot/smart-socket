@@ -87,12 +87,13 @@
 
 ### 核心关注文件
 ```
-aio-core/src/main/java/org/smartboot/socket/transport/
+aio-core/src/main/java/io/github/smartboot/socket/transport/
 ├── AioQuickServer.java      # 服务端启动类
 ├── AioQuickClient.java      # 客户端启动类
 ├── AioSession.java          # 会话接口
 ├── TcpAioSession.java       # TCP会话实现
-├── WriteBuffer.java         # 写缓冲区
+├── WriteBuffer.java         # 写缓冲区接口
+├── WriteBufferImpl.java     # 写缓冲区实现（v2.2.0 起写入逻辑主体）
 └── IoServerConfig.java      # 服务配置
 ```
 
@@ -135,7 +136,7 @@ public interface Protocol<T> {
 
 ### 核心关注文件
 ```
-aio-pro/src/main/java/org/smartboot/socket/extension/
+aio-pro/src/main/java/io/github/smartboot/socket/extension/
 ├── decoder/
 │   ├── DelimiterFrameDecoder.java
 │   ├── FixedLengthFrameDecoder.java
@@ -165,31 +166,32 @@ aio-pro/src/main/java/org/smartboot/socket/extension/
 | **BufferPageMonitorPlugin** | 内存池监控 | 内存泄漏检测、使用率统计 |
 | **RateLimiterPlugin** | 流量限流 | 防DDoS、服务保护 |
 | **StreamMonitorPlugin** | 码流监控 | 调试抓包、协议分析 |
-| **HeartPlugin** | 心跳检测 | 长连接保活 |
+| **ProxyProtocolPlugin** | PROXY 协议头解析 | 负载均衡后端获取真实客户端 IP |
 
 ### 插件开发规范
 ```java
-// 插件接口定义
+// 插件接口定义（io.github.smartboot.socket.Plugin）
 public interface Plugin<T> {
-    void start();
-    void stop();
-    default boolean shouldAccept(SocketAddress remote) { return true; }
-    default void afterAccept(AioSession session) {}
-    default void beforeDecode(AioSession session, ByteBuffer buffer) {}
-    default void afterProcess(AioSession session, T msg) {}
-    default void stateEvent(AioSession session, StateMachineEnum state, Throwable throwable) {}
+    default AsynchronousSocketChannel shouldAccept(AsynchronousSocketChannel channel) { return channel; }
+    default void beforeRead(AioSession session) {}
+    default void afterRead(AioSession session, int readSize) {}
+    default void beforeWrite(AioSession session) {}
+    default void afterWrite(AioSession session, int writeSize) {}
+    default boolean preProcess(AioSession session, T t) { return true; }
+    default void stateEvent(StateMachineEnum stateMachineEnum, AioSession session, Throwable throwable) {}
 }
 ```
 
 ### 核心关注文件
 ```
-aio-pro/src/main/java/org/smartboot/socket/extension/plugins/
+aio-pro/src/main/java/io/github/smartboot/socket/extension/plugins/
 ├── SslPlugin.java
 ├── IdleStatePlugin.java
 ├── MonitorPlugin.java
 ├── RateLimiterPlugin.java
 ├── StreamMonitorPlugin.java
-└── BufferPageMonitorPlugin.java
+├── BufferPageMonitorPlugin.java
+└── ProxyProtocolPlugin.java
 ```
 
 ---
@@ -230,14 +232,15 @@ aio-pro/src/main/java/org/smartboot/socket/extension/plugins/
 
 ### 核心关注文件
 ```
-benchmark/src/main/java/org/smartboot/socket/benchmark/
+benchmark/src/main/java/io/github/smartboot/socket/benchmark/
 ├── Server.java          # 压测服务端
-└── Clients.java         # 压测客户端
+├── Clients.java         # 压测客户端
+└── StringProtocol.java  # 压测用字符串协议
 ```
 
 ---
 
-## � 发版文章编辑专家
+## 📝 发版文章编辑专家
 
 ### 职责范围
 - smart-socket 版本发布文章撰写
@@ -391,7 +394,7 @@ smart-socket/
 
 ---
 
-## � 文档与示例专家
+## 📚 文档与示例专家
 
 ### 职责范围
 - 官方文档编写
@@ -401,15 +404,17 @@ smart-socket/
 
 ### 示例代码分类
 ```
-example/src/main/java/org/smartboot/socket/example/
+example/src/main/java/io/github/smartboot/socket/example/
 ├── basic/              # 基础入门示例
 │   ├── IntegerDemo.java
 │   ├── StringDemo.java
-│   └── AsyncClientDemo.java
+│   ├── AsyncClientDemo.java
+│   └── LocalAddressClient.java
 ├── benchmark/          # 性能压测示例
 ├── plugins/            # 插件使用示例
 │   ├── IdleStatePluginDemo.java
 │   ├── RateLimiterDemo.java
+│   ├── RateLimiterClient.java
 │   └── StreamMonitorDemo.java
 ├── push/               # 消息推送场景
 ├── reconnect/          # 断链重连示例

@@ -1,7 +1,6 @@
-## smart-socket
+# smart-socket
 
-
-[![](https://img.shields.io/badge/lang-Chinese-<green>.svg)](README.md) [![](https://img.shields.io/badge/lang-English-<green>.svg)](./README.en.md)
+[![](https://img.shields.io/badge/lang-Chinese-green.svg)](README_zh.md) [![](https://img.shields.io/badge/lang-English-green.svg)](README.md)
 
 smart-socket 是一款增强了原生 JDK 实现的 AIO 通信框架。
 
