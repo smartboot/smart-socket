@@ -1,6 +1,14 @@
 # smart-socket
 
-[![](https://img.shields.io/badge/lang-Chinese-green.svg)](README_zh.md) [![](https://img.shields.io/badge/lang-English-green.svg)](README.md)
+<p align="center">
+  <a href="README.md">English</a> | <a href="README_zh.md">中文</a>
+</p>
+
+<p align="center">
+  ⭐ <b>如果 smart-socket 帮到了你，点个 Star 能让更多开发者发现它。</b>
+  <a href="https://github.com/smartboot/smart-socket/stargazers">GitHub 加星</a> ·
+  <a href="https://gitee.com/smartboot/smart-socket">Gitee 加星</a>
+</p>
 
 smart-socket 是一款增强了原生 JDK 实现的 AIO 通信框架。
 

@@ -1,7 +1,5 @@
 # smart-socket
 
-[![](https://img.shields.io/badge/lang-English-green.svg)](README.md) [![](https://img.shields.io/badge/lang-Chinese-green.svg)](README_zh.md)
-
 <p align="center">
   <b>A lightweight Java AIO framework for high-performance TCP applications</b><br/>
   Simple API · Low memory footprint · Built for long-lived connections & custom protocols
@@ -16,6 +14,12 @@
 
 <p align="center">
   <a href="README.md">English</a> | <a href="README_zh.md">中文</a>
+</p>
+
+<p align="center">
+  ⭐ <b>If smart-socket saves you time, a star helps other developers find it.</b>
+  <a href="https://github.com/smartboot/smart-socket/stargazers">Star on GitHub</a> ·
+  <a href="https://gitee.com/smartboot/smart-socket">Star on Gitee</a>
 </p>
 
 ---
