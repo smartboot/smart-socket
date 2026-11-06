@@ -62,12 +62,13 @@ smart-socket 作为底层通信微内核，已支撑多个高性能中间件项�
 ### 🎈插件清单
 | Plugin | 用途 |
 |---|---|
-|BlackListPlugin|黑名单插件,smart-socket会拒绝与黑名单中的IP建立连接|
-|BufferPageMonitorPlugin|内存池监控插件|
-|MonitorPlugin|服务指标监控插件|
-|SocketOptionPlugin|连接属性配置插件|
-|SslPlugin|TLS/SSL加密通讯插件|
-|StreamMonitorPlugin|传输层通讯码流监控插件|
+|BufferPageMonitorPlugin|内存页监测插件，统计内存池使用情况|
+|IdleStatePlugin|空闲连接检测插件，超时自动关闭会话|
+|MonitorPlugin|服务指标监控插件，统计连接数、QPS 与流量|
+|ProxyProtocolPlugin|PROXY protocol 解析插件，获取真实客户端 IP|
+|RateLimiterPlugin|网络流量控制插件|
+|SslPlugin|TLS/SSL 加密通讯插件|
+|StreamMonitorPlugin|传输层码流监控插件，用于抓包与协议分析|
 
 ### 🍩感谢
 - 感谢 Gitee 提供的代码托管和曾经的 Pages 服务。

@@ -20,7 +20,7 @@ sidebar:
 
 :::note
 JDK 版本兼容性说明：
-smart-socket 1.7.5 版本完全兼容 JDK 8 及以上所有版本，推荐使用此版本以获得最佳性能和最新功能。
+smart-socket 2.2.0 版本完全兼容 JDK 8 及以上所有版本，推荐使用最新版本以获得最佳性能和最新功能。
 :::
 
 ## 第一步：创建 Maven 项目并引入依赖
@@ -32,7 +32,7 @@ smart-socket 1.7.5 版本完全兼容 JDK 8 及以上所有版本，推荐使用
     <dependency>
         <groupId>io.github.smartboot.socket</groupId>
         <artifactId>aio-core</artifactId>
-        <version>1.7.5</version>
+        <version>2.2.0</version>
     </dependency>
 </dependencies>
 ```
@@ -44,7 +44,7 @@ smart-socket 1.7.5 版本完全兼容 JDK 8 及以上所有版本，推荐使用
     <repository>
         <id>alimaven</id>
         <name>aliyun maven</name>
-        <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+        <url>https://maven.aliyun.com/nexus/content/groups/public/</url>
     </repository>
 </repositories>
 ```
@@ -133,7 +133,7 @@ public class StringServer {
 }
 ```
 
-在上面的代码中，我们使用了 [AioQuickServer](https://gitee.com/smartboot/smart-socket/blob/master/example/src/main/java/org/smartboot/socket/example/benchmark/StringServer.java) 来快速搭建服务端，它封装了大部分复杂的异步IO操作。
+在上面的代码中，我们使用了 [AioQuickServer](https://gitee.com/smartboot/smart-socket/blob/master/example/src/main/java/io/github/smartboot/socket/example/benchmark/StringServer.java) 来快速搭建服务端，它封装了大部分复杂的异步IO操作。
 
 ## 第四步：实现客户端
 
@@ -170,7 +170,7 @@ public class StringClient {
 }
 ```
 
-这段代码展示了如何使用 [AioQuickClient](https://gitee.com/smartboot/smart-socket/blob/master/example/src/main/java/org/smartboot/socket/example/benchmark/StringClient.java) 快速创建客户端并与服务端建立连接。
+这段代码展示了如何使用 [AioQuickClient](https://gitee.com/smartboot/smart-socket/blob/master/example/src/main/java/io/github/smartboot/socket/example/benchmark/StringClient.java) 快速创建客户端并与服务端建立连接。
 
 ## 运行测试
 
